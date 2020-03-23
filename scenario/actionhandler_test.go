@@ -112,3 +112,23 @@ func TestActionhandler(t *testing.T) {
 		t.Fatal("overidden custom settings not of type customActionSettings2")
 	}
 }
+
+func TestDisabledInvalid(t *testing.T) {
+	disabledInvalid := `{
+		"action" : "thinktime",
+		"disabled": true,
+		"settings" : {
+			"type": "static"
+		}
+	}`
+
+	var act Action
+
+	if err := jsonit.Unmarshal([]byte(disabledInvalid), &act); err != nil {
+		t.Fatal("Unmarshal thinktime with invalid settings failed, err:", err)
+	}
+
+	if err := act.Validate(); err != nil {
+		t.Fatal("Validation failed even though action is disabled, err:", err)
+	}
+}
