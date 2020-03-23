@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/json-iterator/go v1.1.9
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.4.0
+	github.com/prometheus/client_golang v1.5.1
 	github.com/qlik-oss/enigma-go v1.1.1
 	github.com/rs/zerolog v1.17.2
 	github.com/satori/go.uuid v1.2.0
