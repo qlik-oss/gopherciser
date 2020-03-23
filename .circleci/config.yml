@@ -66,11 +66,15 @@ jobs:
             - build/*
             - changelog.md
 
+# e1:b9:be:6d:35:a8:d0:83:4c:39:de:0c:9a:3f:ba:f5
   publish-github:
     <<: *defaults
     docker:
       - image: golang:1.11-alpine
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "e1:b9:be:6d:35:a8:d0:83:4c:39:de:0c:9a:3f:ba:f5"
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
       - run:
