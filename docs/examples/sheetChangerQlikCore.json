@@ -1,0 +1,41 @@
+{
+	"settings": {
+		"timeout": 300,
+		"logs": {
+			"Filename": "logs/ctrl00-sheetchanger.tsv"
+		}
+	},
+	"scheduler": {
+		"type": "simple",
+		"settings": {
+			"executiontime": -1,
+			"iterations": 1,
+			"rampupdelay": 1.0,
+			"concurrentusers": 1
+		}
+	},
+	"loginSettings" : {
+		"type" : "none"
+	},
+	"connectionSettings": {
+		"mode" : "ws",
+		"server" : "ws://localhost",
+		"port": 19076,
+		"appext": ""
+	},
+	"scenario": [
+		{
+			"label" : "Open qlik core",
+			"action" : "openapp",
+			"settings" : {
+				"appmode" : "guid",
+				"app" : "Ctrl00_allObj.qvf"
+			}
+		}, {
+			"action": "sheetchanger"
+		}, {
+			"action": "sheetchanger",
+			"label" : "withLabel "
+		}
+	]
+}

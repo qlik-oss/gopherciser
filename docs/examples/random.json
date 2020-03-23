@@ -1,0 +1,91 @@
+{
+	"settings": {
+		"timeout": 300,
+		"logs": {
+			"traffic": false,
+			"debug": false,
+			"filename": "logs/scenario.tsv"
+		}
+	},
+	"scheduler": {
+		"type": "simple",
+		"settings": {
+			"executiontime": -1,
+			"iterations": 10,
+			"rampupdelay": 20.0,
+			"concurrentusers": 1
+		}
+	},
+	"connectionSettings": {
+		"server": "myserver",
+		"mode": "jwt",
+		"virtualproxy": "jwt",
+		"security": true,
+		"mocked": true,
+		"jwtsettings": {
+			"keypath": "mock.pem",
+			"claims": "{\"user\":\"{{.UserName}}\",\"directory\":\"{{.Directory}}\"}"
+		}
+	},
+	"loginSettings": {
+		"type": "userlist",
+		"settings": {
+			"userlist": [
+				{
+					"username": "gopher1",
+					"password": ""
+				},
+				{
+					"username": "gopher2",
+					"password": ""
+				},
+				{
+					"username": "gopher3",
+					"password": ""
+				}
+			]
+		}
+	},
+	"scenario": [
+		{
+			"action": "OpenHub",
+			"label": "Open the hub"
+		},
+		{
+			"label": "Open a random app",
+			"action": "OpenApp",
+			"settings": {
+				"appmode" : "randomnamefromlist",
+				"list": ["PT1MSSD", "Life expectancy"]
+			}
+		},  {
+			"label": "randomaction",
+			"action": "RandomAction",
+			"settings": {
+				"iterations": 5,
+				"actions": [
+					{
+						"type": "thinktime",
+						"weight": 1
+					},
+					{
+						"type": "sheetobjectselection",
+						"weight": 3
+					},
+					{
+						"type": "changesheet",
+						"weight": 5
+					},
+					{
+						"type": "clearall",
+						"weight": 1
+					}
+				],
+				"thinktimesettings": {
+					"type": "static",
+					"delay": 0.1
+				}
+			}
+		}
+	]
+}

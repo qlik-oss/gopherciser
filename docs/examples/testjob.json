@@ -1,0 +1,42 @@
+{
+	"settings": {
+		"timeout": 300,
+		"logs": {
+			"traffic": false,
+			"Debug": false,
+			"Filename": "logs/scenario.log"
+		}
+	},
+	"scheduler": {
+		"type": "simple",
+		"settings": {
+			"executiontime": -1,
+			"iterations": 3,
+			"rampupdelay": 3,
+			"concurrentusers": 100
+		}
+	},
+	"connectionsettings" : {
+		"server" : "myserver.rdlund.qliktech.com",
+		"virtualproxy" : "jwt",
+		"security" : true,
+		"mode": "jwt",
+		"mocked": true,
+		"jwtsettings": {
+			"keypath": "mock.pem",
+			"claims": "{\"user\":\"{{.UserName}}\",\"directory\":\"{{.Directory}}\"}"
+		}
+	},
+	"loginSettings" : {
+		"type": "none"
+	},
+	"scenario": [{
+			"label" : "Think 10s",
+			"action" : "thinktime",
+			"settings" : {
+				"type": "static",
+				"delay" : 10.0
+            }
+		}
+	]
+}

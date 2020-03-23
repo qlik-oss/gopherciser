@@ -1,0 +1,91 @@
+{
+    "settings" : {
+        "timeout" : 30000,
+        "logs" : {
+            "traffic" : false,
+            "debug" : false,
+            "filename" : "logs/gopherciser.tsv"
+        }
+    },
+    "scheduler" : {
+        "type" : "simple",
+        "settings" : {
+            "executionTime" : -1,
+            "iterations" : 2,
+            "rampupDelay" : 10.0,
+            "concurrentUsers" : 2
+        }
+    },
+    "connectionsettings" : {
+        "server" : "myserver.rdlund.qliktech.com",
+        "virtualproxy" : "jwt",
+        "security" : true,
+        "mode": "jwt",
+        "mocked": true,
+        "jwtsettings": {
+            "keypath": "mock.pem",
+			"claims": "{\"user\":\"{{.UserName}}\",\"directory\":\"{{.Directory}}\"}"
+        }
+    },
+    "loginSettings" : {
+        "type": "prefix",
+        "settings": {
+          "prefix": "gopher"
+        }
+    },
+    "scenario" : [
+        {
+            "label" : "Open Systembolaget",
+            "action" : "OpenApp",
+            "settings" : {
+                "appmode" : "guid",
+                "app" : "cce097cc-5b7c-476e-b25e-89bd86614561"
+            }
+        },
+        {
+            "label" : "Change sheet (Produktdetaljer (1))",
+            "action" : "ChangeSheet",
+            "settings" : {
+                "id" : "b89dc3df-add8-4370-9cc0-93a4f68a2237"
+            }
+        },
+        {
+            "label": "Select in combochart",
+            "action" : "StaticSelect",
+            "settings" : {
+                "id" : "2e378138-07ff-467e-96c2-dbda12e922f4",
+                "type" : "HyperCubeCells",
+                "path" : "/qHyperCubeDef",
+                "rows" : [4,5],
+                "cols" : [0],
+                "accept" : true,
+                "wrap" : false
+            }
+        },
+        {
+            "label": "Select in listbox",
+            "action" : "StaticSelect",
+            "settings" : {
+                "id" : "c37dcd68-2199-497b-892c-82358eba5556",
+                "type" : "ListObjectValues",
+                "path" : "/qListObjectDef",
+                "rows" : [2],
+                "accept" : true,
+                "wrap" : false
+            }
+        },
+        {
+            "label": "Select in combochart",
+            "action": "select",
+            "settings": {
+                "id": "2e378138-07ff-467e-96c2-dbda12e922f4",
+                "type": "RandomFromAll",
+                "accept": true,
+                "wrap": false,
+                "min": 1,
+                "max": 1,
+                "dim": 0
+            }
+        }
+    ]
+}

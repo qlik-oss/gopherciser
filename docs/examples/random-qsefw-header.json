@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"timeout": 300,
+		"logs": {
+			"traffic": true,
+			"debug": false,
+			"filename": "logs/random-qsefw-header.tsv"
+		}
+	},
+	"scheduler": {
+		"type": "simple",
+		"settings": {
+			"executiontime": -1,
+			"iterations": 1,
+			"rampupdelay": 1.0,
+			"concurrentusers": 10
+		}
+	},
+	"connectionSettings": {
+		"server": "<my-server-url>",
+		"mode": "ws",
+		"security": true,
+		"virtualproxy": "vp",
+		"headers": {
+			"X-Qlik-User-header" : "{{.UserName}}"
+		}
+	},	
+	"loginSettings" : {
+        "type": "prefix",
+        "settings": {
+		  "prefix": "gopher",
+		  "directory": "anydir"
+        }
+	},
+	"scenario": [
+		{
+			"action": "OpenHub",
+			"label": "Open the hub"
+		},
+		{
+			"label": "Open a random app",
+			"action": "OpenApp",
+			"settings": {
+				"appmode" : "randomnamefromlist",
+				"list": ["<my-app-name>"]
+			}
+		},  {
+			"label": "randomaction",
+			"action": "RandomAction",
+			"settings": {
+				"iterations": 5,
+				"actions": [
+					{
+						"type": "thinktime",
+						"weight": 1
+					},
+					{
+						"type": "sheetobjectselection",
+						"weight": 3
+					},
+					{
+						"type": "changesheet",
+						"weight": 5
+					},
+					{
+						"type": "clearall",
+						"weight": 1
+					}
+				],
+				"thinktimesettings": {
+					"type": "static",
+					"delay": 0.1
+				}
+			}
+		}
+	]
+}

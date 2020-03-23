@@ -1,0 +1,55 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+debug
+bin/
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+*.prof
+.cover
+
+# dep vendor directory
+vendor/
+
+# Dev tools
+.vscode
+.idea/
+*.iml
+*.sw*
+.gradle
+
+# test and dev files
+keyfiles/
+
+# log files
+*.log
+.~lock.*
+*.pdf
+*.tsv
+
+#diff files
+*.orig
+
+# linux ignores
+gopherciser
+
+# MacOS ignores
+.DS_Store
+
+# Folder to be used for local tests or anything which should be ignored by GIT
+localtests/
+
+# Generated files
+build/
+changelog.md
+
+# Temporary files
+*~
+*.swp
+pack/

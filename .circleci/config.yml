@@ -1,0 +1,104 @@
+# Golang CircleCI 2.0 configuration file
+defaults: &defaults
+  working_directory: /go/src/github.com/qlik-oss/gopherciser/
+
+version: 2
+
+jobs:
+  build:
+    <<: *defaults
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Setup working directory
+          command: |
+            set -x
+            mkdir -p build
+      - restore_cache:
+          key: dependency-cache-1.13{{ checksum "go.sum" }}
+      - run:
+          name: Run Golang tests
+          command: |
+            make alltests
+      - run:
+          name: Minimum linting required for Pull Requests to be accepted.
+          command: |
+            make lint-min
+      - run:
+          name: Build gopherciser for Linux, Darwin and Windows (amd64)
+          command: |
+            make build
+      - save_cache:
+          key: dependency-cache-1.13{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+      - run:
+          name: Build documentation
+          command: |
+            make docbuild
+      - run:
+          name: Create changelog
+          command: |
+            ./scripts/generateChangeLog.sh changelog.md
+      - run:
+          name: Zip files
+          command: |
+            ./scripts/pack.sh
+      - store_artifacts:
+          path: changelog.md
+          destination: changelog.md
+      - store_artifacts:
+          path: go.sum  # Store go.sum for verification or troubleshooting
+          destination: go.sum
+      - store_artifacts:
+          path: pack
+          destination: pack
+      - store_artifacts:
+          path: build/version
+          destination: version
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - pack/*
+            - build/*
+            - changelog.md
+
+  publish-github:
+    <<: *defaults
+    docker:
+      - image: golang:1.11-alpine
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/qlik-oss/gopherciser/
+      - run:
+          name: "Publish release to github.com"
+          command: |
+            set -e
+            apk add --no-cache git
+            go get -u github.com/tcnksm/ghr
+            TAG=v$(cat build/version)
+            TITLE=$(head -n 1 changelog.md)
+            BODY=$(tail -n+1 changelog.md)
+            RELEASE=pack
+            echo publish contents of $RELEASE as release $TAG
+            ghr -t ${GITHUB_TOKEN} -debug -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c ${CIRCLE_SHA1} -n "$TITLE" -b "$BODY" -delete $TAG $RELEASE
+
+workflows:
+  version: 2
+  build-publish:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+/
+      - publish-github:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /.*/  # only publish on release tags, ignore all branches
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+/
