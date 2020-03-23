@@ -10,7 +10,7 @@ require (
 	github.com/eventials/go-tus v0.0.0-20190617130015-9db47421f6a0
 	github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee // indirect
 	github.com/gobwas/pool v0.2.0 // indirect
-	github.com/gobwas/ws v1.0.2
+	github.com/gobwas/ws v1.0.3
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/json-iterator/go v1.1.9
 	github.com/pkg/errors v0.9.1
