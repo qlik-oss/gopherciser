@@ -8,7 +8,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.14
     steps:
       - checkout
       - setup_remote_docker
