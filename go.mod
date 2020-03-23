@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/InVisionApp/tabular v0.3.0
 	github.com/buger/jsonparser v0.0.0-20200322175846-f7e751efca13
-	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eventials/go-tus v0.0.0-20190617130015-9db47421f6a0
 	github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee // indirect
