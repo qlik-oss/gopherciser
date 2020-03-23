@@ -288,6 +288,9 @@ func (act *Action) UnmarshalJSON(arg []byte) error {
 
 // Validate scenario action
 func (act *Action) Validate() error {
+	if act.Disabled {
+		return nil // skip validating disabled actions
+	}
 	s, ok := act.Settings.(ActionSettings)
 	if !ok {
 		return errors.Errorf("Failed to convert action settings to ActionSettings")
