@@ -7,15 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals/constant"
-	"github.com/qlik-oss/gopherciser/helpers"
-
 	"github.com/eventials/go-tus"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -99,10 +97,6 @@ func (settings ElasticUploadAppSettings) Validate() error {
 
 // Execute action (Implements ActionSettings interface)
 func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-	resourceType := constant.ResourceTypeApp
-	if strings.HasSuffix(strings.ToLower(settings.Filename), "qvw") {
-		resourceType = constant.ResourceTypeQVapp
-	}
 
 	restUrl, err := connection.GetRestUrl()
 	if err != nil {
@@ -235,13 +229,13 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	err = AddAppToCollection(settings.CanAddToCollection, sessionState, actionState, appImportResponse, restUrl, resourceType)
+	err = AddAppToCollection(settings.CanAddToCollection, sessionState, actionState, appImportResponse, restUrl)
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
-func AddAppToCollection(settings CanAddToCollection, sessionState *session.State, actionState *action.State, appImportResponse elasticstructs.AppImportResponse, host, resourceType string) error {
+func AddAppToCollection(settings CanAddToCollection, sessionState *session.State, actionState *action.State, appImportResponse elasticstructs.AppImportResponse, host string) error {
 	var streamID string
 	if settings.StreamGUID == "" && settings.Stream.String() != "" {
 		stream, err := sessionState.ReplaceSessionVariables(&settings.Stream)
@@ -261,25 +255,36 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 		return errors.WithStack(err)
 	}
 
-	collectionServiceItem := elasticstructs.CollectionServiceItem{}
-	collectionServiceItem.ResourceID = appImportResponse.Attributes.ID
-	collectionServiceItem.Name = title
-	collectionServiceItem.ResourceType = resourceType
-	collectionServiceItem.ResourceCreatedBySubject = appImportResponse.Attributes.Owner
-	collectionServiceItem.ResourceAttributes.ID = appImportResponse.Attributes.ID
-	collectionServiceItem.ResourceAttributes.Resourcetype = resourceType
-	collectionServiceItem.ResourceAttributes.Name = title
-	collectionServiceItem.ResourceAttributes.LastReloadTime = time.Now()
-	collectionServiceItem.ResourceAttributes.Owner = appImportResponse.Attributes.Owner
-	collectionServiceItem.ResourceAttributes.Thumbnail = appImportResponse.Attributes.Thumbnail
-	collectionServiceItem.ResourceAttributes.SpaceID = appImportResponse.Attributes.SpaceID
-	collectionServiceItem.SpaceID = appImportResponse.Attributes.SpaceID
-
-	now := time.Now()
-	collectionServiceItem.ResourceCreatedAt = now
+	collectionServiceItem := elasticstructs.CollectionServiceItem{
+		Name:         title,
+		ResourceID:   appImportResponse.Attributes.ID,
+		ResourceType: appImportResponse.Attributes.ResourceType,
+		Description:  appImportResponse.Attributes.Description,
+		ResourceAttributes: elasticstructs.CollectionServiceResourceAttributes{
+			ID:               appImportResponse.Attributes.ID,
+			Name:             title,
+			Description:      appImportResponse.Attributes.Description,
+			Thumbnail:        appImportResponse.Attributes.Thumbnail,
+			LastReloadTime:   appImportResponse.Attributes.LastReloadTime,
+			CreatedDate:      appImportResponse.Attributes.CreatedDate,
+			ModifiedDate:     appImportResponse.Attributes.ModifiedDate,
+			OwnerID:          appImportResponse.Attributes.OwnerID,
+			DynamicColor:     appImportResponse.Attributes.DynamicColor,
+			Published:        appImportResponse.Attributes.Published,
+			PublishTime:      appImportResponse.Attributes.PublishTime,
+			HasSectionAccess: appImportResponse.Attributes.HasSectionAccess,
+			Encrypted:        appImportResponse.Attributes.Encrypted,
+			OriginAppID:      appImportResponse.Attributes.OriginAppID,
+			SpaceID:          appImportResponse.Attributes.SpaceID,
+			ResourceType:     appImportResponse.Attributes.ResourceType,
+		},
+		ResourceCustomAttributes: appImportResponse.Attributes.Custom,
+		ResourceCreatedAt:        time.Now(),
+		ResourceCreatedBySubject: appImportResponse.Attributes.Owner,
+		SpaceID:                  appImportResponse.Attributes.SpaceID,
+	}
 
 	createItemInCollectionServiceContent, err := jsonit.Marshal(collectionServiceItem)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare payload to collection service")
 	}
