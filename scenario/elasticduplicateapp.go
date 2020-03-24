@@ -9,7 +9,6 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
-	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -130,7 +129,7 @@ func (settings ElasticDuplicateAppSettings) Execute(sessionState *session.State,
 		return
 	}
 
-	err = AddAppToCollection(settings.CanAddToCollection, sessionState, actionState, appImportResponse, host, constant.ResourceTypeApp)
+	err = AddAppToCollection(settings.CanAddToCollection, sessionState, actionState, appImportResponse, host)
 	if err != nil {
 		actionState.AddErrors(err)
 	}
