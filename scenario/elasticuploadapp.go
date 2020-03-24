@@ -255,7 +255,6 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 		return errors.WithStack(err)
 	}
 
-	now := time.Now()
 	collectionServiceItem := elasticstructs.CollectionServiceItem{
 		Name:         title,
 		ResourceID:   appImportResponse.Attributes.ID,
@@ -280,7 +279,7 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 			ResourceType:     appImportResponse.Attributes.ResourceType,
 		},
 		ResourceCustomAttributes: appImportResponse.Attributes.Custom,
-		ResourceCreatedAt:        now,
+		ResourceCreatedAt:        time.Now(),
 		ResourceCreatedBySubject: appImportResponse.Attributes.Owner,
 		SpaceID:                  appImportResponse.Attributes.SpaceID,
 	}
