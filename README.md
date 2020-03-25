@@ -88,7 +88,7 @@ Do the following:
 
 ## Pulling the docker image
 
-Unfortunately the Github packages docker repo is not very "public", more on this can be found in this community [thread](https://github.community/t5/GitHub-Actions/docker-pull-from-public-GitHub-Package-Registry-fail-with-quot/td-p/32782/page/4). This means a docker login needs to be done before the images can be pulled. To do this follow these steps:
+Unfortunately the Github packages docker repo is not very "public", more on this can be found in this community [thread](https://github.community/t5/GitHub-Actions/docker-pull-from-public-GitHub-Package-Registry-fail-with-quot/td-p/32782). This means a docker login needs to be done before the images can be pulled. To do this follow these steps:
 
 1. Create a new token with the scope `read:packages` [here](https://github.com/settings/tokens).
 2. Save your token to e.g. to a file (or use environment variable or similar).
