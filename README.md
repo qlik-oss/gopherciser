@@ -85,3 +85,41 @@ Do the following:
    * `go get github.com/some/lib@v1.2.3`: Get a particular version.
 2. Run `go mod tidy` to remove any unused modules.
 3. Run `go mod verify` to add packages needed for test packages etc.
+
+## Pulling the Docker image
+
+Unfortunately the GitHub packages Docker repo is not very "public", more on this can be found in this community [thread](https://github.community/t5/GitHub-Actions/docker-pull-from-public-GitHub-Package-Registry-fail-with-quot/td-p/32782). This means a Docker login is needed before the images can be pulled. To do this follow these steps:
+
+1. Create a new token with the scope `read:packages` [here](https://github.com/settings/tokens).
+2. Save your token to e.g. to a file (or use an environment variable or similar).
+3. Login with Docker to `docker.pkg.github.com`.
+
+Using a token stored to the file github.token: 
+
+```bash
+docker login -u yourgithubusername --password=$(cat github.token) docker.pkg.github.com
+```
+
+Using the token in the environmental variable GITHUB_TOKEN:
+
+```bash
+docker login -u yourgithubusername --password=$GITHUB_TOKEN docker.pkg.github.com
+```
+
+4. Pull the Docker image.
+
+The latest master version:
+
+```bash
+docker pull docker.pkg.github.com/qlik-oss/gopherciser/gopherciser:latest
+```
+
+Specific released version:
+
+```bash
+docker pull docker.pkg.github.com/qlik-oss/gopherciser/gopherciser:0.4.10
+```
+
+### Using the image in Kubernetes
+
+To use the image in Kubernetes, e.g. to perform executions as part of a Kubernetes job, credentials for the GitHub package registry need to be added the same way a private registry is used, see documentation [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
