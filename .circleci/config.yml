@@ -1,6 +1,8 @@
 # Golang CircleCI 2.0 configuration file
 defaults: &defaults
   working_directory: /go/src/github.com/qlik-oss/gopherciser/
+  environment:
+    DOCKER_REPO: docker.pkg.github.com/qlik-oss/gopherciser/gopherciser
 
 version: 2
 
@@ -65,6 +67,8 @@ jobs:
             - pack/*
             - build/*
             - changelog.md
+            - Dockerfile
+            - artifacts
 
   publish-github:
     <<: *defaults
@@ -86,6 +90,48 @@ jobs:
             echo publish contents of $RELEASE as release $TAG
             ghr -t ${GITHUB_TOKEN} -debug -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c ${CIRCLE_SHA1} -n "$TITLE" -b "$BODY" -delete $TAG $RELEASE
 
+  build-publish-docker:
+    <<: *defaults
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/qlik-oss/gopherciser/
+      - setup_remote_docker
+      - run:
+          name: Check environment variables
+          command: |
+            for envvar in \
+                GITHUB_USER  \
+                GITHUB_TOKEN  \
+            ; do
+              if [ -z "${!envvar}" ]; then
+                echo "\$${envvar} is not set!"
+                exit 1
+              fi
+            done
+      - run:
+          name: Build Docker image
+          command: |
+            VER=$(cat build/version)
+            docker build . -t $DOCKER_REPO:$VER
+      - run:
+          name: Login to GitHub packages
+          command: |
+            echo $GITHUB_TOKEN | docker login docker.pkg.github.com -u ${GITHUB_USER} --password-stdin
+      - run:
+          name: Push docker image
+          command: |
+            VER=$(cat build/version)
+            if [[ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+              docker tag $DOCKER_REPO:$VER $DOCKER_REPO:$VER
+              docker push $DOCKER_REPO:$VER
+            fi
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
+              docker push $DOCKER_REPO:latest
+            fi
+
 workflows:
   version: 2
   build-publish:
@@ -100,5 +146,14 @@ workflows:
           filters:
             branches:
               ignore: /.*/  # only publish on release tags, ignore all branches
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+/
+      - build-publish-docker:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/

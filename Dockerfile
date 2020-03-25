@@ -5,7 +5,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 ARG PORT=9090
 ADD build/gopherciser /root/
-ADD build/testrunner.sh /root/
+ADD artifacts/testrunner.sh /root/
 
 EXPOSE $PORT
 
