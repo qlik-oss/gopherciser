@@ -115,6 +115,16 @@ jobs:
           command: |
             VER=$(cat build/version)
             docker build . -t $DOCKER_REPO:$VER
+      - run:
+          name: Login to GitHub packages
+          command: |
+            echo $GITHUB_TOKEN | docker login docker.pkg.github.com -u ${GITHUB_USER} --password-stdin
+      - run:
+          name: Push docker image
+          command: |
+            VER=$(cat build/version)
+            docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
+            docker push $DOCKER_REPO:latest
 
 workflows:
   version: 2
