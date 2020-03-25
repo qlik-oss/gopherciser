@@ -9,9 +9,9 @@ import (
 	"text/template"
 	"time"
 
+	uuid "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 type (
@@ -35,7 +35,7 @@ var (
 		"now":       time.Now,
 		"hostname":  os.Hostname,
 		"timestamp": timestamp,
-		"uuid":      uuid.NewV4,
+		"uuid":      uuid.New,
 	}
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
