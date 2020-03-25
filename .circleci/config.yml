@@ -96,8 +96,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: Check environment variables
           command: |
