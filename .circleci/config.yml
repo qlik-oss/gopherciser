@@ -68,6 +68,7 @@ jobs:
             - build/*
             - changelog.md
             - Dockerfile
+            - artifacts
 
   publish-github:
     <<: *defaults
