@@ -123,8 +123,14 @@ jobs:
           name: Push docker image
           command: |
             VER=$(cat build/version)
-            docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
-            docker push $DOCKER_REPO:latest
+            if [[ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+              docker tag $DOCKER_REPO:$VER $DOCKER_REPO:$VER
+              docker push $DOCKER_REPO:$VER
+            fi
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
+              docker push $DOCKER_REPO:latest
+            fi
 
 workflows:
   version: 2
@@ -147,4 +153,7 @@ workflows:
             - build
           filters:
             branches:
-              only: /^ci\/.*/  # ci only branches during development
+              only:
+                - master
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+/
