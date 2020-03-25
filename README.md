@@ -1,5 +1,7 @@
 # Gopherciser
 
+[![CircleCI](https://circleci.com/gh/qlik-oss/gopherciser.svg?style=svg)](https://circleci.com/gh/qlik-oss/gopherciser)
+
 Gopherciser is used for load testing (that is, stress testing and performance measurement) in Qlik Sense® Enterprise deployments. It is based on [enigma-go](https://github.com/qlik-oss/enigma-go), which is a library for communication with the Qlik® Associative Engine. 
 
 For an introduction to Gopherciser, see [Load testing - an introduction](./docs/README.md).
