@@ -100,7 +100,7 @@ Using a token stored to the file github.token:
 docker login -u yourgithubusername --password=$(cat github.token) docker.pkg.github.com
 ```
 
-Using a token in the environmental variable GITHUB_TOKEN:
+Using the token in the environmental variable GITHUB_TOKEN:
 
 ```bash
 docker login -u yourgithubusername --password=$GITHUB_TOKEN docker.pkg.github.com
