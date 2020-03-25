@@ -2,7 +2,7 @@
 defaults: &defaults
   working_directory: /go/src/github.com/qlik-oss/gopherciser/
   environment:
-    DOCKER_REPO: docker.pkg.github.com/qlik-oss/gopherciser
+    DOCKER_REPO: docker.pkg.github.com/qlik-oss/gopherciser/gopherciser
 
 version: 2
 
