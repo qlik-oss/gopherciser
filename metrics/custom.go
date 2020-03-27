@@ -58,7 +58,7 @@ var GopherActionLatencyHist = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Name:    "gopherciser_response_times_seconds",
 		Help:    "latency of actions/label",
-		Buckets: []float64{0.01, 0.05, 0.1, 0.5, 2, 4},
+		Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1, 2, 4, 6},
 	},
 	[]string{"action"},
 )
