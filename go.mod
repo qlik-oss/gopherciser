@@ -15,11 +15,10 @@ require (
 	github.com/json-iterator/go v1.1.9
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
-	github.com/qlik-oss/enigma-go v1.1.1
+	github.com/qlik-oss/enigma-go v1.1.2
 	github.com/rs/zerolog v1.18.0
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.5.1
-	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
 )
