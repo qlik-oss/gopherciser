@@ -119,7 +119,7 @@ func PullMetrics(ctx context.Context, metricsPort int, actions []string) error {
 	go func() {
 		<-ctx.Done()
 		//nolint:staticcheck
-		if err := srv.Shutdown(nil); err != nil {
+		if err := srv.Shutdown(context.Background()); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Httpserver: Shutdown() error: %s", err)
 		}
 	}()
