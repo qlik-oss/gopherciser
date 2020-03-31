@@ -11,7 +11,7 @@ require (
 	github.com/gobwas/pool v0.2.0 // indirect
 	github.com/gobwas/ws v1.0.3
 	github.com/google/uuid v1.1.1
-	github.com/hashicorp/go-multierror v1.0.0
+	github.com/hashicorp/go-multierror v1.1.0
 	github.com/json-iterator/go v1.1.9
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
