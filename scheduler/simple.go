@@ -18,11 +18,12 @@ import (
 type (
 	// SimpleSchedSettings simple scheduler settings
 	SimpleSchedSettings struct {
-		ExecutionTime   int     `json:"executionTime" displayname:"Execution time" doc-key:"config.scheduler.settings.executiontime"` // in seconds
-		Iterations      int     `json:"iterations" displayname:"Iterations" doc-key:"config.scheduler.settings.iterations"`
-		RampupDelay     float64 `json:"rampupDelay" displayname:"Rampup delay" doc-key:"config.scheduler.settings.rampupdelay"` // in seconds
-		ConcurrentUsers int     `json:"concurrentUsers" displayname:"Concurrent users" displayname:"Rampup delay" doc-key:"config.scheduler.settings.concurrentusers"`
-		ReuseUsers      bool    `json:"reuseUsers" displayname:"Reuse users" doc-key:"config.scheduler.settings.reuseusers"`
+		ExecutionTime    int     `json:"executionTime" displayname:"Execution time" doc-key:"config.scheduler.settings.executiontime"` // in seconds
+		Iterations       int     `json:"iterations" displayname:"Iterations" doc-key:"config.scheduler.settings.iterations"`
+		RampupDelay      float64 `json:"rampupDelay" displayname:"Rampup delay" doc-key:"config.scheduler.settings.rampupdelay"` // in seconds
+		ConcurrentUsers  int     `json:"concurrentUsers" displayname:"Concurrent users" displayname:"Rampup delay" doc-key:"config.scheduler.settings.concurrentusers"`
+		ReuseUsers       bool    `json:"reuseUsers" displayname:"Reuse users" doc-key:"config.scheduler.settings.reuseusers"`
+		OnlyInstanceSeed bool    `json:"onlyinstanceseed" displayname:"Only use instance seed" doc-key:"config.scheduler.settings.onlyinstanceseed"`
 	}
 
 	// SimpleScheduler simple scheduler
@@ -137,7 +138,7 @@ func (sched SimpleScheduler) iteratorNewUsers(ctx context.Context, timeout time.
 		}
 
 		user := users.GetNext()
-		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.connectionSettings, 1)
+		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.connectionSettings, 1, sched.Settings.OnlyInstanceSeed)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}
@@ -154,7 +155,7 @@ func (sched SimpleScheduler) iteratorReuseUsers(ctx context.Context, timeout tim
 	var mErr *multierror.Error
 
 	user := users.GetNext()
-	err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.connectionSettings, sched.Settings.Iterations)
+	err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.connectionSettings, sched.Settings.Iterations, sched.Settings.OnlyInstanceSeed)
 	if err != nil {
 		mErr = multierror.Append(mErr, err)
 	}

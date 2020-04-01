@@ -145,7 +145,7 @@ func TestState_RestMethod(t *testing.T) {
 }
 
 func TestState_SessionVariables(t *testing.T) {
-	state := New(context.Background(), "", 60, nil, 1, 1, "")
+	state := New(context.Background(), "", 60, nil, 1, 1, "", false)
 	state.SetLogEntry(&logger.LogEntry{
 		Session: &logger.SessionEntry{
 			Thread:  5,
@@ -207,7 +207,7 @@ func TestState_SessionVariables(t *testing.T) {
 }
 
 func setupStateForCLTest() (*State, *eventCounter, *eventCounter, *eventCounter, *eventCounter) {
-	state := New(context.Background(), "", 60, nil, 1, 1, "")
+	state := New(context.Background(), "", 60, nil, 1, 1, "", false)
 	state.Rest = NewRestHandler(state.ctx, 64, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
 
 	event0 := registerEvent(state, 0)

@@ -66,7 +66,7 @@ func TestIterated(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	session := session.New(ctx, "", time.Second*10, nil, 1, 1, "")
+	session := session.New(ctx, "", time.Second*10, nil, 1, 1, "", false)
 	defer session.Disconnect()
 
 	session.Connection = new(enigmahandlers.SenseConnection)

@@ -360,7 +360,7 @@ func TestScheduler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectedJSON := `{"executionTime":-1,"iterations":2,"rampupDelay":10,"concurrentUsers":2,"reuseUsers":false}`
+	expectedJSON := `{"executionTime":-1,"iterations":2,"rampupDelay":10,"concurrentUsers":2,"reuseUsers":false,"onlyinstanceseed":false}`
 
 	if string(marshJSON) != expectedJSON {
 		t.Errorf("Unexpected marshal result.\nHave:\n%s\nExpected:\n%s", marshJSON, expectedJSON)

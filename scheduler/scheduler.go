@@ -157,7 +157,7 @@ func (sched *Scheduler) Validate() error {
 
 func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log,
 	userScenario []scenario.Action, thread uint64, outputsDir string, user *users.User,
-	connectionSettings *connection.ConnectionSettings, iterations int) error {
+	connectionSettings *connection.ConnectionSettings, iterations int, onlyInstanceSeed bool) error {
 
 	sessionID := globals.Sessions.Inc()
 	instanceID := sched.InstanceNumber
@@ -167,7 +167,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	var iteration int
 	var mErr *multierror.Error
 
-	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, connectionSettings.VirtualProxy)
+	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, connectionSettings.VirtualProxy, onlyInstanceSeed)
 
 	userName := ""
 	if user != nil {

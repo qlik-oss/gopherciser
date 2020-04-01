@@ -100,7 +100,7 @@ const (
 
 // New instance of session state
 func New(ctx context.Context, outputsDir string, timeout time.Duration,
-	user *users.User, session, instance uint64, virtualProxy string) *State {
+	user *users.User, session, instance uint64, virtualProxy string, onlyInstanceSeed bool) *State {
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
@@ -124,6 +124,10 @@ func New(ctx context.Context, outputsDir string, timeout time.Duration,
 		state.Timeout = DefaultTimeout
 	}
 
+	if onlyInstanceSeed {
+		// Use same random sequence for all users
+		session = 1
+	}
 	rnd := randomizer.NewSeededRandomizer(randomizer.GetPredictableSeedUInt64(instance, session))
 	state.SetRandomizer(rnd, false)
 
