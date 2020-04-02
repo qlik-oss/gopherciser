@@ -183,6 +183,9 @@ This section of the JSON file contains scheduler settings for the users in the l
   * `reuseUsers`: 
       * `true`: Every iteration for each concurrent user uses the same user and session.
       * `false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`.
+  * `onlyinstanceseed`: Disable session part of randomization seed. Defaults to `false` if omitted.
+      * `true`: All users and sessions will have the same randomization sequence, only changing if `instance` flag is changed.
+      * `false`: Normal randomization sequence, dependent on both `instance` parameter and current user session.
 
 ### Example
 

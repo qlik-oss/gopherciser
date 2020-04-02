@@ -216,6 +216,7 @@ var (
         "config.scheduler.settings.concurrentusers": { "Number of concurrent users to simulate. Allowed values are positive integers."  },  
         "config.scheduler.settings.executiontime": { "Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time."  },  
         "config.scheduler.settings.iterations": { "Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations."  },  
+        "config.scheduler.settings.onlyinstanceseed": { "Disable session part of randomization seed. Defaults to `false` if omitted.","`true`: All users and sessions will have the same randomization sequence, only changing if `instance` flag is changed.","`false`: Normal randomization sequence, dependent on both `instance` parameter and current user session."  },  
         "config.scheduler.settings.rampupdelay": { "Time delay (seconds) scheduled in between each concurrent user during the startup period."  },  
         "config.scheduler.settings.reuseusers": { "","`true`: Every iteration for each concurrent user uses the same user and session.","`false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`."  },  
         "config.scheduler.type": { "Type of scheduler","`simple`: Standard scheduler"  },  
