@@ -471,7 +471,7 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 	if log == nil {
 		return errors.New("setup logging returned nil logger")
 	}
-	sessionState := session.New(ctx, "", time.Duration(cfg.Settings.Timeout)*time.Second, user, 1, 1, cfg.ConnectionSettings.VirtualProxy)
+	sessionState := session.New(ctx, "", time.Duration(cfg.Settings.Timeout)*time.Second, user, 1, 1, cfg.ConnectionSettings.VirtualProxy, false)
 	logEntry := log.NewLogEntry()
 	sessionState.SetLogEntry(logEntry)
 	sessionState.LogEntry.Session = &logger.SessionEntry{}
