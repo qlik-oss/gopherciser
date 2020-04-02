@@ -138,7 +138,7 @@ func (sched SimpleScheduler) iteratorNewUsers(ctx context.Context, timeout time.
 		}
 
 		user := users.GetNext()
-		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.connectionSettings, 1, sched.Settings.OnlyInstanceSeed)
+		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, 1, sched.Settings.OnlyInstanceSeed)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}
@@ -155,7 +155,7 @@ func (sched SimpleScheduler) iteratorReuseUsers(ctx context.Context, timeout tim
 	var mErr *multierror.Error
 
 	user := users.GetNext()
-	err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.connectionSettings, sched.Settings.Iterations, sched.Settings.OnlyInstanceSeed)
+	err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.Settings.Iterations, sched.Settings.OnlyInstanceSeed)
 	if err != nil {
 		mErr = multierror.Append(mErr, err)
 	}

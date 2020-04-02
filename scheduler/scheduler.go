@@ -156,8 +156,7 @@ func (sched *Scheduler) Validate() error {
 }
 
 func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log,
-	userScenario []scenario.Action, thread uint64, outputsDir string, user *users.User,
-	connectionSettings *connection.ConnectionSettings, iterations int, onlyInstanceSeed bool) error {
+	userScenario []scenario.Action, thread uint64, outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool) error {
 
 	sessionID := globals.Sessions.Inc()
 	instanceID := sched.InstanceNumber
@@ -167,7 +166,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	var iteration int
 	var mErr *multierror.Error
 
-	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, connectionSettings.VirtualProxy, onlyInstanceSeed)
+	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.connectionSettings.VirtualProxy, onlyInstanceSeed)
 
 	userName := ""
 	if user != nil {
@@ -194,7 +193,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 
 		setLogEntry(sessionState, log, sessionID, thread, userName)
 
-		err := sched.runIteration(userScenario, sessionState, connectionSettings, mErr, ctx)
+		err := sched.runIteration(userScenario, sessionState, mErr, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}
@@ -209,13 +208,13 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	return helpers.FlattenMultiError(mErr)
 }
 
-func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionState *session.State, connectionSettings *connection.ConnectionSettings, mErr *multierror.Error, ctx context.Context) error {
+func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionState *session.State, mErr *multierror.Error, ctx context.Context) error {
 	defer sessionState.Reset(ctx)
 	defer sessionState.Disconnect() // make sure to disconnect connections at end of iteration
 	defer logErrReport(sessionState)
 
 	for _, v := range userScenario {
-		if err := v.Execute(sessionState, connectionSettings); err != nil {
+		if err := v.Execute(sessionState, sched.connectionSettings); err != nil {
 			if isAborted, _ := scenario.CheckActionError(err); isAborted {
 				return nil
 			} else {
