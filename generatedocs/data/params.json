@@ -138,9 +138,9 @@
         "`false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`."
     ],
     "config.scheduler.settings.onlyinstanceseed": [
-        "Disable session part of randomization seed. Defaults to `false` if omitted.",
-        "`true`: All users and sessions will have the same randomization sequence, only changing if `instance` flag is changed.",
-        "`false`: Normal randomization sequence, dependent on both `instance` parameter and current user session."
+        "Disable session part of randomization seed. Defaults to `false`, if omitted.",
+        "`true`: All users and sessions have the same randomization sequence, which only changes if the 'instance' flag is changed.",
+        "`false`: Normal randomization sequence, dependent on both the 'instance' parameter and the current user session."
     ],
     "config.scheduler.iterationtimebuffer": [
         ""
