@@ -131,7 +131,7 @@ func TestOnlyInstanceSeed(t *testing.T) {
 		}
 	}
 	if !differenceFound {
-		t.Fatalf("scheduler sequences doesn't differ although when using OnlyInstanceSeed and not, sequences: 1<%v> 2<%v>", seq1, seq2)
+		t.Fatalf("scheduler sequences doesn't differ when using OnlyInstanceSeed and not, sequences: 1<%v> 2<%v>", seq1, seq2)
 	}
 }
 
