@@ -94,19 +94,11 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 		go func() {
 			defer wg.Done()
 
-			var err error
-			if sched.Settings.ReuseUsers {
-				err = sched.iteratorReuseUsers(ctx, timeout, log, scenario, outputsDir, users)
-			} else {
-				err = sched.iteratorNewUsers(ctx, timeout, log, scenario, outputsDir, users)
-			}
-
-			if err != nil {
+			if err := sched.iteratorNewUsers(ctx, timeout, log, scenario, outputsDir, users); err != nil {
 				func() { // wrapped in function to minimize locking time
 					mErrLock.Lock()
 					defer mErrLock.Unlock()
 					mErr = multierror.Append(mErr, err)
-
 				}()
 			}
 		}()
@@ -123,9 +115,16 @@ func (sched SimpleScheduler) iteratorNewUsers(ctx context.Context, timeout time.
 	thread := globals.Threads.Inc()
 
 	var (
-		mErr      *multierror.Error
-		iteration int
+		mErr            *multierror.Error
+		iteration       int
+		outerIterations = sched.Settings.Iterations
+		innerIterations = 1
 	)
+
+	if sched.Settings.ReuseUsers {
+		outerIterations = 1
+		innerIterations = sched.Settings.Iterations
+	}
 
 	for {
 		if helpers.IsContextTriggered(ctx) {
@@ -133,31 +132,15 @@ func (sched SimpleScheduler) iteratorNewUsers(ctx context.Context, timeout time.
 		}
 
 		iteration++
-		if sched.Settings.Iterations > 0 && iteration > sched.Settings.Iterations {
+		if outerIterations > 0 && iteration > outerIterations {
 			break
 		}
 
 		user := users.GetNext()
-		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, 1, sched.Settings.OnlyInstanceSeed)
+		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}
-	}
-
-	return errors.WithStack(helpers.FlattenMultiError(mErr))
-}
-
-func (sched SimpleScheduler) iteratorReuseUsers(ctx context.Context, timeout time.Duration, log *logger.Log,
-	scenario []scenario.Action, outputsDir string, users users.UserGenerator) (err error) {
-
-	thread := globals.Threads.Inc()
-
-	var mErr *multierror.Error
-
-	user := users.GetNext()
-	err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, sched.Settings.Iterations, sched.Settings.OnlyInstanceSeed)
-	if err != nil {
-		mErr = multierror.Append(mErr, err)
 	}
 
 	return errors.WithStack(helpers.FlattenMultiError(mErr))

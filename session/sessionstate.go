@@ -124,12 +124,14 @@ func New(ctx context.Context, outputsDir string, timeout time.Duration,
 		state.Timeout = DefaultTimeout
 	}
 
+	var seed int64
 	if onlyInstanceSeed {
 		// Use same random sequence for all users
-		session = 1
+		seed = randomizer.GetPredictableSeedUInt64(instance, 1)
+	} else {
+		seed = randomizer.GetPredictableSeedUInt64(instance, session)
 	}
-	rnd := randomizer.NewSeededRandomizer(randomizer.GetPredictableSeedUInt64(instance, session))
-	state.SetRandomizer(rnd, false)
+	state.SetRandomizer(randomizer.NewSeededRandomizer(seed), false)
 
 	return state
 }

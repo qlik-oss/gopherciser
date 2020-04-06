@@ -185,7 +185,7 @@ func runUserIterationReuseUser(t *testing.T, sched *SimpleScheduler, actions []s
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	if err := sched.iteratorReuseUsers(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
+	if err := sched.iteratorNewUsers(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
 		t.Fatal(err)
 	}
 }
