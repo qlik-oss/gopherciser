@@ -161,7 +161,7 @@ var (
         },
         "thinktime": {
             Description: "## ThinkTime action\n\nSimulate user think time.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
-            Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis would simulate a think time between 10 and 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis would simulate a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
+            Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis simulates a think time of 10 to 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis simulates a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
         },
         "unpublishsheet": {
             Description: "## UnpublishSheet action\n\nUnpublish sheets in the current app.\n",

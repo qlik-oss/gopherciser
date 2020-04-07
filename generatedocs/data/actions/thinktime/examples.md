@@ -2,7 +2,7 @@
 
 #### ThinkTime uniform
 
-This would simulate a think time between 10 and 15 seconds.
+This simulates a think time of 10 to 15 seconds.
 
 ```json
 {
@@ -18,7 +18,7 @@ This would simulate a think time between 10 and 15 seconds.
 
 #### ThinkTime constant
 
-This would simulate a think time of 5 seconds.
+This simulates a think time of 5 seconds.
 
 ```json
 {
