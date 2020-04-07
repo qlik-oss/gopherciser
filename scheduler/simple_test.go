@@ -148,6 +148,11 @@ func TestReuseUserRandomizer(t *testing.T) {
 	result := *resultP
 	t.Log("results:", result)
 
+	// verify we have expected amount of results
+	if len(result) != actionsToAdd*2 {
+		t.Fatalf("results not of expected length<%d>", actionsToAdd*2)
+	}
+
 	// divide into 4 sequences
 	var seqDiv = actionsToAdd / 2
 	seq1 := result[:seqDiv]
