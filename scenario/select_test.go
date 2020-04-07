@@ -8,6 +8,14 @@ import (
 	"github.com/qlik-oss/gopherciser/randomizer"
 )
 
+type Rnd struct {
+	*randomizer.Randomizer
+}
+
+func (rnd *Rnd) Reset(instance, session uint64, onlyinstanceSeed bool) {
+	rnd.Randomizer = randomizer.NewSeededRandomizer(randomizer.GetPredictableSeed(int(instance), int(session)))
+}
+
 func TestSelectUnmarshal(t *testing.T) {
 	t.Parallel()
 
@@ -117,7 +125,8 @@ func TestValidate(t *testing.T) {
 func TestSelectQty(t *testing.T) {
 	t.Parallel()
 
-	rnd := randomizer.NewSeededRandomizer(randomizer.GetPredictableSeedUInt64(1, 2))
+	rnd := &Rnd{}
+	rnd.Reset(1, 2, false)
 
 	v := getSelectQty(2, 5, 5, rnd)
 	validateInt(t, "selectqty", v, 4)
@@ -178,7 +187,8 @@ func TestCutSlice(t *testing.T) {
 func TestFillPos(t *testing.T) {
 	t.Parallel()
 
-	rnd := randomizer.NewSeededRandomizer(randomizer.GetPredictableSeedUInt64(1, 3245345))
+	rnd := &Rnd{}
+	rnd.Reset(1, 3245345, false)
 
 	selectPos, err := fillSelectPosFromAll(3, 6, 5, rnd)
 	if err != nil {

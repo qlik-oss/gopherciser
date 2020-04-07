@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"math"
 	"sort"
 	"strconv"
@@ -16,7 +17,6 @@ import (
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/logger"
-	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -465,7 +465,7 @@ func getHyperCubeCardinal(objId string, dimension int, hypercube *enigmahandlers
 	return dimInfo.Cardinal, nil
 }
 
-func getSelectQty(min, max, possible int, rnd *randomizer.Randomizer) int {
+func getSelectQty(min, max, possible int, rnd helpers.Randomizer) int {
 	localMin := min
 	localMax := max
 
@@ -488,7 +488,7 @@ func getSelectQty(min, max, possible int, rnd *randomizer.Randomizer) int {
 	return rnd.Rand(localMax-localMin+1) + localMin
 }
 
-func fillSelectPosFromAll(min, max, cardinal int, rnd *randomizer.Randomizer) ([]int, error) {
+func fillSelectPosFromAll(min, max, cardinal int, rnd helpers.Randomizer) ([]int, error) {
 	if rnd == nil {
 		return nil, errors.Errorf("Randomizer not provided")
 	}
@@ -532,7 +532,7 @@ func fillSelectPosFromAll(min, max, cardinal int, rnd *randomizer.Randomizer) ([
 	return selectPos.Array(), nil
 }
 
-func fillSelectPosFromPossible(min, max int, possible []int, rnd *randomizer.Randomizer) ([]int, error) {
+func fillSelectPosFromPossible(min, max int, possible []int, rnd helpers.Randomizer) ([]int, error) {
 	if rnd == nil {
 		return nil, errors.Errorf("Randomizer not provided")
 	}
@@ -581,7 +581,7 @@ func fillSelectPosFromPossible(min, max int, possible []int, rnd *randomizer.Ran
 	return selectPos.Array(), nil
 }
 
-func fillSelectBinsFromBins(min, max int, bins []string, rnd *randomizer.Randomizer) ([]string, error) {
+func fillSelectBinsFromBins(min, max int, bins []string, rnd helpers.Randomizer) ([]string, error) {
 	if rnd == nil {
 		return nil, errors.Errorf("Randomizer not provided")
 	}

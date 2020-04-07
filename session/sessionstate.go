@@ -25,7 +25,12 @@ type (
 	// Rand currently used randomizer for connection
 	rand struct {
 		mu  sync.Mutex
-		rnd *randomizer.Randomizer
+		rnd helpers.Randomizer
+	}
+
+	DefaultRandomizer struct {
+		mu sync.Mutex
+		*randomizer.Randomizer
 	}
 
 	// Event encapsulates an event channel and a function to be executed on events
@@ -98,9 +103,22 @@ const (
 	DefaultTimeout = 300 * time.Second
 )
 
-// New instance of session state
-func New(ctx context.Context, outputsDir string, timeout time.Duration,
-	user *users.User, session, instance uint64, virtualProxy string, onlyInstanceSeed bool) *State {
+// Reset child randomizer with new seed
+func (rnd *DefaultRandomizer) Reset(instance, session uint64, onlyInstanceSeed bool) {
+	rnd.mu.Lock()
+	defer rnd.mu.Unlock()
+
+	var seed int64
+	if onlyInstanceSeed {
+		// Use same random sequence for all users
+		seed = randomizer.GetPredictableSeedUInt64(instance, 1)
+	} else {
+		seed = randomizer.GetPredictableSeedUInt64(instance, session)
+	}
+	rnd.Randomizer = randomizer.NewSeededRandomizer(seed)
+}
+
+func newSessionState(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string) *State {
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
@@ -124,15 +142,26 @@ func New(ctx context.Context, outputsDir string, timeout time.Duration,
 		state.Timeout = DefaultTimeout
 	}
 
-	var seed int64
-	if onlyInstanceSeed {
-		// Use same random sequence for all users
-		seed = randomizer.GetPredictableSeedUInt64(instance, 1)
-	} else {
-		seed = randomizer.GetPredictableSeedUInt64(instance, session)
-	}
-	state.SetRandomizer(randomizer.NewSeededRandomizer(seed), false)
+	return state
+}
 
+// New instance of session state
+func New(ctx context.Context, outputsDir string, timeout time.Duration,
+	user *users.User, session, instance uint64, virtualProxy string, onlyInstanceSeed bool) *State {
+
+	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy)
+
+	rnd := &DefaultRandomizer{}
+	rnd.Reset(instance, session, onlyInstanceSeed)
+	state.SetRandomizer(rnd, false)
+
+	return state
+}
+
+// New instance of session state with custom randomizer
+func NewWithRandomizer(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string, rnd helpers.Randomizer) *State {
+	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy)
+	state.SetRandomizer(rnd, false)
 	return state
 }
 
@@ -177,7 +206,7 @@ func (state *State) TrafficLogger() enigmahandlers.ITrafficLogger {
 }
 
 // Randomizer get randomizer for session
-func (state *State) Randomizer() *randomizer.Randomizer {
+func (state *State) Randomizer() helpers.Randomizer {
 	state.rand.mu.Lock()
 	defer state.rand.mu.Unlock()
 
@@ -187,7 +216,7 @@ func (state *State) Randomizer() *randomizer.Randomizer {
 // SetRandomizer set randomizer for session, will not be set if already has a randomizer
 // on concurrent sets, first instance to acquire lock will "win". When setting to nil, it
 // will be automatically forced. Set force flag to have randomizer set even when a randomizer exists.
-func (state *State) SetRandomizer(rnd *randomizer.Randomizer, force bool) {
+func (state *State) SetRandomizer(rnd helpers.Randomizer, force bool) {
 	if state.rand == nil {
 		state.rand = &rand{
 			rnd: rnd,
