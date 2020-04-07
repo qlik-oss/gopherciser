@@ -161,7 +161,7 @@ var (
         },
         "thinktime": {
             Description: "## ThinkTime action\n\nSimulate user think time.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
-            Examples: "### Examples\n\n#### ThinkTime uniform\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
+            Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis would simulate a think time between 10 and 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis would simulate a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
         },
         "unpublishsheet": {
             Description: "## UnpublishSheet action\n\nUnpublish sheets in the current app.\n",
@@ -318,7 +318,7 @@ var (
         "staticselect.type": { "Selection type","`hypercubecells`: Select in hypercube.","`listobjectvalues`: Select in listbox."  },  
         "staticselect.wrap": { "Wrap selection with Begin / End selection requests (`true` / `false`)."  },  
         "thinktime.delay": { "Delay (seconds), used with type `static`."  },  
-        "thinktime.dev": { "Deviation (seconds), used with type `uniform`."  },  
+        "thinktime.dev": { "Deviation (seconds) from `mean` value, used with type `uniform`."  },  
         "thinktime.mean": { "Mean (seconds), used with type `uniform`."  },  
         "thinktime.type": { "Type of think time","`static`: Static think time, defined by `delay`.","`uniform`: Random think time with uniform distribution, defined by `mean` and `dev`."  },  
         "unpublishsheet.mode": { "","`allsheets`: Unpublish all sheets in the app.","`sheetids`: Only unpublish the sheets specified by the `sheetIds` array."  },  

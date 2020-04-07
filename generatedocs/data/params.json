@@ -525,7 +525,7 @@
         "Mean (seconds), used with type `uniform`."
     ],
     "thinktime.dev": [
-        "Deviation (seconds), used with type `uniform`."
+        "Deviation (seconds) from `mean` value, used with type `uniform`."
     ],
     "unpublishsheet.mode": [
         "",

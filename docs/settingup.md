@@ -726,7 +726,7 @@ Each action executed by `randomaction` is followed by a customizable `thinktime`
       * `uniform`: Random think time with uniform distribution, defined by `mean` and `dev`.
   * `delay`: Delay (seconds), used with type `static`.
   * `mean`: Mean (seconds), used with type `uniform`.
-  * `dev`: Deviation (seconds), used with type `uniform`.
+  * `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
 * `iterations`: Number of random actions to perform.
 
 ### Random action defaults
@@ -1037,11 +1037,13 @@ Simulate user think time.
     * `uniform`: Random think time with uniform distribution, defined by `mean` and `dev`.
 * `delay`: Delay (seconds), used with type `static`.
 * `mean`: Mean (seconds), used with type `uniform`.
-* `dev`: Deviation (seconds), used with type `uniform`.
+* `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
 
 ### Examples
 
 #### ThinkTime uniform
+
+This would simulate a think time between 10 and 15 seconds.
 
 ```json
 {
@@ -1056,6 +1058,8 @@ Simulate user think time.
 ```
 
 #### ThinkTime constant
+
+This would simulate a think time of 5 seconds.
 
 ```json
 {
