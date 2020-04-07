@@ -180,7 +180,7 @@ func runUserIteration(t *testing.T, sched *SimpleScheduler, actions []scenario.A
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	if err := sched.iteratorNewUsers(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
+	if err := sched.iterator(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -191,7 +191,7 @@ func runUserIterationReuseUser(t *testing.T, sched *SimpleScheduler, actions []s
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	if err := sched.iteratorNewUsers(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
+	if err := sched.iterator(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
 		t.Fatal(err)
 	}
 }

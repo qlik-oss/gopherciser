@@ -94,7 +94,7 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 		go func() {
 			defer wg.Done()
 
-			if err := sched.iteratorNewUsers(ctx, timeout, log, scenario, outputsDir, users); err != nil {
+			if err := sched.iterator(ctx, timeout, log, scenario, outputsDir, users); err != nil {
 				func() { // wrapped in function to minimize locking time
 					mErrLock.Lock()
 					defer mErrLock.Unlock()
@@ -109,7 +109,7 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 	return errors.WithStack(helpers.FlattenMultiError(mErr))
 }
 
-func (sched SimpleScheduler) iteratorNewUsers(ctx context.Context, timeout time.Duration, log *logger.Log,
+func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration, log *logger.Log,
 	scenario []scenario.Action, outputsDir string, users users.UserGenerator) (err error) {
 
 	thread := globals.Threads.Inc()
