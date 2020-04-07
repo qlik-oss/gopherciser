@@ -191,6 +191,11 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 			break
 		}
 
+		if iteration > 1 {
+			sessionID := globals.Sessions.Inc()
+			sessionState.Randomizer().Reset(instanceID, sessionID, onlyInstanceSeed)
+		}
+
 		setLogEntry(sessionState, log, sessionID, thread, userName)
 
 		err := sched.runIteration(userScenario, sessionState, mErr, ctx)

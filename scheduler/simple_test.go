@@ -139,6 +139,7 @@ func TestReuseUserRandomizer(t *testing.T) {
 	}
 	actions, resultP := FillScenario(actionsToAdd)
 
+	globals.Sessions.Reset()
 	runUserIterationReuseUser(t, sched, actions)
 	sched.Settings.Iterations = 2
 	globals.Sessions.Reset()
