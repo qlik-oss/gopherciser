@@ -13,8 +13,6 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-const nanosecond float64 = 0.000000001
-
 type (
 	// ThinkTimeSettings think time settings
 	ThinkTimeSettings struct {
