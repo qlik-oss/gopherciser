@@ -13,8 +13,6 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-const nanosecond float64 = 0.000000001
-
 type (
 	// ThinkTimeSettings think time settings
 	ThinkTimeSettings struct {
@@ -30,13 +28,12 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 		sessionState.LogEntry.Log(logger.WarningLevel, "Faking sent message in timer delay failed")
 	}
 
-	seconds, err := settings.DistributionSettings.GetSample(sessionState.Randomizer())
-	delay := time.Duration(int(seconds*1000000000)) * time.Nanosecond
+	delay, err := settings.DistributionSettings.RandDuration(sessionState.Randomizer())
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
-	if seconds < nanosecond {
+	if delay < time.Nanosecond {
 		actionState.AddErrors(errors.New("timer delay not set"))
 		return
 	}

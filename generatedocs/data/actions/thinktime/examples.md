@@ -2,6 +2,8 @@
 
 #### ThinkTime uniform
 
+This simulates a think time of 10 to 15 seconds.
+
 ```json
 {
      "label": "TimerDelay",
@@ -15,6 +17,8 @@
 ```
 
 #### ThinkTime constant
+
+This simulates a think time of 5 seconds.
 
 ```json
 {

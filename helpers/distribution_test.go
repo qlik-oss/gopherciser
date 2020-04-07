@@ -2,9 +2,18 @@ package helpers
 
 import (
 	"testing"
+	"time"
 
 	"github.com/qlik-oss/gopherciser/randomizer"
 )
+
+type Rnd struct {
+	*randomizer.Randomizer
+}
+
+func (rnd *Rnd) Reset(instance, session uint64, onlyinstanceSeed bool) {
+	rnd.Randomizer = randomizer.NewSeededRandomizer(randomizer.GetPredictableSeed(int(instance), int(session)))
+}
 
 func TestDistributionUniform(t *testing.T) {
 	t.Parallel()
@@ -28,19 +37,20 @@ func TestDistributionUniform(t *testing.T) {
 		t.Fatalf("Deviation: Expected<0.1> got<%f>", settings.Deviation)
 	}
 
-	rndCompare := randomizer.NewSeededRandomizer(randomizer.GetPredictableSeed(1, 1))
+	rndCompare := &Rnd{}
+	rndCompare.Reset(1, 1, false)
 
-	sample, err := settings.GetSample(rndCompare)
+	sample, err := settings.RandDuration(rndCompare)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if sample > 0.6 {
-		t.Fatalf("Sample: Expected< < 0.6> got<%f>", sample)
+	if sample > time.Duration(0.6*float64(time.Second)) {
+		t.Fatalf("Sample: Expected< < 0.6s> got<%v>", sample)
 	}
 
-	if sample < 0.4 {
-		t.Fatalf("Sample: Expected< > 0.4> got<%f>", sample)
+	if sample < time.Duration(0.4*float64(time.Second)) {
+		t.Fatalf("Sample: Expected< > 0.4> got<%v>", sample)
 	}
 }
 
@@ -61,13 +71,13 @@ func TestThinkTimeStatic(t *testing.T) {
 		t.Fatalf("Delay: Expected<0.1> got<%f>", settings.Delay)
 	}
 
-	sample, err := settings.GetSample(nil)
+	sample, err := settings.RandDuration(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if sample != 0.1 {
-		t.Fatalf("Sample: Expected<0.1> got<%f>", sample)
+	if sample != time.Duration(0.1*float64(time.Second)) {
+		t.Fatalf("Sample: Expected<0.1> got<%v>", sample)
 	}
 }
 

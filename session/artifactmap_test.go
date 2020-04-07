@@ -1,10 +1,10 @@
 package session
 
 import (
+	"github.com/qlik-oss/gopherciser/randomizer"
 	"sync"
 	"testing"
 
-	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,8 +51,11 @@ var (
 
 	dummyState = &State{
 		rand: &rand{
-			mu:  sync.Mutex{},
-			rnd: randomizer.NewRandomizer(),
+			mu: sync.Mutex{},
+			rnd: &DefaultRandomizer{
+				sync.Mutex{},
+				randomizer.NewRandomizer(),
+			},
 		},
 	}
 )

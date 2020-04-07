@@ -2,12 +2,10 @@ package helpers
 
 import (
 	"fmt"
-	"strconv"
-	"math/rand"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/randomizer"
+	"strconv"
+	"time"
 )
 
 type (
@@ -34,7 +32,8 @@ const (
 	UniformDistribution
 )
 
-func (value DistributionType) GetEnumMap() *enummap.EnumMap{
+// GetEnumMap of DistributionType
+func (value DistributionType) GetEnumMap() *enummap.EnumMap {
 	enumMap, _ := enummap.NewEnumMap(map[string]int{
 		"static":  int(StaticDistribution),
 		"uniform": int(UniformDistribution),
@@ -62,6 +61,7 @@ func (value DistributionType) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
+// Validate DistributionSettings
 func (settings DistributionSettings) Validate() error {
 	switch settings.Type {
 	case StaticDistribution:
@@ -89,21 +89,22 @@ func (settings DistributionSettings) Validate() error {
 	return nil
 }
 
-func (settings DistributionSettings) GetSample(rnd *randomizer.Randomizer) (float64, error) {
+// RandDuration returns a random duration
+func (settings DistributionSettings) RandDuration(rnd Randomizer) (time.Duration, error) {
 	switch settings.Type {
 	case StaticDistribution:
-		return settings.Delay, nil
+		return time.Duration(settings.Delay * float64(time.Second)), nil
 	case UniformDistribution:
-		min := settings.Mean - settings.Deviation
-		max := settings.Mean + settings.Deviation
-		delay := (rand.Float64() * (max-min)) + min
-		return delay, nil
+		min := time.Duration(float64(time.Second) * (settings.Mean - settings.Deviation))
+		max := time.Duration(float64(time.Second) * (settings.Mean + settings.Deviation))
+		return rnd.RandDuration(min, max)
 	default:
 		return 0, errors.Errorf("distribution type<%d> not yet supported", settings.Type)
 	}
 }
 
-func (settings DistributionSettings) GetMax(rnd *randomizer.Randomizer) (float64, error) {
+// GetMax value
+func (settings DistributionSettings) GetMax() (float64, error) {
 	switch settings.Type {
 	case StaticDistribution:
 		return settings.Delay, nil
@@ -115,7 +116,8 @@ func (settings DistributionSettings) GetMax(rnd *randomizer.Randomizer) (float64
 	}
 }
 
-func (settings DistributionSettings) GetMin(rnd *randomizer.Randomizer) (float64, error) {
+// GetMin value
+func (settings DistributionSettings) GetMin() (float64, error) {
 	switch settings.Type {
 	case StaticDistribution:
 		return settings.Delay, nil
@@ -127,6 +129,7 @@ func (settings DistributionSettings) GetMin(rnd *randomizer.Randomizer) (float64
 	}
 }
 
+// GetActionInfo get information for action details logging
 func (settings DistributionSettings) GetActionInfo() string {
 	switch settings.Type {
 	case StaticDistribution:
