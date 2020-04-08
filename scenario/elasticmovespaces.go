@@ -19,7 +19,8 @@ type (
 	}
 
 	ElasticMoveSpacesSettingsCore struct {
-		NewSpaceID    string     `json:"newspaceid" displayname:"New space ID" doc-key:"elasticmovespaces.spaceid"`
+		DestinationSpaceId   string `json:"destinationspaceid" displayname:"New space ID" doc-key:"elasticmovespaces.destinationspaceid"`
+		DestinationSpaceName string `json:"destinationspacename" displayname:"New space name" doc-key:"elasticmovespaces.destinationspacename"`
 	}
 )
 
@@ -40,8 +41,8 @@ func (settings *ElasticMoveSpacesSettings) UnmarshalJSON(arg []byte) error {
 
 // Validate action (Implements ActionSettings interface)
 func (settings ElasticMoveSpacesSettings) Validate() error {
-	if settings.NewSpaceID == "" {
-		return errors.New("No SpaceID specified")
+	if (settings.DestinationSpaceId == "") == (settings.DestinationSpaceName == "") {
+		return errors.New("either specify DestinationSpaceId or DestinationSpaceName")
 	}
 	return nil
 }
@@ -56,11 +57,22 @@ func (settings ElasticMoveSpacesSettings) Execute(sessionState *session.State, a
 
 	entry, err := settings.AppSelection.Select(sessionState)
 	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "Failed to perform app selection"))
+		actionState.AddErrors(errors.Wrap(err, "failed to perform app selection"))
 		return
 	}
 
-	spaceReference := elasticstructs.SpaceReference{settings.NewSpaceID}
+	var moveToSpace *elasticstructs.Space
+	if settings.DestinationSpaceId != "" {
+		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByID(settings.DestinationSpaceId)
+	} else {
+		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByName(settings.DestinationSpaceName)
+	}
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "could not find specified destination space"))
+		return
+	}
+
+	spaceReference := elasticstructs.SpaceReference{SpaceID: moveToSpace.ID}
 	spaceReferenceJson, err := json.Marshal(spaceReference)
 	if err != nil {
 		actionState.AddErrors(err)
@@ -68,9 +80,9 @@ func (settings ElasticMoveSpacesSettings) Execute(sessionState *session.State, a
 	}
 
 	putApp := session.RestRequest{
-		Method:        session.PUT,
-		ContentType:   "application/octet-stream",
-		Destination:   fmt.Sprintf("%s/api/v1/apps/%s/space", host, entry.GUID),
+		Method:      session.PUT,
+		ContentType: "application/octet-stream",
+		Destination: fmt.Sprintf("%s/api/v1/apps/%s/space", host, entry.GUID),
 		Content:     spaceReferenceJson,
 	}
 

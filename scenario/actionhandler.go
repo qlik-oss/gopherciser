@@ -77,7 +77,7 @@ const (
 	ActionElasticDeleteOdag       = "elasticdeleteodag"
 	ActionElasticDuplicateApp     = "elasticduplicateapp"
 	ActionElasticExplore          = "elasticexplore"
-	ActionElasticMoveSpaces = "elasticmovespaces"
+	ActionElasticMoveSpaces       = "elasticmovespaces"
 	ActionGenerateOdag            = "generateodag"
 	ActionDeleteOdag              = "deleteodag"
 	ActionUploadData              = "uploaddata"
@@ -191,7 +191,7 @@ func ResetDefaultActions() {
 		ActionElasticDeleteOdag:       ElasticDeleteOdagSettings{},
 		ActionElasticDuplicateApp:     ElasticDuplicateAppSettings{},
 		ActionElasticExplore:          ElasticExploreSettings{},
-		ActionElasticMoveSpaces: ElasticMoveSpacesSettings{},
+		ActionElasticMoveSpaces:       ElasticMoveSpacesSettings{},
 		ActionGenerateOdag:            GenerateOdagSettings{},
 		ActionDeleteOdag:              DeleteOdagSettings{},
 		ActionUploadData:              UploadDataSettings{},
