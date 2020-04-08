@@ -1,9 +1,9 @@
 {
     "destinationspace.destinationspaceid": [
-        "Destination space, specified by ID."
+        "Specify destination space by ID."
     ],
     "destinationspace.destinationspacename": [
-        "Destination space, specified by name."
+        "Specify destination space by name."
     ],
     "appselection.appmode": [
         "App selection mode",

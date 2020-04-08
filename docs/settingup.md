@@ -1667,8 +1667,8 @@ Upload an app to a QSEoK deployment.
     * `legacy`: Upload the file using a single POST payload (legacy file upload mode).
 * `filename`: Local file to send as payload.
 * `spaceid`: DEPRECATED
-* `destinationspaceid`: Destination space, specified by ID.
-* `destinationspacename`: Destination space, specified by name.
+* `destinationspaceid`: Specify destination space by ID.
+* `destinationspacename`: Specify destination space by name.
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
@@ -1739,8 +1739,8 @@ Move an app from its existing space into the specified destination space.
 * `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
 * `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
 * `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `destinationspaceid`: Destination space, specified by ID.
-* `destinationspacename`: Destination space, specified by name.
+* `destinationspaceid`: Specify destination space by ID.
+* `destinationspacename`: Specify destination space by name.
 
 ### Example
 
