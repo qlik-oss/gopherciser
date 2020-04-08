@@ -44,4 +44,8 @@ type (
 		Ids   []string `json:"ids,omitempty"`
 		Names []string `json:"names,omitempty"`
 	}
+
+	SpaceReference struct {
+		SpaceID      string `json:"spaceId"`
+	}
 )
