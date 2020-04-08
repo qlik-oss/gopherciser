@@ -1,4 +1,4 @@
-## ElasticMoveSpaces action
+## ElasticMoveApp action
 
 Move an app from its existing space into the specified destination space.
 

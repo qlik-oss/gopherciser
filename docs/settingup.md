@@ -1715,9 +1715,9 @@ Upload a data file to the Data manager.
 ```
 
 </details><details>
-<summary>elasticmovespaces</summary>
+<summary>elasticmoveapp</summary>
 
-## ElasticMoveSpaces action
+## ElasticMoveApp action
 
 Move an app from its existing space into the specified destination space.
 
@@ -1749,7 +1749,7 @@ Move an app from its existing space into the specified destination space.
 
 ```json
 {
-    "action": "elasticmovespaces",
+    "action": "elasticmoveapp",
     "settings": {
         "app": "AppForEveryone",
         "appmode": "name",

@@ -77,7 +77,7 @@ const (
 	ActionElasticDeleteOdag       = "elasticdeleteodag"
 	ActionElasticDuplicateApp     = "elasticduplicateapp"
 	ActionElasticExplore          = "elasticexplore"
-	ActionElasticMoveApp          = "elasticmovespaces"
+	ActionElasticMoveApp          = "elasticmoveapp"
 	ActionGenerateOdag            = "generateodag"
 	ActionDeleteOdag              = "deleteodag"
 	ActionUploadData              = "uploaddata"

@@ -2,7 +2,7 @@
 
 ```json
 {
-    "action": "elasticmovespaces",
+    "action": "elasticmoveapp",
     "settings": {
         "app": "AppForEveryone",
         "appmode": "name",

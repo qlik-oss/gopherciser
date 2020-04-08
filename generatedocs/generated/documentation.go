@@ -95,9 +95,9 @@ var (
             Description: "## ElasticHubSearch action\n\nSearch the hub in a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticHubSearch\",\n	\"settings\": {\n		\"searchfor\": \"apps\",\n		\"querysource\": \"fromfile\",\n		\"queryfile\": \"/MyQueries/Queries.txt\"\n	}\n}\n```\n",
         },
-        "elasticmovespaces": {
-            Description: "## ElasticMoveSpaces action\n\nMove an app from its existing space into the specified destination space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
-            Examples: "### Example\n\n```json\n{\n    \"action\": \"elasticmovespaces\",\n    \"settings\": {\n        \"app\": \"AppForEveryone\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"everyone\"\n    }\n}\n```\n",
+        "elasticmoveapp": {
+            Description: "## ElasticMoveApp action\n\nMove an app from its existing space into the specified destination space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
+            Examples: "### Example\n\n```json\n{\n    \"action\": \"elasticmoveapp\",\n    \"settings\": {\n        \"app\": \"AppForEveryone\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"everyone\"\n    }\n}\n```\n",
         },
         "elasticopenhub": {
             Description: "## ElasticOpenHub action\n\nOpen the hub in a QSEoK deployment.\n",
@@ -381,7 +381,7 @@ var (
             {
                 Name: "qseokActions",
                 Title: "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticopenhub","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","elasticmovespaces" },
+                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticopenhub","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","elasticmoveapp" },
                 DocEntry: common.DocEntry{
                     Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
                     Examples: "",
