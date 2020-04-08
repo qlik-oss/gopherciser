@@ -282,7 +282,7 @@ func searchForSpaceByName(sessionState *session.State, actionState *action.State
 		return space, nil
 	}
 	switch err.(type) {
-	case session.SpaceNotFoundError:
+	case session.SpaceNameNotFoundError:
 		// spaces/filter seems to no be implemented yet, so we have to iterate everything instead, replace with this once api is usable
 		//filter := elasticstructs.Filter{
 		//	Names: []string{spaceName},
@@ -344,7 +344,7 @@ func searchForSpaceByID(sessionState *session.State, actionState *action.State, 
 		return space, nil
 	}
 	switch err.(type) {
-	case session.SpaceNotFoundError:
+	case session.SpaceNameNotFoundError:
 		spaceReq, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/api/v1/spaces/%s", host, spaceID), actionState, sessionState.LogEntry, nil)
 		if err != nil {
 			return nil, errors.WithStack(err)

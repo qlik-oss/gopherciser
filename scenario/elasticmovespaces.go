@@ -97,7 +97,7 @@ func (settings DestinationSpace) ResolveDestinationSpace(sessionState *session.S
 	var err error
 	if settings.DestinationSpaceId != "" {
 		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByID(settings.DestinationSpaceId)
-	} else {
+	} else if settings.DestinationSpaceName != "" {
 		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByName(settings.DestinationSpaceName)
 	}
 	if err != nil {

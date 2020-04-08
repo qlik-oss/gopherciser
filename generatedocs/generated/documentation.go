@@ -288,7 +288,7 @@ var (
         "elasticuploadapp.filename": { "Local file to send as payload."  },  
         "elasticuploadapp.mode": { "Upload mode. Defaults to `tus`, if omitted.","`tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.","`legacy`: Upload the file using a single POST payload (legacy file upload mode)."  },  
         "elasticuploadapp.retries": { "(optional) Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on."  },  
-        "elasticuploadapp.spaceid": { "(optional) GUID of the shared space in which to publish the app."  },  
+        "elasticuploadapp.spaceid": { "DEPRECATED"  },  
         "elasticuploadapp.stream": { "(optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables))."  },  
         "elasticuploadapp.streamguid": { "(optional) GUID of the private collection or public tag under which to publish the app."  },  
         "elasticuploadapp.title": { "Name of the app to upload (supports the use of [session variables](#session_variables))."  },  

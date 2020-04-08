@@ -398,7 +398,7 @@
         "Local file to send as payload."
     ],
     "elasticuploadapp.spaceid": [
-        "(optional) GUID of the shared space in which to publish the app."
+        "DEPRECATED"
     ],
     "elasticuploadapp.title": [
         "Name of the app to upload (supports the use of [session variables](#session_variables))."

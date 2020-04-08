@@ -44,12 +44,17 @@ type (
 		ItemID string
 	}
 
-	SpaceNotFoundError string
+	SpaceNameNotFoundError string
+	SpaceIdNotFoundError   string
 )
 
 // Error implements error interface
-func (err SpaceNotFoundError) Error() string {
-	return fmt.Sprintf("space<%s> not found", string(err))
+func (err SpaceNameNotFoundError) Error() string {
+	return fmt.Sprintf("space name <%s> not found", string(err))
+}
+
+func (err SpaceIdNotFoundError) Error() string {
+	return fmt.Sprintf("space id <%s> not found", string(err))
 }
 
 func (d ArtifactListDict) Len() int {
@@ -248,7 +253,7 @@ func (am *ArtifactMap) GetStreamID(streamName string) (string, error) {
 func (am *ArtifactMap) GetSpaceByName(spaceName string) (*elasticstructs.Space, error) {
 	value, found := am.spaceTitleToID.Load(spaceName)
 	if !found {
-		return nil, SpaceNotFoundError(spaceName)
+		return nil, SpaceNameNotFoundError(spaceName)
 	}
 
 	retVal, ok := value.(elasticstructs.Space)
@@ -274,7 +279,7 @@ func (am *ArtifactMap) GetSpaceByID(spaceID string) (*elasticstructs.Space, erro
 		return space, nil
 	}
 
-	return nil, SpaceNotFoundError(spaceID)
+	return nil, SpaceIdNotFoundError(spaceID)
 }
 
 // GetRandomApp returns a random app for the map, chosen by a uniform distribution
