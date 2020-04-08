@@ -1205,7 +1205,6 @@ Create an app in a QSEoK deployment. The app will be private to the user who cre
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `groups`: DEPRECATED
 
 ### Example
 
@@ -1373,7 +1372,6 @@ Duplicate an app in a QSEoK deployment.
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `groups`: DEPRECATED
 * `spaceid`: (optional) GUID of the shared space in which to publish the app.
 
 ### Example
@@ -1674,7 +1672,6 @@ Upload an app to a QSEoK deployment.
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `groups`: DEPRECATED
 
 ### Example
 

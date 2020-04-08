@@ -19,7 +19,9 @@ type (
 	}
 
 	DestinationSpace struct {
-		DestinationSpaceId   string `json:"destinationspaceid" displayname:"New space ID" doc-key:"destinationspace.destinationspaceid"`
+		// DestinationSpaceId ID for destination space
+		DestinationSpaceId string `json:"destinationspaceid" displayname:"New space ID" doc-key:"destinationspace.destinationspaceid"`
+		// DestinationSpaceName name for destination space
 		DestinationSpaceName string `json:"destinationspacename" displayname:"New space name" doc-key:"destinationspace.destinationspacename"`
 	}
 )
@@ -61,7 +63,7 @@ func (settings ElasticMoveAppSettings) Execute(sessionState *session.State, acti
 		return
 	}
 
-	destSpace, err := settings.ResolveDestinationSpace(sessionState)
+	destSpace, err := settings.ResolveDestinationSpace(sessionState, actionState, host)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
@@ -92,13 +94,13 @@ func (settings ElasticMoveAppSettings) Execute(sessionState *session.State, acti
 	}
 }
 
-func (settings DestinationSpace) ResolveDestinationSpace(sessionState *session.State) (*elasticstructs.Space, error) {
+func (settings DestinationSpace) ResolveDestinationSpace(sessionState *session.State, actionState *action.State, host string) (*elasticstructs.Space, error) {
 	var moveToSpace *elasticstructs.Space
 	var err error
 	if settings.DestinationSpaceId != "" {
 		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByID(settings.DestinationSpaceId)
 	} else if settings.DestinationSpaceName != "" {
-		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByName(settings.DestinationSpaceName)
+		moveToSpace, err = SearchForSpaceByName(sessionState, actionState, host, settings.DestinationSpaceName)
 	}
 	if err != nil {
 		return nil, errors.Wrap(err, "could not find specified destination space")

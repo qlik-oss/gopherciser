@@ -170,7 +170,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 			urlParams["spaceId"] = "personal"
 		} else {
 			var err error
-			space, err = searchForSpaceByName(sessionState, actionState, host, spaceName)
+			space, err = SearchForSpaceByName(sessionState, actionState, host, spaceName)
 			if err != nil {
 				actionState.AddErrors(err)
 				return
@@ -275,8 +275,8 @@ func isSessionUserOk(sessionState *session.State, actionState *action.State) boo
 	return true
 }
 
-// searchForSpaceByName looks for space in artifact map or tries to request from server, returns space ID
-func searchForSpaceByName(sessionState *session.State, actionState *action.State, host, spaceName string) (*elasticstructs.Space, error) {
+// SearchForSpaceByName looks for space in artifact map or tries to request from server, returns space ID
+func SearchForSpaceByName(sessionState *session.State, actionState *action.State, host, spaceName string) (*elasticstructs.Space, error) {
 	space, err := sessionState.ArtifactMap.GetSpaceByName(spaceName)
 	if err == nil {
 		return space, nil
