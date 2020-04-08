@@ -1714,16 +1714,16 @@ Upload a data file to the Data manager.
 }
 ```
 
-</details>
-</details>
-<details>
-<summary>Ungrouped actions</summary>
+</details><details>
+<summary>elasticmovespaces</summary>
 
 ## ElasticMoveSpaces action
 
 Move an app from its existing space into the specified destination space.
 
 **Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
+
+### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1758,6 +1758,7 @@ Move an app from its existing space into the specified destination space.
 }
 ```
 
+</details>
 </details>
 
 ## Session variables

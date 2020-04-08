@@ -54,7 +54,8 @@
             "elasticreload",
             "elasticshareapp",
             "elasticuploadapp",
-            "uploaddata"
+            "uploaddata",
+            "elasticmovespaces"
         ]
     }
 ]
