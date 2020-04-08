@@ -12,8 +12,8 @@ import (
 )
 
 type (
-	// ElasticMoveSpacesSettings settings for moving an app between spaces
-	ElasticMoveSpacesSettings struct {
+	// ElasticMoveAppSettings settings for moving an app between spaces
+	ElasticMoveAppSettings struct {
 		session.AppSelection
 		DestinationSpace
 	}
@@ -24,15 +24,15 @@ type (
 	}
 )
 
-// UnmarshalJSON unmarshals ElasticMoveSpacesSettings from JSON
-func (settings *ElasticMoveSpacesSettings) UnmarshalJSON(arg []byte) error {
+// UnmarshalJSON unmarshals ElasticMoveAppSettings from JSON
+func (settings *ElasticMoveAppSettings) UnmarshalJSON(arg []byte) error {
 	var actionCore DestinationSpace
 	if err := jsonit.Unmarshal(arg, &actionCore); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveSpaces)
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
 	}
 	var appSelectCore session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelectCore); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveSpaces)
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
 	}
 	(*settings).DestinationSpace = actionCore
 	(*settings).AppSelection = appSelectCore
@@ -40,7 +40,7 @@ func (settings *ElasticMoveSpacesSettings) UnmarshalJSON(arg []byte) error {
 }
 
 // Validate action (Implements ActionSettings interface)
-func (settings ElasticMoveSpacesSettings) Validate() error {
+func (settings ElasticMoveAppSettings) Validate() error {
 	if (settings.DestinationSpaceId == "") == (settings.DestinationSpaceName == "") {
 		return errors.New("either specify DestinationSpaceId or DestinationSpaceName")
 	}
@@ -48,7 +48,7 @@ func (settings ElasticMoveSpacesSettings) Validate() error {
 }
 
 // Execute action (Implements ActionSettings interface)
-func (settings ElasticMoveSpacesSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+func (settings ElasticMoveAppSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	host, err := connection.GetRestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
