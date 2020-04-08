@@ -15,18 +15,18 @@ type (
 	// ElasticMoveSpacesSettings settings for moving an app between spaces
 	ElasticMoveSpacesSettings struct {
 		session.AppSelection
-		ElasticMoveSpacesSettingsCore
+		DestinationSpace
 	}
 
-	ElasticMoveSpacesSettingsCore struct {
-		DestinationSpaceId   string `json:"destinationspaceid" displayname:"New space ID" doc-key:"elasticmovespaces.destinationspaceid"`
-		DestinationSpaceName string `json:"destinationspacename" displayname:"New space name" doc-key:"elasticmovespaces.destinationspacename"`
+	DestinationSpace struct {
+		DestinationSpaceId   string `json:"destinationspaceid" displayname:"New space ID" doc-key:"destinationspace.destinationspaceid"`
+		DestinationSpaceName string `json:"destinationspacename" displayname:"New space name" doc-key:"destinationspace.destinationspacename"`
 	}
 )
 
 // UnmarshalJSON unmarshals ElasticMoveSpacesSettings from JSON
 func (settings *ElasticMoveSpacesSettings) UnmarshalJSON(arg []byte) error {
-	var actionCore ElasticMoveSpacesSettingsCore
+	var actionCore DestinationSpace
 	if err := jsonit.Unmarshal(arg, &actionCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveSpaces)
 	}
@@ -34,7 +34,7 @@ func (settings *ElasticMoveSpacesSettings) UnmarshalJSON(arg []byte) error {
 	if err := jsonit.Unmarshal(arg, &appSelectCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveSpaces)
 	}
-	(*settings).ElasticMoveSpacesSettingsCore = actionCore
+	(*settings).DestinationSpace = actionCore
 	(*settings).AppSelection = appSelectCore
 	return nil
 }
@@ -61,18 +61,13 @@ func (settings ElasticMoveSpacesSettings) Execute(sessionState *session.State, a
 		return
 	}
 
-	var moveToSpace *elasticstructs.Space
-	if settings.DestinationSpaceId != "" {
-		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByID(settings.DestinationSpaceId)
-	} else {
-		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByName(settings.DestinationSpaceName)
-	}
+	destSpace, err := settings.ResolveDestinationSpace(sessionState)
 	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "could not find specified destination space"))
+		actionState.AddErrors(err)
 		return
 	}
 
-	spaceReference := elasticstructs.SpaceReference{SpaceID: moveToSpace.ID}
+	spaceReference := elasticstructs.SpaceReference{SpaceID: destSpace.ID}
 	spaceReferenceJson, err := json.Marshal(spaceReference)
 	if err != nil {
 		actionState.AddErrors(err)
@@ -95,4 +90,18 @@ func (settings ElasticMoveSpacesSettings) Execute(sessionState *session.State, a
 	if putApp.ResponseStatusCode != http.StatusOK {
 		actionState.AddErrors(errors.Errorf("unexpected response code <%d> when putting app in new space: %s", putApp.ResponseStatusCode, putApp.ResponseBody))
 	}
+}
+
+func (settings DestinationSpace) ResolveDestinationSpace(sessionState *session.State) (*elasticstructs.Space, error) {
+	var moveToSpace *elasticstructs.Space
+	var err error
+	if settings.DestinationSpaceId != "" {
+		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByID(settings.DestinationSpaceId)
+	} else {
+		moveToSpace, err = sessionState.ArtifactMap.GetSpaceByName(settings.DestinationSpaceName)
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "could not find specified destination space")
+	}
+	return moveToSpace, nil
 }

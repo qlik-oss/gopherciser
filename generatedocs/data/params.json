@@ -1,4 +1,10 @@
 {
+    "destinationspace.destinationspaceid": [
+        "Destination space, specified by ID."
+    ],
+    "destinationspace.destinationspacename": [
+        "Destination space, specified by name."
+    ],
     "appselection.appmode": [
         "App selection mode",
         "`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.",

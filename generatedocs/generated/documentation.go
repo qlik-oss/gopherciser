@@ -95,6 +95,10 @@ var (
             Description: "## ElasticHubSearch action\n\nSearch the hub in a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticHubSearch\",\n	\"settings\": {\n		\"searchfor\": \"apps\",\n		\"querysource\": \"fromfile\",\n		\"queryfile\": \"/MyQueries/Queries.txt\"\n	}\n}\n```\n",
         },
+        "elasticmovespaces": {
+            Description: "## ElasticMoveSpaces action\n\nMove an app from its existing space into the specified destination space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
+            Examples: "### Example\n\n```json\n{\n    \"action\": \"elasticmovespaces\",\n    \"settings\": {\n        \"app\": \"AppForEveryone\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"everyone\"\n    }\n}\n```\n",
+        },
         "elasticopenhub": {
             Description: "## ElasticOpenHub action\n\nOpen the hub in a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticOpenHub\",\n	\"label\": \"Open cloud hub with YourCollection and MyCollection\"\n}\n```\n",
@@ -245,6 +249,8 @@ var (
         "deletesheet.id": { "(optional) GUID of the sheet to delete."  },  
         "deletesheet.mode": { "","`single`: Delete one sheet that matches the specified `title` or `id` in the current app.","`matching`: Delete all sheets with the specified `title` in the current app.","`allunpublished`: Delete all unpublished sheets in the current app."  },  
         "deletesheet.title": { "(optional) Name of the sheet to delete."  },  
+        "destinationspace.destinationspaceid": { "Destination space, specified by ID."  },  
+        "destinationspace.destinationspacename": { "Destination space, specified by name."  },  
         "duplicatesheet.changesheet": { "Clear the objects currently subscribed to and then subribe to all objects on the cloned sheet (which essentially corresponds to using the `changesheet` action to go to the cloned sheet) (`true` / `false`). Defaults to `false`, if omitted."  },  
         "duplicatesheet.cloneid": { "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."  },  
         "duplicatesheet.id": { "ID of the sheet to clone."  },  
