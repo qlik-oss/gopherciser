@@ -27,7 +27,9 @@ type (
 		MaxRetries int        `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"elasticuploadapp.retries"`
 		Mode       UploadMode `json:"mode" displayname:"Upload mode" doc-key:"elasticuploadapp.mode"`
 		Filename   string     `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"elasticuploadapp.filename"`
-		SpaceID    string     `json:"spaceid" displayname:"Space ID" doc-key:"elasticuploadapp.spaceid"`
+		// Deprecated: This property will be removed. DestinationSpace should be used instead, keeping entry here for some time to make sure scripts get validation error
+		SpaceID string `json:"spaceid" displayname:"Space ID" doc-key:"elasticuploadapp.spaceid"`
+		DestinationSpace
 		CanAddToCollection
 	}
 
@@ -35,8 +37,6 @@ type (
 		Title      session.SyncedTemplate `json:"title" displayname:"Title" doc-key:"elasticuploadapp.title"`
 		Stream     session.SyncedTemplate `json:"stream" displayname:"Stream name" doc-key:"elasticuploadapp.stream"`
 		StreamGUID string                 `json:"streamguid" displayname:"Stream ID" doc-key:"elasticuploadapp.streamguid"`
-		// Deprecated: This property will be removed.ElasticShareApp action should be used instead, keeping entry here for some time to make sure scripts get validation error.
-		Groups []string `json:"groups" displayname:"Groups - deprecated" doc-key:"canaddtocollection.groups"`
 	}
 )
 
@@ -86,8 +86,8 @@ func (settings ElasticUploadAppSettings) Validate() error {
 	if settings.Title.String() == "" {
 		return errors.New("No Title specified")
 	}
-	if len(settings.Groups) > 0 {
-		return errors.New("elasticuploadapp action no longer utilizes Group, add a elasticshareapp action to share the app")
+	if settings.SpaceID != "" {
+		return errors.New("elasticuploadapp action no longer utilizes SpaceID, please use DestinationSpaceID to specify a space")
 	}
 	if settings.ChunkSize < 0 {
 		return errors.New("ChunkSize must be a positive value")
@@ -97,10 +97,15 @@ func (settings ElasticUploadAppSettings) Validate() error {
 
 // Execute action (Implements ActionSettings interface)
 func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-
 	restUrl, err := connection.GetRestUrl()
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	destSpace, err := settings.ResolveDestinationSpace(sessionState, actionState, restUrl)
+	if err != nil {
+		actionState.AddErrors(err)
 		return
 	}
 
@@ -189,8 +194,8 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		fileId := fileUrlSplit[len(fileUrlSplit)-1]
 
 		parameters := ""
-		if settings.SpaceID != "" {
-			parameters = fmt.Sprintf("&spaceId=%v", settings.SpaceID)
+		if destSpace != nil {
+			parameters = fmt.Sprintf("&spaceId=%v", destSpace.ID)
 		}
 		postApp = session.RestRequest{
 			Method:      session.POST,
@@ -199,8 +204,8 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		}
 	case Legacy:
 		parameters := ""
-		if settings.SpaceID != "" {
-			parameters = fmt.Sprintf("?spaceId=%v", settings.SpaceID)
+		if destSpace != nil {
+			parameters = fmt.Sprintf("?spaceId=%v", destSpace.ID)
 		}
 		postApp = session.RestRequest{
 			Method:        session.POST,

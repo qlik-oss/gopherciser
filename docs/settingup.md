@@ -1212,7 +1212,6 @@ Create an app in a QSEoK deployment. The app will be private to the user who cre
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `groups`: DEPRECATED
 
 ### Example
 
@@ -1380,7 +1379,6 @@ Duplicate an app in a QSEoK deployment.
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `groups`: DEPRECATED
 * `spaceid`: (optional) GUID of the shared space in which to publish the app.
 
 ### Example
@@ -1675,11 +1673,12 @@ Upload an app to a QSEoK deployment.
     * `tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.
     * `legacy`: Upload the file using a single POST payload (legacy file upload mode).
 * `filename`: Local file to send as payload.
-* `spaceid`: (optional) GUID of the shared space in which to publish the app.
+* `spaceid`: DEPRECATED
+* `destinationspaceid`: Specify destination space by ID.
+* `destinationspacename`: Specify destination space by name.
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `groups`: DEPRECATED
 
 ### Example
 
@@ -1716,6 +1715,50 @@ Upload a data file to the Data manager.
      "settings": {
          "filename": "/home/root/data.csv"
      }
+}
+```
+
+</details><details>
+<summary>elasticmoveapp</summary>
+
+## ElasticMoveApp action
+
+Move an app from its existing space into the specified destination space.
+
+**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
+
+### Settings
+
+* `appmode`: App selection mode
+    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
+    * `guid`: Use the app GUID specified by the `app` parameter.
+    * `name`: Use the app name specified by the `app` parameter.
+    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
+    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
+    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
+    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+    * `round`: Select an app from the artifact map according to the round-robin principle.
+    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
+    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
+    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
+* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
+* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
+* `destinationspaceid`: Specify destination space by ID.
+* `destinationspacename`: Specify destination space by name.
+
+### Example
+
+```json
+{
+    "action": "elasticmoveapp",
+    "settings": {
+        "app": "AppForEveryone",
+        "appmode": "name",
+        "destinationspacename": "everyone"
+    }
 }
 ```
 

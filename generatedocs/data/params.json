@@ -1,4 +1,10 @@
 {
+    "destinationspace.destinationspaceid": [
+        "Specify destination space by ID."
+    ],
+    "destinationspace.destinationspacename": [
+        "Specify destination space by name."
+    ],
     "appselection.appmode": [
         "App selection mode",
         "`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.",
@@ -397,7 +403,7 @@
         "Local file to send as payload."
     ],
     "elasticuploadapp.spaceid": [
-        "(optional) GUID of the shared space in which to publish the app."
+        "DEPRECATED"
     ],
     "elasticuploadapp.title": [
         "Name of the app to upload (supports the use of [session variables](#session_variables))."

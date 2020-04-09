@@ -95,6 +95,10 @@ var (
             Description: "## ElasticHubSearch action\n\nSearch the hub in a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticHubSearch\",\n	\"settings\": {\n		\"searchfor\": \"apps\",\n		\"querysource\": \"fromfile\",\n		\"queryfile\": \"/MyQueries/Queries.txt\"\n	}\n}\n```\n",
         },
+        "elasticmoveapp": {
+            Description: "## ElasticMoveApp action\n\nMove an app from its existing space into the specified destination space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
+            Examples: "### Example\n\n```json\n{\n    \"action\": \"elasticmoveapp\",\n    \"settings\": {\n        \"app\": \"AppForEveryone\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"everyone\"\n    }\n}\n```\n",
+        },
         "elasticopenhub": {
             Description: "## ElasticOpenHub action\n\nOpen the hub in a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticOpenHub\",\n	\"label\": \"Open cloud hub with YourCollection and MyCollection\"\n}\n```\n",
@@ -246,6 +250,8 @@ var (
         "deletesheet.id": { "(optional) GUID of the sheet to delete."  },  
         "deletesheet.mode": { "","`single`: Delete one sheet that matches the specified `title` or `id` in the current app.","`matching`: Delete all sheets with the specified `title` in the current app.","`allunpublished`: Delete all unpublished sheets in the current app."  },  
         "deletesheet.title": { "(optional) Name of the sheet to delete."  },  
+        "destinationspace.destinationspaceid": { "Specify destination space by ID."  },  
+        "destinationspace.destinationspacename": { "Specify destination space by name."  },  
         "duplicatesheet.changesheet": { "Clear the objects currently subscribed to and then subribe to all objects on the cloned sheet (which essentially corresponds to using the `changesheet` action to go to the cloned sheet) (`true` / `false`). Defaults to `false`, if omitted."  },  
         "duplicatesheet.cloneid": { "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."  },  
         "duplicatesheet.id": { "ID of the sheet to clone."  },  
@@ -283,7 +289,7 @@ var (
         "elasticuploadapp.filename": { "Local file to send as payload."  },  
         "elasticuploadapp.mode": { "Upload mode. Defaults to `tus`, if omitted.","`tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.","`legacy`: Upload the file using a single POST payload (legacy file upload mode)."  },  
         "elasticuploadapp.retries": { "(optional) Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on."  },  
-        "elasticuploadapp.spaceid": { "(optional) GUID of the shared space in which to publish the app."  },  
+        "elasticuploadapp.spaceid": { "DEPRECATED"  },  
         "elasticuploadapp.stream": { "(optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables))."  },  
         "elasticuploadapp.streamguid": { "(optional) GUID of the private collection or public tag under which to publish the app."  },  
         "elasticuploadapp.title": { "Name of the app to upload (supports the use of [session variables](#session_variables))."  },  
@@ -376,7 +382,7 @@ var (
             {
                 Name: "qseokActions",
                 Title: "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticopenhub","elasticreload","elasticshareapp","elasticuploadapp","uploaddata" },
+                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticopenhub","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","elasticmoveapp" },
                 DocEntry: common.DocEntry{
                     Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
                     Examples: "",

@@ -170,7 +170,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 			urlParams["spaceId"] = "personal"
 		} else {
 			var err error
-			space, err = searchForSpaceByName(sessionState, actionState, host, spaceName)
+			space, err = SearchForSpaceByName(sessionState, actionState, host, spaceName)
 			if err != nil {
 				actionState.AddErrors(err)
 				return
@@ -275,14 +275,14 @@ func isSessionUserOk(sessionState *session.State, actionState *action.State) boo
 	return true
 }
 
-// searchForSpaceByName looks for space in artifact map or tries to request from server, returns space ID
-func searchForSpaceByName(sessionState *session.State, actionState *action.State, host, spaceName string) (*elasticstructs.Space, error) {
+// SearchForSpaceByName looks for space in artifact map or tries to request from server, returns space ID
+func SearchForSpaceByName(sessionState *session.State, actionState *action.State, host, spaceName string) (*elasticstructs.Space, error) {
 	space, err := sessionState.ArtifactMap.GetSpaceByName(spaceName)
 	if err == nil {
 		return space, nil
 	}
 	switch err.(type) {
-	case session.SpaceNotFoundError:
+	case session.SpaceNameNotFoundError:
 		// spaces/filter seems to no be implemented yet, so we have to iterate everything instead, replace with this once api is usable
 		//filter := elasticstructs.Filter{
 		//	Names: []string{spaceName},
@@ -344,7 +344,7 @@ func searchForSpaceByID(sessionState *session.State, actionState *action.State, 
 		return space, nil
 	}
 	switch err.(type) {
-	case session.SpaceNotFoundError:
+	case session.SpaceNameNotFoundError:
 		spaceReq, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/api/v1/spaces/%s", host, spaceID), actionState, sessionState.LogEntry, nil)
 		if err != nil {
 			return nil, errors.WithStack(err)
