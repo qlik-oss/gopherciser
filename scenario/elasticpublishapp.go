@@ -59,6 +59,7 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 		actionState.AddErrors(err)
 		return
 	}
+	restHandler := sessionState.Rest
 
 	entry, err := settings.AppSelection.Select(sessionState)
 	if err != nil {
@@ -79,6 +80,25 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 		return
 	}
 
+	getAppItem := session.RestRequest{
+		Method:      session.GET,
+		Destination: fmt.Sprintf("%s/api/v1/items/%s", host, entry.ItemID),
+	}
+	restHandler.QueueRequest(actionState, true, &getAppItem, sessionState.LogEntry)
+	if sessionState.Wait(actionState) {
+		actionState.AddErrors(errors.New("failed to get app item"))
+		return
+	}
+	if getAppItem.ResponseStatusCode != http.StatusOK {
+		actionState.AddErrors(errors.Errorf("unexpected response code <%d> when getting app item: %s", getAppItem.ResponseStatusCode, getAppItem.ResponseBody))
+	}
+
+	var getItemResponse elasticstructs.CollectionItem
+	if err := jsonit.Unmarshal(getAppItem.ResponseBody, &getItemResponse); err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "failed unmarshaling app item response data: %s", getAppItem.ResponseBody))
+		return
+	}
+
 	publishApp := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "application/json",
@@ -86,7 +106,6 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 		Content:     spaceReferenceJson,
 	}
 
-	restHandler := sessionState.Rest
 	restHandler.QueueRequest(actionState, true, &publishApp, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
 		actionState.AddErrors(errors.New("failed during app publish"))
@@ -103,13 +122,23 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 		return
 	}
 
-	_, err = AddItemToCollectionService(sessionState, actionState, appPublishResponse, appPublishResponse.Attributes.Name, host)
+	collectionServiceItemResponse, err := AddItemToCollectionService(sessionState, actionState, appPublishResponse, appPublishResponse.Attributes.Name, host)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
 	}
+	itemId := collectionServiceItemResponse["id"].(string)
 
 	if settings.ClearTags {
 		return
+	}
+
+	collectionIds := getItemResponse.CollectionIds
+	for _, collectionId := range collectionIds {
+		err := AddTag(sessionState, actionState, itemId, host, collectionId)
+		if err != nil {
+			actionState.AddErrors(errors.Wrapf(err, "failed to add tag: %s", collectionId))
+			return
+		}
 	}
 }

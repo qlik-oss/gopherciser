@@ -269,27 +269,9 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 
 	// No collection to add it to; we're done
 	if streamID != "" {
-		itemCollectionAdd := elasticstructs.ItemCollectionAdd{}
-		itemCollectionAdd.ID = itemId
-		itemCollectionAddContent, err := jsonit.Marshal(itemCollectionAdd)
+		err := AddTag(sessionState, actionState, itemId, host, streamID)
 		if err != nil {
-			return errors.Wrap(err, "failed to prepare payload to publish")
-		}
-
-		collectAdd := session.RestRequest{
-			Method:      session.POST,
-			ContentType: "application/json",
-			Destination: fmt.Sprintf("%v/api/v1/collections/%v/items", host, streamID),
-			Content:     itemCollectionAddContent,
-		}
-
-		sessionState.Rest.QueueRequest(actionState, true, &collectAdd, sessionState.LogEntry)
-		if sessionState.Wait(actionState) {
-			return errors.New("failed during add collection")
-		}
-
-		if collectAdd.ResponseStatusCode != http.StatusCreated {
-			return errors.Errorf("failed to publish app to stream: %s", collectAdd.ResponseBody)
+			return err
 		}
 	}
 	err = sessionState.ArtifactMap.FillAppsUsingName(&session.AppData{
@@ -372,4 +354,30 @@ func AddItemToCollectionService(sessionState *session.State, actionState *action
 		return nil, errors.Wrapf(err, "failed unmarshaling collection service item creation response data: %s", collectionServiceItemResponseRaw)
 	}
 	return collectionServiceItemResponse, nil
+}
+
+func AddTag(sessionState *session.State, actionState *action.State, itemId string, host string, collectionId string) error {
+	itemCollectionAdd := elasticstructs.ItemCollectionAdd{}
+	itemCollectionAdd.ID = itemId
+	itemCollectionAddContent, err := jsonit.Marshal(itemCollectionAdd)
+	if err != nil {
+		return errors.Wrap(err, "failed to prepare payload to publish")
+	}
+
+	collectAdd := session.RestRequest{
+		Method:      session.POST,
+		ContentType: "application/json",
+		Destination: fmt.Sprintf("%v/api/v1/collections/%v/items", host, collectionId),
+		Content:     itemCollectionAddContent,
+	}
+
+	sessionState.Rest.QueueRequest(actionState, true, &collectAdd, sessionState.LogEntry)
+	if sessionState.Wait(actionState) {
+		return errors.New("failed during add collection")
+	}
+
+	if collectAdd.ResponseStatusCode != http.StatusCreated {
+		return errors.Errorf("failed to publish app to stream: %s", collectAdd.ResponseBody)
+	}
+	return nil
 }
