@@ -1,0 +1,115 @@
+package scenario
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/session"
+	"net/http"
+)
+
+type (
+	// ElasticMoveAppSettings settings for moving an app between spaces
+	ElasticPublishAppSettings struct {
+		session.AppSelection
+		DestinationSpace
+		ElasticPublishAppSettingsCore
+	}
+
+	ElasticPublishAppSettingsCore struct {
+		ClearTags bool `json:"cleartags" displayname:"Clear existing tags" doc-key:"elasticpublishapp.cleartags"`
+	}
+)
+
+// UnmarshalJSON unmarshals ElasticMoveAppSettings from JSON
+func (settings *ElasticPublishAppSettings) UnmarshalJSON(arg []byte) error {
+	var destSpace DestinationSpace
+	if err := jsonit.Unmarshal(arg, &destSpace); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
+	}
+	var appSelectCore session.AppSelection
+	if err := jsonit.Unmarshal(arg, &appSelectCore); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
+	}
+	var actionCore ElasticPublishAppSettingsCore
+	if err := jsonit.Unmarshal(arg, &actionCore); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
+	}
+	(*settings).DestinationSpace = destSpace
+	(*settings).AppSelection = appSelectCore
+	(*settings).ElasticPublishAppSettingsCore = actionCore
+	return nil
+}
+
+// Validate action (Implements ActionSettings interface)
+func (settings ElasticPublishAppSettings) Validate() error {
+	if (settings.DestinationSpaceId == "") == (settings.DestinationSpaceName == "") {
+		return errors.New("either specify DestinationSpaceId or DestinationSpaceName")
+	}
+	return nil
+}
+
+// Execute action (Implements ActionSettings interface)
+func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+	host, err := connection.GetRestUrl()
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	entry, err := settings.AppSelection.Select(sessionState)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to perform app selection"))
+		return
+	}
+
+	destSpace, err := settings.ResolveDestinationSpace(sessionState, actionState, host)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	spaceReference := elasticstructs.SpaceReference{SpaceID: destSpace.ID}
+	spaceReferenceJson, err := json.Marshal(spaceReference)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	publishApp := session.RestRequest{
+		Method:      session.POST,
+		ContentType: "application/json",
+		Destination: fmt.Sprintf("%s/api/v1/apps/%s/publish", host, entry.GUID),
+		Content:     spaceReferenceJson,
+	}
+
+	restHandler := sessionState.Rest
+	restHandler.QueueRequest(actionState, true, &publishApp, sessionState.LogEntry)
+	if sessionState.Wait(actionState) {
+		actionState.AddErrors(errors.New("failed during app publish"))
+		return
+	}
+	if publishApp.ResponseStatusCode != http.StatusOK {
+		actionState.AddErrors(errors.Errorf("unexpected response code <%d> when posting app to new space: %s", publishApp.ResponseStatusCode, publishApp.ResponseBody))
+	}
+
+	appPublishResponseRaw := publishApp.ResponseBody
+	var appPublishResponse elasticstructs.AppImportResponse
+	if err := jsonit.Unmarshal(appPublishResponseRaw, &appPublishResponse); err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "failed unmarshaling app publish response data: %s", appPublishResponseRaw))
+		return
+	}
+
+	_, err = AddItemToCollectionService(sessionState, actionState, appPublishResponse, appPublishResponse.Attributes.Name, host)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	if settings.ClearTags {
+		return
+	}
+}

@@ -259,60 +259,9 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	collectionServiceItem := elasticstructs.CollectionServiceItem{
-		Name:         title,
-		ResourceID:   appImportResponse.Attributes.ID,
-		ResourceType: appImportResponse.Attributes.ResourceType,
-		Description:  appImportResponse.Attributes.Description,
-		ResourceAttributes: elasticstructs.CollectionServiceResourceAttributes{
-			ID:               appImportResponse.Attributes.ID,
-			Name:             title,
-			Description:      appImportResponse.Attributes.Description,
-			Thumbnail:        appImportResponse.Attributes.Thumbnail,
-			LastReloadTime:   appImportResponse.Attributes.LastReloadTime,
-			CreatedDate:      appImportResponse.Attributes.CreatedDate,
-			ModifiedDate:     appImportResponse.Attributes.ModifiedDate,
-			OwnerID:          appImportResponse.Attributes.OwnerID,
-			DynamicColor:     appImportResponse.Attributes.DynamicColor,
-			Published:        appImportResponse.Attributes.Published,
-			PublishTime:      appImportResponse.Attributes.PublishTime,
-			HasSectionAccess: appImportResponse.Attributes.HasSectionAccess,
-			Encrypted:        appImportResponse.Attributes.Encrypted,
-			OriginAppID:      appImportResponse.Attributes.OriginAppID,
-			SpaceID:          appImportResponse.Attributes.SpaceID,
-			ResourceType:     appImportResponse.Attributes.ResourceType,
-		},
-		ResourceCustomAttributes: appImportResponse.Attributes.Custom,
-		ResourceCreatedAt:        time.Now(),
-		ResourceCreatedBySubject: appImportResponse.Attributes.Owner,
-		SpaceID:                  appImportResponse.Attributes.SpaceID,
-	}
-
-	createItemInCollectionServiceContent, err := jsonit.Marshal(collectionServiceItem)
+	collectionServiceItemResponse, err := AddItemToCollectionService(sessionState, actionState, appImportResponse, title, host)
 	if err != nil {
-		return errors.Wrap(err, "failed to prepare payload to collection service")
-	}
-
-	createItemInCollectionService := session.RestRequest{
-		Method:      session.POST,
-		ContentType: "application/json",
-		Destination: fmt.Sprintf("%v/api/v1/items", host),
-		Content:     createItemInCollectionServiceContent,
-	}
-
-	sessionState.Rest.QueueRequest(actionState, true, &createItemInCollectionService, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return errors.New("failed during create item iń collection service")
-	}
-	if createItemInCollectionService.ResponseStatusCode != http.StatusCreated {
-		return errors.Errorf("failed to create item in collection service: %s", createItemInCollectionService.ResponseBody)
-	}
-
-	collectionServiceItemResponseRaw := createItemInCollectionService.ResponseBody
-	var collectionServiceItemResponse map[string]interface{}
-	if err := jsonit.Unmarshal(collectionServiceItemResponseRaw, &collectionServiceItemResponse); err != nil {
-		return errors.Wrapf(err, "failed unmarshaling collection service item creation response data: %s", collectionServiceItemResponseRaw)
+		return err
 	}
 
 	itemId := collectionServiceItemResponse["id"].(string)
@@ -365,4 +314,62 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 	}
 
 	return nil
+}
+
+func AddItemToCollectionService(sessionState *session.State, actionState *action.State, appImportResponse elasticstructs.AppImportResponse, title string, host string) (map[string]interface{}, error) {
+	collectionServiceItem := elasticstructs.CollectionServiceItem{
+		Name:         title,
+		ResourceID:   appImportResponse.Attributes.ID,
+		ResourceType: appImportResponse.Attributes.ResourceType,
+		Description:  appImportResponse.Attributes.Description,
+		ResourceAttributes: elasticstructs.CollectionServiceResourceAttributes{
+			ID:               appImportResponse.Attributes.ID,
+			Name:             title,
+			Description:      appImportResponse.Attributes.Description,
+			Thumbnail:        appImportResponse.Attributes.Thumbnail,
+			LastReloadTime:   appImportResponse.Attributes.LastReloadTime,
+			CreatedDate:      appImportResponse.Attributes.CreatedDate,
+			ModifiedDate:     appImportResponse.Attributes.ModifiedDate,
+			OwnerID:          appImportResponse.Attributes.OwnerID,
+			DynamicColor:     appImportResponse.Attributes.DynamicColor,
+			Published:        appImportResponse.Attributes.Published,
+			PublishTime:      appImportResponse.Attributes.PublishTime,
+			HasSectionAccess: appImportResponse.Attributes.HasSectionAccess,
+			Encrypted:        appImportResponse.Attributes.Encrypted,
+			OriginAppID:      appImportResponse.Attributes.OriginAppID,
+			SpaceID:          appImportResponse.Attributes.SpaceID,
+			ResourceType:     appImportResponse.Attributes.ResourceType,
+		},
+		ResourceCustomAttributes: appImportResponse.Attributes.Custom,
+		ResourceCreatedAt:        time.Now(),
+		ResourceCreatedBySubject: appImportResponse.Attributes.Owner,
+		SpaceID:                  appImportResponse.Attributes.SpaceID,
+	}
+
+	createItemInCollectionServiceContent, err := jsonit.Marshal(collectionServiceItem)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to prepare payload to collection service")
+	}
+
+	createItemInCollectionService := session.RestRequest{
+		Method:      session.POST,
+		ContentType: "application/json",
+		Destination: fmt.Sprintf("%v/api/v1/items", host),
+		Content:     createItemInCollectionServiceContent,
+	}
+
+	sessionState.Rest.QueueRequest(actionState, true, &createItemInCollectionService, sessionState.LogEntry)
+	if sessionState.Wait(actionState) {
+		return nil, errors.New("failed during create item in collection service")
+	}
+	if createItemInCollectionService.ResponseStatusCode != http.StatusCreated {
+		return nil, errors.Errorf("failed to create item in collection service: %s", createItemInCollectionService.ResponseBody)
+	}
+
+	collectionServiceItemResponseRaw := createItemInCollectionService.ResponseBody
+	var collectionServiceItemResponse map[string]interface{}
+	if err := jsonit.Unmarshal(collectionServiceItemResponseRaw, &collectionServiceItemResponse); err != nil {
+		return nil, errors.Wrapf(err, "failed unmarshaling collection service item creation response data: %s", collectionServiceItemResponseRaw)
+	}
+	return collectionServiceItemResponse, nil
 }
