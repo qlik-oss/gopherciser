@@ -18,7 +18,7 @@ require (
 	github.com/qlik-oss/enigma-go v1.1.2
 	github.com/rs/zerolog v1.18.0
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644
-	github.com/spf13/cobra v0.0.7
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.5.1
 )
