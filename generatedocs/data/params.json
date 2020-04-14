@@ -231,8 +231,8 @@
     "createbookmark.id": [
         "(optional) ID to use with subsequent `applybookmark` or `deletebookmark` actions. **Note:** This ID is only used within the scenario."
     ],
-    "createbookmark.savesheet": [
-        "Include sheet with bookmark."
+    "createbookmark.nosheet": [
+        "Do not include sheet with bookmark."
     ],
     "createbookmark.savelayout": [
         "Include layout with bookmark."

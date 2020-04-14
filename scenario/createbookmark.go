@@ -16,11 +16,11 @@ import (
 type (
 	//CreateBookmarkSettings create bookmark settings
 	CreateBookmarkSettings struct {
-		Title             string `json:"title" displayname:"Bookmark title" doc-key:"createbookmark.title"`
-		Description       string `json:"description" displayname:"Bookmark description" doc-key:"createbookmark.description"`
-		ID                string `json:"id" displayname:"Bookmark ID" doc-key:"createbookmark.id"`
-		SaveSheetLocation bool   `json:"savesheet" displayname:"Save sheet location" doc-key:"createbookmark.savesheet"`
-		SaveLayout        bool   `json:"savelayout" displayname:"Save Layout" doc-key:"createbookmark.savelayout"`
+		Title           string `json:"title" displayname:"Bookmark title" doc-key:"createbookmark.title"`
+		Description     string `json:"description" displayname:"Bookmark description" doc-key:"createbookmark.description"`
+		ID              string `json:"id" displayname:"Bookmark ID" doc-key:"createbookmark.id"`
+		NoSheetLocation bool   `json:"nosheet" displayname:"Save sheet location" doc-key:"createbookmark.nosheet"`
+		SaveLayout      bool   `json:"savelayout" displayname:"Save Layout" doc-key:"createbookmark.savelayout"`
 	}
 )
 
@@ -57,7 +57,7 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 	fields := uplink.CurrentApp.GetAggregatedSelectionFields()
 
 	sheetID := ""
-	if settings.SaveSheetLocation {
+	if !settings.NoSheetLocation {
 		// Find out the current sheet from the object map
 		sheets := uplink.Objects.GetAllObjectHandles(false, enigmahandlers.ObjTypeSheet)
 		if len(sheets) == 0 {
