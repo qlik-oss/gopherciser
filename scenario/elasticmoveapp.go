@@ -20,9 +20,9 @@ type (
 
 	DestinationSpace struct {
 		// DestinationSpaceId ID for destination space
-		DestinationSpaceId string `json:"destinationspaceid" displayname:"New space ID" doc-key:"destinationspace.destinationspaceid"`
+		DestinationSpaceId string `json:"destinationspaceid" displayname:"Destination space ID" doc-key:"destinationspace.destinationspaceid"`
 		// DestinationSpaceName name for destination space
-		DestinationSpaceName string `json:"destinationspacename" displayname:"New space name" doc-key:"destinationspace.destinationspacename"`
+		DestinationSpaceName string `json:"destinationspacename" displayname:"Destination space name" doc-key:"destinationspace.destinationspacename"`
 	}
 )
 
@@ -78,7 +78,7 @@ func (settings ElasticMoveAppSettings) Execute(sessionState *session.State, acti
 
 	putApp := session.RestRequest{
 		Method:      session.PUT,
-		ContentType: "application/octet-stream",
+		ContentType: "application/json",
 		Destination: fmt.Sprintf("%s/api/v1/apps/%s/space", host, entry.GUID),
 		Content:     spaceReferenceJson,
 	}

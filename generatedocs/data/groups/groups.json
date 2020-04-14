@@ -50,12 +50,13 @@
             "elasticexportapp",
             "elasticgenerateodag",
             "elastichubsearch",
+            "elasticmoveapp",
             "elasticopenhub",
+            "elasticpublishapp",
             "elasticreload",
             "elasticshareapp",
             "elasticuploadapp",
-            "uploaddata",
-            "elasticmoveapp"
+            "uploaddata"
         ]
     }
 ]
