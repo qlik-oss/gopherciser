@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"context"
+	"github.com/qlik-oss/enigma-go"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,9 +16,11 @@ import (
 type (
 	//CreateBookmarkSettings create bookmark settings
 	CreateBookmarkSettings struct {
-		Title       string `json:"title" displayname:"Bookmark title" doc-key:"createbookmark.title"`
-		Description string `json:"description" displayname:"Bookmark description" doc-key:"createbookmark.description"`
-		ID          string `json:"id" displayname:"Bookmark ID" doc-key:"createbookmark.id"`
+		Title             string `json:"title" displayname:"Bookmark title" doc-key:"createbookmark.title"`
+		Description       string `json:"description" displayname:"Bookmark description" doc-key:"createbookmark.description"`
+		ID                string `json:"id" displayname:"Bookmark ID" doc-key:"createbookmark.id"`
+		SaveSheetLocation bool   `json:"savesheet" displayname:"Save sheet location" doc-key:"createbookmark.savesheet"`
+		SaveLayout        bool   `json:"savelayout" displayname:"Save Layout" doc-key:"createbookmark.savelayout"`
 	}
 )
 
@@ -66,17 +69,33 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 	sheetHandle := sheets[0]
 	sheet := uplink.Objects.Load(sheetHandle)
 
+	sheetID := sheet.ID
+
+	if !settings.SaveSheetLocation {
+		sheetID = ""
+	}
+
 	// Mirrors the fields in the SDK
 	props := map[string]interface{}{
-		"sheetId":         sheet.ID,
+		"sheetId":         sheetID,
 		"selectionFields": fields,
 		"creationDate":    time.Now().Format("01/02/06 "), // US short date format
 		"qMetaDef":        creation.StubMetaDef(settings.Title, settings.Description),
 		"qInfo":           creation.StubNxInfo("bookmark"),
 	}
 
+	requestToSend := func(ctx context.Context) (*enigma.GenericBookmark, error) {
+		return uplink.CurrentApp.Doc.CreateBookmarkRaw(ctx, props)
+	}
+
+	if settings.SaveLayout {
+		requestToSend = func(ctx context.Context) (*enigma.GenericBookmark, error) {
+			return uplink.CurrentApp.Doc.CreateBookmarkExRaw(ctx, props, []string{})
+		}
+	}
+
 	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		bookmark, err := uplink.CurrentApp.Doc.CreateBookmarkRaw(ctx, props)
+		bookmark, err := requestToSend(ctx)
 		if err != nil {
 			return err
 		}
