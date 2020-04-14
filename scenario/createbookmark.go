@@ -83,13 +83,14 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 		"qInfo":           creation.StubNxInfo("bookmark"),
 	}
 
-	requestToSend := func(ctx context.Context) (*enigma.GenericBookmark, error) {
-		return uplink.CurrentApp.Doc.CreateBookmarkRaw(ctx, props)
-	}
-
+	var requestToSend func(context.Context) (*enigma.GenericBookmark, error)
 	if settings.SaveLayout {
 		requestToSend = func(ctx context.Context) (*enigma.GenericBookmark, error) {
 			return uplink.CurrentApp.Doc.CreateBookmarkExRaw(ctx, props, []string{})
+		}
+	} else {
+		requestToSend = func(ctx context.Context) (*enigma.GenericBookmark, error) {
+			return uplink.CurrentApp.Doc.CreateBookmarkRaw(ctx, props)
 		}
 	}
 
