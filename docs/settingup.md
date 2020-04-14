@@ -1575,6 +1575,50 @@ Search the hub in a QSEoK deployment.
 ```
 
 </details><details>
+<summary>elasticmoveapp</summary>
+
+## ElasticMoveApp action
+
+Move an app from its existing space into the specified destination space.
+
+**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
+
+### Settings
+
+* `appmode`: App selection mode
+    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
+    * `guid`: Use the app GUID specified by the `app` parameter.
+    * `name`: Use the app name specified by the `app` parameter.
+    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
+    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
+    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
+    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+    * `round`: Select an app from the artifact map according to the round-robin principle.
+    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
+    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
+    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
+* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
+* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
+* `destinationspaceid`: Specify destination space by ID.
+* `destinationspacename`: Specify destination space by name.
+
+### Example
+
+```json
+{
+    "action": "elasticmoveapp",
+    "settings": {
+        "app": "AppForEveryone",
+        "appmode": "name",
+        "destinationspacename": "everyone"
+    }
+}
+```
+
+</details><details>
 <summary>elasticopenhub</summary>
 
 ## ElasticOpenHub action
@@ -1588,6 +1632,52 @@ Open the hub in a QSEoK deployment.
 {
 	"action": "ElasticOpenHub",
 	"label": "Open cloud hub with YourCollection and MyCollection"
+}
+```
+
+</details><details>
+<summary>elasticpublishapp</summary>
+
+## ElasticPublishApp action
+
+Publish an app to a managed space.
+
+**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
+
+### Settings
+
+* `appmode`: App selection mode
+    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
+    * `guid`: Use the app GUID specified by the `app` parameter.
+    * `name`: Use the app name specified by the `app` parameter.
+    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
+    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
+    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
+    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+    * `round`: Select an app from the artifact map according to the round-robin principle.
+    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
+    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
+    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
+* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
+* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
+* `destinationspaceid`: Specify destination space by ID.
+* `destinationspacename`: Specify destination space by name.
+* `cleartags`: Publish the app without its original tags.
+
+### Example
+
+```json
+{
+    "action": "elasticpublishapp",
+    "settings": {
+        "app": "Sales",
+        "appmode": "name",
+        "destinationspacename": "Finance",
+        "cleartags": false
+    }
 }
 ```
 
@@ -1715,96 +1805,6 @@ Upload a data file to the Data manager.
      "settings": {
          "filename": "/home/root/data.csv"
      }
-}
-```
-
-</details><details>
-<summary>elasticmoveapp</summary>
-
-## ElasticMoveApp action
-
-Move an app from its existing space into the specified destination space.
-
-**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
-
-### Settings
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `destinationspaceid`: Specify destination space by ID.
-* `destinationspacename`: Specify destination space by name.
-
-### Example
-
-```json
-{
-    "action": "elasticmoveapp",
-    "settings": {
-        "app": "AppForEveryone",
-        "appmode": "name",
-        "destinationspacename": "everyone"
-    }
-}
-```
-
-</details><details>
-<summary>elasticpublishapp</summary>
-
-## ElasticPublishApp action
-
-Publish an app to a managed space.
-
-**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
-
-### Settings
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `destinationspaceid`: Specify destination space by ID.
-* `destinationspacename`: Specify destination space by name.
-* `cleartags`: Publish the app without its original tags.
-
-### Example
-
-```json
-{
-    "action": "elasticpublishapp",
-    "settings": {
-        "app": "Sales",
-        "appmode": "name",
-        "destinationspacename": "Finance",
-        "cleartags": false
-    }
 }
 ```
 

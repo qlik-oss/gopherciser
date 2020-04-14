@@ -127,7 +127,11 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 		actionState.AddErrors(err)
 		return
 	}
-	itemId := collectionServiceItemResponse["id"].(string)
+	itemId, ok := collectionServiceItemResponse["id"].(string)
+	if !ok {
+		actionState.AddErrors(errors.New("failed to get id from collection service response"))
+		return
+	}
 
 	if settings.ClearTags {
 		return

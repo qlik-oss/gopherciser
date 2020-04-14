@@ -264,8 +264,14 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 		return err
 	}
 
-	itemId := collectionServiceItemResponse["id"].(string)
-	appGuid := collectionServiceItemResponse["resourceId"].(string)
+	itemId, ok := collectionServiceItemResponse["id"].(string)
+	if !ok {
+		return errors.New("failed to get id from collection service response")
+	}
+	appGuid, ok := collectionServiceItemResponse["resourceId"].(string)
+	if !ok {
+		return errors.New("failed to get resource id from collection service response")
+	}
 
 	// No collection to add it to; we're done
 	if streamID != "" {
