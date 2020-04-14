@@ -56,23 +56,22 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 
 	fields := uplink.CurrentApp.GetAggregatedSelectionFields()
 
-	// Find out the current sheet from the object map
-	sheets := uplink.Objects.GetAllObjectHandles(false, enigmahandlers.ObjTypeSheet)
-	if len(sheets) == 0 {
-		actionState.AddErrors(errors.New("no sheet in current context: a sheet must be selected to be create a bookmark"))
-		return
-	}
-	if len(sheets) > 1 {
-		actionState.AddErrors(errors.New("more than one sheet in current context"))
-		return
-	}
-	sheetHandle := sheets[0]
-	sheet := uplink.Objects.Load(sheetHandle)
+	sheetID := ""
+	if settings.SaveSheetLocation {
+		// Find out the current sheet from the object map
+		sheets := uplink.Objects.GetAllObjectHandles(false, enigmahandlers.ObjTypeSheet)
+		if len(sheets) == 0 {
+			actionState.AddErrors(errors.New("no sheet in current context: a sheet must be selected to be create a bookmark"))
+			return
+		}
+		if len(sheets) > 1 {
+			actionState.AddErrors(errors.New("more than one sheet in current context"))
+			return
+		}
+		sheetHandle := sheets[0]
+		sheet := uplink.Objects.Load(sheetHandle)
 
-	sheetID := sheet.ID
-
-	if !settings.SaveSheetLocation {
-		sheetID = ""
+		sheetID = sheet.ID
 	}
 
 	// Mirrors the fields in the SDK
