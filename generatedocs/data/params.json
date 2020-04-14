@@ -1,4 +1,7 @@
 {
+    "elasticpublishapp.cleartags": [
+        "Publish the app without its original tags."
+    ],
     "destinationspace.destinationspaceid": [
         "Specify destination space by ID."
     ],
