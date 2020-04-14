@@ -399,6 +399,8 @@ Create a bookmark from the current selection and selected sheet.
 * `title`: Name of the bookmark to create.
 * `description`: (optional) Description of the bookmark to create.
 * `id`: (optional) ID to use with subsequent `applybookmark` or `deletebookmark` actions. **Note:** This ID is only used within the scenario.
+* `savesheet`: Include sheet with bookmark.
+* `savelayout`: Include layout with bookmark.
 
 ### Example
 

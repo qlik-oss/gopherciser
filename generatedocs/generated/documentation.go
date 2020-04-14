@@ -241,6 +241,8 @@ var (
         "config.settings.timeout": { "Timeout setting (seconds) for WebSocket requests."  },  
         "createbookmark.description": { "(optional) Description of the bookmark to create."  },  
         "createbookmark.id": { "(optional) ID to use with subsequent `applybookmark` or `deletebookmark` actions. **Note:** This ID is only used within the scenario."  },  
+        "createbookmark.savelayout": { "Include layout with bookmark."  },  
+        "createbookmark.savesheet": { "Include sheet with bookmark."  },  
         "createbookmark.title": { "Name of the bookmark to create."  },  
         "createsheet.description": { "(optional) Description of the sheet to create."  },  
         "createsheet.id": { "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."  },  
