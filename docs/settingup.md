@@ -1762,16 +1762,16 @@ Move an app from its existing space into the specified destination space.
 }
 ```
 
-</details>
-</details>
-<details>
-<summary>Ungrouped actions</summary>
+</details><details>
+<summary>elasticpublishapp</summary>
 
 ## ElasticPublishApp action
 
 Publish an app to a managed space.
 
 **Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
+
+### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1808,6 +1808,7 @@ Publish an app to a managed space.
 }
 ```
 
+</details>
 </details>
 
 ## Session variables

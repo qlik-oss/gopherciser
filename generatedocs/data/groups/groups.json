@@ -55,7 +55,8 @@
             "elasticshareapp",
             "elasticuploadapp",
             "uploaddata",
-            "elasticmoveapp"
+            "elasticmoveapp",
+            "elasticpublishapp"
         ]
     }
 ]
