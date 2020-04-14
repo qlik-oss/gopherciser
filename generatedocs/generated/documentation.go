@@ -103,6 +103,10 @@ var (
             Description: "## ElasticOpenHub action\n\nOpen the hub in a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticOpenHub\",\n	\"label\": \"Open cloud hub with YourCollection and MyCollection\"\n}\n```\n",
         },
+        "elasticpublishapp": {
+            Description: "## ElasticPublishApp action\n\nPublish an app to a managed space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
+            Examples: "### Example\n\n```json\n{\n    \"action\": \"elasticpublishapp\",\n    \"settings\": {\n        \"app\": \"Sales\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"Finance\",\n        \"cleartags\": false\n    }\n}\n```\n",
+        },
         "elasticreload": {
             Description: "## ElasticReload action\n\nReload an app by simulating selecting **Reload** in the app context menu in the hub.\n",
             Examples: "### Example\n\n```json\n{\n    \"label\": \"Reload MyApp\",\n    \"action\": \"elasticreload\",\n    \"settings\": {\n        \"appmode\": \"name\",\n        \"app\": \"MyApp\"\n    }\n}\n```\n",
@@ -281,6 +285,7 @@ var (
         "elastichubsearch.queryfile": { "(optional) File from which to read a query (in case of `fromfile` as source)."  },  
         "elastichubsearch.querysource": { "","`querystring`: The query is provided as a string specified by `query`.","`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."  },  
         "elastichubsearch.searchfor": { "","`collections`: Search for collections only.","`apps`: Search for apps only.","`both`: Search for both collections and apps."  },  
+        "elasticpublishapp.cleartags": { "Publish the app without its original tags."  },  
         "elasticreload.pollinterval": { "Reload status polling interval (seconds). Defaults to 5 seconds, if omitted."  },  
         "elasticshareapp.appguid": { "GUID of the app to share."  },  
         "elasticshareapp.groups": { "List of groups that should be given access to the app."  },  
@@ -382,7 +387,7 @@ var (
             {
                 Name: "qseokActions",
                 Title: "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticopenhub","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","elasticmoveapp" },
+                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticshareapp","elasticuploadapp","uploaddata" },
                 DocEntry: common.DocEntry{
                     Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
                     Examples: "",

@@ -259,7 +259,52 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	collectionServiceItemResponse, err := AddItemToCollectionService(sessionState, actionState, appImportResponse, title, host)
+	if err != nil {
+		return err
+	}
 
+	itemId, ok := collectionServiceItemResponse["id"].(string)
+	if !ok {
+		return errors.New("failed to get id from collection service response")
+	}
+	appGuid, ok := collectionServiceItemResponse["resourceId"].(string)
+	if !ok {
+		return errors.New("failed to get resource id from collection service response")
+	}
+
+	// No collection to add it to; we're done
+	if streamID != "" {
+		err := AddTag(sessionState, actionState, itemId, host, streamID)
+		if err != nil {
+			return err
+		}
+	}
+	err = sessionState.ArtifactMap.FillAppsUsingName(&session.AppData{
+		Data: []session.AppsResp{
+			{
+				Name:   title,
+				ID:     appGuid,
+				ItemID: itemId,
+			},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed adding new app to internal artifact map")
+	}
+
+	// Set "current" app
+	sessionState.CurrentApp = &session.ArtifactEntry{Title: title, GUID: appGuid, ItemID: itemId}
+
+	// Debug log of artifact map in it's entirety after uploading app
+	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
+		sessionState.LogEntry.Log(logger.WarningLevel, err)
+	}
+
+	return nil
+}
+
+func AddItemToCollectionService(sessionState *session.State, actionState *action.State, appImportResponse elasticstructs.AppImportResponse, title string, host string) (map[string]interface{}, error) {
 	collectionServiceItem := elasticstructs.CollectionServiceItem{
 		Name:         title,
 		ResourceID:   appImportResponse.Attributes.ID,
@@ -291,7 +336,7 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 
 	createItemInCollectionServiceContent, err := jsonit.Marshal(collectionServiceItem)
 	if err != nil {
-		return errors.Wrap(err, "failed to prepare payload to collection service")
+		return nil, errors.Wrap(err, "failed to prepare payload to collection service")
 	}
 
 	createItemInCollectionService := session.RestRequest{
@@ -303,66 +348,42 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 
 	sessionState.Rest.QueueRequest(actionState, true, &createItemInCollectionService, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
-		return errors.New("failed during create item iń collection service")
+		return nil, errors.New("failed during create item in collection service")
 	}
 	if createItemInCollectionService.ResponseStatusCode != http.StatusCreated {
-		return errors.Errorf("failed to create item in collection service: %s", createItemInCollectionService.ResponseBody)
+		return nil, errors.Errorf("failed to create item in collection service: %s", createItemInCollectionService.ResponseBody)
 	}
 
 	collectionServiceItemResponseRaw := createItemInCollectionService.ResponseBody
 	var collectionServiceItemResponse map[string]interface{}
 	if err := jsonit.Unmarshal(collectionServiceItemResponseRaw, &collectionServiceItemResponse); err != nil {
-		return errors.Wrapf(err, "failed unmarshaling collection service item creation response data: %s", collectionServiceItemResponseRaw)
+		return nil, errors.Wrapf(err, "failed unmarshaling collection service item creation response data: %s", collectionServiceItemResponseRaw)
 	}
+	return collectionServiceItemResponse, nil
+}
 
-	itemId := collectionServiceItemResponse["id"].(string)
-	appGuid := collectionServiceItemResponse["resourceId"].(string)
-
-	// No collection to add it to; we're done
-	if streamID != "" {
-		itemCollectionAdd := elasticstructs.ItemCollectionAdd{}
-		itemCollectionAdd.ID = itemId
-		itemCollectionAddContent, err := jsonit.Marshal(itemCollectionAdd)
-		if err != nil {
-			return errors.Wrap(err, "failed to prepare payload to publish")
-		}
-
-		collectAdd := session.RestRequest{
-			Method:      session.POST,
-			ContentType: "application/json",
-			Destination: fmt.Sprintf("%v/api/v1/collections/%v/items", host, streamID),
-			Content:     itemCollectionAddContent,
-		}
-
-		sessionState.Rest.QueueRequest(actionState, true, &collectAdd, sessionState.LogEntry)
-		if sessionState.Wait(actionState) {
-			return errors.New("failed during add collection")
-		}
-
-		if collectAdd.ResponseStatusCode != http.StatusCreated {
-			return errors.Errorf("failed to publish app to stream: %s", collectAdd.ResponseBody)
-		}
-	}
-	err = sessionState.ArtifactMap.FillAppsUsingName(&session.AppData{
-		Data: []session.AppsResp{
-			{
-				Name:   title,
-				ID:     appGuid,
-				ItemID: itemId,
-			},
-		},
-	})
+func AddTag(sessionState *session.State, actionState *action.State, itemId string, host string, collectionId string) error {
+	itemCollectionAdd := elasticstructs.ItemCollectionAdd{}
+	itemCollectionAdd.ID = itemId
+	itemCollectionAddContent, err := jsonit.Marshal(itemCollectionAdd)
 	if err != nil {
-		return errors.Wrap(err, "failed adding new app to internal artifact map")
+		return errors.Wrap(err, "failed to prepare payload to publish")
 	}
 
-	// Set "current" app
-	sessionState.CurrentApp = &session.ArtifactEntry{Title: title, GUID: appGuid, ItemID: itemId}
-
-	// Debug log of artifact map in it's entirety after uploading app
-	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
-		sessionState.LogEntry.Log(logger.WarningLevel, err)
+	collectAdd := session.RestRequest{
+		Method:      session.POST,
+		ContentType: "application/json",
+		Destination: fmt.Sprintf("%v/api/v1/collections/%v/items", host, collectionId),
+		Content:     itemCollectionAddContent,
 	}
 
+	sessionState.Rest.QueueRequest(actionState, true, &collectAdd, sessionState.LogEntry)
+	if sessionState.Wait(actionState) {
+		return errors.New("failed during add collection")
+	}
+
+	if collectAdd.ResponseStatusCode != http.StatusCreated {
+		return errors.Errorf("failed to publish app to stream: %s", collectAdd.ResponseBody)
+	}
 	return nil
 }
