@@ -122,7 +122,7 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 		return
 	}
 
-	collectionServiceItemResponse, err := AddItemToCollectionService(sessionState, actionState, appPublishResponse, appPublishResponse.Attributes.Name, host)
+	collectionServiceItemResponse, err := AddItemToCollectionService(sessionState, actionState, appPublishResponse, getItemResponse.Name, host)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
