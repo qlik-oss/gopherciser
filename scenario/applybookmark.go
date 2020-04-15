@@ -3,11 +3,9 @@ package scenario
 import (
 	"context"
 	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -97,14 +95,12 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 
 	sessionState.LogEntry.LogDebug(fmt.Sprint("ApplyBookmark: Change sheet to ", sheetID))
 
-	if sheetID == "" {
-		sessionState.LogEntry.Log(logger.WarningLevel, "no sheet id found in bookmark, sheet not changed")
-	} else {
+	if sheetID != "" {
 		(&ChangeSheetSettings{
 			ID: sheetID,
 		}).Execute(sessionState, actionState, connectionSettings, label, reset)
-
 	}
+	actionState.Details = fmt.Sprintf("%v;%s", sheetID != "", sheetID) // log details in results as {Has sheet};{Sheet ID}
 
 	sessionState.Wait(actionState)
 }
