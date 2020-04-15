@@ -232,10 +232,10 @@
         "(optional) ID to use with subsequent `applybookmark` or `deletebookmark` actions. **Note:** This ID is only used within the scenario."
     ],
     "createbookmark.nosheet": [
-        "Do not include sheet with bookmark."
+        "Do not include the sheet location in the bookmark."
     ],
     "createbookmark.savelayout": [
-        "Include layout with bookmark."
+        "Include the layout in the bookmark."
     ],
     "createsheet.title": [
         "Name of the sheet to create."
