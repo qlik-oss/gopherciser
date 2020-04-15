@@ -869,22 +869,8 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
 
 Select random values in an object.
 
-The action supports:
-
-* Listbox
-* Bar chart
-* Scatter plot
-* Map (only the first layer)
-* Combo chart
-* Table
-* Line chart
-* Pie chart
-* Tree map
-* Box plot
-* Distribution plot
-* Histogram
-* Auto chart (including any support generated visualization from this list)
-
+See the [Limitations](README.md#limitations) section in the README.md file for limitations related to this action.
+ 
 ### Settings
 
 * `id`: ID of the object in which to select values.

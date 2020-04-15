@@ -497,6 +497,26 @@ var (
 		//},
 	}
 
+	DefaultSNOrgChart = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCube",
+		},
+		Data: []Data{
+			{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			},
+		},
+		Select: &Select{
+			Type: SelectTypeHypercubeValues,
+			Path: "/qHyperCubeDef",
+		},
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -527,5 +547,6 @@ var (
 		"qlik-multi-kpi":        &DefaultQlikMultiKPIChart,
 		"qlik-network-chart":    &DefaultQlikNetworkChart,
 		"qlik-heatmap-chart":    &DefaultQlikHeatmapChart,
+		"sn-org-chart":          &DefaultSNOrgChart,
 	}
 )
