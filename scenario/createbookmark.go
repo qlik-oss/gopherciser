@@ -19,8 +19,8 @@ type (
 		Title           string `json:"title" displayname:"Bookmark title" doc-key:"createbookmark.title"`
 		Description     string `json:"description" displayname:"Bookmark description" doc-key:"createbookmark.description"`
 		ID              string `json:"id" displayname:"Bookmark ID" doc-key:"createbookmark.id"`
-		NoSheetLocation bool   `json:"nosheet" displayname:"Save sheet location" doc-key:"createbookmark.nosheet"`
-		SaveLayout      bool   `json:"savelayout" displayname:"Save Layout" doc-key:"createbookmark.savelayout"`
+		NoSheetLocation bool   `json:"nosheet" displayname:"Exclude sheet location" doc-key:"createbookmark.nosheet"`
+		SaveLayout      bool   `json:"savelayout" displayname:"Save layout" doc-key:"createbookmark.savelayout"`
 	}
 )
 
