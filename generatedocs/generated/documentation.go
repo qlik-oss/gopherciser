@@ -152,7 +152,7 @@ var (
             Examples: "### Example\n\n```json\n{\n    \"action\": \"reload\",\n    \"settings\": {\n        \"mode\" : \"default\",\n        \"partial\": false\n    }\n}\n```\n",
         },
         "select": {
-            Description: "## Select action\n\nSelect random values in an object.\n\nThe action supports:\n\n* Listbox\n* Bar chart\n* Scatter plot\n* Map (only the first layer)\n* Combo chart\n* Table\n* Line chart\n* Pie chart\n* Tree map\n* Box plot\n* Distribution plot\n* Histogram\n* Auto chart (including any support generated visualization from this list)\n",
+            Description: "## Select action\n\nSelect random values in an object.\n\nSee [README.md](README.md) limitations section for limitations to this action.\n ",
             Examples: "### Example\n\n```json\n//Select Listbox RandomFromAll\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromAll\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n",
         },
         "setscript": {
