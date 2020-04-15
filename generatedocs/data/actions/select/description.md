@@ -2,5 +2,5 @@
 
 Select random values in an object.
 
-See [README.md](README.md#limitations) limitations section for limitations to this action.
+See [Limitations](README.md#limitations) section in the README.md file for limitations related to this action
  
