@@ -19,9 +19,8 @@ type (
 
 	//DeleteBookmarkSettings create bookmark settings
 	DeleteBookmarkSettings struct {
+		BookMarkSettings
 		DeletionMode BookmarkDeletionModeEnum `json:"mode" displayname:"Deletion mode" doc-key:"deletebookmark.mode"`
-		Title        string                   `json:"title" displayname:"Bookmark title" doc-key:"deletebookmark.title"`
-		ID           string                   `json:"id" displayname:"Bookmark ID" doc-key:"deletebookmark.id"`
 	}
 )
 
@@ -34,7 +33,7 @@ const (
 	AllBookmarks
 )
 
-func (value BookmarkDeletionModeEnum) GetEnumMap() *enummap.EnumMap{
+func (value BookmarkDeletionModeEnum) GetEnumMap() *enummap.EnumMap {
 	enumMap, _ := enummap.NewEnumMap(map[string]int{
 		"single":   int(SingleBookmark),
 		"matching": int(MatchingBookmarks),
@@ -66,21 +65,21 @@ func (value BookmarkDeletionModeEnum) MarshalJSON() ([]byte, error) {
 // Validate DeleteBookmarkSettings action (Implements ActionSettings interface)
 func (settings DeleteBookmarkSettings) Validate() error {
 	if settings.DeletionMode == SingleBookmark {
-		if settings.Title == "" && settings.ID == "" {
+		if settings.Title.String() == "" && settings.ID == "" {
 			return errors.New("either specify bookmark title or bookmark id")
 		}
 	}
 	if settings.DeletionMode == MatchingBookmarks {
-		if settings.Title == "" {
+		if settings.Title.String() == "" {
 			return errors.New("please specify bookmark title")
 		}
 	}
 	if settings.DeletionMode == AllBookmarks {
-		if settings.Title != "" || settings.ID != "" {
+		if settings.Title.String() != "" || settings.ID != "" {
 			return errors.New("neither bookmark title nor id cannot be specified when deleting all bookmarks")
 		}
 	}
-	if settings.Title != "" && settings.ID != "" {
+	if settings.Title.String() != "" && settings.ID != "" {
 		return errors.New("specify only one of the following - bookmark title and bookmark id")
 	}
 	return nil
@@ -101,6 +100,12 @@ func (settings DeleteBookmarkSettings) Execute(sessionState *session.State, acti
 
 	uplink := sessionState.Connection.Sense()
 
+	title, err := sessionState.ReplaceSessionVariables(&settings.Title)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
 	bl, err := uplink.CurrentApp.GetBookmarkList(sessionState, actionState)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to GetBookmarkList"))
@@ -114,7 +119,7 @@ func (settings DeleteBookmarkSettings) Execute(sessionState *session.State, acti
 		if id == "" { // Search by title if ID not specified
 			for _, bookmark := range bl.GetBookmarks() {
 				name := bookmark.Data.Title
-				if name == settings.Title {
+				if name == title {
 					id = bookmark.Info.Id
 					break
 				}
@@ -135,7 +140,7 @@ func (settings DeleteBookmarkSettings) Execute(sessionState *session.State, acti
 	case MatchingBookmarks:
 		for _, bookmark := range bl.GetBookmarks() {
 			name := bookmark.Data.Title
-			if name != settings.Title {
+			if name != title {
 				continue
 			}
 			// Bookmark matches name, destroy it

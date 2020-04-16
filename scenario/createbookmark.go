@@ -16,9 +16,8 @@ import (
 type (
 	//CreateBookmarkSettings create bookmark settings
 	CreateBookmarkSettings struct {
-		Title           string `json:"title" displayname:"Bookmark title" doc-key:"createbookmark.title"`
+		BookMarkSettings
 		Description     string `json:"description" displayname:"Bookmark description" doc-key:"createbookmark.description"`
-		ID              string `json:"id" displayname:"Bookmark ID" doc-key:"createbookmark.id"`
 		NoSheetLocation bool   `json:"nosheet" displayname:"Exclude sheet location" doc-key:"createbookmark.nosheet"`
 		SaveLayout      bool   `json:"savelayout" displayname:"Save layout" doc-key:"createbookmark.savelayout"`
 	}
@@ -74,12 +73,18 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 		sheetID = sheet.ID
 	}
 
+	title, err := sessionState.ReplaceSessionVariables(&settings.Title)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
 	// Mirrors the fields in the SDK
 	props := map[string]interface{}{
 		"sheetId":         sheetID,
 		"selectionFields": fields,
 		"creationDate":    time.Now().Format("01/02/06 "), // US short date format
-		"qMetaDef":        creation.StubMetaDef(settings.Title, settings.Description),
+		"qMetaDef":        creation.StubMetaDef(title, settings.Description),
 		"qInfo":           creation.StubNxInfo("bookmark"),
 	}
 
@@ -94,7 +99,7 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 		}
 	}
 
-	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		bookmark, err := requestToSend(ctx)
 		if err != nil {
 			return err
@@ -107,11 +112,9 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 		}
 
 		return nil
-	})
-
-	sessionState.Wait(actionState)
-
-	if err != nil {
+	}); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to CreateBookmark"))
 	}
+
+	sessionState.Wait(actionState)
 }

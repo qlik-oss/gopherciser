@@ -13,8 +13,8 @@ import (
 
 type (
 	BookMarkSettings struct {
-		Title string `json:"title" displayname:"Bookmark title" doc-key:"applybookmark.title"`
-		Id    string `json:"id" displayname:"Bookmark ID" doc-key:"applybookmark.id"`
+		Title session.SyncedTemplate `json:"title" displayname:"Bookmark title" doc-key:"applybookmark.title"`
+		ID    string                 `json:"id" displayname:"Bookmark ID" doc-key:"applybookmark.id"`
 	}
 
 	//ApplyBookmarkSettings apply bookmark settings
@@ -32,7 +32,7 @@ const (
 
 // Validate ApplyBookmarkSettings action (Implements ActionSettings interface)
 func (settings ApplyBookmarkSettings) Validate() error {
-	if (settings.Title == "") == (settings.Id == "") {
+	if (settings.Title.String() == "") == (settings.ID == "") {
 		return errors.New("specify exactly one of the following - bookmark title or bookmark id")
 	}
 	return nil
@@ -94,7 +94,11 @@ func (settings BookMarkSettings) getBookmark(sessionState *session.State, action
 		return "", "", errors.Wrap(err, "failed to GetBookmarkList")
 	}
 
-	term, input := settings.getSearchTerm(sessionState)
+	term, input, err := settings.getSearchTerm(sessionState)
+	if err != nil {
+		return "", "", err
+	}
+
 	id, sheetID, err := getBookmarkData(bl, input, term)
 	if err != nil {
 		return "", "", err
@@ -107,18 +111,19 @@ func (settings BookMarkSettings) getBookmark(sessionState *session.State, action
 	return id, sheetID, nil
 }
 
-func (settings BookMarkSettings) getSearchTerm(sessionState *session.State) (bmSearchTerm, string) {
+func (settings BookMarkSettings) getSearchTerm(sessionState *session.State) (bmSearchTerm, string, error) {
 	var input string
 	var term bmSearchTerm
+	var err error
 
-	if settings.Id == "" {
-		input = settings.Title
+	if settings.ID == "" {
+		input, err = sessionState.ReplaceSessionVariables(&settings.Title)
 		term = bmSearchTitle
 	} else {
-		input = sessionState.IDMap.Get(settings.Id)
+		input = sessionState.IDMap.Get(settings.ID)
 		term = bmSearchId
 	}
-	return term, input
+	return term, input, err
 }
 
 func getBookmarkData(bl *senseobjects.BookmarkList, input string, term bmSearchTerm) (string /*id*/, string /*sheetId*/, error) {
