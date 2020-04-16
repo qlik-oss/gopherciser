@@ -1,3 +1,5 @@
+![](images/logo.png)
+
 # Load testing - an introduction
 
 To get reliable measurements when performing load testing, the following must be taken into consideration:
