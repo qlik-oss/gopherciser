@@ -1,4 +1,4 @@
-![](docs/images/logo.png)
+![](images/logo.png)
 
 # Load testing - an introduction
 
