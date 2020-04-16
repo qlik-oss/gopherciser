@@ -1,4 +1,4 @@
-![Gopherciser logo](images/logo.png)
+![](docs/images/logo.png)
 
 # Load testing - an introduction
 
