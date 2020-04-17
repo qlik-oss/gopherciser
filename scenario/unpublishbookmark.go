@@ -8,18 +8,18 @@ import (
 )
 
 type (
-	PublishBookmarkSettings struct {
+	UnPublishBookmarkSettings struct {
 		BookMarkSettings
 	}
 )
 
 // Validate PublishBookmarkSettings action (Implements ActionSettings interface)
-func (settings PublishBookmarkSettings) Validate() error {
+func (settings UnPublishBookmarkSettings) Validate() error {
 	return nil
 }
 
 // Execute CreateBookmarkSettings action (Implements ActionSettings interface)
-func (settings PublishBookmarkSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+func (settings UnPublishBookmarkSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("not connected to a Sense environment"))
 		return
@@ -34,8 +34,8 @@ func (settings PublishBookmarkSettings) Execute(sessionState *session.State, act
 
 	// TODO check published / unpublished
 
-	// publish bookmark
-	if err := sessionState.SendRequest(actionState, bm.Publish); err != nil {
+	// un-publish bookmark
+	if err := sessionState.SendRequest(actionState, bm.UnPublish); err != nil {
 		actionState.AddErrors(err)
 		return
 	}

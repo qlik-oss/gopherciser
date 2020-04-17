@@ -1,7 +1,9 @@
 package scenario
 
 import (
+	"context"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
@@ -69,4 +71,22 @@ func getBookmarkData(bl *senseobjects.BookmarkList, input string, term bmSearchT
 	}
 
 	return "", "", errors.New("bookmark not found")
+}
+
+func (settings BookMarkSettings) getBookmarkObject(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink) (*enigma.GenericBookmark, error) {
+	id, _, err := settings.getBookmark(sessionState, actionState, uplink)
+	if err != nil {
+		return nil, err
+	}
+
+	var bm *enigma.GenericBookmark
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		var err error
+		bm, err = uplink.CurrentApp.Doc.GetBookmark(ctx, id)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	return bm, nil
 }

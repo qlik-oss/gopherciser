@@ -104,6 +104,7 @@ const (
 	ActionDisconnectApp           = "disconnectapp"
 	ActionDeleteSheet             = "deletesheet"
 	ActionPublishBookmark         = "publishbookmark"
+	ActionUnPublishBookmark       = "unpublishbookmark"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -220,6 +221,7 @@ func ResetDefaultActions() {
 		ActionDisconnectApp:           DisconnectAppSettings{},
 		ActionDeleteSheet:             DeleteSheetSettings{},
 		ActionPublishBookmark:         PublishBookmarkSettings{},
+		ActionUnPublishBookmark:       UnPublishBookmarkSettings{},
 	}
 }
 
