@@ -83,6 +83,17 @@ func (settings BookMarkSettings) getBookmarkObject(sessionState *session.State, 
 	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		var err error
 		bm, err = uplink.CurrentApp.Doc.GetBookmark(ctx, id)
+		if err != nil {
+			return errors.Wrap(err, "Failed to get bookmark object")
+		}
+		if _, err := bm.GetLayout(ctx); err != nil {
+			return errors.Wrap(err, "Failed to get bookmark layout")
+		}
+		onBookmarkChanged := func(ctx context.Context, actionState *action.State) error {
+			_, err := bm.GetLayout(ctx)
+			return errors.WithStack(err)
+		}
+		sessionState.RegisterEvent(bm.Handle, onBookmarkChanged, nil, true)
 		return err
 	}); err != nil {
 		return nil, err
