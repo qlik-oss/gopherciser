@@ -674,6 +674,46 @@ Request the product version from the server and, optionally, save it to the log.
 ```
 
 </details><details>
+<summary>publishbookmark</summary>
+
+## PublishBookmark action
+
+Publish a bookmark.
+
+### Settings
+
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
+
+### Example
+
+Publish bookmark previously created in the script with an id `bookmark1`.
+
+```json
+{
+    "label" : "Publish bookmark 1",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "id" : "bookmark1"
+    }
+}
+```
+
+Publish bookmark with title "bookmark of testuser", where `testuser` is the username of the simulated user. 
+
+```json
+{
+    "label" : "Publish bookmark 2",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title" : "bookmark of {{.UserName}}"
+    }
+}
+```
+
+</details><details>
 <summary>publishsheet</summary>
 
 ## PublishSheet action
@@ -1057,6 +1097,46 @@ This simulates a think time of 5 seconds.
          "type": "static",
          "delay": 5
      }
+}
+```
+
+</details><details>
+<summary>unpublishbookmark</summary>
+
+## UnpublishBookmark action
+
+Unpublish a bookmark.
+
+### Settings
+
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
+
+### Example
+
+Unpublish bookmark previously created in the script with an id `bookmark1`.
+
+```json
+{
+    "label" : "Unpublish bookmark 1",
+    "action": "unpublishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "id" : "bookmark1"
+    }
+}
+```
+
+Unpublish bookmark with title "bookmark of testuser", where `testuser` is the username of the simulated user. 
+
+```json
+{
+    "label" : "Unpublish bookmark 2",
+    "action": "unpublishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title" : "bookmark of {{.UserName}}"
+    }
 }
 ```
 
@@ -1797,15 +1877,6 @@ Upload a data file to the Data manager.
 ```
 
 </details>
-</details>
-<details>
-<summary>Ungrouped actions</summary>
-
-
-* `title`: Name of the bookmark.
-* `id`: GUID of the bookmark.
-
-
 </details>
 
 ## Session variables

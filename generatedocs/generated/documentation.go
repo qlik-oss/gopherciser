@@ -140,8 +140,8 @@ var (
             Examples: "### Example\n\n```json\n//Keep-alive loop\n{\n    \"action\": \"iterated\",\n    \"settings\" : {\n        \"iterations\" : 10,\n        \"actions\" : [\n            {\n                \"action\" : \"productversion\"\n            },\n            {\n                \"action\": \"thinktime\",\n                \"settings\": {\n                    \"type\": \"static\",\n                    \"delay\": 30\n                }\n            }\n        ]\n    }\n}\n```\n",
         },
         "publishbookmark": {
-            Description: "",
-            Examples: "",
+            Description: "## PublishBookmark action\n\nPublish a bookmark.\n",
+            Examples: "### Example\n\nPublish bookmark previously created in the script with an id `bookmark1`.\n\n```json\n{\n    \"label\" : \"Publish bookmark 1\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nPublish bookmark with title \"bookmark of testuser\", where `testuser` is the username of the simulated user. \n\n```json\n{\n    \"label\" : \"Publish bookmark 2\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
         },
         "publishsheet": {
             Description: "## PublishSheet action\n\nPublish sheets in the current app.\n",
@@ -174,6 +174,10 @@ var (
         "thinktime": {
             Description: "## ThinkTime action\n\nSimulate user think time.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
             Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis simulates a think time of 10 to 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis simulates a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
+        },
+        "unpublishbookmark": {
+            Description: "## UnpublishBookmark action\n\nUnpublish a bookmark.\n",
+            Examples: "### Example\n\nUnpublish bookmark previously created in the script with an id `bookmark1`.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 1\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nUnpublish bookmark with title \"bookmark of testuser\", where `testuser` is the username of the simulated user. \n\n```json\n{\n    \"label\" : \"Unpublish bookmark 2\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
         },
         "unpublishsheet": {
             Description: "## UnpublishSheet action\n\nUnpublish sheets in the current app.\n",
@@ -371,7 +375,7 @@ var (
             {
                 Name: "commonActions",
                 Title: "Common actions",
-                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","thinktime","unpublishsheet" },
+                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","thinktime","unpublishbookmark","unpublishsheet" },
                 DocEntry: common.DocEntry{
                     Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEfW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
                     Examples: "",

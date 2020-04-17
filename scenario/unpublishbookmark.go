@@ -32,8 +32,6 @@ func (settings UnPublishBookmarkSettings) Execute(sessionState *session.State, a
 		return
 	}
 
-	// TODO check published / unpublished
-
 	// un-publish bookmark
 	if err := sessionState.SendRequest(actionState, bm.UnPublish); err != nil {
 		actionState.AddErrors(err)
