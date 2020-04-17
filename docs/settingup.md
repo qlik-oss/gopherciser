@@ -311,8 +311,8 @@ Apply a bookmark in the current app.
 
 ### Settings
 
-* `title`: (optional) Name of the bookmark to apply.
-* `id`: (optional) GUID of the bookmark to apply.
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
 
 ### Example
 
@@ -396,9 +396,9 @@ Create a bookmark from the current selection and selected sheet.
 
 ### Settings
 
-* `title`: Name of the bookmark to create.
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
 * `description`: (optional) Description of the bookmark to create.
-* `id`: (optional) ID to use with subsequent `applybookmark` or `deletebookmark` actions. **Note:** This ID is only used within the scenario.
 * `nosheet`: Do not include the sheet location in the bookmark.
 * `savelayout`: Include the layout in the bookmark.
 
@@ -449,12 +449,12 @@ Delete one or more bookmarks in the current app.
 
 ### Settings
 
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
 * `mode`: 
     * `single`: Delete one bookmark that matches the specified `title` or `id` in the current app.
     * `matching`: Delete all bookmarks with the specified `title` in the current app.
     * `all`: Delete all bookmarks in the current app.
-* `title`: (optional) Name of the bookmark to delete.
-* `id`: (optional) GUID of the bookmark to delete.
 
 ### Example
 
@@ -669,6 +669,46 @@ Request the product version from the server and, optionally, save it to the log.
                 }
             }
         ]
+    }
+}
+```
+
+</details><details>
+<summary>publishbookmark</summary>
+
+## PublishBookmark action
+
+Publish a bookmark.
+
+### Settings
+
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
+
+### Example
+
+Publish the bookmark with `id` "bookmark1" that was created earlier on in the script.
+
+```json
+{
+    "label" : "Publish bookmark 1",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "id" : "bookmark1"
+    }
+}
+```
+
+Publish the bookmark with the `title` "bookmark of testuser", where "testuser" is the username of the simulated user.
+
+```json
+{
+    "label" : "Publish bookmark 2",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title" : "bookmark of {{.UserName}}"
     }
 }
 ```
@@ -1057,6 +1097,46 @@ This simulates a think time of 5 seconds.
          "type": "static",
          "delay": 5
      }
+}
+```
+
+</details><details>
+<summary>unpublishbookmark</summary>
+
+## UnpublishBookmark action
+
+Unpublish a bookmark.
+
+### Settings
+
+* `title`: Name of the bookmark.
+* `id`: GUID of the bookmark.
+
+### Example
+
+Unpublish the bookmark with `id` "bookmark1" that was created earlier on in the script.
+
+```json
+{
+    "label" : "Unpublish bookmark 1",
+    "action": "unpublishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "id" : "bookmark1"
+    }
+}
+```
+
+Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser" is the username of the simulated user.
+
+```json
+{
+    "label" : "Unpublish bookmark 2",
+    "action": "unpublishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title" : "bookmark of {{.UserName}}"
+    }
 }
 ```
 

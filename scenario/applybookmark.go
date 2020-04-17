@@ -6,15 +6,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
 	//ApplyBookmarkSettings apply bookmark settings
 	ApplyBookmarkSettings struct {
-		Title string `json:"title" displayname:"Bookmark title" doc-key:"applybookmark.title"`
-		Id    string `json:"id" displayname:"Bookmark ID" doc-key:"applybookmark.id"`
+		BookMarkSettings
 	}
 
 	bmSearchTerm int
@@ -27,7 +25,7 @@ const (
 
 // Validate ApplyBookmarkSettings action (Implements ActionSettings interface)
 func (settings ApplyBookmarkSettings) Validate() error {
-	if (settings.Title == "") == (settings.Id == "") {
+	if (settings.Title.String() == "") == (settings.ID == "") {
 		return errors.New("specify exactly one of the following - bookmark title or bookmark id")
 	}
 	return nil
@@ -48,31 +46,9 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 
 	uplink := sessionState.Connection.Sense()
 
-	bl, err := uplink.CurrentApp.GetBookmarkList(sessionState, actionState)
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to GetBookmarkList"))
-		return
-	}
-
-	var input string
-	var term bmSearchTerm
-
-	if settings.Id == "" {
-		input = settings.Title
-		term = bmSearchTitle
-	} else {
-		input = sessionState.IDMap.Get(settings.Id)
-		term = bmSearchId
-	}
-
-	id, sheetID, err := getBookmarkData(bl, input, term)
+	id, sheetID, err := settings.getBookmark(sessionState, actionState, uplink)
 	if err != nil {
 		actionState.AddErrors(err)
-		return
-	}
-
-	if id == "" { // No ID and named bookmark not found
-		actionState.AddErrors(errors.New("could not find specified bookmark"))
 		return
 	}
 
@@ -93,9 +69,8 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 
 	sessionState.Wait(actionState)
 
-	sessionState.LogEntry.LogDebug(fmt.Sprint("ApplyBookmark: Change sheet to ", sheetID))
-
 	if sheetID != "" {
+		sessionState.LogEntry.LogDebug(fmt.Sprint("ApplyBookmark: Change sheet to ", sheetID))
 		(&ChangeSheetSettings{
 			ID: sheetID,
 		}).Execute(sessionState, actionState, connectionSettings, label, reset)
@@ -103,21 +78,4 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 	actionState.Details = fmt.Sprintf("%v;%s", sheetID != "", sheetID) // log details in results as {Has sheet};{Sheet ID}
 
 	sessionState.Wait(actionState)
-}
-
-func getBookmarkData(bl *senseobjects.BookmarkList, input string, term bmSearchTerm) (string /*id*/, string /*sheetId*/, error) {
-	for _, bookmark := range bl.GetBookmarks() {
-		switch term {
-		case bmSearchTitle:
-			if input == bookmark.Data.Title {
-				return bookmark.Info.Id, bookmark.Data.SheetId, nil
-			}
-		case bmSearchId:
-			if input == bookmark.Info.Id {
-				return bookmark.Info.Id, bookmark.Data.SheetId, nil
-			}
-		}
-	}
-
-	return "", "", errors.New("bookmark not found")
 }

@@ -15,6 +15,7 @@
             "iterated",
             "openapp",
             "productversion",
+            "publishbookmark",
             "publishsheet",
             "randomaction",
             "reload",
@@ -23,6 +24,7 @@
             "sheetchanger",
             "staticselect",
             "thinktime",
+            "unpublishbookmark",
             "unpublishsheet"
         ]
     },

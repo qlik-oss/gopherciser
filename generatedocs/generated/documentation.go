@@ -139,6 +139,10 @@ var (
             Description: "## ProductVersion action\n\nRequest the product version from the server and, optionally, save it to the log. This is a lightweight request that can be used as a keep-alive message in a loop.\n",
             Examples: "### Example\n\n```json\n//Keep-alive loop\n{\n    \"action\": \"iterated\",\n    \"settings\" : {\n        \"iterations\" : 10,\n        \"actions\" : [\n            {\n                \"action\" : \"productversion\"\n            },\n            {\n                \"action\": \"thinktime\",\n                \"settings\": {\n                    \"type\": \"static\",\n                    \"delay\": 30\n                }\n            }\n        ]\n    }\n}\n```\n",
         },
+        "publishbookmark": {
+            Description: "## PublishBookmark action\n\nPublish a bookmark.\n",
+            Examples: "### Example\n\nPublish the bookmark with `id` \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Publish bookmark 1\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nPublish the bookmark with the `title` \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Publish bookmark 2\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
+        },
         "publishsheet": {
             Description: "## PublishSheet action\n\nPublish sheets in the current app.\n",
             Examples: "### Example\n```json\n{\n     \"label\": \"PublishSheets\",\n     \"action\": \"publishsheet\",\n     \"settings\": {\n       \"mode\": \"sheetids\",\n       \"sheetIds\": [\"qmGcYS\", \"bKbmgT\"]\n     }\n}\n```\n",
@@ -171,6 +175,10 @@ var (
             Description: "## ThinkTime action\n\nSimulate user think time.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
             Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis simulates a think time of 10 to 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis simulates a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
         },
+        "unpublishbookmark": {
+            Description: "## UnpublishBookmark action\n\nUnpublish a bookmark.\n",
+            Examples: "### Example\n\nUnpublish the bookmark with `id` \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 1\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nUnpublish the bookmark with the `title` \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 2\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
+        },
         "unpublishsheet": {
             Description: "## UnpublishSheet action\n\nUnpublish sheets in the current app.\n",
             Examples: "### Example\n```json\n{\n     \"label\": \"UnpublishSheets\",\n     \"action\": \"unpublishsheet\",\n     \"settings\": {\n       \"mode\": \"allsheets\"        \n     }\n}\n```\n",
@@ -182,12 +190,12 @@ var (
     }
 
     Params = map[string][]string{ 
-        "applybookmark.id": { "(optional) GUID of the bookmark to apply."  },  
-        "applybookmark.title": { "(optional) Name of the bookmark to apply."  },  
         "appselection.app": { "App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`."  },  
         "appselection.appmode": { "App selection mode","`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.","`guid`: Use the app GUID specified by the `app` parameter.","`name`: Use the app name specified by the `app` parameter.","`random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.","`randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.","`randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.","`randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.","`randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.","`round`: Select an app from the artifact map according to the round-robin principle.","`roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.","`roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.","`roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.","`roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID."  },  
         "appselection.filename": { "Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."  },  
         "appselection.list": { "List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`."  },  
+        "bookmark.id": { "GUID of the bookmark."  },  
+        "bookmark.title": { "Name of the bookmark."  },  
         "canaddtocollection.groups": { "DEPRECATED"  },  
         "changesheet.id": { "GUID of the sheet to change to."  },  
         "config.connectionSettings.allowuntrusted": { "Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."  },  
@@ -240,16 +248,12 @@ var (
         "config.settings.outputs.dir": { "Directory in which to save artifacts generated by the script (except log file)."  },  
         "config.settings.timeout": { "Timeout setting (seconds) for WebSocket requests."  },  
         "createbookmark.description": { "(optional) Description of the bookmark to create."  },  
-        "createbookmark.id": { "(optional) ID to use with subsequent `applybookmark` or `deletebookmark` actions. **Note:** This ID is only used within the scenario."  },  
         "createbookmark.nosheet": { "Do not include the sheet location in the bookmark."  },  
         "createbookmark.savelayout": { "Include the layout in the bookmark."  },  
-        "createbookmark.title": { "Name of the bookmark to create."  },  
         "createsheet.description": { "(optional) Description of the sheet to create."  },  
         "createsheet.id": { "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."  },  
         "createsheet.title": { "Name of the sheet to create."  },  
-        "deletebookmark.id": { "(optional) GUID of the bookmark to delete."  },  
         "deletebookmark.mode": { "","`single`: Delete one bookmark that matches the specified `title` or `id` in the current app.","`matching`: Delete all bookmarks with the specified `title` in the current app.","`all`: Delete all bookmarks in the current app."  },  
-        "deletebookmark.title": { "(optional) Name of the bookmark to delete."  },  
         "deletedata.filename": { "Name of the file to delete."  },  
         "deletedata.path": { "(optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted."  },  
         "deleteodag.linkname": { "Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."  },  
@@ -371,7 +375,7 @@ var (
             {
                 Name: "commonActions",
                 Title: "Common actions",
-                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","thinktime","unpublishsheet" },
+                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","thinktime","unpublishbookmark","unpublishsheet" },
                 DocEntry: common.DocEntry{
                     Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEfW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
                     Examples: "",
