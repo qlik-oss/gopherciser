@@ -141,7 +141,7 @@ var (
         },
         "publishbookmark": {
             Description: "## PublishBookmark action\n\nPublish a bookmark.\n",
-            Examples: "### Example\n\nPublish the bookmark with id \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Publish bookmark 1\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nPublish the bookmark with the title \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Publish bookmark 2\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
+            Examples: "### Example\n\nPublish the bookmark with `id` \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Publish bookmark 1\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nPublish the bookmark with the `title` \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Publish bookmark 2\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
         },
         "publishsheet": {
             Description: "## PublishSheet action\n\nPublish sheets in the current app.\n",
@@ -177,7 +177,7 @@ var (
         },
         "unpublishbookmark": {
             Description: "## UnpublishBookmark action\n\nUnpublish a bookmark.\n",
-            Examples: "### Example\n\nUnpublish the bookmark with id \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 1\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nUnpublish the bookmark with the title \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 2\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
+            Examples: "### Example\n\nUnpublish the bookmark with `id` \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 1\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nUnpublish the bookmark with the `title` \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 2\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
         },
         "unpublishsheet": {
             Description: "## UnpublishSheet action\n\nUnpublish sheets in the current app.\n",

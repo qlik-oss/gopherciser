@@ -1,6 +1,6 @@
 ### Example
 
-Publish the bookmark with id "bookmark1" that was created earlier on in the script.
+Publish the bookmark with `id` "bookmark1" that was created earlier on in the script.
 
 ```json
 {
@@ -13,7 +13,7 @@ Publish the bookmark with id "bookmark1" that was created earlier on in the scri
 }
 ```
 
-Publish the bookmark with the title "bookmark of testuser", where "testuser" is the username of the simulated user.
+Publish the bookmark with the `title` "bookmark of testuser", where "testuser" is the username of the simulated user.
 
 ```json
 {

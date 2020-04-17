@@ -687,7 +687,7 @@ Publish a bookmark.
 
 ### Example
 
-Publish the bookmark with id "bookmark1" that was created earlier on in the script.
+Publish the bookmark with `id` "bookmark1" that was created earlier on in the script.
 
 ```json
 {
@@ -700,7 +700,7 @@ Publish the bookmark with id "bookmark1" that was created earlier on in the scri
 }
 ```
 
-Publish the bookmark with the title "bookmark of testuser", where "testuser" is the username of the simulated user.
+Publish the bookmark with the `title` "bookmark of testuser", where "testuser" is the username of the simulated user.
 
 ```json
 {
@@ -1114,7 +1114,7 @@ Unpublish a bookmark.
 
 ### Example
 
-Unpublish the bookmark with id "bookmark1" that was created earlier on in the script.
+Unpublish the bookmark with `id` "bookmark1" that was created earlier on in the script.
 
 ```json
 {
@@ -1127,7 +1127,7 @@ Unpublish the bookmark with id "bookmark1" that was created earlier on in the sc
 }
 ```
 
-Unpublish the bookmark with the title "bookmark of testuser", where "testuser" is the username of the simulated user.
+Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser" is the username of the simulated user.
 
 ```json
 {
