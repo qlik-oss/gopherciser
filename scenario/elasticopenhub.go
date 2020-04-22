@@ -89,7 +89,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 			return
 		}
 		favCollection := elasticstructs.Collection{Name: "Favorites", ID: favorites.ID}
-		//accessedCollections := make([]string, 0, 1)
 		if favCollection.ID == "" {
 			actionState.AddErrors(errors.New("No favorite collection id"))
 			return
@@ -127,16 +126,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.LogEntry.LogInfo("TenantUser", strings.Join([]string{userData.Name, userData.Subject, userData.ID, userData.TenantID}, ";"))
 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/tenants/me", host), actionState, sessionState.LogEntry, nil)
-
-	// Get streams
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections?limit=30&type=public&sort=-updatedAt", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-		var collectionData elasticstructs.CollectionRequest
-		if err := jsonit.Unmarshal(req.ResponseBody, &collectionData); err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed unmarshaling collection data"))
-			return
-		}
-		sessionState.ArtifactMap.FillStreams(collectionData.Data)
-	})
 
 	// This get items request is done by client, but resulting apps are never shown to users
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=30", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
