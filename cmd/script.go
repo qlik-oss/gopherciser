@@ -30,6 +30,10 @@ func init() {
 	// template sub command
 	AddConfigParameter(templateCmd)
 	templateCmd.Flags().BoolVarP(&scriptOverwrite, "force", "f", false, "overwrite existing script file")
+
+	// structure sub command
+	scriptCmd.AddCommand(structureCmd)
+	AddAllSharedParameters(structureCmd)
 }
 
 // scriptCmd represents the script command
@@ -142,5 +146,30 @@ var testConnectionCmd = &cobra.Command{
 		}
 
 		_, _ = os.Stderr.WriteString("Connection Successful!\n")
+	},
+}
+
+var structureCmd = &cobra.Command{
+	Use:     "structure",
+	Aliases: []string{"s"},
+	Short:   "get app structure",
+	Long:    `get app structure using connect settings in file`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if cfgFile == "" {
+			_, _ = os.Stderr.WriteString("Error: No config provided\n")
+			if err := cmd.Help(); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			}
+			os.Exit(ExitCodeConnectionError)
+		}
+		/*cfg*/ _, err := unmarshalConfigFile()
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			os.Exit(ExitCodeConnectionError)
+		}
+
+		// TODO figure out app/-s
+
+		// TODO Save structure to file/-s
 	},
 }
