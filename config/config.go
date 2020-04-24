@@ -570,6 +570,66 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	return nil
 }
 
+// GetAppStructures for all apps in scenario
+func (cfg *Config) GetAppStructures(ctx context.Context) error {
+	// find all auth and actions
+	scenario := cfg.getAppStructureScenario()
+	if len(scenario) < 1 {
+		return errors.New("no applicable actions in scenario")
+	}
+
+	// Replace scheduler with 1 iteration 1 user simple scheduler
+	cfg.Scheduler = &scheduler.SimpleScheduler{
+		Scheduler: scheduler.Scheduler{
+			SchedType: scheduler.SchedSimple,
+		},
+		Settings: scheduler.SimpleSchedSettings{
+			ExecutionTime:   -1,
+			Iterations:      1,
+			ConcurrentUsers: 1,
+			RampupDelay:     1.0,
+		},
+	}
+
+	// Todo where to log? Probably should override log settings
+	// Todo use outputs dir for structure result
+
+	if err := cfg.Scheduler.Validate(); err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Setup outputs folder
+	outputsDir, err := setupOutputs(cfg.Settings.OutputsSettings)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
+	if err := cfg.Scheduler.Execute(ctx, nil /*log*/, timeout, cfg.Scenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func (cfg *Config) getAppStructureScenario() []scenario.Action {
+	// TODO handle "injectable auth actions" using interface returning action array
+	// TODO new action type with parameter showing "app" connect or not
+	actionsToKeep := map[string]interface{}{
+		"openapp": nil,
+	}
+
+	appStructureScenario := make([]scenario.Action, 0, 1)
+	for _, act := range cfg.Scenario {
+		if _, ok := actionsToKeep[act.Type]; ok {
+			appStructureScenario = append(appStructureScenario, act)
+			// todo inject GetAppStructureAction
+		}
+	}
+
+	return appStructureScenario
+}
+
 func (settings *LogSettings) shouldLogStatus() bool {
 	if settings == nil {
 		return true

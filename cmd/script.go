@@ -13,8 +13,6 @@ var (
 	scriptOverwrite bool
 )
 
-const ExitCodeConnectionError = 1
-
 func init() {
 	RootCmd.AddCommand(scriptCmd)
 	scriptCmd.AddCommand(templateCmd)
@@ -34,6 +32,8 @@ func init() {
 	// structure sub command
 	scriptCmd.AddCommand(structureCmd)
 	AddAllSharedParameters(structureCmd)
+	// TODO Add parameter for using title or GUID
+	// TODO Add parameter for output folder
 }
 
 // scriptCmd represents the script command
@@ -132,12 +132,12 @@ var testConnectionCmd = &cobra.Command{
 			if err := cmd.Help(); err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			}
-			os.Exit(ExitCodeConnectionError)
+			os.Exit(ExitCodeMissingParameter)
 		}
 		cfg, err := unmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			os.Exit(ExitCodeConnectionError)
+			os.Exit(ExitCodeJSONParseError)
 		}
 
 		if err = cfg.TestConnection(context.Background()); err != nil {
@@ -160,16 +160,24 @@ var structureCmd = &cobra.Command{
 			if err := cmd.Help(); err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			}
-			os.Exit(ExitCodeConnectionError)
+			os.Exit(ExitCodeMissingParameter)
 		}
-		/*cfg*/ _, err := unmarshalConfigFile()
+
+		// Read object definition overrides and additions
+		if err := ReadObjectDefinitions(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "ObjectDefError: %s\n", err)
+			os.Exit(ExitCodeObjectDefError)
+		}
+
+		cfg, err := unmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			os.Exit(ExitCodeConnectionError)
+			os.Exit(ExitCodeJSONParseError)
 		}
 
-		// TODO figure out app/-s
-
-		// TODO Save structure to file/-s
+		if err := cfg.GetAppStructures(context.Background()); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			os.Exit(ExitCodeAppStructure)
+		}
 	},
 }
