@@ -4,17 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
-	"os"
-	"sync"
-	"time"
 )
 
 type (
@@ -23,24 +26,27 @@ type (
 	// AppObjectDef title and ID of a Sense object
 	AppObjectDef struct {
 		// Id of object
-		Id string
+		Id string `json:"id"`
 		// Type of Sense object
-		Type string
+		Type string `json:"type"`
 	}
 
 	// AppStructureObject sense object structure
 	AppStructureObject struct {
 		AppObjectDef
-		// Properties of Sense object
-		Properties json.RawMessage
+		// RawProperties of Sense object
+		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 		// Children to the sense object
-		Children []AppObjectDef
+		Children []AppObjectDef `json:"children"`
+		// Selectable true if select can be done in object
+		Selectable           bool `json:"selectable"`
+		Dimensions, Measures json.RawMessage
 	}
 
 	// AppStructure of Sense app
 	AppStructure struct {
 		// Objects in Sense app
-		Objects []AppStructureObject
+		Objects []AppStructureObject `json:"objects"`
 
 		structureLock sync.Mutex
 	}
@@ -224,7 +230,7 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 			return errors.WithStack(err)
 		}
 
-		obj.Properties, err = genObj.GetPropertiesRaw(ctx)
+		obj.RawProperties, err = genObj.GetPropertiesRaw(ctx)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -232,6 +238,26 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 		childInfos, err := genObj.GetChildInfos(ctx)
 		if err != nil {
 			return errors.WithStack(err)
+		}
+
+		def, err := senseobjdef.GetObjectDef(typ)
+		if err != nil {
+			switch errors.Cause(err).(type) {
+			case senseobjdef.NoDefError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "Object type<%s> not supported", typ)
+			default:
+				return errors.WithStack(err)
+			}
+		} else {
+			obj.Selectable = def.Select != nil // Todo also check if has dimensions
+			if obj.Selectable {
+				dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
+				measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
+
+				// Try to set dimensions and measures, null if not exist or not parsable (error)
+				obj.Dimensions, _ = dimensions.Lookup(obj.RawProperties)
+				obj.Measures, _ = measures.Lookup(obj.RawProperties)
+			}
 		}
 
 		var children []AppObjectDef
