@@ -43,10 +43,17 @@ type (
 		Dimensions, Measures json.RawMessage
 	}
 
+	// AppStructureAppMeta meta information about the app
+	AppStructureAppMeta struct {
+		Title string `json:"title"`
+	}
+
 	// AppStructure of Sense app
 	AppStructure struct {
+		AppMeta AppStructureAppMeta `json:"meta"`
 		// Objects in Sense app
 		Objects []AppStructureObject `json:"objects"`
+		//AppLayout *enigma.NxAppLayout
 
 		structureLock sync.Mutex
 	}
@@ -166,6 +173,7 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 	}
 
 	appStructure := &AppStructure{}
+	appStructure.AppMeta.Title = app.Layout.Title
 
 	for _, info := range allInfos {
 		if info == nil {
@@ -176,6 +184,9 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 			return
 		}
 	}
+
+	// Todo Get Master items
+	// Todo Get bookmarks
 
 	if sessionState.Wait(actionState) {
 		return // An error occurred
