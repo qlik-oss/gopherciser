@@ -31,6 +31,19 @@ type (
 		Type string `json:"type"`
 	}
 
+	AppStructureMeasureMeta struct {
+		LibraryId string `json:"libraryId"`
+		Label     string `json:"label"`
+		Def       string `json:"def"`
+	}
+
+	AppStructureDimensionMeta struct {
+		LibraryId       string   `json:"libraryId"`
+		LabelExpression string   `json:"name"`
+		Defs            []string `json:"defs"`
+		Labels          []string `json:"labels"`
+	}
+
 	// AppStructureObject sense object structure
 	AppStructureObject struct {
 		AppObjectDef
@@ -39,8 +52,9 @@ type (
 		// Children to the sense object
 		Children []AppObjectDef `json:"children"`
 		// Selectable true if select can be done in object
-		Selectable           bool `json:"selectable"`
-		Dimensions, Measures json.RawMessage
+		Selectable bool                        `json:"selectable"`
+		Dimensions []AppStructureDimensionMeta `json:"dimensions"`
+		Measures   []AppStructureMeasureMeta   `json:"measures"`
 	}
 
 	// AppStructureAppMeta meta information about the app
@@ -220,8 +234,6 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 }
 
 func getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, appStructure *AppStructure) error {
-	// Todo check if visualization
-	// Todo get dimensions and measures
 	// Todo check for master item connections
 
 	if appStructure == nil {
@@ -236,78 +248,26 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 			},
 		}
 
+		// Todo handle auto-chart subtype
+
 		// handle some special types
 		switch typ {
 		case "dimension":
-			genDim, err := app.Doc.GetDimension(ctx, id)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			obj.RawProperties, err = genDim.GetPropertiesRaw(ctx)
-			if err != nil {
-				fmt.Printf("Dim: %+v\n", genDim)
+			if err := handleDimension(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
 		case "measure":
-			genMeasure, err := app.Doc.GetMeasure(ctx, id)
-			if err != nil {
-				fmt.Printf("Measure: %+v\n", genMeasure)
-				return errors.WithStack(err)
-			}
-			obj.RawProperties, err = genMeasure.GetPropertiesRaw(ctx)
-			if err != nil {
+			if err := handleMeasure(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
 		default:
-			genObj, err := app.Doc.GetObject(ctx, id)
-			if err != nil {
+			if err := handleObject(ctx, sessionState, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-			obj.RawProperties, err = genObj.GetPropertiesRaw(ctx)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-
-			childInfos, err := genObj.GetChildInfos(ctx)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			var children []AppObjectDef
-			if len(childInfos) > 0 {
-				children = make([]AppObjectDef, 0, len(childInfos))
-			}
-
-			for _, child := range childInfos {
-				if child == nil {
-					continue
-				}
-				children = append(children, AppObjectDef{
-					Id:   child.Id,
-					Type: child.Type,
-				})
-			}
-			obj.Children = children
 		}
 
-		def, err := senseobjdef.GetObjectDef(typ)
-		if err != nil {
-			switch errors.Cause(err).(type) {
-			case senseobjdef.NoDefError:
-				sessionState.LogEntry.Logf(logger.WarningLevel, "Object type<%s> not supported", typ)
-			default:
-				return errors.WithStack(err)
-			}
-		} else {
-			obj.Selectable = def.Select != nil // Todo also check if has dimensions
-			if obj.Selectable {
-				dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
-				measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
-
-				// Try to set dimensions and measures, null if not exist or not parsable (error)
-				obj.Dimensions, _ = dimensions.Lookup(obj.RawProperties)
-				obj.Measures, _ = measures.Lookup(obj.RawProperties)
-			}
-		}
+		// Todo (Dev only) comment this line to turn on seeing raw properties in file
+		obj.RawProperties = nil
 
 		appStructure.AddObject(obj)
 		return nil
@@ -323,4 +283,130 @@ func (structure *AppStructure) AddObject(obj AppStructureObject) {
 		structure.Objects = make([]AppStructureObject, 0, 1)
 	}
 	structure.Objects = append(structure.Objects, obj)
+}
+
+func handleObject(ctx context.Context, sessionState *session.State, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
+	genObj, err := app.Doc.GetObject(ctx, id)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	obj.RawProperties, err = genObj.GetPropertiesRaw(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	childInfos, err := genObj.GetChildInfos(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	var children []AppObjectDef
+	if len(childInfos) > 0 {
+		children = make([]AppObjectDef, 0, len(childInfos))
+	}
+
+	for _, child := range childInfos {
+		if child == nil {
+			continue
+		}
+		children = append(children, AppObjectDef{
+			Id:   child.Id,
+			Type: child.Type,
+		})
+	}
+	obj.Children = children
+
+	def, err := senseobjdef.GetObjectDef(typ)
+	if err != nil {
+		switch errors.Cause(err).(type) {
+		case senseobjdef.NoDefError:
+			sessionState.LogEntry.Logf(logger.WarningLevel, "Object type<%s> not supported", typ)
+		default:
+			return errors.WithStack(err)
+		}
+	} else {
+		obj.Selectable = def.Select != nil // Todo also check if has dimensions
+		if obj.Selectable {
+			// Hyper cube dimensions and measures
+			dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
+			measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
+
+			// Todo handle list object
+
+			// Try to set dimensions and measures, null if not exist or not parsable (error)
+			rawDimensions, _ := dimensions.Lookup(obj.RawProperties)
+			if rawDimensions != nil {
+				var dimensions []*enigma.NxDimension
+				if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
+					return errors.WithStack(err)
+				}
+				obj.Dimensions = make([]AppStructureDimensionMeta, 0, len(dimensions))
+				for _, dimension := range dimensions {
+					if dimension == nil {
+						continue
+					}
+
+					obj.Dimensions = append(obj.Dimensions, AppStructureDimensionMeta{
+						LibraryId:       dimension.LibraryId,
+						LabelExpression: dimension.Def.LabelExpression,
+						Defs:            dimension.Def.FieldDefs,
+						Labels:          dimension.Def.FieldLabels,
+					})
+				}
+			}
+
+			rawMeasures, _ := measures.Lookup(obj.RawProperties)
+			if rawMeasures != nil {
+				var measures []*enigma.NxMeasure
+				if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
+					// Todo error or warning here?
+					return errors.WithStack(err)
+				}
+				obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
+				for _, measure := range measures {
+					if measure == nil {
+						continue
+					}
+					obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+						LibraryId: measure.LibraryId,
+						Label:     measure.Def.Label,
+						Def:       measure.Def.Def,
+					})
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *AppStructureObject) error {
+	genMeasure, err := app.Doc.GetMeasure(ctx, id)
+	if err != nil {
+		fmt.Printf("Measure: %+v\n", genMeasure)
+		return errors.WithStack(err)
+	}
+	obj.RawProperties, err = genMeasure.GetPropertiesRaw(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Todo save measure information to structure
+
+	return nil
+}
+
+func handleDimension(ctx context.Context, app *senseobjects.App, id string, obj *AppStructureObject) error {
+	genDim, err := app.Doc.GetDimension(ctx, id)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	obj.RawProperties, err = genDim.GetPropertiesRaw(ctx)
+	if err != nil {
+		fmt.Printf("Dim: %+v\n", genDim)
+		return errors.WithStack(err)
+	}
+
+	// Todo save dimension information to structure
+
+	return nil
 }
