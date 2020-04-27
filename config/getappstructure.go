@@ -122,8 +122,8 @@ func (cfg *Config) GetAppStructures(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 	logSettings := LogSettings{
-		Traffic:        false,
-		Debug:          false,
+		Traffic:        cfg.Settings.LogSettings.Traffic,
+		Debug:          cfg.Settings.LogSettings.Debug,
 		TrafficMetrics: false,
 		FileName:       *stmpl,
 		Format:         0,
@@ -236,19 +236,57 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 			},
 		}
 
-		genObj, err := app.Doc.GetObject(ctx, id)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+		// handle some special types
+		switch typ {
+		case "dimension":
+			genDim, err := app.Doc.GetDimension(ctx, id)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			obj.RawProperties, err = genDim.GetPropertiesRaw(ctx)
+			if err != nil {
+				fmt.Printf("Dim: %+v\n", genDim)
+				return errors.WithStack(err)
+			}
+		case "measure":
+			genMeasure, err := app.Doc.GetMeasure(ctx, id)
+			if err != nil {
+				fmt.Printf("Measure: %+v\n", genMeasure)
+				return errors.WithStack(err)
+			}
+			obj.RawProperties, err = genMeasure.GetPropertiesRaw(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		default:
+			genObj, err := app.Doc.GetObject(ctx, id)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			obj.RawProperties, err = genObj.GetPropertiesRaw(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
-		obj.RawProperties, err = genObj.GetPropertiesRaw(ctx)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+			childInfos, err := genObj.GetChildInfos(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			var children []AppObjectDef
+			if len(childInfos) > 0 {
+				children = make([]AppObjectDef, 0, len(childInfos))
+			}
 
-		childInfos, err := genObj.GetChildInfos(ctx)
-		if err != nil {
-			return errors.WithStack(err)
+			for _, child := range childInfos {
+				if child == nil {
+					continue
+				}
+				children = append(children, AppObjectDef{
+					Id:   child.Id,
+					Type: child.Type,
+				})
+			}
+			obj.Children = children
 		}
 
 		def, err := senseobjdef.GetObjectDef(typ)
@@ -270,22 +308,6 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 				obj.Measures, _ = measures.Lookup(obj.RawProperties)
 			}
 		}
-
-		var children []AppObjectDef
-		if len(childInfos) > 0 {
-			children = make([]AppObjectDef, 0, len(childInfos))
-		}
-
-		for _, child := range childInfos {
-			if child == nil {
-				continue
-			}
-			children = append(children, AppObjectDef{
-				Id:   child.Id,
-				Type: child.Type,
-			})
-		}
-		obj.Children = children
 
 		appStructure.AddObject(obj)
 		return nil
