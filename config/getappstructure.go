@@ -23,6 +23,13 @@ import (
 type (
 	getAppStructureSettings struct{}
 
+	// LibraryMetaDef meta information for Library objects such as dimension and measure
+	LibraryMetaDef struct {
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Tags        []string `json:"tags"`
+	}
+
 	// AppObjectDef title and ID of a Sense object
 	AppObjectDef struct {
 		// Id of object
@@ -32,16 +39,27 @@ type (
 	}
 
 	AppStructureMeasureMeta struct {
-		LibraryId string `json:"libraryId"`
-		Label     string `json:"label"`
-		Def       string `json:"def"`
+		// Meta information, only included for library items
+		Meta LibraryMetaDef `json:"meta,omitempty"`
+		// LibraryId connects measure to separately defined measure
+		LibraryId string `json:"libraryId,omitempty"`
+		// Label of on measure
+		Label string `json:"label"`
+		// Def the actual measure definition
+		Def string `json:"def"`
 	}
 
 	AppStructureDimensionMeta struct {
-		LibraryId       string   `json:"libraryId"`
-		LabelExpression string   `json:"name"`
-		Defs            []string `json:"defs"`
-		Labels          []string `json:"labels"`
+		// Meta information, only included for library items
+		Meta LibraryMetaDef `json:"meta,omitempty"`
+		// LibraryId connects dimension to separately defined dimension
+		LibraryId string `json:"libraryId,omitempty"`
+		// LabelExpression optional parameter with label expression
+		LabelExpression string `json:"labelExpression,omitempty"`
+		// Defs definitions of dimension
+		Defs []string `json:"defs"`
+		// Labels of dimension
+		Labels []string `json:"labels"`
 	}
 
 	// AppStructureObject sense object structure
@@ -52,14 +70,19 @@ type (
 		// Children to the sense object
 		Children []AppObjectDef `json:"children"`
 		// Selectable true if select can be done in object
-		Selectable bool                        `json:"selectable"`
+		Selectable bool `json:"selectable"`
+		// Dimensions meta information of dimensions defined in object
 		Dimensions []AppStructureDimensionMeta `json:"dimensions"`
-		Measures   []AppStructureMeasureMeta   `json:"measures"`
+		// Measures meta information of measures defined in object
+		Measures []AppStructureMeasureMeta `json:"measures"`
 	}
 
 	// AppStructureAppMeta meta information about the app
 	AppStructureAppMeta struct {
+		// Title of the app
 		Title string `json:"title"`
+		// Guid of the app
+		Guid string `json:"guid"`
 	}
 
 	// AppStructure of Sense app
@@ -186,8 +209,12 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	appStructure := &AppStructure{}
-	appStructure.AppMeta.Title = app.Layout.Title
+	appStructure := &AppStructure{
+		AppMeta: AppStructureAppMeta{
+			Title: app.Layout.Title,
+			Guid:  app.GUID,
+		},
+	}
 
 	for _, info := range allInfos {
 		if info == nil {
@@ -199,7 +226,6 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		}
 	}
 
-	// Todo Get Master items
 	// Todo Get bookmarks
 
 	if sessionState.Wait(actionState) {
@@ -234,8 +260,6 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 }
 
 func getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, appStructure *AppStructure) error {
-	// Todo check for master item connections
-
 	if appStructure == nil {
 		return errors.New("appStructure object is nil")
 	}
@@ -390,7 +414,35 @@ func handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *A
 		return errors.WithStack(err)
 	}
 
-	// Todo save measure information to structure
+	// Save measure information to structure
+	measurePath := senseobjdef.NewDataPath("/qMeasure")
+	rawMeasure, err := measurePath.Lookup(obj.RawProperties)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	var measure enigma.NxInlineMeasureDef
+	if err := jsonit.Unmarshal(rawMeasure, &measure); err != nil {
+		return errors.WithStack(err)
+	}
+
+	metaPath := senseobjdef.NewDataPath("/qMetaDef")
+	rawMeta, err := metaPath.Lookup(obj.RawProperties)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var meta LibraryMetaDef
+	if err := jsonit.Unmarshal(rawMeta, &meta); err != nil {
+		return errors.WithStack(err)
+	}
+
+	obj.Measures = []AppStructureMeasureMeta{
+		{
+			Meta:  meta,
+			Label: measure.Label,
+			Def:   measure.Def,
+		},
+	}
 
 	return nil
 }
@@ -406,7 +458,37 @@ func handleDimension(ctx context.Context, app *senseobjects.App, id string, obj 
 		return errors.WithStack(err)
 	}
 
-	// Todo save dimension information to structure
+	// Save dimension information to structure
+	dimensionPath := senseobjdef.NewDataPath("/qDim")
+	rawDimension, err := dimensionPath.Lookup(obj.RawProperties)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var dimension enigma.NxInlineDimensionDef
+	if err := jsonit.Unmarshal(rawDimension, &dimension); err != nil {
+		return errors.WithStack(err)
+	}
+
+	metaPath := senseobjdef.NewDataPath("/qMetaDef")
+	rawMeta, err := metaPath.Lookup(obj.RawProperties)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var meta LibraryMetaDef
+	if err := jsonit.Unmarshal(rawMeta, &meta); err != nil {
+		return errors.WithStack(err)
+	}
+
+	obj.Dimensions = []AppStructureDimensionMeta{
+		{
+			Meta:            meta,
+			LabelExpression: dimension.LabelExpression,
+			Defs:            dimension.FieldDefs,
+			Labels:          dimension.FieldLabels,
+		},
+	}
 
 	return nil
 }
