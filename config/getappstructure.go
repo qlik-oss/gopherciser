@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -356,13 +357,13 @@ func handleObject(ctx context.Context, sessionState *session.State, app *senseob
 			return errors.WithStack(err)
 		}
 	} else {
+		// Todo handle non "selectable" objects
+
 		obj.Selectable = def.Select != nil // Todo also check if has dimensions
 		if obj.Selectable {
 			// Hyper cube dimensions and measures
 			dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
 			measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
-
-			// Todo handle list object
 
 			// Try to set dimensions and measures, null if not exist or not parsable (error)
 			rawDimensions, _ := dimensions.Lookup(obj.RawProperties)
@@ -402,6 +403,39 @@ func handleObject(ctx context.Context, sessionState *session.State, app *senseob
 						LibraryId: measure.LibraryId,
 						Label:     measure.Def.Label,
 						Def:       measure.Def.Def,
+					})
+				}
+			}
+
+			// Handle list object
+			path := def.Select.Path
+			if !strings.HasSuffix(path, "/qListObjectDef") {
+				path = def.Select.Path + "/qListObjectDef"
+			}
+			listObjects := senseobjdef.NewDataPath(path)
+			rawListObject, _ := listObjects.Lookup(obj.RawProperties)
+			if rawListObject != nil {
+				var listObject enigma.ListObjectDef
+				if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
+					return errors.WithStack(err)
+				}
+				obj.Dimensions = []AppStructureDimensionMeta{
+					{
+						LibraryId:       listObject.LibraryId,
+						LabelExpression: listObject.Def.LabelExpression,
+						Defs:            listObject.Def.FieldDefs,
+						Labels:          listObject.Def.FieldLabels,
+					},
+				}
+
+				if obj.Measures == nil {
+					obj.Measures = make([]AppStructureMeasureMeta, 0, len(listObject.Expressions))
+				}
+
+				for _, expression := range listObject.Expressions {
+					obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+						LibraryId: expression.LibraryId,
+						Def:       expression.Expr,
 					})
 				}
 			}
