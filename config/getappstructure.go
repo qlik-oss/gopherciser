@@ -88,13 +88,25 @@ type (
 		Guid string `json:"guid"`
 	}
 
+	// AppStructureBookmark list of bookmarks in the app
+	AppStructureBookmark struct {
+		// Title of bookmark
+		Title string `json:"title"`
+		// Description of bookmark
+		Description string `json:"description"`
+		// SheetId connected sheet ID, null if none
+		SheetId *string `json:"sheetId,omitempty"`
+		// SelectionFields fields bookmark would select in
+		SelectionFields string `json:"selectionFields"`
+	}
+
 	// AppStructure of Sense app
 	AppStructure struct {
 		AppMeta AppStructureAppMeta `json:"meta"`
 		// Objects in Sense app
 		Objects []AppStructureObject `json:"objects"`
-		//AppLayout *enigma.NxAppLayout
-
+		// Bookmarks list of bookmarks in the app
+		Bookmarks     []AppStructureBookmark `json:"bookmarks"`
 		structureLock sync.Mutex
 	}
 )
@@ -229,7 +241,13 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		}
 	}
 
-	// Todo Get bookmarks
+	//// Get bookmarks
+	//bl, err := app.GetBookmarkList(sessionState, actionState)
+	//if err != nil {
+	//	actionState.AddErrors(errors.Wrap(err, "failed to GetBookmarkList"))
+	//	return
+	//}
+	//appStructure.Bookmarks = bl.GetBookmarks()
 
 	if sessionState.Wait(actionState) {
 		return // An error occurred
@@ -289,6 +307,10 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 			if err := handleMeasure(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
+		case "bookmark":
+			if err := handleBookmark(ctx, app, id, appStructure); err != nil {
+				return errors.WithStack(err)
+			}
 		default:
 			if err := handleObject(ctx, sessionState, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
@@ -305,6 +327,7 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 	return nil
 }
 
+// AddObject to structure
 func (structure *AppStructure) AddObject(obj AppStructureObject) {
 	structure.structureLock.Lock()
 	defer structure.structureLock.Unlock()
@@ -312,6 +335,16 @@ func (structure *AppStructure) AddObject(obj AppStructureObject) {
 		structure.Objects = make([]AppStructureObject, 0, 1)
 	}
 	structure.Objects = append(structure.Objects, obj)
+}
+
+// AddBookmark to structure
+func (structure *AppStructure) AddBookmark(bookmark AppStructureBookmark) {
+	structure.structureLock.Lock()
+	defer structure.structureLock.Unlock()
+	if structure.Bookmarks == nil {
+		structure.Bookmarks = make([]AppStructureBookmark, 0, 1)
+	}
+	structure.Bookmarks = append(structure.Bookmarks, bookmark)
 }
 
 func handleObject(ctx context.Context, sessionState *session.State, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
@@ -531,6 +564,35 @@ func handleDimension(ctx context.Context, app *senseobjects.App, id string, obj 
 			Labels:          dimension.FieldLabels,
 		},
 	}
+
+	return nil
+}
+
+func handleBookmark(ctx context.Context, app *senseobjects.App, id string, structure *AppStructure) error {
+	bookmark, err := app.Doc.GetBookmark(ctx, id)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	properties, err := bookmark.GetPropertiesRaw(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var structureBookmark AppStructureBookmark
+	if err := jsonit.Unmarshal(properties, &structureBookmark); err != nil {
+		return errors.WithStack(err)
+	}
+
+	metaPath := senseobjdef.NewDataPath("/qMetaDef")
+	rawMeta, _ := metaPath.Lookup(properties)
+	var meta LibraryMetaDef // meta shares title and description from this struct
+	_ = jsonit.Unmarshal(rawMeta, &meta)
+
+	structureBookmark.Title = meta.Title
+	structureBookmark.Description = meta.Description
+
+	structure.AddBookmark(structureBookmark)
 
 	return nil
 }
