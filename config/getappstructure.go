@@ -336,8 +336,12 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 			if err := handleBookmark(ctx, app, id, appStructure); err != nil {
 				return errors.WithStack(err)
 			}
+		case ObjectTypeAutoChart:
+			if err := handleAutoChart(ctx, sessionState, app, id, &obj); err != nil {
+				return errors.WithStack(err)
+			}
 		default:
-			if err := handleObject(ctx, sessionState, app, id, typ, &obj); err != nil {
+			if err := handleDefaultObject(ctx, sessionState, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -372,7 +376,7 @@ func (structure *AppStructure) AddBookmark(bookmark AppStructureBookmark) {
 	structure.Bookmarks = append(structure.Bookmarks, bookmark)
 }
 
-func handleObject(ctx context.Context, sessionState *session.State, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
+func handleDefaultObject(ctx context.Context, sessionState *session.State, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
 	genObj, err := app.Doc.GetObject(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -382,6 +386,27 @@ func handleObject(ctx context.Context, sessionState *session.State, app *senseob
 		return errors.WithStack(err)
 	}
 
+	return errors.WithStack(handleObject(ctx, sessionState, genObj, typ, obj))
+}
+
+func handleAutoChart(ctx context.Context, sessionState *session.State, app *senseobjects.App, id string, obj *AppStructureObject) error {
+	genObj, err := app.Doc.GetObject(ctx, id)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	autoChartProperties, err := genObj.GetPropertiesRaw(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	generatedPropertiesPath := senseobjdef.NewDataPath("/qUndoExclude/generated")
+	obj.RawProperties, _ = generatedPropertiesPath.Lookup(autoChartProperties)
+
+	return errors.WithStack(handleObject(ctx, sessionState, genObj, ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
+}
+
+func handleObject(ctx context.Context, sessionState *session.State, genObj *enigma.GenericObject, typ string, obj *AppStructureObject) error {
 	childInfos, err := genObj.GetChildInfos(ctx)
 	if err != nil {
 		return errors.WithStack(err)
@@ -508,9 +533,11 @@ func handleObject(ctx context.Context, sessionState *session.State, app *senseob
 				})
 			}
 		}
-	} else {
-		// Todo handle non "selectable" objects
 	}
+	// Todo handle non "selectable" objects
+	//else {
+	//
+	//}
 
 	return nil
 }
