@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/enummap"
 	"os"
 	"strings"
 	"sync"
@@ -26,9 +27,12 @@ type (
 
 	// LibraryMetaDef meta information for Library objects such as dimension and measure
 	LibraryMetaDef struct {
-		Title       string   `json:"title"`
-		Description string   `json:"description"`
-		Tags        []string `json:"tags"`
+		// Title of library item
+		Title string `json:"title"`
+		// Description of library item
+		Description string `json:"description"`
+		// Tags of  of library item
+		Tags []string `json:"tags"`
 	}
 
 	// AppObjectDef title and ID of a Sense object
@@ -78,6 +82,8 @@ type (
 		Measures []AppStructureMeasureMeta `json:"measures,omitempty"`
 		// ExtendsId ID of linked object
 		ExtendsId string `json:"extendsId,omitempty"`
+		// Visualization visualization of object, if exists
+		Visualization string `json:"visualization,omitempty"`
 	}
 
 	// AppStructureAppMeta meta information about the app
@@ -106,9 +112,31 @@ type (
 		// Objects in Sense app
 		Objects []AppStructureObject `json:"objects"`
 		// Bookmarks list of bookmarks in the app
-		Bookmarks     []AppStructureBookmark `json:"bookmarks"`
+		Bookmarks []AppStructureBookmark `json:"bookmarks"`
+
 		structureLock sync.Mutex
 	}
+
+	ObjectType int
+)
+
+const (
+	ObjectTypeDefault ObjectType = iota
+	ObjectTypeDimension
+	ObjectTypeMeasure
+	ObjectTypeBookmark
+	ObjectTypeMasterObject
+	ObjectTypeAutoChart
+)
+
+var (
+	ObjectTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+		"dimension":    int(ObjectTypeDimension),
+		"measure":      int(ObjectTypeMeasure),
+		"bookmark":     int(ObjectTypeBookmark),
+		"masterobject": int(ObjectTypeMasterObject),
+		"auto-chart":   int(ObjectTypeAutoChart),
+	})
 )
 
 func (cfg *Config) getAppStructureScenario() []scenario.Action {
@@ -241,14 +269,6 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		}
 	}
 
-	//// Get bookmarks
-	//bl, err := app.GetBookmarkList(sessionState, actionState)
-	//if err != nil {
-	//	actionState.AddErrors(errors.Wrap(err, "failed to GetBookmarkList"))
-	//	return
-	//}
-	//appStructure.Bookmarks = bl.GetBookmarks()
-
 	if sessionState.Wait(actionState) {
 		return // An error occurred
 	}
@@ -297,17 +317,22 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 
 		// Todo handle auto-chart subtype
 
+		objectType := ObjectTypeDefault
+		if oType, err := ObjectTypeEnumMap.Int(typ); err == nil {
+			objectType = ObjectType(oType)
+		}
+
 		// handle some special types
-		switch typ {
-		case "dimension":
+		switch objectType {
+		case ObjectTypeDimension:
 			if err := handleDimension(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case "measure":
+		case ObjectTypeMeasure:
 			if err := handleMeasure(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case "bookmark":
+		case ObjectTypeBookmark:
 			if err := handleBookmark(ctx, app, id, appStructure); err != nil {
 				return errors.WithStack(err)
 			}
@@ -377,102 +402,114 @@ func handleObject(ctx context.Context, sessionState *session.State, app *senseob
 	}
 	obj.Children = children
 
+	// Lookup and set ExtendsID
 	extendsIdPath := senseobjdef.NewDataPath("/qExtendsId")
 	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawProperties)
 	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
 
-	def, err := senseobjdef.GetObjectDef(typ)
+	// Lookup and set Visualization
+	visualizationPath := senseobjdef.NewDataPath("/visualization")
+	rawVisualization, _ := visualizationPath.Lookup(obj.RawProperties)
+	_ = jsonit.Unmarshal(rawVisualization, &obj.Visualization)
+
+	vis := obj.Visualization
+	if vis == "" {
+		vis = typ
+	}
+
+	def, err := senseobjdef.GetObjectDef(vis)
 	if err != nil {
 		switch errors.Cause(err).(type) {
 		case senseobjdef.NoDefError:
-			sessionState.LogEntry.Logf(logger.WarningLevel, "Object type<%s> not supported", typ)
+			sessionState.LogEntry.Logf(logger.WarningLevel, "Object type<%s> not supported", vis)
+			return nil
 		default:
 			return errors.WithStack(err)
 		}
-	} else {
-		// Todo handle non "selectable" objects
+	}
 
-		obj.Selectable = def.Select != nil // Todo also check if has dimensions
-		if obj.Selectable {
-			// Hyper cube dimensions and measures
-			dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
-			measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
+	obj.Selectable = def.Select != nil // Todo also check if has dimensions
+	if obj.Selectable {
+		// Hyper cube dimensions and measures
+		dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
+		measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
 
-			// Try to set dimensions and measures, null if not exist or not parsable (error)
-			rawDimensions, _ := dimensions.Lookup(obj.RawProperties)
-			if rawDimensions != nil {
-				var dimensions []*enigma.NxDimension
-				if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
-					return errors.WithStack(err)
-				}
-				obj.Dimensions = make([]AppStructureDimensionMeta, 0, len(dimensions))
-				for _, dimension := range dimensions {
-					if dimension == nil {
-						continue
-					}
-
-					obj.Dimensions = append(obj.Dimensions, AppStructureDimensionMeta{
-						LibraryId:       dimension.LibraryId,
-						LabelExpression: dimension.Def.LabelExpression,
-						Defs:            dimension.Def.FieldDefs,
-						Labels:          dimension.Def.FieldLabels,
-					})
-				}
+		// Try to set dimensions and measures, null if not exist or not parsable (error)
+		rawDimensions, _ := dimensions.Lookup(obj.RawProperties)
+		if rawDimensions != nil {
+			var dimensions []*enigma.NxDimension
+			if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
+				return errors.WithStack(err)
 			}
-
-			rawMeasures, _ := measures.Lookup(obj.RawProperties)
-			if rawMeasures != nil {
-				var measures []*enigma.NxMeasure
-				if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
-					// Todo error or warning here?
-					return errors.WithStack(err)
-				}
-				obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
-				for _, measure := range measures {
-					if measure == nil {
-						continue
-					}
-					obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
-						LibraryId: measure.LibraryId,
-						Label:     measure.Def.Label,
-						Def:       measure.Def.Def,
-					})
-				}
-			}
-
-			// Handle list object
-			path := def.Select.Path
-			if !strings.HasSuffix(path, "/qListObjectDef") {
-				path = def.Select.Path + "/qListObjectDef"
-			}
-			listObjects := senseobjdef.NewDataPath(path)
-			rawListObject, _ := listObjects.Lookup(obj.RawProperties)
-			if rawListObject != nil {
-				var listObject enigma.ListObjectDef
-				if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
-					return errors.WithStack(err)
-				}
-				obj.Dimensions = []AppStructureDimensionMeta{
-					{
-						LibraryId:       listObject.LibraryId,
-						LabelExpression: listObject.Def.LabelExpression,
-						Defs:            listObject.Def.FieldDefs,
-						Labels:          listObject.Def.FieldLabels,
-					},
+			obj.Dimensions = make([]AppStructureDimensionMeta, 0, len(dimensions))
+			for _, dimension := range dimensions {
+				if dimension == nil {
+					continue
 				}
 
-				if obj.Measures == nil {
-					obj.Measures = make([]AppStructureMeasureMeta, 0, len(listObject.Expressions))
-				}
-
-				for _, expression := range listObject.Expressions {
-					obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
-						LibraryId: expression.LibraryId,
-						Def:       expression.Expr,
-					})
-				}
+				obj.Dimensions = append(obj.Dimensions, AppStructureDimensionMeta{
+					LibraryId:       dimension.LibraryId,
+					LabelExpression: dimension.Def.LabelExpression,
+					Defs:            dimension.Def.FieldDefs,
+					Labels:          dimension.Def.FieldLabels,
+				})
 			}
 		}
+
+		rawMeasures, _ := measures.Lookup(obj.RawProperties)
+		if rawMeasures != nil {
+			var measures []*enigma.NxMeasure
+			if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
+				// Todo error or warning here?
+				return errors.WithStack(err)
+			}
+			obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
+			for _, measure := range measures {
+				if measure == nil {
+					continue
+				}
+				obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+					LibraryId: measure.LibraryId,
+					Label:     measure.Def.Label,
+					Def:       measure.Def.Def,
+				})
+			}
+		}
+
+		// Handle list object
+		path := def.Select.Path
+		if !strings.HasSuffix(path, "/qListObjectDef") {
+			path = def.Select.Path + "/qListObjectDef"
+		}
+		listObjects := senseobjdef.NewDataPath(path)
+		rawListObject, _ := listObjects.Lookup(obj.RawProperties)
+		if rawListObject != nil {
+			var listObject enigma.ListObjectDef
+			if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
+				return errors.WithStack(err)
+			}
+			obj.Dimensions = []AppStructureDimensionMeta{
+				{
+					LibraryId:       listObject.LibraryId,
+					LabelExpression: listObject.Def.LabelExpression,
+					Defs:            listObject.Def.FieldDefs,
+					Labels:          listObject.Def.FieldLabels,
+				},
+			}
+
+			if obj.Measures == nil {
+				obj.Measures = make([]AppStructureMeasureMeta, 0, len(listObject.Expressions))
+			}
+
+			for _, expression := range listObject.Expressions {
+				obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+					LibraryId: expression.LibraryId,
+					Def:       expression.Expr,
+				})
+			}
+		}
+	} else {
+		// Todo handle non "selectable" objects
 	}
 
 	return nil
