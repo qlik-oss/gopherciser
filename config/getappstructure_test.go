@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"github.com/qlik-oss/gopherciser/scenario"
+	"strings"
+	"testing"
+)
 
 var structureJSON = []byte(`{
   "meta": {
@@ -3758,5 +3762,66 @@ func TestGetSelectables(t *testing.T) {
 
 	for id := range expectedSelectables {
 		t.Errorf("object<%s> expected but not found\n", id)
+	}
+}
+
+func TestConfig_GetAppStructures(t *testing.T) {
+	cfg, err := NewEmptyConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Scenario = []scenario.Action{
+		{
+			scenario.ActionCore{
+				Type: scenario.ActionOpenApp,
+			},
+			scenario.OpenAppSettings{},
+		},
+		{
+			scenario.ActionCore{
+				Type: scenario.ActionIterated,
+			},
+			scenario.IteratedSettings{
+				Iterations: 10,
+				Actions: []scenario.Action{
+					{
+						scenario.ActionCore{
+							Type: scenario.ActionClearAll,
+						},
+						scenario.ClearAllSettings{},
+					},
+					{
+						scenario.ActionCore{
+							Type: scenario.ActionOpenApp,
+						},
+						scenario.OpenAppSettings{},
+					},
+				},
+			},
+		},
+	}
+
+	expectedActions := []string{
+		scenario.ActionOpenApp,
+		"getappstructure",
+		scenario.ActionOpenApp,
+		"getappstructure",
+	}
+
+	structureScenario := cfg.getAppStructureScenario()
+
+	if len(expectedActions) != len(structureScenario) {
+		expected := strings.Join(expectedActions, ",")
+		got := make([]string, 0, len(structureScenario))
+		for _, act := range structureScenario {
+			got = append(got, act.Type)
+		}
+		t.Fatalf("unexpectedd structure scenario, expected<%s> got<%s>\n", expected, strings.Join(got, ","))
+	}
+
+	for i, act := range structureScenario {
+		if act.Type != expectedActions[i] {
+			t.Errorf("action<%d> expected<%s> got<%s>", i, expectedActions[i], act.Type)
+		}
 	}
 }

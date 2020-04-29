@@ -253,6 +253,14 @@ func (openApp OpenAppSettings) GetConnectWsAction(wsLabel string, connectFunc fu
 	return connectWs
 }
 
+// AppStructureAction implements AppStructureAction interface
+func (openApp OpenAppSettings) AppStructureAction() (*AppStructureInfo, []Action) {
+	return &AppStructureInfo{
+		IsAppAction: true,
+		Include:     true,
+	}, nil
+}
+
 func (connectWs connectWsSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	appGUID, err := connectWs.ConnectFunc()
 	actionState.Details = appGUID

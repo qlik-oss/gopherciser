@@ -267,6 +267,14 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 	}
 }
 
+// AppStructureAction implements AppStructureAction interface
+func (settings ElasticExploreSettings) AppStructureAction() (*AppStructureInfo, []Action) {
+	return &AppStructureInfo{
+		IsAppAction: false,
+		Include:     true,
+	}, nil
+}
+
 func isSessionUserOk(sessionState *session.State, actionState *action.State) bool {
 	if sessionState.CurrentUser == nil || sessionState.CurrentUser.ID == "" {
 		actionState.AddErrors(errors.New("No current user to be used for owner filter"))

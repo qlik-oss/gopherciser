@@ -142,27 +142,32 @@ var (
 )
 
 func (cfg *Config) getAppStructureScenario() []scenario.Action {
-	// TODO handle "injectable auth actions" using interface returning action array
-	// TODO new action type with parameter showing "app" connect or not
-	actionsToKeep := map[string]interface{}{
-		"openapp": nil,
-	}
+	return evaluateActionList(cfg.Scenario)
+}
 
-	appStructureScenario := make([]scenario.Action, 0, 1)
-	for _, act := range cfg.Scenario {
-		if _, ok := actionsToKeep[act.Type]; ok {
-			appStructureScenario = append(appStructureScenario, act)
-			// todo inject GetAppStructureAction if action is action set to handle app connect
-			appStructureScenario = append(appStructureScenario, scenario.Action{
-				ActionCore: scenario.ActionCore{
-					Type:  "GetAppStructure",
-					Label: "Get app structure",
-				},
-				Settings: &getAppStructureSettings{},
-			})
+func evaluateActionList(actions []scenario.Action) []scenario.Action {
+	appStructureScenario := make([]scenario.Action, 0, len(actions))
+	for _, act := range actions {
+		info, subActions := act.AppStructureAction()
+		if info != nil {
+			if info.Include {
+				appStructureScenario = append(appStructureScenario, act)
+			}
+			if info.IsAppAction {
+				appStructureScenario = append(appStructureScenario, scenario.Action{
+					ActionCore: scenario.ActionCore{
+						Type:  "getappstructure",
+						Label: "Get app structure",
+					},
+					Settings: &getAppStructureSettings{},
+				})
+
+			}
+			if len(subActions) > 0 {
+				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions)...)
+			}
 		}
 	}
-
 	return appStructureScenario
 }
 
@@ -307,8 +312,6 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 		return errors.New("appStructure object is nil")
 	}
 
-	// Todo get and set object visualization
-
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		obj := AppStructureObject{
 			AppObjectDef: AppObjectDef{
@@ -316,8 +319,6 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 				Type: typ,
 			},
 		}
-
-		// Todo handle auto-chart subtype
 
 		objectType := ObjectTypeDefault
 		if oType, err := ObjectTypeEnumMap.Int(typ); err == nil {
@@ -485,7 +486,7 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 		}
 	}
 
-	obj.Selectable = def.Select != nil // Todo also check if has dimensions
+	obj.Selectable = def.Select != nil
 	if obj.Selectable {
 		// Hyper cube dimensions and measures
 		dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")

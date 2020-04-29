@@ -61,3 +61,11 @@ func (action IteratedSettings) Validate() error {
 // IsContainerAction implements ContainerAction interface
 // and sets container action logging to original action entry
 func (action IteratedSettings) IsContainerAction() {}
+
+// AppStructureAction implements AppStructureAction interface
+func (action IteratedSettings) AppStructureAction() (*AppStructureInfo, []Action) {
+	return &AppStructureInfo{
+		IsAppAction: false,
+		Include:     false,
+	}, action.Actions
+}
