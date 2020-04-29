@@ -378,6 +378,41 @@ func (structure *AppStructure) AddBookmark(bookmark AppStructureBookmark) {
 	structure.Bookmarks[bookmark.ID] = bookmark
 }
 
+func (structure *AppStructure) GetSelectables(rooObject string) ([]AppStructureObject, error) {
+	rootObj, ok := structure.Objects[rooObject]
+	if !ok {
+		return nil, errors.New("not found") // todo make defined error
+	}
+
+	return structure.addSelectableChildren(rootObj), nil
+}
+
+func (structure *AppStructure) addSelectableChildren(obj AppStructureObject) []AppStructureObject {
+	selectables := make([]AppStructureObject, 0, 1)
+	if obj.Selectable {
+		selectables = append(selectables, obj)
+	}
+
+	if obj.ExtendsId != "" {
+		linkedObject, ok := structure.Objects[obj.ExtendsId]
+		if ok {
+			selectableChildren := structure.addSelectableChildren(linkedObject)
+			selectables = append(selectables, selectableChildren...)
+		}
+	}
+
+	for id := range obj.Children {
+		child, ok := structure.Objects[id]
+		if !ok {
+			continue
+		}
+
+		selectableChildren := structure.addSelectableChildren(child)
+		selectables = append(selectables, selectableChildren...)
+	}
+	return selectables
+}
+
 func handleDefaultObject(ctx context.Context, sessionState *session.State, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
 	genObj, err := app.Doc.GetObject(ctx, id)
 	if err != nil {
@@ -529,6 +564,11 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 					Def:       expression.Expr,
 				})
 			}
+		}
+
+		// no dimension = not selectable
+		if len(obj.Dimensions) < 1 {
+			obj.Selectable = false
 		}
 	}
 	// Todo handle non "selectable" objects
