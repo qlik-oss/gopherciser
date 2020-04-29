@@ -73,7 +73,7 @@ type (
 		// RawProperties of Sense object
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 		// Children to the sense object
-		Children []AppObjectDef `json:"children,omitempty"`
+		Children map[string]string `json:"children,omitempty"`
 		// Selectable true if select can be done in object
 		Selectable bool `json:"selectable"`
 		// Dimensions meta information of dimensions defined in object
@@ -96,6 +96,8 @@ type (
 
 	// AppStructureBookmark list of bookmarks in the app
 	AppStructureBookmark struct {
+		// ID of bookmark
+		ID string `json:"id"`
 		// Title of bookmark
 		Title string `json:"title"`
 		// Description of bookmark
@@ -110,9 +112,9 @@ type (
 	AppStructure struct {
 		AppMeta AppStructureAppMeta `json:"meta"`
 		// Objects in Sense app
-		Objects []AppStructureObject `json:"objects"`
+		Objects map[string]AppStructureObject `json:"objects"`
 		// Bookmarks list of bookmarks in the app
-		Bookmarks []AppStructureBookmark `json:"bookmarks"`
+		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
 
 		structureLock sync.Mutex
 	}
@@ -361,9 +363,9 @@ func (structure *AppStructure) AddObject(obj AppStructureObject) {
 	structure.structureLock.Lock()
 	defer structure.structureLock.Unlock()
 	if structure.Objects == nil {
-		structure.Objects = make([]AppStructureObject, 0, 1)
+		structure.Objects = make(map[string]AppStructureObject)
 	}
-	structure.Objects = append(structure.Objects, obj)
+	structure.Objects[obj.Id] = obj
 }
 
 // AddBookmark to structure
@@ -371,9 +373,9 @@ func (structure *AppStructure) AddBookmark(bookmark AppStructureBookmark) {
 	structure.structureLock.Lock()
 	defer structure.structureLock.Unlock()
 	if structure.Bookmarks == nil {
-		structure.Bookmarks = make([]AppStructureBookmark, 0, 1)
+		structure.Bookmarks = make(map[string]AppStructureBookmark)
 	}
-	structure.Bookmarks = append(structure.Bookmarks, bookmark)
+	structure.Bookmarks[bookmark.ID] = bookmark
 }
 
 func handleDefaultObject(ctx context.Context, sessionState *session.State, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
@@ -411,21 +413,16 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	var children []AppObjectDef
-	if len(childInfos) > 0 {
-		children = make([]AppObjectDef, 0, len(childInfos))
-	}
 
 	for _, child := range childInfos {
 		if child == nil {
 			continue
 		}
-		children = append(children, AppObjectDef{
-			Id:   child.Id,
-			Type: child.Type,
-		})
+		if obj.Children == nil {
+			obj.Children = make(map[string]string)
+		}
+		obj.Children[child.Id] = child.Type
 	}
-	obj.Children = children
 
 	// Lookup and set ExtendsID
 	extendsIdPath := senseobjdef.NewDataPath("/qExtendsId")
@@ -655,6 +652,15 @@ func handleBookmark(ctx context.Context, app *senseobjects.App, id string, struc
 
 	structureBookmark.Title = meta.Title
 	structureBookmark.Description = meta.Description
+
+	idPath := senseobjdef.NewDataPath("/qInfo/qId")
+	rawId, err := idPath.Lookup(properties)
+	if err != nil {
+		return errors.Wrap(err, "failed to get ID of bookmark")
+	}
+	if err := jsonit.Unmarshal(rawId, &structureBookmark.ID); err != nil {
+		return errors.Wrap(err, "failed to unmarshal ID of bookmark")
+	}
 
 	structure.AddBookmark(structureBookmark)
 
