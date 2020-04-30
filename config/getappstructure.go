@@ -512,96 +512,111 @@ func handleObject(sessionState *session.State, typ string, obj *AppStructureObje
 		properties = obj.RawExtendedProperties
 	}
 
+	// Set selectable flag
 	obj.Selectable = def.Select != nil
+
+	var dimensionsPath, measuresPath, listObjectPath string
 	if obj.Selectable {
 		// Hyper cube dimensions and measures
-		dimensions := senseobjdef.NewDataPath(def.Select.Path + "/qDimensions")
-		measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
-
-		// Try to set dimensions and measures, null if not exist or not parsable (error)
-		rawDimensions, _ := dimensions.Lookup(properties)
-		if rawDimensions != nil {
-			var dimensions []*enigma.NxDimension
-			if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
-				return errors.WithStack(err)
-			}
-			obj.Dimensions = make([]AppStructureDimensionMeta, 0, len(dimensions))
-			for _, dimension := range dimensions {
-				if dimension == nil {
-					continue
-				}
-
-				obj.Dimensions = append(obj.Dimensions, AppStructureDimensionMeta{
-					LibraryId:       dimension.LibraryId,
-					LabelExpression: dimension.Def.LabelExpression,
-					Defs:            dimension.Def.FieldDefs,
-					Labels:          dimension.Def.FieldLabels,
-				})
-			}
-		}
-
-		rawMeasures, _ := measures.Lookup(properties)
-		if rawMeasures != nil {
-			var measures []*enigma.NxMeasure
-			if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
-				// Todo error or warning here?
-				return errors.WithStack(err)
-			}
-			obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
-			for _, measure := range measures {
-				if measure == nil {
-					continue
-				}
-				obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
-					LibraryId: measure.LibraryId,
-					Label:     measure.Def.Label,
-					Def:       measure.Def.Def,
-				})
-			}
-		}
+		dimensionsPath = fmt.Sprintf("%s/qDimensions", def.Select.Path)
+		measuresPath = fmt.Sprintf("%s/qMeasures", def.Select.Path)
 
 		// Handle list object
-		path := def.Select.Path
-		if !strings.HasSuffix(path, "/qListObjectDef") {
-			path = def.Select.Path + "/qListObjectDef"
+		listObjectPath = def.Select.Path
+		if !strings.HasSuffix(listObjectPath, "/qListObjectDef") {
+			listObjectPath = fmt.Sprintf("%s/qListObjectDef", def.Select.Path)
 		}
-		listObjects := senseobjdef.NewDataPath(path)
-		rawListObject, _ := listObjects.Lookup(properties)
-		if rawListObject != nil {
-			var listObject enigma.ListObjectDef
-			if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
-				return errors.WithStack(err)
-			}
-			obj.Dimensions = []AppStructureDimensionMeta{
-				{
-					LibraryId:       listObject.LibraryId,
-					LabelExpression: listObject.Def.LabelExpression,
-					Defs:            listObject.Def.FieldDefs,
-					Labels:          listObject.Def.FieldLabels,
-				},
-			}
+	} else {
+		// Guess data paths using DataDef.Path as base
 
-			if obj.Measures == nil {
-				obj.Measures = make([]AppStructureMeasureMeta, 0, len(listObject.Expressions))
-			}
+		// Hyper cube dimensions and measures
+		dimensionsPath = fmt.Sprintf("%sDef/qDimensions", def.DataDef.Path)
+		measuresPath = fmt.Sprintf("%sDef/qMeasures", def.DataDef.Path)
 
-			for _, expression := range listObject.Expressions {
-				obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
-					LibraryId: expression.LibraryId,
-					Def:       expression.Expr,
-				})
-			}
-		}
-
-		// no dimension = not selectable
-		if len(obj.Dimensions) < 1 {
-			obj.Selectable = false
+		// Handle list object
+		listObjectPath = fmt.Sprintf("%sDef", def.DataDef.Path)
+		if !strings.HasSuffix(listObjectPath, "/qListObjectDef") {
+			listObjectPath = fmt.Sprintf("%s/qListObjectDef", def.DataDef.Path)
 		}
 	}
-	// Todo handle non "selectable" objects
-	//else {
-	//
-	//}
+
+	dimensions := senseobjdef.NewDataPath(dimensionsPath)
+	measures := senseobjdef.NewDataPath(measuresPath)
+	listObjects := senseobjdef.NewDataPath(listObjectPath)
+
+	// Try to set dimensions and measures, null if not exist or not parsable (error)
+	rawDimensions, _ := dimensions.Lookup(properties)
+	if rawDimensions != nil {
+		var dimensions []*enigma.NxDimension
+		if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
+			return errors.WithStack(err)
+		}
+		obj.Dimensions = make([]AppStructureDimensionMeta, 0, len(dimensions))
+		for _, dimension := range dimensions {
+			if dimension == nil {
+				continue
+			}
+
+			obj.Dimensions = append(obj.Dimensions, AppStructureDimensionMeta{
+				LibraryId:       dimension.LibraryId,
+				LabelExpression: dimension.Def.LabelExpression,
+				Defs:            dimension.Def.FieldDefs,
+				Labels:          dimension.Def.FieldLabels,
+			})
+		}
+	}
+
+	rawMeasures, _ := measures.Lookup(properties)
+	if rawMeasures != nil {
+		var measures []*enigma.NxMeasure
+		if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
+			// Todo error or warning here?
+			return errors.WithStack(err)
+		}
+		obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
+		for _, measure := range measures {
+			if measure == nil {
+				continue
+			}
+			obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+				LibraryId: measure.LibraryId,
+				Label:     measure.Def.Label,
+				Def:       measure.Def.Def,
+			})
+		}
+	}
+
+	rawListObject, _ := listObjects.Lookup(properties)
+	if rawListObject != nil {
+		var listObject enigma.ListObjectDef
+		if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
+			return errors.WithStack(err)
+		}
+		obj.Dimensions = []AppStructureDimensionMeta{
+			{
+				LibraryId:       listObject.LibraryId,
+				LabelExpression: listObject.Def.LabelExpression,
+				Defs:            listObject.Def.FieldDefs,
+				Labels:          listObject.Def.FieldLabels,
+			},
+		}
+
+		if obj.Measures == nil {
+			obj.Measures = make([]AppStructureMeasureMeta, 0, len(listObject.Expressions))
+		}
+
+		for _, expression := range listObject.Expressions {
+			obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+				LibraryId: expression.LibraryId,
+				Def:       expression.Expr,
+			})
+		}
+	}
+
+	// no dimension = not selectable
+	if len(obj.Dimensions) < 1 {
+		obj.Selectable = false
+	}
 
 	return nil
 }
