@@ -72,6 +72,8 @@ type (
 		AppObjectDef
 		// RawProperties of Sense object
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
+		// RawProperties of extended Sense object
+		RawExtendedProperties json.RawMessage `json:"rawExtendedProperties,omitempty"`
 		// Children to the sense object
 		Children map[string]string `json:"children,omitempty"`
 		// Selectable true if select can be done in object
@@ -351,6 +353,7 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 
 		// Todo (Dev only) comment this line to turn on seeing raw properties in file
 		obj.RawProperties = nil
+		obj.RawExtendedProperties = nil
 
 		appStructure.AddObject(obj)
 		return nil
@@ -394,14 +397,6 @@ func (structure *AppStructure) addSelectableChildren(obj AppStructureObject) []A
 		selectables = append(selectables, obj)
 	}
 
-	if obj.ExtendsId != "" {
-		linkedObject, ok := structure.Objects[obj.ExtendsId]
-		if ok {
-			selectableChildren := structure.addSelectableChildren(linkedObject)
-			selectables = append(selectables, selectableChildren...)
-		}
-	}
-
 	for id := range obj.Children {
 		child, ok := structure.Objects[id]
 		if !ok {
@@ -424,7 +419,30 @@ func handleDefaultObject(ctx context.Context, sessionState *session.State, app *
 		return errors.WithStack(err)
 	}
 
-	return errors.WithStack(handleObject(ctx, sessionState, genObj, typ, obj))
+	// Lookup and set ExtendsID
+	extendsIdPath := senseobjdef.NewDataPath("/qExtendsId")
+	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawProperties)
+	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
+
+	if obj.ExtendsId != "" {
+		extendedObject, err := app.Doc.GetObject(ctx, obj.ExtendsId)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		obj.RawExtendedProperties, err = extendedObject.GetPropertiesRaw(ctx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if err := handleChildren(ctx, extendedObject, obj); err != nil {
+			return errors.WithStack(err)
+		}
+	} else {
+		if err := handleChildren(ctx, genObj, obj); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	return errors.WithStack(handleObject(ctx, sessionState, typ, obj))
 }
 
 func handleAutoChart(ctx context.Context, sessionState *session.State, app *senseobjects.App, id string, obj *AppStructureObject) error {
@@ -441,10 +459,14 @@ func handleAutoChart(ctx context.Context, sessionState *session.State, app *sens
 	generatedPropertiesPath := senseobjdef.NewDataPath("/qUndoExclude/generated")
 	obj.RawProperties, _ = generatedPropertiesPath.Lookup(autoChartProperties)
 
-	return errors.WithStack(handleObject(ctx, sessionState, genObj, ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
+	if err := handleChildren(ctx, genObj, obj); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return errors.WithStack(handleObject(ctx, sessionState, ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
 }
 
-func handleObject(ctx context.Context, sessionState *session.State, genObj *enigma.GenericObject, typ string, obj *AppStructureObject) error {
+func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppStructureObject) error {
 	childInfos, err := genObj.GetChildInfos(ctx)
 	if err != nil {
 		return errors.WithStack(err)
@@ -460,11 +482,10 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 		obj.Children[child.Id] = child.Type
 	}
 
-	// Lookup and set ExtendsID
-	extendsIdPath := senseobjdef.NewDataPath("/qExtendsId")
-	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawProperties)
-	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
+	return nil
+}
 
+func handleObject(ctx context.Context, sessionState *session.State, typ string, obj *AppStructureObject) error {
 	// Lookup and set Visualization
 	visualizationPath := senseobjdef.NewDataPath("/visualization")
 	rawVisualization, _ := visualizationPath.Lookup(obj.RawProperties)
@@ -486,6 +507,11 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 		}
 	}
 
+	properties := obj.RawProperties
+	if obj.RawExtendedProperties != nil {
+		properties = obj.RawExtendedProperties
+	}
+
 	obj.Selectable = def.Select != nil
 	if obj.Selectable {
 		// Hyper cube dimensions and measures
@@ -493,7 +519,7 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 		measures := senseobjdef.NewDataPath(def.Select.Path + "/qMeasures")
 
 		// Try to set dimensions and measures, null if not exist or not parsable (error)
-		rawDimensions, _ := dimensions.Lookup(obj.RawProperties)
+		rawDimensions, _ := dimensions.Lookup(properties)
 		if rawDimensions != nil {
 			var dimensions []*enigma.NxDimension
 			if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
@@ -514,7 +540,7 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 			}
 		}
 
-		rawMeasures, _ := measures.Lookup(obj.RawProperties)
+		rawMeasures, _ := measures.Lookup(properties)
 		if rawMeasures != nil {
 			var measures []*enigma.NxMeasure
 			if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
@@ -540,7 +566,7 @@ func handleObject(ctx context.Context, sessionState *session.State, genObj *enig
 			path = def.Select.Path + "/qListObjectDef"
 		}
 		listObjects := senseobjdef.NewDataPath(path)
-		rawListObject, _ := listObjects.Lookup(obj.RawProperties)
+		rawListObject, _ := listObjects.Lookup(properties)
 		if rawListObject != nil {
 			var listObject enigma.ListObjectDef
 			if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {

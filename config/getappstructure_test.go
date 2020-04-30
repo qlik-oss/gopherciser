@@ -83,7 +83,30 @@ var structureJSON = []byte(`{
     "1074afba-0a68-4ef3-b43a-02e500cd2fd8": {
       "id": "1074afba-0a68-4ef3-b43a-02e500cd2fd8",
       "type": "table",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Alpha"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "TransID"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression3)"
+        }
+      ],
       "extendsId": "LczZG"
     },
     "27908a64-d573-4aaa-ac04-b47932ba7995": {
@@ -105,7 +128,22 @@ var structureJSON = []byte(`{
     "29ee51e0-f9bb-4a4b-8686-96dcd314727c": {
       "id": "29ee51e0-f9bb-4a4b-8686-96dcd314727c",
       "type": "barchart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(Expression1)"
+        }
+      ],
       "extendsId": "WKUFp"
     },
     "2b86d4e7-dff0-4252-9c3f-f67a82626d7d": {
@@ -222,7 +260,22 @@ var structureJSON = []byte(`{
     "532bbe7a-8001-4b94-8b9e-441cc1e8aa48": {
       "id": "532bbe7a-8001-4b94-8b9e-441cc1e8aa48",
       "type": "piechart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim3"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Avg(Expression3)"
+        }
+      ],
       "extendsId": "bTLJu"
     },
     "53d3f92c-90e5-46a5-ab0f-019e9cf955ec": {
@@ -239,7 +292,25 @@ var structureJSON = []byte(`{
     "5932e9a5-14e2-4f6d-8654-c719c288743e": {
       "id": "5932e9a5-14e2-4f6d-8654-c719c288743e",
       "type": "combochart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(Expression2)"
+        },
+        {
+          "def": "Sum(Expression3)"
+        }
+      ],
       "extendsId": "QquqnR"
     },
     "66c88abf-ee94-4568-8b1b-bff6eeaccf7d": {
@@ -326,6 +397,11 @@ var structureJSON = []byte(`{
     "7e3f0dd0-b5f2-4179-9172-d48011e167e9": {
       "id": "7e3f0dd0-b5f2-4179-9172-d48011e167e9",
       "type": "filterpane",
+      "children": {
+        "27908a64-d573-4aaa-ac04-b47932ba7995": "listbox",
+        "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": "listbox",
+        "e13b12f0-c2c1-42cd-aa54-ef6efdbf24c0": "listbox"
+      },
       "selectable": false,
       "extendsId": "UmDGVm"
     },
@@ -345,7 +421,22 @@ var structureJSON = []byte(`{
     "88a8c69b-5715-4c7c-b4ae-293da7a072d9": {
       "id": "88a8c69b-5715-4c7c-b4ae-293da7a072d9",
       "type": "treemap",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "AsciiAlpha"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(AsciiNum)"
+        }
+      ],
       "extendsId": "JmdbDg"
     },
     "8b7da3fa-45ee-4920-bd9d-419950be8f2e": {
@@ -489,7 +580,19 @@ var structureJSON = []byte(`{
     "BvCKL": {
       "id": "BvCKL",
       "type": "histogram",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "=Class([TransID],1100)"
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count([TransID])"
+        }
+      ],
       "extendsId": "6bd32eab-6ae7-4b80-b3d3-e02f22e1d5b8"
     },
     "CPKEjQP": {
@@ -672,13 +775,59 @@ var structureJSON = []byte(`{
     "EKSBrUL": {
       "id": "EKSBrUL",
       "type": "pivot-table",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "TransID"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "Num"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression3)"
+        }
+      ],
       "extendsId": "ZDxxg"
     },
     "ELvcvsJ": {
       "id": "ELvcvsJ",
       "type": "linechart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim2"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression2)"
+        }
+      ],
       "extendsId": "tEwrF"
     },
     "EaUj": {
@@ -1109,7 +1258,22 @@ var structureJSON = []byte(`{
     "NrnEY": {
       "id": "NrnEY",
       "type": "piechart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim3"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Avg(Expression3)"
+        }
+      ],
       "extendsId": "bTLJu"
     },
     "NxTZDm": {
@@ -1136,7 +1300,28 @@ var structureJSON = []byte(`{
     "PUvSAN": {
       "id": "PUvSAN",
       "type": "scatterplot",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(Expression2)"
+        },
+        {
+          "def": "Count(Expression3)"
+        },
+        {
+          "def": "Avg(Expression3)"
+        }
+      ],
       "extendsId": "VqPXn"
     },
     "PaMnJfP": {
@@ -1191,7 +1376,30 @@ var structureJSON = []byte(`{
     "QAr": {
       "id": "QAr",
       "type": "table",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Alpha"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "TransID"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression3)"
+        }
+      ],
       "extendsId": "LczZG"
     },
     "QKPPSD": {
@@ -1603,7 +1811,22 @@ var structureJSON = []byte(`{
     "VevpJm": {
       "id": "VevpJm",
       "type": "treemap",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "AsciiAlpha"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(AsciiNum)"
+        }
+      ],
       "extendsId": "JmdbDg"
     },
     "VqPXn": {
@@ -1809,7 +2032,22 @@ var structureJSON = []byte(`{
     "XjwmbU": {
       "id": "XjwmbU",
       "type": "barchart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(Expression1)"
+        }
+      ],
       "extendsId": "WKUFp"
     },
     "XwGwH": {
@@ -1924,7 +2162,38 @@ var structureJSON = []byte(`{
     "a19b72ab-2ca8-4b69-8082-2c100aba8c3c": {
       "id": "a19b72ab-2ca8-4b69-8082-2c100aba8c3c",
       "type": "pivot-table",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "TransID"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "Num"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression3)"
+        }
+      ],
       "extendsId": "ZDxxg"
     },
     "aFjjST": {
@@ -2125,7 +2394,25 @@ var structureJSON = []byte(`{
     "bZCvHFB": {
       "id": "bZCvHFB",
       "type": "combochart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(Expression2)"
+        },
+        {
+          "def": "Sum(Expression3)"
+        }
+      ],
       "extendsId": "QquqnR"
     },
     "ba3dabae-88a4-41f8-a4d3-a83a3f805232": {
@@ -2189,7 +2476,28 @@ var structureJSON = []byte(`{
     "c66245be-8472-4900-9f05-e07a0141ed99": {
       "id": "c66245be-8472-4900-9f05-e07a0141ed99",
       "type": "scatterplot",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim1"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(Expression2)"
+        },
+        {
+          "def": "Count(Expression3)"
+        },
+        {
+          "def": "Avg(Expression3)"
+        }
+      ],
       "extendsId": "VqPXn"
     },
     "cQTurT": {
@@ -2576,7 +2884,22 @@ var structureJSON = []byte(`{
     "fcaf1755-a56b-4d33-a3b4-cebe86254e61": {
       "id": "fcaf1755-a56b-4d33-a3b4-cebe86254e61",
       "type": "linechart",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Dim2"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression2)"
+        }
+      ],
       "extendsId": "tEwrF"
     },
     "fjETFn": {
@@ -3144,6 +3467,11 @@ var structureJSON = []byte(`{
     "naSGALJ": {
       "id": "naSGALJ",
       "type": "filterpane",
+      "children": {
+        "27908a64-d573-4aaa-ac04-b47932ba7995": "listbox",
+        "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": "listbox",
+        "e13b12f0-c2c1-42cd-aa54-ef6efdbf24c0": "listbox"
+      },
       "selectable": false,
       "extendsId": "UmDGVm"
     },
@@ -3337,7 +3665,30 @@ var structureJSON = []byte(`{
     "sDuuGK": {
       "id": "sDuuGK",
       "type": "distributionplot",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Alpha"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "TransLineID"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Sum(TransID)"
+        }
+      ],
       "extendsId": "35585276-91fd-45f2-8594-e28feae7a8cd"
     },
     "tCxXew": {
@@ -3505,7 +3856,39 @@ var structureJSON = []byte(`{
     "uaHYE": {
       "id": "uaHYE",
       "type": "boxplot",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "TransLineID"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "label": "Box start - 1.5 IQR",
+          "def": "(Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.25 ) - ((Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.75 ) - Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.25 )) * 1.5))"
+        },
+        {
+          "label": "First quartile",
+          "def": "Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.25 )"
+        },
+        {
+          "label": "Median",
+          "def": "Median( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] )  )"
+        },
+        {
+          "label": "Third quartile",
+          "def": "Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.75 )"
+        },
+        {
+          "label": "Box end + 1.5 IQR",
+          "def": "(Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.75 ) + ((Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.75 ) - Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.25 )) * 1.5))"
+        }
+      ],
       "extendsId": "02624185-cc26-4e98-92a1-d2008c36fd85"
     },
     "vHznrgh": {
@@ -3729,7 +4112,7 @@ var structureJSON = []byte(`{
   }
 }`)
 
-func TestGetSelectables(t *testing.T) {
+func TestConfig_GetSelectables(t *testing.T) {
 	var structure AppStructure
 	if err := jsonit.Unmarshal(structureJSON, &structure); err != nil {
 		t.Fatal(err)
@@ -3740,12 +4123,12 @@ func TestGetSelectables(t *testing.T) {
 	}
 
 	expectedSelectables := map[string]interface{}{
-		"tEwrF":                                nil,
-		"JmdbDg":                               nil,
-		"LczZG":                                nil,
-		"WKUFp":                                nil,
-		"bTLJu":                                nil,
-		"QquqnR":                               nil,
+		"88a8c69b-5715-4c7c-b4ae-293da7a072d9": nil,
+		"fcaf1755-a56b-4d33-a3b4-cebe86254e61": nil,
+		"1074afba-0a68-4ef3-b43a-02e500cd2fd8": nil,
+		"29ee51e0-f9bb-4a4b-8686-96dcd314727c": nil,
+		"532bbe7a-8001-4b94-8b9e-441cc1e8aa48": nil,
+		"5932e9a5-14e2-4f6d-8654-c719c288743e": nil,
 		"27908a64-d573-4aaa-ac04-b47932ba7995": nil,
 		"b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": nil,
 		"e13b12f0-c2c1-42cd-aa54-ef6efdbf24c0": nil,
