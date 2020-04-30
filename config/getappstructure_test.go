@@ -3772,29 +3772,29 @@ func TestConfig_GetAppStructures(t *testing.T) {
 	}
 	cfg.Scenario = []scenario.Action{
 		{
-			scenario.ActionCore{
+			ActionCore: scenario.ActionCore{
 				Type: scenario.ActionOpenApp,
 			},
-			scenario.OpenAppSettings{},
+			Settings: scenario.OpenAppSettings{},
 		},
 		{
-			scenario.ActionCore{
+			ActionCore: scenario.ActionCore{
 				Type: scenario.ActionIterated,
 			},
-			scenario.IteratedSettings{
+			Settings: scenario.IteratedSettings{
 				Iterations: 10,
 				Actions: []scenario.Action{
 					{
-						scenario.ActionCore{
+						ActionCore: scenario.ActionCore{
 							Type: scenario.ActionClearAll,
 						},
-						scenario.ClearAllSettings{},
+						Settings: scenario.ClearAllSettings{},
 					},
 					{
-						scenario.ActionCore{
+						ActionCore: scenario.ActionCore{
 							Type: scenario.ActionOpenApp,
 						},
-						scenario.OpenAppSettings{},
+						Settings: scenario.OpenAppSettings{},
 					},
 				},
 			},
