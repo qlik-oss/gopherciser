@@ -199,7 +199,6 @@ func (cfg *Config) GetAppStructures(ctx context.Context) error {
 	}
 
 	// Setup outputs folder
-	// Todo use outputs dir for structure result
 	outputsDir, err := setupOutputs(cfg.Settings.OutputsSettings)
 	if err != nil {
 		return errors.WithStack(err)
@@ -442,7 +441,7 @@ func handleDefaultObject(ctx context.Context, sessionState *session.State, app *
 		}
 	}
 
-	return errors.WithStack(handleObject(ctx, sessionState, typ, obj))
+	return errors.WithStack(handleObject(sessionState, typ, obj))
 }
 
 func handleAutoChart(ctx context.Context, sessionState *session.State, app *senseobjects.App, id string, obj *AppStructureObject) error {
@@ -458,12 +457,13 @@ func handleAutoChart(ctx context.Context, sessionState *session.State, app *sens
 
 	generatedPropertiesPath := senseobjdef.NewDataPath("/qUndoExclude/generated")
 	obj.RawProperties, _ = generatedPropertiesPath.Lookup(autoChartProperties)
+	obj.RawExtendedProperties = autoChartProperties
 
 	if err := handleChildren(ctx, genObj, obj); err != nil {
 		return errors.WithStack(err)
 	}
 
-	return errors.WithStack(handleObject(ctx, sessionState, ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
+	return errors.WithStack(handleObject(sessionState, ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
 }
 
 func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppStructureObject) error {
@@ -485,7 +485,7 @@ func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppS
 	return nil
 }
 
-func handleObject(ctx context.Context, sessionState *session.State, typ string, obj *AppStructureObject) error {
+func handleObject(sessionState *session.State, typ string, obj *AppStructureObject) error {
 	// Lookup and set Visualization
 	visualizationPath := senseobjdef.NewDataPath("/visualization")
 	rawVisualization, _ := visualizationPath.Lookup(obj.RawProperties)
@@ -508,7 +508,7 @@ func handleObject(ctx context.Context, sessionState *session.State, typ string, 
 	}
 
 	properties := obj.RawProperties
-	if obj.RawExtendedProperties != nil {
+	if obj.ExtendsId != "" && obj.RawExtendedProperties != nil {
 		properties = obj.RawExtendedProperties
 	}
 
