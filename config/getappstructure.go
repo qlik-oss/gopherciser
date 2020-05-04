@@ -24,7 +24,9 @@ import (
 )
 
 type (
-	getAppStructureSettings struct{}
+	getAppStructureSettings struct {
+		IncludeRaw bool `json:"includeRaw,omitempty"`
+	}
 
 	// MetaDef meta information for Library objects such as dimension and measure
 	MetaDef struct {
@@ -157,11 +159,11 @@ func (err AppStructureObjectNotFoundError) Error() string {
 	return string(err)
 }
 
-func (cfg *Config) getAppStructureScenario() []scenario.Action {
-	return evaluateActionList(cfg.Scenario)
+func (cfg *Config) getAppStructureScenario(includeRaw bool) []scenario.Action {
+	return evaluateActionList(cfg.Scenario, includeRaw)
 }
 
-func evaluateActionList(actions []scenario.Action) []scenario.Action {
+func evaluateActionList(actions []scenario.Action, includeRaw bool) []scenario.Action {
 	appStructureScenario := make([]scenario.Action, 0, len(actions))
 	for _, act := range actions {
 		info, subActions := act.AppStructureAction()
@@ -175,12 +177,14 @@ func evaluateActionList(actions []scenario.Action) []scenario.Action {
 						Type:  "getappstructure",
 						Label: "Get app structure",
 					},
-					Settings: &getAppStructureSettings{},
+					Settings: &getAppStructureSettings{
+						IncludeRaw: includeRaw,
+					},
 				})
 
 			}
 			if len(subActions) > 0 {
-				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions)...)
+				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw)...)
 			}
 		}
 	}
@@ -188,9 +192,9 @@ func evaluateActionList(actions []scenario.Action) []scenario.Action {
 }
 
 // GetAppStructures for all apps in scenario
-func (cfg *Config) GetAppStructures(ctx context.Context) error {
+func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error {
 	// find all auth and actions
-	appStructureScenario := cfg.getAppStructureScenario()
+	appStructureScenario := cfg.getAppStructureScenario(includeRaw)
 	if len(appStructureScenario) < 1 {
 		return errors.New("no applicable actions in scenario")
 	}
@@ -282,7 +286,7 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		if info == nil {
 			continue
 		}
-		if err := getStructureForObjectAsync(sessionState, actionState, app, info.Id, info.Type, appStructure); err != nil {
+		if err := getStructureForObjectAsync(sessionState, actionState, app, info.Id, info.Type, appStructure, settings.IncludeRaw); err != nil {
 			actionState.AddErrors(err)
 			return
 		}
@@ -319,7 +323,7 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 	}
 }
 
-func getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, appStructure *AppStructure) error {
+func getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, appStructure *AppStructure, includeRaw bool) error {
 	if appStructure == nil {
 		return errors.New("appStructure object is nil")
 	}
@@ -361,9 +365,11 @@ func getStructureForObjectAsync(sessionState *session.State, actionState *action
 			}
 		}
 
-		// Todo (Dev only) comment this line to turn on seeing raw properties in file
-		obj.RawProperties = nil
-		obj.RawExtendedProperties = nil
+		if !includeRaw {
+			// Remove raw properties from structure output
+			obj.RawProperties = nil
+			obj.RawExtendedProperties = nil
+		}
 
 		appStructure.AddObject(obj)
 		return nil

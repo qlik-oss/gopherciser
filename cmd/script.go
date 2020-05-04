@@ -11,7 +11,10 @@ import (
 
 var (
 	scriptOverwrite bool
-	outputFolder    string
+
+	// structure command parameters
+	outputFolder string
+	includeRaw   bool
 )
 
 func init() {
@@ -35,6 +38,7 @@ func init() {
 	AddAllSharedParameters(structureCmd)
 	AddLoggingParameters(structureCmd)
 	structureCmd.Flags().StringVarP(&outputFolder, "output", "o", "", "override script output folder")
+	structureCmd.Flags().BoolVarP(&includeRaw, "raw", "r", false, "include raw properties in structure")
 }
 
 // scriptCmd represents the script command
@@ -182,7 +186,7 @@ var structureCmd = &cobra.Command{
 		// Override log settings in case of parameters being set
 		ConfigOverrideLogSettings(cfg)
 
-		if err := cfg.GetAppStructures(context.Background()); err != nil {
+		if err := cfg.GetAppStructures(context.Background(), includeRaw); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeAppStructure)
 		}
