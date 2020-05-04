@@ -134,6 +134,9 @@ const (
 	ObjectTypeBookmark
 	ObjectTypeMasterObject
 	ObjectTypeAutoChart
+	ObjectSheet
+	ObjectLoadModel
+	ObjectAppprops
 )
 
 var (
@@ -143,6 +146,9 @@ var (
 		"bookmark":     int(ObjectTypeBookmark),
 		"masterobject": int(ObjectTypeMasterObject),
 		"auto-chart":   int(ObjectTypeAutoChart),
+		"sheet":        int(ObjectSheet),
+		"loadmodel":    int(ObjectLoadModel),
+		"appprops":     int(ObjectAppprops),
 	})
 )
 
@@ -501,6 +507,24 @@ func handleObject(sessionState *session.State, typ string, obj *AppStructureObje
 		vis = typ
 	}
 
+	properties := obj.RawProperties
+	if obj.ExtendsId != "" && obj.RawExtendedProperties != nil {
+		properties = obj.RawExtendedProperties
+	}
+
+	metaDef := senseobjdef.NewDataPath("/qMetaDef")
+	rawMetaDef, _ := metaDef.Lookup(properties)
+	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
+
+	enumTyp, _ := ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
+
+	// Should we look for measures and dimensions?
+	switch ObjectType(enumTyp) {
+	case ObjectSheet, ObjectAppprops, ObjectLoadModel:
+		// Known object which does not have measures and dimensions
+		return nil
+	}
+
 	def, err := senseobjdef.GetObjectDef(vis)
 	if err != nil {
 		switch errors.Cause(err).(type) {
@@ -511,15 +535,6 @@ func handleObject(sessionState *session.State, typ string, obj *AppStructureObje
 			return errors.WithStack(err)
 		}
 	}
-
-	properties := obj.RawProperties
-	if obj.ExtendsId != "" && obj.RawExtendedProperties != nil {
-		properties = obj.RawExtendedProperties
-	}
-
-	metaDef := senseobjdef.NewDataPath("/qMetaDef")
-	rawMetaDef, _ := metaDef.Lookup(properties)
-	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
 
 	// Set selectable flag
 	obj.Selectable = def.Select != nil
