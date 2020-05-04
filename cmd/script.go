@@ -32,7 +32,7 @@ func init() {
 	// structure sub command
 	scriptCmd.AddCommand(structureCmd)
 	AddAllSharedParameters(structureCmd)
-	// TODO Add parameter for using title or GUID
+	AddLoggingParameters(structureCmd)
 	// TODO Add parameter for output folder
 }
 
@@ -174,6 +174,9 @@ var structureCmd = &cobra.Command{
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeJSONParseError)
 		}
+
+		// Override log settings in case of parameters being set
+		ConfigOverrideLogSettings(cfg)
 
 		if err := cfg.GetAppStructures(context.Background()); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)

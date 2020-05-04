@@ -40,17 +40,12 @@ type (
 )
 
 var (
-	traffic          bool
-	trafficMetrics   bool
-	debug            bool
 	metricsPort      int
 	metricsAddress   string
 	metricsLabel     string
 	metricsGroupings []string
-	logFormat        string
 	profTyp          string
 	objDefFile       string
-	summaryType      string
 )
 
 // *** Custom errors ***
@@ -172,11 +167,7 @@ func init() {
 	executeCmd.Flags().StringVarP(&objDefFile, "definitions", "d", "", `Custom object definitions and overrides.`)
 
 	// Logging
-	executeCmd.Flags().BoolVarP(&traffic, "traffic", "t", false, "Log traffic. Logging traffic is heavy and should only be done for debugging purposes.")
-	executeCmd.Flags().BoolVarP(&trafficMetrics, "trafficmetrics", "m", false, "Log traffic metrics.")
-	executeCmd.Flags().BoolVar(&debug, "debug", false, "Log debug info.")
-	executeCmd.Flags().StringVar(&logFormat, "logformat", "", getLogFormatHelpString())
-	executeCmd.Flags().StringVar(&summaryType, "summary", "", getSummaryTypeHelpString())
+	AddLoggingParameters(executeCmd)
 
 	// Prometheus
 	executeCmd.Flags().IntVar(&metricsPort, "metrics", 0, "Export via http prometheus metrics.")
@@ -201,18 +192,7 @@ func execute() error {
 	}
 
 	// === logging section ===
-
-	if trafficMetrics {
-		cfg.SetTrafficMetricsLogging()
-	}
-
-	if traffic {
-		cfg.SetTrafficLogging()
-	}
-
-	if debug {
-		cfg.SetDebugLogging()
-	}
+	ConfigOverrideLogSettings(cfg)
 
 	if logFormat != "" {
 		var errLogformat error
@@ -299,34 +279,12 @@ func ReadObjectDefinitions() error {
 	return nil
 }
 
-func getLogFormatHelpString() string {
-	buf := helpers.NewBuffer()
-	buf.WriteString("Set a log format to be used. One of:\n")
-	config.LogFormatType(0).GetEnumMap().ForEachSorted(func(k int, v string) {
-		addEnumToBuf(buf, k, v)
-	})
-	buf.WriteString("Defaults to in-script definition and falls back on ")
-	defaultFormat, _ := config.LogFormatType(0).GetEnumMap().String(0)
-	buf.WriteString(defaultFormat)
-	buf.WriteString("\n")
-	return buf.String()
-}
-
 func addEnumToBuf(buf *helpers.Buffer, k int, v string) {
 	buf.WriteString("[")
 	buf.WriteString(strconv.Itoa(k))
 	buf.WriteString("]: ")
 	buf.WriteString(v)
 	buf.WriteString("\n")
-}
-
-func getSummaryTypeHelpString() string {
-	buf := helpers.NewBuffer()
-	buf.WriteString("Set a summary type to be used. One of:\n")
-	config.SummaryType(0).GetEnumMap().ForEachSorted(func(k int, v string) {
-		addEnumToBuf(buf, k, v)
-	})
-	return buf.String()
 }
 
 func resolveLogFormat(param string) (config.LogFormatType, error) {

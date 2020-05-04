@@ -4148,7 +4148,7 @@ func TestConfig_GetSelectables(t *testing.T) {
 		t.Errorf("object<%s> expected but not found\n", id)
 	}
 
-	selectables, err = structure.GetSelectables("not-a-real-object-id")
+	_, err = structure.GetSelectables("not-a-real-object-id")
 	switch err.(type) {
 	case AppStructureObjectNotFoundError:
 	default:
