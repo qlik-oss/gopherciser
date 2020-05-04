@@ -11,6 +11,7 @@ import (
 
 var (
 	scriptOverwrite bool
+	outputFolder    string
 )
 
 func init() {
@@ -33,7 +34,7 @@ func init() {
 	scriptCmd.AddCommand(structureCmd)
 	AddAllSharedParameters(structureCmd)
 	AddLoggingParameters(structureCmd)
-	// TODO Add parameter for output folder
+	structureCmd.Flags().StringVarP(&outputFolder, "output", "o", "", "override script output folder")
 }
 
 // scriptCmd represents the script command
@@ -174,6 +175,9 @@ var structureCmd = &cobra.Command{
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeJSONParseError)
 		}
+
+		// Override output folder
+		cfg.Settings.OutputsSettings.Dir = outputFolder
 
 		// Override log settings in case of parameters being set
 		ConfigOverrideLogSettings(cfg)
