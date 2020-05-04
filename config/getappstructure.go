@@ -25,14 +25,14 @@ import (
 type (
 	getAppStructureSettings struct{}
 
-	// LibraryMetaDef meta information for Library objects such as dimension and measure
-	LibraryMetaDef struct {
+	// MetaDef meta information for Library objects such as dimension and measure
+	MetaDef struct {
 		// Title of library item
-		Title string `json:"title"`
+		Title string `json:"title,omitempty"`
 		// Description of library item
-		Description string `json:"description"`
+		Description string `json:"description,omitempty"`
 		// Tags of  of library item
-		Tags []string `json:"tags"`
+		Tags []string `json:"tags,omitempty"`
 	}
 
 	// AppObjectDef title and ID of a Sense object
@@ -45,7 +45,7 @@ type (
 
 	AppStructureMeasureMeta struct {
 		// Meta information, only included for library items
-		Meta *LibraryMetaDef `json:"meta,omitempty"`
+		Meta *MetaDef `json:"meta,omitempty"`
 		// LibraryId connects measure to separately defined measure
 		LibraryId string `json:"libraryId,omitempty"`
 		// Label of on measure
@@ -56,7 +56,7 @@ type (
 
 	AppStructureDimensionMeta struct {
 		// Meta information, only included for library items
-		Meta *LibraryMetaDef `json:"meta,omitempty"`
+		Meta *MetaDef `json:"meta,omitempty"`
 		// LibraryId connects dimension to separately defined dimension
 		LibraryId string `json:"libraryId,omitempty"`
 		// LabelExpression optional parameter with label expression
@@ -70,6 +70,7 @@ type (
 	// AppStructureObject sense object structure
 	AppStructureObject struct {
 		AppObjectDef
+		MetaDef
 		// RawProperties of Sense object
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 		// RawProperties of extended Sense object
@@ -512,6 +513,10 @@ func handleObject(sessionState *session.State, typ string, obj *AppStructureObje
 		properties = obj.RawExtendedProperties
 	}
 
+	metaDef := senseobjdef.NewDataPath("/qMetaDef")
+	rawMetaDef, _ := metaDef.Lookup(properties)
+	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
+
 	// Set selectable flag
 	obj.Selectable = def.Select != nil
 
@@ -649,7 +654,7 @@ func handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *A
 		return errors.WithStack(err)
 	}
 
-	var meta LibraryMetaDef
+	var meta MetaDef
 	if err := jsonit.Unmarshal(rawMeta, &meta); err != nil {
 		return errors.WithStack(err)
 	}
@@ -694,7 +699,7 @@ func handleDimension(ctx context.Context, app *senseobjects.App, id string, obj 
 		return errors.WithStack(err)
 	}
 
-	var meta LibraryMetaDef
+	var meta MetaDef
 	if err := jsonit.Unmarshal(rawMeta, &meta); err != nil {
 		return errors.WithStack(err)
 	}
@@ -729,7 +734,7 @@ func handleBookmark(ctx context.Context, app *senseobjects.App, id string, struc
 
 	metaPath := senseobjdef.NewDataPath("/qMetaDef")
 	rawMeta, _ := metaPath.Lookup(properties)
-	var meta LibraryMetaDef // meta shares title and description from this struct
+	var meta MetaDef // meta shares title and description from this struct
 	_ = jsonit.Unmarshal(rawMeta, &meta)
 
 	structureBookmark.Title = meta.Title
