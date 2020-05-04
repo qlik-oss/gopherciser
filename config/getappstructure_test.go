@@ -4117,6 +4117,7 @@ func TestConfig_GetSelectables(t *testing.T) {
 	if err := jsonit.Unmarshal(structureJSON, &structure); err != nil {
 		t.Fatal(err)
 	}
+
 	selectables, err := structure.GetSelectables("41dbb01c-d1bd-4528-be05-910ee565988b")
 	if err != nil {
 		t.Fatal(err)
@@ -4145,6 +4146,13 @@ func TestConfig_GetSelectables(t *testing.T) {
 
 	for id := range expectedSelectables {
 		t.Errorf("object<%s> expected but not found\n", id)
+	}
+
+	selectables, err = structure.GetSelectables("not-a-real-object-id")
+	switch err.(type) {
+	case AppStructureObjectNotFoundError:
+	default:
+		t.Error("Expected AppStructureObjectNotFoundError, got:", err)
 	}
 }
 

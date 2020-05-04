@@ -123,7 +123,8 @@ type (
 		structureLock sync.Mutex
 	}
 
-	ObjectType int
+	ObjectType                      int
+	AppStructureObjectNotFoundError string
 )
 
 const (
@@ -144,6 +145,11 @@ var (
 		"auto-chart":   int(ObjectTypeAutoChart),
 	})
 )
+
+// Error object was not found in app structure
+func (err AppStructureObjectNotFoundError) Error() string {
+	return string(err)
+}
 
 func (cfg *Config) getAppStructureScenario() []scenario.Action {
 	return evaluateActionList(cfg.Scenario)
@@ -383,7 +389,7 @@ func (structure *AppStructure) AddBookmark(bookmark AppStructureBookmark) {
 func (structure *AppStructure) GetSelectables(rooObject string) ([]AppStructureObject, error) {
 	rootObj, ok := structure.Objects[rooObject]
 	if !ok {
-		return nil, errors.New("not found") // todo make defined error
+		return nil, AppStructureObjectNotFoundError(rooObject)
 	}
 
 	return structure.addSelectableChildren(rootObj), nil
@@ -573,7 +579,6 @@ func handleObject(sessionState *session.State, typ string, obj *AppStructureObje
 	if rawMeasures != nil {
 		var measures []*enigma.NxMeasure
 		if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
-			// Todo error or warning here?
 			return errors.WithStack(err)
 		}
 		obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
