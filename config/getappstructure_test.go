@@ -8,13 +8,14 @@ import (
 
 var structureJSON = []byte(`{
   "meta": {
-    "title": "Ctrl00_allObj",
-    "guid": "6c75f3ab-b8e0-46da-912c-8cbf0ecad8f4"
+    "title": "Ctrl00_allObj-Modified(1)(1)",
+    "guid": "76b3f8c0-ed73-4732-b9de-1b1397477052"
   },
   "objects": {
     "02624185-cc26-4e98-92a1-d2008c36fd85": {
       "id": "02624185-cc26-4e98-92a1-d2008c36fd85",
       "type": "masterobject",
+      "title": "BoxplotM",
       "selectable": true,
       "dimensions": [
         {
@@ -50,39 +51,10 @@ var structureJSON = []byte(`{
       ],
       "visualization": "boxplot"
     },
-    "081e689b-2537-4a68-9091-8e5f6e185c2c": {
-      "id": "081e689b-2537-4a68-9091-8e5f6e185c2c",
-      "type": "table",
-      "selectable": true,
-      "dimensions": [
-        {
-          "libraryId": "2b86d4e7-dff0-4252-9c3f-f67a82626d7d"
-        },
-        {
-          "defs": [
-            "Alpha"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "defs": [
-            "AsciiAlpha"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "libraryId": "d86adb80-fdb0-4da5-9d63-d95ba3f2bd33"
-        }
-      ],
-      "visualization": "table"
-    },
     "1074afba-0a68-4ef3-b43a-02e500cd2fd8": {
       "id": "1074afba-0a68-4ef3-b43a-02e500cd2fd8",
       "type": "table",
+      "title": "TableM",
       "selectable": true,
       "dimensions": [
         {
@@ -128,6 +100,7 @@ var structureJSON = []byte(`{
     "29ee51e0-f9bb-4a4b-8686-96dcd314727c": {
       "id": "29ee51e0-f9bb-4a4b-8686-96dcd314727c",
       "type": "barchart",
+      "title": "BarM",
       "selectable": true,
       "dimensions": [
         {
@@ -154,8 +127,7 @@ var structureJSON = []byte(`{
         {
           "meta": {
             "title": "Dim2M",
-            "description": "Master Dim2",
-            "tags": []
+            "description": "Master Dim2"
           },
           "defs": [
             "Dim2"
@@ -169,6 +141,7 @@ var structureJSON = []byte(`{
     "3404f780-d272-4620-80b6-721e010f9152": {
       "id": "3404f780-d272-4620-80b6-721e010f9152",
       "type": "sheet",
+      "title": "sheet2D",
       "children": {
         "8b7da3fa-45ee-4920-bd9d-419950be8f2e": "kpi",
         "a19b72ab-2ca8-4b69-8082-2c100aba8c3c": "pivot-table",
@@ -181,6 +154,7 @@ var structureJSON = []byte(`{
     "35585276-91fd-45f2-8594-e28feae7a8cd": {
       "id": "35585276-91fd-45f2-8594-e28feae7a8cd",
       "type": "masterobject",
+      "title": "DistributionM",
       "selectable": true,
       "dimensions": [
         {
@@ -226,6 +200,7 @@ var structureJSON = []byte(`{
     "41dbb01c-d1bd-4528-be05-910ee565988b": {
       "id": "41dbb01c-d1bd-4528-be05-910ee565988b",
       "type": "sheet",
+      "title": "sheet1D",
       "children": {
         "1074afba-0a68-4ef3-b43a-02e500cd2fd8": "table",
         "29ee51e0-f9bb-4a4b-8686-96dcd314727c": "barchart",
@@ -244,9 +219,7 @@ var structureJSON = []byte(`{
       "dimensions": [
         {
           "meta": {
-            "title": "Sum(Exp1)",
-            "description": "",
-            "tags": []
+            "title": "Sum(Exp1)"
           },
           "defs": [
             "=Sum(Expression1)"
@@ -260,6 +233,8 @@ var structureJSON = []byte(`{
     "532bbe7a-8001-4b94-8b9e-441cc1e8aa48": {
       "id": "532bbe7a-8001-4b94-8b9e-441cc1e8aa48",
       "type": "piechart",
+      "title": "PieM",
+      "description": "Master of Pie",
       "selectable": true,
       "dimensions": [
         {
@@ -281,6 +256,7 @@ var structureJSON = []byte(`{
     "53d3f92c-90e5-46a5-ab0f-019e9cf955ec": {
       "id": "53d3f92c-90e5-46a5-ab0f-019e9cf955ec",
       "type": "sheet",
+      "title": "Accumulated and Mekko Charts",
       "children": {
         "KbVvkqF": "barchart",
         "TmzQd": "linechart",
@@ -292,6 +268,7 @@ var structureJSON = []byte(`{
     "5932e9a5-14e2-4f6d-8654-c719c288743e": {
       "id": "5932e9a5-14e2-4f6d-8654-c719c288743e",
       "type": "combochart",
+      "title": "ComboM",
       "selectable": true,
       "dimensions": [
         {
@@ -313,38 +290,10 @@ var structureJSON = []byte(`{
       ],
       "extendsId": "QquqnR"
     },
-    "66c88abf-ee94-4568-8b1b-bff6eeaccf7d": {
-      "id": "66c88abf-ee94-4568-8b1b-bff6eeaccf7d",
-      "type": "pivot-table",
-      "selectable": true,
-      "dimensions": [
-        {
-          "defs": [
-            "Alpha"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "defs": [
-            "=Dim2"
-          ],
-          "labels": [
-            ""
-          ]
-        }
-      ],
-      "measures": [
-        {
-          "def": "Count(Dim1)"
-        }
-      ],
-      "visualization": "pivot-table"
-    },
     "6b9169cc-d6de-4fae-9520-d674e2ded148": {
       "id": "6b9169cc-d6de-4fae-9520-d674e2ded148",
       "type": "sheet",
+      "title": "Histograms",
       "children": {
         "BvCKL": "histogram",
         "mqKjf": "histogram",
@@ -356,6 +305,7 @@ var structureJSON = []byte(`{
     "6bd32eab-6ae7-4b80-b3d3-e02f22e1d5b8": {
       "id": "6bd32eab-6ae7-4b80-b3d3-e02f22e1d5b8",
       "type": "masterobject",
+      "title": "HistogramM",
       "selectable": true,
       "dimensions": [
         {
@@ -374,6 +324,7 @@ var structureJSON = []byte(`{
     "70256cd8-abe1-42b2-99e6-36665130ec03": {
       "id": "70256cd8-abe1-42b2-99e6-36665130ec03",
       "type": "sheet",
+      "title": "Distribution Plots",
       "children": {
         "JPzUJ": "distributionplot",
         "QjPQnKP": "distributionplot",
@@ -384,19 +335,16 @@ var structureJSON = []byte(`{
     "75d45738-aee0-4979-a393-e4f5daa6a509": {
       "id": "75d45738-aee0-4979-a393-e4f5daa6a509",
       "type": "sheet",
+      "title": "Mekko Chart",
       "children": {
         "ynZFW": "mekkochart"
       },
       "selectable": false
     },
-    "793a1081-b21a-4dbb-8322-2fb41774452f": {
-      "id": "793a1081-b21a-4dbb-8322-2fb41774452f",
-      "type": "bookmark",
-      "selectable": false
-    },
     "7e3f0dd0-b5f2-4179-9172-d48011e167e9": {
       "id": "7e3f0dd0-b5f2-4179-9172-d48011e167e9",
       "type": "filterpane",
+      "title": "FilterPaneM",
       "children": {
         "27908a64-d573-4aaa-ac04-b47932ba7995": "listbox",
         "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": "listbox",
@@ -405,22 +353,10 @@ var structureJSON = []byte(`{
       "selectable": false,
       "extendsId": "UmDGVm"
     },
-    "856be938-e3ae-4437-8752-4af7195cbb78": {
-      "id": "856be938-e3ae-4437-8752-4af7195cbb78",
-      "type": "sheet",
-      "children": {
-        "081e689b-2537-4a68-9091-8e5f6e185c2c": "table",
-        "66c88abf-ee94-4568-8b1b-bff6eeaccf7d": "pivot-table",
-        "9c163098-73e2-480e-8b02-3017742b39be": "pivot-table",
-        "b18c7214-33c1-495b-bf17-cbc467389207": "table",
-        "b2c3aa99-ba9b-42dc-aa61-c7072157c833": "table",
-        "ba3dabae-88a4-41f8-a4d3-a83a3f805232": "pivot-table"
-      },
-      "selectable": false
-    },
     "88a8c69b-5715-4c7c-b4ae-293da7a072d9": {
       "id": "88a8c69b-5715-4c7c-b4ae-293da7a072d9",
       "type": "treemap",
+      "title": "TreeM",
       "selectable": true,
       "dimensions": [
         {
@@ -443,42 +379,17 @@ var structureJSON = []byte(`{
       "id": "8b7da3fa-45ee-4920-bd9d-419950be8f2e",
       "type": "kpi",
       "selectable": false,
-      "visualization": "kpi"
-    },
-    "9c163098-73e2-480e-8b02-3017742b39be": {
-      "id": "9c163098-73e2-480e-8b02-3017742b39be",
-      "type": "pivot-table",
-      "selectable": true,
-      "dimensions": [
-        {
-          "defs": [
-            "Expression1"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "defs": [
-            "=Expression2"
-          ],
-          "labels": [
-            ""
-          ]
-        }
-      ],
       "measures": [
         {
-          "def": "Count(Num)"
-        },
-        {
-          "def": "Avg(Expression3)"
-        },
-        {
-          "def": "Sum(AsciiNum)"
+          "def": "Sum(Expression1)"
         }
       ],
-      "visualization": "pivot-table"
+      "visualization": "kpi"
+    },
+    "9d8b2a78-4143-466c-8a5b-ffbf5fd54cba": {
+      "id": "9d8b2a78-4143-466c-8a5b-ffbf5fd54cba",
+      "type": "bookmark",
+      "selectable": false
     },
     "ALGFsZ": {
       "id": "ALGFsZ",
@@ -505,6 +416,7 @@ var structureJSON = []byte(`{
     "AjLSTb": {
       "id": "AjLSTb",
       "type": "masterobject",
+      "title": "TextM",
       "selectable": false,
       "visualization": "text-image"
     },
@@ -580,6 +492,7 @@ var structureJSON = []byte(`{
     "BvCKL": {
       "id": "BvCKL",
       "type": "histogram",
+      "title": "HistogramM",
       "selectable": true,
       "dimensions": [
         {
@@ -731,8 +644,7 @@ var structureJSON = []byte(`{
         {
           "meta": {
             "title": "Dim1M",
-            "description": "MasterDim1",
-            "tags": []
+            "description": "MasterDim1"
           },
           "defs": [
             "Dim1"
@@ -775,6 +687,7 @@ var structureJSON = []byte(`{
     "EKSBrUL": {
       "id": "EKSBrUL",
       "type": "pivot-table",
+      "title": "PivotM",
       "selectable": true,
       "dimensions": [
         {
@@ -812,6 +725,7 @@ var structureJSON = []byte(`{
     "ELvcvsJ": {
       "id": "ELvcvsJ",
       "type": "linechart",
+      "title": "LineM",
       "selectable": true,
       "dimensions": [
         {
@@ -887,6 +801,7 @@ var structureJSON = []byte(`{
     "GSNB": {
       "id": "GSNB",
       "type": "sheet",
+      "title": "Sheet Calculation Condition",
       "children": {
         "DuJDJ": "barchart",
         "frSUmz": "text-image",
@@ -932,6 +847,7 @@ var structureJSON = []byte(`{
     "HkVwxK": {
       "id": "HkVwxK",
       "type": "text-image",
+      "title": "TextM",
       "selectable": false,
       "extendsId": "AjLSTb"
     },
@@ -939,6 +855,17 @@ var structureJSON = []byte(`{
       "id": "JMSnZmr",
       "type": "waterfallchart",
       "selectable": false,
+      "measures": [
+        {
+          "libraryId": "gWKjj"
+        },
+        {
+          "libraryId": "uSFruQ"
+        },
+        {
+          "def": "Avg(AsciiAlpha)"
+        }
+      ],
       "visualization": "waterfallchart"
     },
     "JPzUJ": {
@@ -963,6 +890,7 @@ var structureJSON = []byte(`{
     "JmdbDg": {
       "id": "JmdbDg",
       "type": "masterobject",
+      "title": "TreeM",
       "selectable": true,
       "dimensions": [
         {
@@ -1011,6 +939,7 @@ var structureJSON = []byte(`{
     "JuhBpt": {
       "id": "JuhBpt",
       "type": "sheet",
+      "title": "MasterSheet1",
       "children": {
         "EKSBrUL": "pivot-table",
         "ELvcvsJ": "linechart",
@@ -1080,6 +1009,7 @@ var structureJSON = []byte(`{
       "selectable": true,
       "dimensions": [
         {
+          "labelExpression": "='Dim label with expr' + Count(Dim1)",
           "defs": [
             "Dim1"
           ],
@@ -1175,6 +1105,7 @@ var structureJSON = []byte(`{
     "LczZG": {
       "id": "LczZG",
       "type": "masterobject",
+      "title": "TableM",
       "selectable": true,
       "dimensions": [
         {
@@ -1228,6 +1159,11 @@ var structureJSON = []byte(`{
       ],
       "visualization": "table"
     },
+    "LoadModel": {
+      "id": "LoadModel",
+      "type": "LoadModel",
+      "selectable": false
+    },
     "MJcFdz": {
       "id": "MJcFdz",
       "type": "map",
@@ -1258,6 +1194,8 @@ var structureJSON = []byte(`{
     "NrnEY": {
       "id": "NrnEY",
       "type": "piechart",
+      "title": "PieM",
+      "description": "Master of Pie",
       "selectable": true,
       "dimensions": [
         {
@@ -1300,6 +1238,7 @@ var structureJSON = []byte(`{
     "PUvSAN": {
       "id": "PUvSAN",
       "type": "scatterplot",
+      "title": "ScatterM",
       "selectable": true,
       "dimensions": [
         {
@@ -1328,6 +1267,11 @@ var structureJSON = []byte(`{
       "id": "PaMnJfP",
       "type": "gauge",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Avg(Expression2)"
+        }
+      ],
       "visualization": "gauge"
     },
     "PhZtQ": {
@@ -1376,6 +1320,7 @@ var structureJSON = []byte(`{
     "QAr": {
       "id": "QAr",
       "type": "table",
+      "title": "TableM",
       "selectable": true,
       "dimensions": [
         {
@@ -1483,6 +1428,7 @@ var structureJSON = []byte(`{
     "QquqnR": {
       "id": "QquqnR",
       "type": "masterobject",
+      "title": "ComboM",
       "selectable": true,
       "dimensions": [
         {
@@ -1606,7 +1552,13 @@ var structureJSON = []byte(`{
     "SyZnb": {
       "id": "SyZnb",
       "type": "gauge",
+      "title": "GuaugeM",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Avg(Expression2)"
+        }
+      ],
       "extendsId": "bMafQ"
     },
     "TMAvcJs": {
@@ -1730,11 +1682,17 @@ var structureJSON = []byte(`{
       "id": "Ubyp",
       "type": "text-image",
       "selectable": false,
+      "measures": [
+        {
+          "def": "'AsciiAlpha Counts: ' \u0026 Count(AsciiAlpha) \u0026chr(13)\u0026 'AsciiNum Counts: ' \u0026 Count(AsciiNum) \u0026chr(13)\u0026 'Num Counts: ' \u0026 Count(Num)"
+        }
+      ],
       "visualization": "text-image"
     },
     "UmDGVm": {
       "id": "UmDGVm",
       "type": "masterobject",
+      "title": "FilterPaneM",
       "children": {
         "27908a64-d573-4aaa-ac04-b47932ba7995": "listbox",
         "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": "listbox",
@@ -1762,6 +1720,7 @@ var structureJSON = []byte(`{
     "VQTSUM": {
       "id": "VQTSUM",
       "type": "sheet",
+      "title": "Filter Pane  and Text \u0026 Image",
       "children": {
         "ALGFsZ": "filterpane",
         "GwyUc": "filterpane",
@@ -1811,6 +1770,7 @@ var structureJSON = []byte(`{
     "VevpJm": {
       "id": "VevpJm",
       "type": "treemap",
+      "title": "TreeM",
       "selectable": true,
       "dimensions": [
         {
@@ -1832,6 +1792,7 @@ var structureJSON = []byte(`{
     "VqPXn": {
       "id": "VqPXn",
       "type": "masterobject",
+      "title": "ScatterM",
       "selectable": true,
       "dimensions": [
         {
@@ -1865,6 +1826,7 @@ var structureJSON = []byte(`{
     "WKUFp": {
       "id": "WKUFp",
       "type": "masterobject",
+      "title": "BarM",
       "selectable": true,
       "dimensions": [
         {
@@ -1889,6 +1851,7 @@ var structureJSON = []byte(`{
       "selectable": true,
       "dimensions": [
         {
+          "labelExpression": "='Dim label with set expression'+Avg({\u003cDim1={'A'}\u003e} Dim1)",
           "defs": [
             "AsciiAlpha"
           ],
@@ -1901,7 +1864,7 @@ var structureJSON = []byte(`{
             "Alpha"
           ],
           "labels": [
-            ""
+            "Normal Label for Alpha"
           ]
         }
       ],
@@ -2032,6 +1995,7 @@ var structureJSON = []byte(`{
     "XjwmbU": {
       "id": "XjwmbU",
       "type": "barchart",
+      "title": "BarM",
       "selectable": true,
       "dimensions": [
         {
@@ -2053,8 +2017,31 @@ var structureJSON = []byte(`{
     "XwGwH": {
       "id": "XwGwH",
       "type": "auto-chart",
-      "selectable": false,
-      "visualization": "boxplot"
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Alpha"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "TransID"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "def": "Count(Expression3)"
+        }
+      ],
+      "visualization": "table"
     },
     "YTxPZp": {
       "id": "YTxPZp",
@@ -2084,6 +2071,7 @@ var structureJSON = []byte(`{
     "ZDxxg": {
       "id": "ZDxxg",
       "type": "masterobject",
+      "title": "PivotM",
       "selectable": true,
       "dimensions": [
         {
@@ -2162,6 +2150,7 @@ var structureJSON = []byte(`{
     "a19b72ab-2ca8-4b69-8082-2c100aba8c3c": {
       "id": "a19b72ab-2ca8-4b69-8082-2c100aba8c3c",
       "type": "pivot-table",
+      "title": "PivotM",
       "selectable": true,
       "dimensions": [
         {
@@ -2199,6 +2188,7 @@ var structureJSON = []byte(`{
     "aFjjST": {
       "id": "aFjjST",
       "type": "sheet",
+      "title": "Maps",
       "children": {
         "MJcFdz": "map",
         "QqFVRmp": "map",
@@ -2240,6 +2230,7 @@ var structureJSON = []byte(`{
     "ab563802-8c69-427e-929e-0966bdaf07eb": {
       "id": "ab563802-8c69-427e-929e-0966bdaf07eb",
       "type": "sheet",
+      "title": "Rose chart",
       "children": {
         "WYjhNJ": "piechart",
         "dxre": "piechart"
@@ -2267,62 +2258,6 @@ var structureJSON = []byte(`{
         }
       ],
       "visualization": "barchart"
-    },
-    "b18c7214-33c1-495b-bf17-cbc467389207": {
-      "id": "b18c7214-33c1-495b-bf17-cbc467389207",
-      "type": "table",
-      "selectable": true,
-      "dimensions": [
-        {
-          "defs": [
-            "AsciiAlpha"
-          ],
-          "labels": [
-            ""
-          ]
-        }
-      ],
-      "measures": [
-        {
-          "def": "Count(AsciiNum)"
-        },
-        {
-          "def": "Count(Alpha)"
-        },
-        {
-          "def": "Count(Dim3)"
-        }
-      ],
-      "visualization": "table"
-    },
-    "b2c3aa99-ba9b-42dc-aa61-c7072157c833": {
-      "id": "b2c3aa99-ba9b-42dc-aa61-c7072157c833",
-      "type": "table",
-      "selectable": true,
-      "dimensions": [
-        {
-          "defs": [
-            "TransID"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "defs": [
-            "Expression2"
-          ],
-          "labels": [
-            ""
-          ]
-        }
-      ],
-      "measures": [
-        {
-          "def": "Avg(Num)"
-        }
-      ],
-      "visualization": "table"
     },
     "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": {
       "id": "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a",
@@ -2367,12 +2302,20 @@ var structureJSON = []byte(`{
     "bMafQ": {
       "id": "bMafQ",
       "type": "masterobject",
+      "title": "GuaugeM",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Avg(Expression2)"
+        }
+      ],
       "visualization": "gauge"
     },
     "bTLJu": {
       "id": "bTLJu",
       "type": "masterobject",
+      "title": "PieM",
+      "description": "Master of Pie",
       "selectable": true,
       "dimensions": [
         {
@@ -2394,6 +2337,7 @@ var structureJSON = []byte(`{
     "bZCvHFB": {
       "id": "bZCvHFB",
       "type": "combochart",
+      "title": "ComboM",
       "selectable": true,
       "dimensions": [
         {
@@ -2415,43 +2359,6 @@ var structureJSON = []byte(`{
       ],
       "extendsId": "QquqnR"
     },
-    "ba3dabae-88a4-41f8-a4d3-a83a3f805232": {
-      "id": "ba3dabae-88a4-41f8-a4d3-a83a3f805232",
-      "type": "pivot-table",
-      "selectable": true,
-      "dimensions": [
-        {
-          "defs": [
-            "TransID"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "defs": [
-            "=Num"
-          ],
-          "labels": [
-            ""
-          ]
-        },
-        {
-          "defs": [
-            "=Dim3"
-          ],
-          "labels": [
-            ""
-          ]
-        }
-      ],
-      "measures": [
-        {
-          "def": "Count(Expression2)"
-        }
-      ],
-      "visualization": "pivot-table"
-    },
     "bapZzrB": {
       "id": "bapZzrB",
       "type": "listbox",
@@ -2468,14 +2375,10 @@ var structureJSON = []byte(`{
       ],
       "visualization": "listbox"
     },
-    "c10777be-31a4-41f9-a576-797c59820639": {
-      "id": "c10777be-31a4-41f9-a576-797c59820639",
-      "type": "bookmark",
-      "selectable": false
-    },
     "c66245be-8472-4900-9f05-e07a0141ed99": {
       "id": "c66245be-8472-4900-9f05-e07a0141ed99",
       "type": "scatterplot",
+      "title": "ScatterM",
       "selectable": true,
       "dimensions": [
         {
@@ -2543,16 +2446,16 @@ var structureJSON = []byte(`{
       ],
       "visualization": "linechart"
     },
+    "cf5e4644-fd93-4b01-848b-5ba69124987b": {
+      "id": "cf5e4644-fd93-4b01-848b-5ba69124987b",
+      "type": "bookmark",
+      "selectable": false
+    },
     "cwqJNQ": {
       "id": "cwqJNQ",
       "type": "text-image",
       "selectable": false,
       "visualization": "text-image"
-    },
-    "d582f067-d8a0-47b4-b62f-7930ce009da7": {
-      "id": "d582f067-d8a0-47b4-b62f-7930ce009da7",
-      "type": "bookmark",
-      "selectable": false
     },
     "d86adb80-fdb0-4da5-9d63-d95ba3f2bd33": {
       "id": "d86adb80-fdb0-4da5-9d63-d95ba3f2bd33",
@@ -2562,8 +2465,7 @@ var structureJSON = []byte(`{
         {
           "meta": {
             "title": "Dims123D",
-            "description": "DrillDown Dims",
-            "tags": []
+            "description": "DrillDown Dims"
           },
           "defs": [
             "Dim1",
@@ -2573,14 +2475,10 @@ var structureJSON = []byte(`{
         }
       ]
     },
-    "d8ac3450-c845-45fb-95d7-711bfaef31b9": {
-      "id": "d8ac3450-c845-45fb-95d7-711bfaef31b9",
-      "type": "bookmark",
-      "selectable": false
-    },
     "dYZkN": {
       "id": "dYZkN",
       "type": "sheet",
+      "title": "Tables \u0026 Pivot Tables",
       "children": {
         "EFUmpQ": "table",
         "LkpcR": "table",
@@ -2626,7 +2524,13 @@ var structureJSON = []byte(`{
     "dmjZp": {
       "id": "dmjZp",
       "type": "masterobject",
+      "title": "KPIM",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Sum(Expression1)"
+        }
+      ],
       "visualization": "kpi"
     },
     "dxre": {
@@ -2656,6 +2560,7 @@ var structureJSON = []byte(`{
     "e097e3c4-8304-495b-be67-482a2eba4fd1": {
       "id": "e097e3c4-8304-495b-be67-482a2eba4fd1",
       "type": "sheet",
+      "title": "Org chart",
       "children": {
         "vHznrgh": "sn-org-chart"
       },
@@ -2680,12 +2585,14 @@ var structureJSON = []byte(`{
     "e94a7e71-0ebb-47c0-aeea-bd4b9eb8c69d": {
       "id": "e94a7e71-0ebb-47c0-aeea-bd4b9eb8c69d",
       "type": "text-image",
+      "title": "TextM",
       "selectable": false,
       "extendsId": "AjLSTb"
     },
     "e98010b2-a77e-4c5c-9612-1c3329713141": {
       "id": "e98010b2-a77e-4c5c-9612-1c3329713141",
       "type": "sheet",
+      "title": "Waterfall",
       "children": {
         "Dqtpwy": "filterpane",
         "JMSnZmr": "waterfallchart",
@@ -2741,6 +2648,7 @@ var structureJSON = []byte(`{
     "esXkULt": {
       "id": "esXkULt",
       "type": "sheet",
+      "title": "MasterSheet2",
       "children": {
         "RednFCk": "barchart",
         "XffY": "filterpane",
@@ -2778,6 +2686,7 @@ var structureJSON = []byte(`{
     "f2a50cb3-a7e1-40ac-a015-bc4378773312": {
       "id": "f2a50cb3-a7e1-40ac-a015-bc4378773312",
       "type": "sheet",
+      "title": "Auto Charts",
       "children": {
         "HYwCuY": "auto-chart",
         "KuaUFm": "auto-chart",
@@ -2790,6 +2699,7 @@ var structureJSON = []byte(`{
     "f57d852f-f248-4a1a-a15b-015e60147cf8": {
       "id": "f57d852f-f248-4a1a-a15b-015e60147cf8",
       "type": "sheet",
+      "title": "Boxplots",
       "children": {
         "fCHrRdn": "boxplot",
         "uaHYE": "boxplot"
@@ -2837,6 +2747,7 @@ var structureJSON = []byte(`{
     "fEPFmQ": {
       "id": "fEPFmQ",
       "type": "sheet",
+      "title": "Scatter Plots",
       "children": {
         "CWHcvpF": "scatterplot",
         "PhZtQ": "scatterplot",
@@ -2872,18 +2783,31 @@ var structureJSON = []byte(`{
     "fLXy": {
       "id": "fLXy",
       "type": "kpi",
+      "title": "KPIM",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Sum(Expression1)"
+        }
+      ],
       "extendsId": "dmjZp"
     },
     "fa4229b9-6e9b-4bea-b516-c9c717167a29": {
       "id": "fa4229b9-6e9b-4bea-b516-c9c717167a29",
       "type": "gauge",
+      "title": "GuaugeM",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Avg(Expression2)"
+        }
+      ],
       "extendsId": "bMafQ"
     },
     "fcaf1755-a56b-4d33-a3b4-cebe86254e61": {
       "id": "fcaf1755-a56b-4d33-a3b4-cebe86254e61",
       "type": "linechart",
+      "title": "LineM",
       "selectable": true,
       "dimensions": [
         {
@@ -2933,11 +2857,20 @@ var structureJSON = []byte(`{
       "id": "frSUmz",
       "type": "text-image",
       "selectable": false,
+      "measures": [
+        {
+          "def": "//FieldValue('Dim1',GetSelectedCount(Dim1))\n//if(RANK('Dim1')=1,'N/A',FieldValue('Dim1',1))\n//FieldValue('Dim1',2)\n//IF(GetSelectedCount('Dim1')=1,'N/A','One selected')\n//GetSelectedCount('Dim1')\n//Rank('Dim')\n//GetCurrentSelections('Dim1')\nGetSelectedCount(Dim1)\n"
+        },
+        {
+          "def": "//FieldValue('Dim1',GetSelectedCount(Dim1))\n//if(RANK('Dim1')=1,'N/A',FieldValue('Dim1',1))\n//FieldValue('Dim1',2)\n//IF(GetSelectedCount('Dim1')=1,'N/A','One selected')\n//GetSelectedCount('Dim1')\n//Rank('Dim')\nGetCurrentSelections('Dim1')\n//GetSelectedCount(Dim1)\n"
+        }
+      ],
       "visualization": "text-image"
     },
     "gJfAjj": {
       "id": "gJfAjj",
       "type": "sheet",
+      "title": "Bar Charts",
       "children": {
         "BcJyGT": "barchart",
         "BhJBj": "barchart",
@@ -2992,9 +2925,7 @@ var structureJSON = []byte(`{
       "measures": [
         {
           "meta": {
-            "title": "Avg(Exp2)",
-            "description": "",
-            "tags": []
+            "title": "Avg(Exp2)"
           },
           "label": "Avg(Exp2)",
           "def": "Avg(Expression2)"
@@ -3062,11 +2993,17 @@ var structureJSON = []byte(`{
       "id": "hJUssV",
       "type": "text-image",
       "selectable": false,
+      "measures": [
+        {
+          "def": "'Num Counts: ' \u0026 Count(Num) \u0026chr(13)\u0026 'Alpha: ' \u0026 Count(Alpha)"
+        }
+      ],
       "visualization": "text-image"
     },
     "hQDEATt": {
       "id": "hQDEATt",
       "type": "sheet",
+      "title": "TreeMaps",
       "children": {
         "LXJqzzq": "treemap",
         "RaQyNmU": "treemap",
@@ -3077,6 +3014,7 @@ var structureJSON = []byte(`{
     "hSTsZt": {
       "id": "hSTsZt",
       "type": "sheet",
+      "title": "Line charts",
       "children": {
         "VeQpVnP": "linechart",
         "ZRybA": "linechart",
@@ -3149,6 +3087,11 @@ var structureJSON = []byte(`{
       "id": "jCjQxvm",
       "type": "auto-chart",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Avg(Expression2)"
+        }
+      ],
       "visualization": "kpi"
     },
     "jEPxKRr": {
@@ -3176,6 +3119,11 @@ var structureJSON = []byte(`{
       "id": "jpTaBxJ",
       "type": "text-image",
       "selectable": false,
+      "measures": [
+        {
+          "def": "'Num Counts: ' \u0026 Count(Num) \u0026chr(13)\u0026 'TranLineID: ' \u0026 Count(TransLineID) \u0026chr(13)\u0026 'TranID: ' \u0026 Count(TransID) \u0026chr(13)\u0026 'Dim1M: ' \u0026 Count(Dim1) \u0026chr(13)\u0026 'Dim2M: ' \u0026 Count(Dim2) \u0026chr(13)\u0026 'Dim123D: ' \u0026 Count(Dim3) \u0026chr(13)\u0026 'Expression1: ' \u0026 Count(Expression1) \u0026chr(13)\u0026 'Expression2: ' \u0026 Count(Expression2) \u0026chr(13)\u0026 'Expression3: ' \u0026 Count(Expression3)"
+        }
+      ],
       "visualization": "text-image"
     },
     "kEhhTmG": {
@@ -3259,6 +3207,7 @@ var structureJSON = []byte(`{
     "mBshXB": {
       "id": "mBshXB",
       "type": "sheet",
+      "title": "sheet1",
       "children": {
         "FvFMQjL": "filterpane",
         "JpcpmT": "barchart",
@@ -3350,6 +3299,7 @@ var structureJSON = []byte(`{
     "mkeka": {
       "id": "mkeka",
       "type": "sheet",
+      "title": "Combo Charts",
       "children": {
         "BBabPm": "combochart",
         "CPPCtj": "combochart",
@@ -3404,7 +3354,7 @@ var structureJSON = []byte(`{
       "dimensions": [
         {
           "defs": [
-            "=Class([Num],5)"
+            "=Class(aggr([Num],[Num]),5)"
           ],
           "labels": [
             "Num"
@@ -3467,6 +3417,7 @@ var structureJSON = []byte(`{
     "naSGALJ": {
       "id": "naSGALJ",
       "type": "filterpane",
+      "title": "FilterPaneM",
       "children": {
         "27908a64-d573-4aaa-ac04-b47932ba7995": "listbox",
         "b3e6f4a3-b43c-49d8-ae5f-87586a937b3a": "listbox",
@@ -3526,7 +3477,7 @@ var structureJSON = []byte(`{
       "dimensions": [
         {
           "defs": [
-            "=Class([Expression2],0.65)"
+            "=Class(aggr([Expression2],[Expression2]),0.575)"
           ],
           "labels": [
             "Expression2"
@@ -3599,9 +3550,7 @@ var structureJSON = []byte(`{
       "measures": [
         {
           "meta": {
-            "title": "Sum(Exp1)",
-            "description": "",
-            "tags": []
+            "title": "Sum(Exp1)"
           },
           "label": "Sum(Exp1)",
           "def": "Sum(Expression1)"
@@ -3611,12 +3560,19 @@ var structureJSON = []byte(`{
     "ppUMK": {
       "id": "ppUMK",
       "type": "kpi",
+      "title": "KPIM",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Sum(Expression1)"
+        }
+      ],
       "extendsId": "dmjZp"
     },
     "ppjDSJ": {
       "id": "ppjDSJ",
       "type": "sheet",
+      "title": "sheet2",
       "children": {
         "CnXmja": "scatterplot",
         "PaMnJfP": "gauge",
@@ -3646,12 +3602,14 @@ var structureJSON = []byte(`{
     "qjwe": {
       "id": "qjwe",
       "type": "masterobject",
+      "title": "MApM",
       "selectable": false,
       "visualization": "map"
     },
     "rkuwZh": {
       "id": "rkuwZh",
       "type": "sheet",
+      "title": "Pie chart's",
       "children": {
         "GCuLj": "piechart",
         "NxTZDm": "piechart",
@@ -3665,6 +3623,7 @@ var structureJSON = []byte(`{
     "sDuuGK": {
       "id": "sDuuGK",
       "type": "distributionplot",
+      "title": "DistributionM",
       "selectable": true,
       "dimensions": [
         {
@@ -3718,6 +3677,7 @@ var structureJSON = []byte(`{
     "tEwrF": {
       "id": "tEwrF",
       "type": "masterobject",
+      "title": "LineM",
       "selectable": true,
       "dimensions": [
         {
@@ -3844,9 +3804,7 @@ var structureJSON = []byte(`{
       "measures": [
         {
           "meta": {
-            "title": "Max(Exp3)",
-            "description": "",
-            "tags": []
+            "title": "Max(Exp3)"
           },
           "label": "Max(Exp3)",
           "def": "Max(Expression3)"
@@ -3856,6 +3814,7 @@ var structureJSON = []byte(`{
     "uaHYE": {
       "id": "uaHYE",
       "type": "boxplot",
+      "title": "BoxplotM",
       "selectable": true,
       "dimensions": [
         {
@@ -3935,6 +3894,20 @@ var structureJSON = []byte(`{
       "id": "vTHMcf",
       "type": "waterfallchart",
       "selectable": false,
+      "measures": [
+        {
+          "def": "Count(Expression1)"
+        },
+        {
+          "def": "Count(Expression2)"
+        },
+        {
+          "def": "Count(Expression3)"
+        },
+        {
+          "def": "Count(Expression3)"
+        }
+      ],
       "visualization": "waterfallchart"
     },
     "vXhmc": {
@@ -4017,7 +3990,7 @@ var structureJSON = []byte(`{
       "dimensions": [
         {
           "defs": [
-            "=Class([Expression1],60)"
+            "=Class(aggr([Expression1],[Expression1]),60)"
           ],
           "labels": [
             "Expression1"
@@ -4083,31 +4056,18 @@ var structureJSON = []byte(`{
     }
   },
   "bookmarks": {
-    "793a1081-b21a-4dbb-8322-2fb41774452f": {
-      "id": "793a1081-b21a-4dbb-8322-2fb41774452f",
-      "title": "PrivateBookmarkNoSheet",
-      "description": "",
-      "selectionFields": "TransID"
+    "9d8b2a78-4143-466c-8a5b-ffbf5fd54cba": {
+      "id": "9d8b2a78-4143-466c-8a5b-ffbf5fd54cba",
+      "title": "BookmarkWithoutSheet",
+      "description": "asdfasdfad",
+      "selectionFields": "AsciiAlpha"
     },
-    "c10777be-31a4-41f9-a576-797c59820639": {
-      "id": "c10777be-31a4-41f9-a576-797c59820639",
-      "title": "PublicBookmarkNoSheet",
+    "cf5e4644-fd93-4b01-848b-5ba69124987b": {
+      "id": "cf5e4644-fd93-4b01-848b-5ba69124987b",
+      "title": "BookmarkWithSheet",
       "description": "",
-      "selectionFields": "TransID"
-    },
-    "d582f067-d8a0-47b4-b62f-7930ce009da7": {
-      "id": "d582f067-d8a0-47b4-b62f-7930ce009da7",
-      "title": "PublicBookmarkWithSheet",
-      "description": "",
-      "sheetId": "hQDEATt",
-      "selectionFields": "TransID"
-    },
-    "d8ac3450-c845-45fb-95d7-711bfaef31b9": {
-      "id": "d8ac3450-c845-45fb-95d7-711bfaef31b9",
-      "title": "PrivateBookmarkWithSheet",
-      "description": "",
-      "sheetId": "hQDEATt",
-      "selectionFields": "TransID"
+      "sheetId": "f2a50cb3-a7e1-40ac-a015-bc4378773312",
+      "selectionFields": "AsciiAlpha"
     }
   }
 }`)
@@ -4199,7 +4159,7 @@ func TestConfig_GetAppStructures(t *testing.T) {
 		"getappstructure",
 	}
 
-	structureScenario := cfg.getAppStructureScenario()
+	structureScenario := cfg.getAppStructureScenario(false)
 
 	if len(expectedActions) != len(structureScenario) {
 		expected := strings.Join(expectedActions, ",")
