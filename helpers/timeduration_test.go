@@ -8,7 +8,10 @@ import (
 func TestMarshalTimeDuration(t *testing.T) {
 	td := TimeDuration(2000000000)
 	expected := "\"1s\""
-	td.UnmarshalJSON([]byte(expected))
+	err := td.UnmarshalJSON([]byte(expected))
+	if err != nil {
+		t.Errorf("got error during unmarshal <%s>", err)
+	}
 	json, err := td.MarshalJSON()
 	if err != nil {
 		t.Errorf("got error during marshal <%s>", err)
