@@ -88,7 +88,7 @@ func (em *EnumMap) AsInt() map[string]int {
 
 // Int Get integer representation of enum
 func (em *EnumMap) Int(s string) (int, error) {
-	i, ok := em.asInt[s]
+	i, ok := em.asInt[strings.ToLower(s)]
 	if !ok {
 		return 0, StringKeyNotFoundError(s)
 	}
