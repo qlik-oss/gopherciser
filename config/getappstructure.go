@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -205,19 +206,16 @@ func (cfg *Config) GetAppStructures(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	// Todo where to log? Override for now during development
-	stmpl, err := session.NewSyncedTemplate("./logs/appstructure.tsv")
+	logSettings := cfg.Settings.LogSettings
+
+	fileName := cfg.Settings.LogSettings.FileName.String()
+	ext := filepath.Ext(fileName)
+	appStructureLogPath := fmt.Sprintf("%s-appstructure%s", strings.TrimSuffix(fileName, ext), ext)
+	stmpl, err := session.NewSyncedTemplate(appStructureLogPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	logSettings := LogSettings{
-		Traffic:        cfg.Settings.LogSettings.Traffic,
-		Debug:          cfg.Settings.LogSettings.Debug,
-		TrafficMetrics: false,
-		FileName:       *stmpl,
-		Format:         0,
-		Summary:        0,
-	}
+	logSettings.FileName = *stmpl
 
 	log, err := setupLogging(ctx, logSettings, nil, nil)
 	if err != nil {
