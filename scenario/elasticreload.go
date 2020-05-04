@@ -18,13 +18,13 @@ import (
 type (
 	// ElasticReloadCore Currently used ElasticReloadCore (as opposed to deprecated settings)
 	ElasticReloadCore struct {
-		session.AppSelection
 		// PollInterval time in-between polling for reload status
 		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
 	}
 
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
+		session.AppSelection
 		ElasticReloadCore
 	}
 
@@ -66,7 +66,11 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
 	}
-	*settings = ElasticReloadSettings{core}
+	var appSelection session.AppSelection
+	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
+	}
+	*settings = ElasticReloadSettings{appSelection, core}
 	return nil
 }
 
