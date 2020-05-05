@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/InVisionApp/tabular"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"os"
@@ -354,9 +355,9 @@ func (structure *AppStructure) printSummary(summary SummaryType, fileName string
 	buf.WriteString(" created with ")
 
 	// print object count
-	objectCount := structure.Objects
+	objectCount := len(structure.Objects)
 	buf.WriteString(ansiBoldWhite)
-	buf.WriteString(strconv.Itoa(len(objectCount)))
+	buf.WriteString(strconv.Itoa(objectCount))
 	buf.WriteString(" objects")
 	buf.WriteString(ansiBoldBlue)
 	buf.WriteString(" and ")
@@ -394,21 +395,39 @@ func (structure *AppStructure) printSummary(summary SummaryType, fileName string
 	}
 
 	buf.WriteString(ansiBoldBlue)
-	// print all objects
-	// Todo make table
+	buf.WriteString("\n")
+
+	// object table
+	tabbedOutput := tabular.New()
+	summaryHeaders := make(SummaryHeader)
+	//objectTblData := make([]SummaryActionDataEntry, 0, objectCount)
+
+	// Create headers and default column sizes
+	summaryHeaders["id"] = &SummaryHeaderEntry{"ID", 2}
+	summaryHeaders["vis"] = &SummaryHeaderEntry{"Visualization", 13}
+	summaryHeaders["typ"] = &SummaryHeaderEntry{"Type", 4}
+
+	// Update column widths
 	for _, obj := range structure.Objects {
-		buf.WriteString("id<")
-		buf.WriteString(obj.Id)
-		buf.WriteString(">")
+		summaryHeaders["id"].UpdateColSize(len(obj.Id))
+		summaryHeaders["vis"].UpdateColSize(len(obj.Visualization))
+		summaryHeaders["typ"].UpdateColSize(len(obj.Type))
+	}
 
-		if obj.Visualization != "" {
-			buf.WriteString(" visualization<")
-			buf.WriteString(">")
-		}
+	// Set column widths
+	for k := range summaryHeaders {
+		summaryHeaders.Col(k, &tabbedOutput)
+	}
 
-		buf.WriteString(" type<")
-		buf.WriteString(obj.Type)
-		buf.WriteString(">\n")
+	// Print table headers
+	table := tabbedOutput.Parse("*")
+	writeTableHeaders(buf, &table)
+
+	// print all objects
+	for _, obj := range structure.Objects {
+		buf.WriteString(ansiBoldBlue)
+		buf.WriteString(fmt.Sprintf(table.Format, obj.Id, obj.Visualization, obj.Type))
+		buf.WriteString(ansiReset)
 	}
 }
 
