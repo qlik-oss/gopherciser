@@ -8,6 +8,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -118,11 +119,8 @@ type (
 
 	// AppStructureReport reports warnings and fetched objects for app structure
 	AppStructureReport struct {
-		warnings []string
-		objects  []AppObjectDef
-
+		warnings     []string
 		warningsLock sync.Mutex
-		objectsLock  sync.Mutex
 	}
 
 	// AppStructure of Sense app
@@ -322,7 +320,8 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		outputDir += "/"
 	}
 
-	structureFile, err := os.Create(fmt.Sprintf("%s%s.structure", outputDir, app.GUID))
+	fileName := fmt.Sprintf("%s%s.structure", outputDir, app.GUID)
+	structureFile, err := os.Create(fileName)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to create structure file"))
 		return
@@ -338,34 +337,79 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	appStructure.printSummary(settings.Summary)
+	appStructure.printSummary(settings.Summary, fileName)
 }
 
-func (structure *AppStructure) printSummary(summary SummaryType) {
+func (structure *AppStructure) printSummary(summary SummaryType, fileName string) {
 	if structure == nil || summary == SummaryTypeNone {
 		return
 	}
 
 	buf := helpers.NewBuffer()
-	//switch summary {
-	//case SummaryTypeSimple:
-	//// todo files + warns
-	//case SummaryTypeExtended:
-	//// todo files + warns + object count
-	//case SummaryTypeFull:
-	//	// todo files + warns + object specific
-	//}
+	defer buf.WriteTo(ansiWriter)
+	defer buf.WriteString(ansiReset)
 
-	if len(structure.report.warnings) > 0 {
-		buf.WriteString(fmt.Sprintf("%d Warnings found:\n", len(structure.report.warnings)))
+	buf.WriteString(ansiBoldBlue)
+	buf.WriteString(fileName)
+	buf.WriteString(" created with ")
+
+	// print object count
+	objectCount := structure.Objects
+	buf.WriteString(ansiBoldWhite)
+	buf.WriteString(strconv.Itoa(len(objectCount)))
+	buf.WriteString(" objects")
+	buf.WriteString(ansiBoldBlue)
+	buf.WriteString(" and ")
+
+	warningCount := len(structure.report.warnings)
+
+	warningColor := ansiBoldBlue
+	if warningCount > 0 {
+		warningColor = ansiBoldYellow
+	}
+
+	buf.WriteString(warningColor)
+	buf.WriteString(strconv.Itoa(warningCount))
+	buf.WriteString(" warning")
+	if warningCount != 1 {
+		buf.WriteString("s")
+	}
+	buf.WriteString(ansiBoldBlue)
+	buf.WriteString(" found")
+
+	if warningCount > 0 {
+		buf.WriteString(":\n")
+	} else {
+		buf.WriteString("\n")
 	}
 
 	for _, warning := range structure.report.warnings {
+		buf.WriteString(ansiBoldYellow)
 		buf.WriteString(warning)
 		buf.WriteString("\n")
 	}
 
-	buf.WriteTo(ansiWriter)
+	if summary < SummaryTypeExtended {
+		return
+	}
+
+	buf.WriteString(ansiBoldBlue)
+	// print all objects
+	// Todo make table
+	for _, obj := range structure.Objects {
+		buf.WriteString("id<")
+		buf.WriteString(obj.Id)
+		buf.WriteString(">")
+
+		if obj.Visualization != "" {
+			buf.WriteString(" visualization<")
+			buf.WriteString(">")
+		}
+
+		buf.WriteString(" type<")
+		buf.WriteString(obj.Type)
+		buf.WriteString(">\n")
+	}
 }
 
 func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, includeRaw bool) error {
@@ -598,33 +642,15 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 	// Set selectable flag
 	obj.Selectable = def.Select != nil
 
-	var dimensionsPath, measuresPath, listObjectPath string
-	if obj.Selectable {
-		// Hyper cube dimensions and measures
-		dimensionsPath = fmt.Sprintf("%s/qDimensions", def.Select.Path)
-		measuresPath = fmt.Sprintf("%s/qMeasures", def.Select.Path)
+	// Paths dimensions and measures in hypercube
+	dimensions := senseobjdef.NewDataPath(fmt.Sprintf("%sDef/qDimensions", def.DataDef.Path))
+	measures := senseobjdef.NewDataPath(fmt.Sprintf("%sDef/qMeasures", def.DataDef.Path))
 
-		// Handle list object
-		listObjectPath = def.Select.Path
-		if !strings.HasSuffix(listObjectPath, "/qListObjectDef") {
-			listObjectPath = fmt.Sprintf("%s/qListObjectDef", def.Select.Path)
-		}
-	} else {
-		// Guess data paths using DataDef.Path as base
-
-		// Hyper cube dimensions and measures
-		dimensionsPath = fmt.Sprintf("%sDef/qDimensions", def.DataDef.Path)
-		measuresPath = fmt.Sprintf("%sDef/qMeasures", def.DataDef.Path)
-
-		// Handle list object
-		listObjectPath = fmt.Sprintf("%sDef", def.DataDef.Path)
-		if !strings.HasSuffix(listObjectPath, "/qListObjectDef") {
-			listObjectPath = fmt.Sprintf("%s/qListObjectDef", def.DataDef.Path)
-		}
+	// Figure out list object path
+	listObjectPath := fmt.Sprintf("%sDef", def.DataDef.Path)
+	if !strings.HasSuffix(listObjectPath, "/qListObjectDef") {
+		listObjectPath = fmt.Sprintf("%s/qListObjectDef", def.DataDef.Path)
 	}
-
-	dimensions := senseobjdef.NewDataPath(dimensionsPath)
-	measures := senseobjdef.NewDataPath(measuresPath)
 	listObjects := senseobjdef.NewDataPath(listObjectPath)
 
 	// Try to set dimensions and measures, null if not exist or not parsable (error)
@@ -855,16 +881,4 @@ func (report *AppStructureReport) AddWarning(warning string) {
 	}
 
 	report.warnings = append(report.warnings, warning)
-}
-
-// AddObject to app structure report
-func (report *AppStructureReport) AddObject(obj AppObjectDef) {
-	report.objectsLock.Lock()
-	defer report.objectsLock.Unlock()
-
-	if report.objects == nil {
-		report.objects = make([]AppObjectDef, 0, 1)
-	}
-
-	report.objects = append(report.objects, obj)
 }
