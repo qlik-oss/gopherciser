@@ -416,6 +416,7 @@ func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.
 			obj.RawExtendedProperties = nil
 		}
 
+		structure.AddObject(obj)
 		return nil
 	}, actionState, true, "")
 
@@ -696,7 +697,7 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 
 	if obj.Selectable && (len(obj.Dimensions)+len(obj.Measures)) < 1 {
 		// object defined as selectable both doesn't have any data definitions found
-		structure.warn(fmt.Sprintf("object<%s> visualization<%s> is expected to have data, but no measures or dimensions were found", obj.Id, vis))
+		structure.warn(fmt.Sprintf("object<%s> visualization<%s> type<%s> is expected to have data, but no measures or dimensions were found", obj.Id, vis, typ))
 	}
 
 	// no dimension = not selectable
