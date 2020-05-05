@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	jsoniter "github.com/json-iterator/go"
@@ -81,7 +82,7 @@ func getSummaryTypeHelpString() string {
 	return buf.String()
 }
 
-func ConfigOverrideLogSettings(cfg *config.Config) {
+func ConfigOverrideLogSettings(cfg *config.Config) error {
 	if trafficMetrics {
 		cfg.SetTrafficMetricsLogging()
 	}
@@ -93,4 +94,22 @@ func ConfigOverrideLogSettings(cfg *config.Config) {
 	if debug {
 		cfg.SetDebugLogging()
 	}
+
+	if logFormat != "" {
+		var errLogformat error
+		cfg.Settings.LogSettings.Format, errLogformat = resolveLogFormat(logFormat)
+		if errLogformat != nil {
+			return LogFormatError(fmt.Sprintf("error resolving log format<%s>: %v", logFormat, errLogformat))
+		}
+	}
+
+	if summaryType != "" {
+		if summary, errSummaryType := resolveSummaryType(); errSummaryType != nil {
+			return SummaryTypeError(fmt.Sprintf("error resolving summary type<%s>: %v", summaryType, errSummaryType))
+		} else {
+			cfg.Settings.LogSettings.Summary = summary
+		}
+	}
+
+	return nil
 }

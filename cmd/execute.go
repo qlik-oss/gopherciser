@@ -192,22 +192,8 @@ func execute() error {
 	}
 
 	// === logging section ===
-	ConfigOverrideLogSettings(cfg)
-
-	if logFormat != "" {
-		var errLogformat error
-		cfg.Settings.LogSettings.Format, errLogformat = resolveLogFormat(logFormat)
-		if errLogformat != nil {
-			return LogFormatError(fmt.Sprintf("error resolving log format<%s>: %v", logFormat, errLogformat))
-		}
-	}
-
-	if summaryType != "" {
-		if summary, errSummaryType := resolveSummaryType(); errSummaryType != nil {
-			return SummaryTypeError(fmt.Sprintf("error resolving summary type<%s>: %v", summaryType, errSummaryType))
-		} else {
-			cfg.Settings.LogSettings.Summary = summary
-		}
+	if err := ConfigOverrideLogSettings(cfg); err != nil {
+		return errors.WithStack(err)
 	}
 
 	// === object definition section ===
