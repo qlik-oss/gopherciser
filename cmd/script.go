@@ -184,7 +184,10 @@ var structureCmd = &cobra.Command{
 		cfg.Settings.OutputsSettings.Dir = outputFolder
 
 		// Override log settings in case of parameters being set
-		ConfigOverrideLogSettings(cfg)
+		if err := ConfigOverrideLogSettings(cfg); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			os.Exit(ExitCodeLogFormatError)
+		}
 
 		if err := cfg.GetAppStructures(context.Background(), includeRaw); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)

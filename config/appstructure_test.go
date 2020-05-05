@@ -4159,7 +4159,7 @@ func TestConfig_GetAppStructures(t *testing.T) {
 		"getappstructure",
 	}
 
-	structureScenario := cfg.getAppStructureScenario(false)
+	structureScenario := cfg.getAppStructureScenario(false, SummaryTypeNone)
 
 	if len(expectedActions) != len(structureScenario) {
 		expected := strings.Join(expectedActions, ",")
