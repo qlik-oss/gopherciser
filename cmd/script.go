@@ -37,7 +37,7 @@ func init() {
 	scriptCmd.AddCommand(structureCmd)
 	AddAllSharedParameters(structureCmd)
 	AddLoggingParameters(structureCmd)
-	structureCmd.Flags().StringVarP(&outputFolder, "output", "o", "", "override script output folder")
+	structureCmd.Flags().StringVarP(&outputFolder, "output", "o", "", "script output folder. Defaults to working folder")
 	structureCmd.Flags().BoolVarP(&includeRaw, "raw", "r", false, "include raw properties in structure")
 }
 
@@ -157,8 +157,9 @@ var testConnectionCmd = &cobra.Command{
 var structureCmd = &cobra.Command{
 	Use:     "structure",
 	Aliases: []string{"s"},
-	Short:   "get app structure",
-	Long:    `get app structure using connect settings in file`,
+	Short:   "Get app structure",
+	Long: `Get app structure using settings provided by the config file.
+Will save one .structure file per app in script in the folder defined by output parameter.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if cfgFile == "" {
 			_, _ = os.Stderr.WriteString("Error: No config provided\n")
@@ -194,6 +195,7 @@ var structureCmd = &cobra.Command{
 		case config.AppStructureNoScenarioActionsError:
 			// Not an error but print info
 			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
+		case nil:
 		default:
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeAppStructure)
