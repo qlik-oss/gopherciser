@@ -782,7 +782,6 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *AppStructureObject) error {
 	genMeasure, err := app.Doc.GetMeasure(ctx, id)
 	if err != nil {
-		fmt.Printf("Measure: %+v\n", genMeasure)
 		return errors.WithStack(err)
 	}
 	obj.RawBaseProperties, err = genMeasure.GetPropertiesRaw(ctx)
