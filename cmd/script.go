@@ -189,7 +189,12 @@ var structureCmd = &cobra.Command{
 			os.Exit(ExitCodeLogFormatError)
 		}
 
-		if err := cfg.GetAppStructures(context.Background(), includeRaw); err != nil {
+		err = cfg.GetAppStructures(context.Background(), includeRaw)
+		switch err.(type) {
+		case config.AppStructureNoScenarioActionsError:
+			// Not an error but print info
+			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
+		default:
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeAppStructure)
 		}

@@ -137,8 +137,9 @@ type (
 		structureLock sync.Mutex
 	}
 
-	ObjectType                      int
-	AppStructureObjectNotFoundError string
+	ObjectType                         int
+	AppStructureObjectNotFoundError    string
+	AppStructureNoScenarioActionsError struct{}
 )
 
 const (
@@ -169,6 +170,11 @@ var (
 // Error object was not found in app structure
 func (err AppStructureObjectNotFoundError) Error() string {
 	return string(err)
+}
+
+// Error no applicable actions found in scenario
+func (err AppStructureNoScenarioActionsError) Error() string {
+	return "no applicable actions in scenario"
 }
 
 func (cfg *Config) getAppStructureScenario(includeRaw bool, summary SummaryType) []scenario.Action {
@@ -209,7 +215,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	// find all auth and actions
 	appStructureScenario := cfg.getAppStructureScenario(includeRaw, cfg.Settings.LogSettings.getSummaryType())
 	if len(appStructureScenario) < 1 {
-		return errors.New("no applicable actions in scenario") // Todo warn only? Only include in summary?
+		return AppStructureNoScenarioActionsError{}
 	}
 
 	// Replace scheduler with 1 iteration 1 user simple scheduler
