@@ -251,6 +251,9 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 		return errors.WithStack(err)
 	}
 
+	logEntry := log.NewLogEntry()
+	logEntry.Log(logger.DebugLevel, fmt.Sprintf("outputs folder: %s", outputsDir))
+
 	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
 	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings); err != nil {
 		return errors.WithStack(err)
@@ -448,6 +451,8 @@ func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.
 		if oType, err := ObjectTypeEnumMap.Int(typ); err == nil {
 			objectType = ObjectType(oType)
 		}
+
+		sessionState.LogEntry.Log(logger.DebugLevel, fmt.Sprintf("get structure for object id<%s> type<%s>", id, typ))
 
 		// handle some special types
 		switch objectType {
