@@ -78,10 +78,12 @@ type (
 	AppStructureObject struct {
 		AppObjectDef
 		MetaDef
-		// RawProperties of Sense object
-		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
-		// RawProperties of extended Sense object
+		// RawBaseProperties of Sense object
+		RawBaseProperties json.RawMessage `json:"rawBaseProperties,omitempty"`
+		// RawExtendedProperties of extended Sense object
 		RawExtendedProperties json.RawMessage `json:"rawExtendedProperties,omitempty"`
+		// RawGeneratedProperties inner generated properties of auto-chart
+		RawGeneratedProperties json.RawMessage `json:"rawGeneratedProperties,omitempty"`
 		// Children to the sense object
 		Children map[string]string `json:"children,omitempty"`
 		// Selectable true if select can be done in object
@@ -486,8 +488,9 @@ func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.
 
 		if !includeRaw {
 			// Remove raw properties from structure output
-			obj.RawProperties = nil
+			obj.RawBaseProperties = nil
 			obj.RawExtendedProperties = nil
+			obj.RawGeneratedProperties = nil
 		}
 
 		structure.AddObject(obj)
@@ -557,14 +560,14 @@ func (structure *AppStructure) handleDefaultObject(ctx context.Context, app *sen
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	obj.RawProperties, err = genObj.GetPropertiesRaw(ctx)
+	obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	// Lookup and set ExtendsID
 	extendsIdPath := senseobjdef.NewDataPath("/qExtendsId")
-	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawProperties)
+	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawBaseProperties)
 	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
 
 	if obj.ExtendsId != "" {
@@ -576,6 +579,9 @@ func (structure *AppStructure) handleDefaultObject(ctx context.Context, app *sen
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
+		obj.RawGeneratedProperties = extractGeneratedProperties(obj.RawExtendedProperties)
+
 		if err := handleChildren(ctx, extendedObject, obj); err != nil {
 			return errors.WithStack(err)
 		}
@@ -594,20 +600,24 @@ func (structure *AppStructure) handleAutoChart(ctx context.Context, app *senseob
 		return errors.WithStack(err)
 	}
 
-	autoChartProperties, err := genObj.GetPropertiesRaw(ctx)
+	obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	generatedPropertiesPath := senseobjdef.NewDataPath("/qUndoExclude/generated")
-	obj.RawProperties, _ = generatedPropertiesPath.Lookup(autoChartProperties)
-	obj.RawExtendedProperties = autoChartProperties
+	obj.RawGeneratedProperties = extractGeneratedProperties(obj.RawBaseProperties)
 
 	if err := handleChildren(ctx, genObj, obj); err != nil {
 		return errors.WithStack(err)
 	}
 
 	return errors.WithStack(structure.handleObject(ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
+}
+
+func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
+	generatedPropertiesPath := senseobjdef.NewDataPath("/qUndoExclude/generated")
+	properties, _ = generatedPropertiesPath.Lookup(properties)
+	return properties
 }
 
 func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppStructureObject) error {
@@ -630,19 +640,24 @@ func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppS
 }
 
 func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject) error {
+	// figure out which properties to use
+	var properties json.RawMessage
+	if obj.RawGeneratedProperties != nil {
+		properties = obj.RawGeneratedProperties
+	} else if obj.RawExtendedProperties != nil {
+		properties = obj.RawExtendedProperties
+	} else {
+		properties = obj.RawBaseProperties
+	}
+
 	// Lookup and set Visualization
 	visualizationPath := senseobjdef.NewDataPath("/visualization")
-	rawVisualization, _ := visualizationPath.Lookup(obj.RawProperties)
+	rawVisualization, _ := visualizationPath.Lookup(properties)
 	_ = jsonit.Unmarshal(rawVisualization, &obj.Visualization)
 
 	vis := obj.Visualization
 	if vis == "" {
 		vis = typ
-	}
-
-	properties := obj.RawProperties
-	if obj.ExtendsId != "" && obj.RawExtendedProperties != nil {
-		properties = obj.RawExtendedProperties
 	}
 
 	metaDef := senseobjdef.NewDataPath("/qMetaDef")
@@ -770,7 +785,7 @@ func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobje
 		fmt.Printf("Measure: %+v\n", genMeasure)
 		return errors.WithStack(err)
 	}
-	obj.RawProperties, err = genMeasure.GetPropertiesRaw(ctx)
+	obj.RawBaseProperties, err = genMeasure.GetPropertiesRaw(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -778,7 +793,7 @@ func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobje
 	// Save measure information to structure
 	var measure enigma.NxInlineMeasureDef
 	measurePath := senseobjdef.NewDataPath("/qMeasure")
-	rawMeasure, err := measurePath.Lookup(obj.RawProperties)
+	rawMeasure, err := measurePath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("measure<%s> definition not found", id))
 	} else {
@@ -790,7 +805,7 @@ func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobje
 	// Save meta information to structure
 	var meta MetaDef
 	metaPath := senseobjdef.NewDataPath("/qMetaDef")
-	rawMeta, err := metaPath.Lookup(obj.RawProperties)
+	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("measure<%s> has not meta information", id))
 	} else {
@@ -815,7 +830,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	obj.RawProperties, err = genDim.GetPropertiesRaw(ctx)
+	obj.RawBaseProperties, err = genDim.GetPropertiesRaw(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -823,7 +838,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 	// Save dimension information to structure
 	var dimension enigma.NxInlineDimensionDef
 	dimensionPath := senseobjdef.NewDataPath("/qDim")
-	rawDimension, err := dimensionPath.Lookup(obj.RawProperties)
+	rawDimension, err := dimensionPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("dimension<%s> defintion not found", id))
 	} else {
@@ -835,7 +850,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 	// Add dimension meta information to structure
 	var meta MetaDef
 	metaPath := senseobjdef.NewDataPath("/qMetaDef")
-	rawMeta, err := metaPath.Lookup(obj.RawProperties)
+	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("dimension<%s> has not meta information", id))
 	} else {
