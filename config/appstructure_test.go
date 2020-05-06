@@ -79,7 +79,8 @@ var structureJSON = []byte(`{
           "def": "Count(Expression3)"
         }
       ],
-      "extendsId": "LczZG"
+      "extendsId": "LczZG",
+      "visualization": "table"
     },
     "27908a64-d573-4aaa-ac04-b47932ba7995": {
       "id": "27908a64-d573-4aaa-ac04-b47932ba7995",
@@ -117,7 +118,8 @@ var structureJSON = []byte(`{
           "def": "Sum(Expression1)"
         }
       ],
-      "extendsId": "WKUFp"
+      "extendsId": "WKUFp",
+      "visualization": "barchart"
     },
     "2b86d4e7-dff0-4252-9c3f-f67a82626d7d": {
       "id": "2b86d4e7-dff0-4252-9c3f-f67a82626d7d",
@@ -251,7 +253,8 @@ var structureJSON = []byte(`{
           "def": "Avg(Expression3)"
         }
       ],
-      "extendsId": "bTLJu"
+      "extendsId": "bTLJu",
+      "visualization": "piechart"
     },
     "53d3f92c-90e5-46a5-ab0f-019e9cf955ec": {
       "id": "53d3f92c-90e5-46a5-ab0f-019e9cf955ec",
@@ -288,7 +291,8 @@ var structureJSON = []byte(`{
           "def": "Sum(Expression3)"
         }
       ],
-      "extendsId": "QquqnR"
+      "extendsId": "QquqnR",
+      "visualization": "combochart"
     },
     "6b9169cc-d6de-4fae-9520-d674e2ded148": {
       "id": "6b9169cc-d6de-4fae-9520-d674e2ded148",
@@ -351,7 +355,8 @@ var structureJSON = []byte(`{
         "e13b12f0-c2c1-42cd-aa54-ef6efdbf24c0": "listbox"
       },
       "selectable": false,
-      "extendsId": "UmDGVm"
+      "extendsId": "UmDGVm",
+      "visualization": "filterpane"
     },
     "88a8c69b-5715-4c7c-b4ae-293da7a072d9": {
       "id": "88a8c69b-5715-4c7c-b4ae-293da7a072d9",
@@ -373,7 +378,8 @@ var structureJSON = []byte(`{
           "def": "Count(AsciiNum)"
         }
       ],
-      "extendsId": "JmdbDg"
+      "extendsId": "JmdbDg",
+      "visualization": "treemap"
     },
     "8b7da3fa-45ee-4920-bd9d-419950be8f2e": {
       "id": "8b7da3fa-45ee-4920-bd9d-419950be8f2e",
@@ -506,7 +512,8 @@ var structureJSON = []byte(`{
           "def": "Count([TransID])"
         }
       ],
-      "extendsId": "6bd32eab-6ae7-4b80-b3d3-e02f22e1d5b8"
+      "extendsId": "6bd32eab-6ae7-4b80-b3d3-e02f22e1d5b8",
+      "visualization": "histogram"
     },
     "CPKEjQP": {
       "id": "CPKEjQP",
@@ -720,7 +727,8 @@ var structureJSON = []byte(`{
           "def": "Count(Expression3)"
         }
       ],
-      "extendsId": "ZDxxg"
+      "extendsId": "ZDxxg",
+      "visualization": "pivot-table"
     },
     "ELvcvsJ": {
       "id": "ELvcvsJ",
@@ -742,12 +750,23 @@ var structureJSON = []byte(`{
           "def": "Count(Expression2)"
         }
       ],
-      "extendsId": "tEwrF"
+      "extendsId": "tEwrF",
+      "visualization": "linechart"
     },
     "EaUj": {
       "id": "EaUj",
       "type": "map",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
       "visualization": "map"
     },
     "Fpwhwuy": {
@@ -849,7 +868,8 @@ var structureJSON = []byte(`{
       "type": "text-image",
       "title": "TextM",
       "selectable": false,
-      "extendsId": "AjLSTb"
+      "extendsId": "AjLSTb",
+      "visualization": "text-image"
     },
     "JMSnZmr": {
       "id": "JMSnZmr",
@@ -886,6 +906,22 @@ var structureJSON = []byte(`{
         }
       ],
       "visualization": "distributionplot"
+    },
+    "JhmJf": {
+      "id": "JhmJf",
+      "type": "map",
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "visualization": "map"
     },
     "JmdbDg": {
       "id": "JmdbDg",
@@ -1167,7 +1203,17 @@ var structureJSON = []byte(`{
     "MJcFdz": {
       "id": "MJcFdz",
       "type": "map",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
       "visualization": "map"
     },
     "NBMVsP": {
@@ -1212,7 +1258,8 @@ var structureJSON = []byte(`{
           "def": "Avg(Expression3)"
         }
       ],
-      "extendsId": "bTLJu"
+      "extendsId": "bTLJu",
+      "visualization": "piechart"
     },
     "NxTZDm": {
       "id": "NxTZDm",
@@ -1261,7 +1308,8 @@ var structureJSON = []byte(`{
           "def": "Avg(Expression3)"
         }
       ],
-      "extendsId": "VqPXn"
+      "extendsId": "VqPXn",
+      "visualization": "scatterplot"
     },
     "PaMnJfP": {
       "id": "PaMnJfP",
@@ -1345,7 +1393,8 @@ var structureJSON = []byte(`{
           "def": "Count(Expression3)"
         }
       ],
-      "extendsId": "LczZG"
+      "extendsId": "LczZG",
+      "visualization": "table"
     },
     "QKPPSD": {
       "id": "QKPPSD",
@@ -1422,7 +1471,31 @@ var structureJSON = []byte(`{
     "QqFVRmp": {
       "id": "QqFVRmp",
       "type": "map",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "Property"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "label": "Value",
+          "def": "Sum(Property.Value)"
+        }
+      ],
       "visualization": "map"
     },
     "QquqnR": {
@@ -1559,7 +1632,8 @@ var structureJSON = []byte(`{
           "def": "Avg(Expression2)"
         }
       ],
-      "extendsId": "bMafQ"
+      "extendsId": "bMafQ",
+      "visualization": "gauge"
     },
     "TMAvcJs": {
       "id": "TMAvcJs",
@@ -1787,7 +1861,8 @@ var structureJSON = []byte(`{
           "def": "Count(AsciiNum)"
         }
       ],
-      "extendsId": "JmdbDg"
+      "extendsId": "JmdbDg",
+      "visualization": "treemap"
     },
     "VqPXn": {
       "id": "VqPXn",
@@ -2012,7 +2087,8 @@ var structureJSON = []byte(`{
           "def": "Sum(Expression1)"
         }
       ],
-      "extendsId": "WKUFp"
+      "extendsId": "WKUFp",
+      "visualization": "barchart"
     },
     "XwGwH": {
       "id": "XwGwH",
@@ -2183,7 +2259,8 @@ var structureJSON = []byte(`{
           "def": "Count(Expression3)"
         }
       ],
-      "extendsId": "ZDxxg"
+      "extendsId": "ZDxxg",
+      "visualization": "pivot-table"
     },
     "aFjjST": {
       "id": "aFjjST",
@@ -2357,7 +2434,8 @@ var structureJSON = []byte(`{
           "def": "Sum(Expression3)"
         }
       ],
-      "extendsId": "QquqnR"
+      "extendsId": "QquqnR",
+      "visualization": "combochart"
     },
     "bapZzrB": {
       "id": "bapZzrB",
@@ -2401,7 +2479,8 @@ var structureJSON = []byte(`{
           "def": "Avg(Expression3)"
         }
       ],
-      "extendsId": "VqPXn"
+      "extendsId": "VqPXn",
+      "visualization": "scatterplot"
     },
     "cQTurT": {
       "id": "cQTurT",
@@ -2582,12 +2661,23 @@ var structureJSON = []byte(`{
       ],
       "visualization": "listbox"
     },
+    "e85e2002-3daf-44b6-a052-784da3323444": {
+      "id": "e85e2002-3daf-44b6-a052-784da3323444",
+      "type": "sheet",
+      "title": "more maps",
+      "children": {
+        "JhmJf": "map",
+        "hjvTwJp": "map"
+      },
+      "selectable": false
+    },
     "e94a7e71-0ebb-47c0-aeea-bd4b9eb8c69d": {
       "id": "e94a7e71-0ebb-47c0-aeea-bd4b9eb8c69d",
       "type": "text-image",
       "title": "TextM",
       "selectable": false,
-      "extendsId": "AjLSTb"
+      "extendsId": "AjLSTb",
+      "visualization": "text-image"
     },
     "e98010b2-a77e-4c5c-9612-1c3329713141": {
       "id": "e98010b2-a77e-4c5c-9612-1c3329713141",
@@ -2790,7 +2880,8 @@ var structureJSON = []byte(`{
           "def": "Sum(Expression1)"
         }
       ],
-      "extendsId": "dmjZp"
+      "extendsId": "dmjZp",
+      "visualization": "kpi"
     },
     "fa4229b9-6e9b-4bea-b516-c9c717167a29": {
       "id": "fa4229b9-6e9b-4bea-b516-c9c717167a29",
@@ -2802,7 +2893,8 @@ var structureJSON = []byte(`{
           "def": "Avg(Expression2)"
         }
       ],
-      "extendsId": "bMafQ"
+      "extendsId": "bMafQ",
+      "visualization": "gauge"
     },
     "fcaf1755-a56b-4d33-a3b4-cebe86254e61": {
       "id": "fcaf1755-a56b-4d33-a3b4-cebe86254e61",
@@ -2824,7 +2916,8 @@ var structureJSON = []byte(`{
           "def": "Count(Expression2)"
         }
       ],
-      "extendsId": "tEwrF"
+      "extendsId": "tEwrF",
+      "visualization": "linechart"
     },
     "fjETFn": {
       "id": "fjETFn",
@@ -3045,6 +3138,22 @@ var structureJSON = []byte(`{
         }
       ],
       "visualization": "combochart"
+    },
+    "hjvTwJp": {
+      "id": "hjvTwJp",
+      "type": "map",
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "visualization": "map"
     },
     "hkDzPW": {
       "id": "hkDzPW",
@@ -3424,7 +3533,8 @@ var structureJSON = []byte(`{
         "e13b12f0-c2c1-42cd-aa54-ef6efdbf24c0": "listbox"
       },
       "selectable": false,
-      "extendsId": "UmDGVm"
+      "extendsId": "UmDGVm",
+      "visualization": "filterpane"
     },
     "nuCHz": {
       "id": "nuCHz",
@@ -3467,7 +3577,17 @@ var structureJSON = []byte(`{
     "pCYhUmk": {
       "id": "pCYhUmk",
       "type": "map",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
       "visualization": "map"
     },
     "pHjJnUa": {
@@ -3567,7 +3687,8 @@ var structureJSON = []byte(`{
           "def": "Sum(Expression1)"
         }
       ],
-      "extendsId": "dmjZp"
+      "extendsId": "dmjZp",
+      "visualization": "kpi"
     },
     "ppjDSJ": {
       "id": "ppjDSJ",
@@ -3603,7 +3724,25 @@ var structureJSON = []byte(`{
       "id": "qjwe",
       "type": "masterobject",
       "title": "MApM",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Public_Toilets.Name"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "Public_Toilets.Point"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
       "visualization": "map"
     },
     "rkuwZh": {
@@ -3648,7 +3787,8 @@ var structureJSON = []byte(`{
           "def": "Sum(TransID)"
         }
       ],
-      "extendsId": "35585276-91fd-45f2-8594-e28feae7a8cd"
+      "extendsId": "35585276-91fd-45f2-8594-e28feae7a8cd",
+      "visualization": "distributionplot"
     },
     "tCxXew": {
       "id": "tCxXew",
@@ -3708,7 +3848,17 @@ var structureJSON = []byte(`{
     "teTUAr": {
       "id": "teTUAr",
       "type": "map",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
       "visualization": "map"
     },
     "tmnqgR": {
@@ -3848,7 +3998,8 @@ var structureJSON = []byte(`{
           "def": "(Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.75 ) + ((Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.75 ) - Fractile( total \u003c[TransLineID]\u003e Aggr( Avg(TransID), [TransLineID], [Alpha] ) , 0.25 )) * 1.5))"
         }
       ],
-      "extendsId": "02624185-cc26-4e98-92a1-d2008c36fd85"
+      "extendsId": "02624185-cc26-4e98-92a1-d2008c36fd85",
+      "visualization": "boxplot"
     },
     "vHznrgh": {
       "id": "vHznrgh",
@@ -4027,7 +4178,31 @@ var structureJSON = []byte(`{
     "yvyZVN": {
       "id": "yvyZVN",
       "type": "map",
-      "selectable": false,
+      "selectable": true,
+      "dimensions": [
+        {
+          "defs": [
+            "Distillery"
+          ],
+          "labels": [
+            ""
+          ]
+        },
+        {
+          "defs": [
+            "Property"
+          ],
+          "labels": [
+            ""
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "label": "Value",
+          "def": "Sum(Property.Value)"
+        }
+      ],
       "visualization": "map"
     },
     "zJSbv": {
