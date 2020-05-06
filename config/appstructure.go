@@ -7,7 +7,6 @@ import (
 	"github.com/InVisionApp/tabular"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
-	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
@@ -27,10 +25,6 @@ import (
 )
 
 type (
-	getAppStructureSettings struct {
-		IncludeRaw bool        `json:"includeRaw,omitempty"`
-		Summary    SummaryType `json:"summary,omitempty"`
-	}
 
 	// MetaDef meta information for Library objects such as dimension and measure
 	MetaDef struct {
@@ -183,175 +177,6 @@ func (cfg *Config) getAppStructureScenario(includeRaw bool, summary SummaryType)
 	return evaluateActionList(cfg.Scenario, includeRaw, summary)
 }
 
-func evaluateActionList(actions []scenario.Action, includeRaw bool, summary SummaryType) []scenario.Action {
-	appStructureScenario := make([]scenario.Action, 0, len(actions))
-	for _, act := range actions {
-		info, subActions := act.AppStructureAction()
-		if info != nil {
-			if info.Include {
-				appStructureScenario = append(appStructureScenario, act)
-			}
-			if info.IsAppAction {
-				appStructureScenario = append(appStructureScenario, scenario.Action{
-					ActionCore: scenario.ActionCore{
-						Type:  "getappstructure",
-						Label: "Get app structure",
-					},
-					Settings: &getAppStructureSettings{
-						IncludeRaw: includeRaw,
-						Summary:    summary,
-					},
-				})
-
-			}
-			if len(subActions) > 0 {
-				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw, summary)...)
-			}
-		}
-	}
-	return appStructureScenario
-}
-
-// GetAppStructures for all apps in scenario
-func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error {
-	// find all auth and actions
-	appStructureScenario := cfg.getAppStructureScenario(includeRaw, cfg.Settings.LogSettings.getSummaryType())
-	if len(appStructureScenario) < 1 {
-		return AppStructureNoScenarioActionsError{}
-	}
-
-	// Replace scheduler with 1 iteration 1 user simple scheduler
-	cfg.Scheduler = &scheduler.SimpleScheduler{
-		Scheduler: scheduler.Scheduler{
-			SchedType: scheduler.SchedSimple,
-		},
-		Settings: scheduler.SimpleSchedSettings{
-			ExecutionTime:   -1,
-			Iterations:      1,
-			ConcurrentUsers: 1,
-			RampupDelay:     1.0,
-		},
-	}
-
-	if err := cfg.Scheduler.Validate(); err != nil {
-		return errors.WithStack(err)
-	}
-
-	// Setup outputs folder
-	outputsDir, err := setupOutputs(cfg.Settings.OutputsSettings)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	logSettings := cfg.Settings.LogSettings
-
-	fileName := cfg.Settings.LogSettings.FileName.String()
-	ext := filepath.Ext(fileName)
-	appStructureLogPath := fmt.Sprintf("%s-appstructure%s", strings.TrimSuffix(fileName, ext), ext)
-	stmpl, err := session.NewSyncedTemplate(appStructureLogPath)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	logSettings.FileName = *stmpl
-
-	log, err := setupLogging(ctx, logSettings, nil, nil)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	logEntry := log.NewLogEntry()
-	logEntry.Log(logger.DebugLevel, fmt.Sprintf("outputs folder: %s", outputsDir))
-
-	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
-	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings); err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-// Validate implements ActionSettings interface
-func (settings *getAppStructureSettings) Validate() error {
-	return nil
-}
-
-// Execute implements ActionSettings interface
-func (settings *getAppStructureSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
-		return
-	}
-
-	app := sessionState.Connection.Sense().CurrentApp
-	if app == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense app"))
-		return
-	}
-
-	var allInfos []*enigma.NxInfo
-
-	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		var err error
-		allInfos, err = app.Doc.GetAllInfos(ctx)
-		return err
-	}); err != nil {
-		actionState.AddErrors(err)
-		return
-	}
-
-	appStructure := &AppStructure{
-		AppMeta: AppStructureAppMeta{
-			Title: app.Layout.Title,
-			Guid:  app.GUID,
-		},
-		logEntry: sessionState.LogEntry,
-	}
-
-	for _, info := range allInfos {
-		if info == nil {
-			continue
-		}
-		if err := appStructure.getStructureForObjectAsync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw); err != nil {
-			actionState.AddErrors(err)
-			return
-		}
-	}
-
-	if sessionState.Wait(actionState) {
-		return // An error occurred
-	}
-
-	raw, err := json.MarshalIndent(appStructure, "", "  ")
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "error marshaling app structure"))
-		return
-	}
-
-	outputDir := sessionState.OutputsDir
-	if outputDir != "" && outputDir[len(outputDir)-1:] != "/" {
-		outputDir += "/"
-	}
-
-	fileName := fmt.Sprintf("%s%s.structure", outputDir, app.GUID)
-	structureFile, err := os.Create(fileName)
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to create structure file"))
-		return
-	}
-	defer func() {
-		if err := structureFile.Close(); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "failed to close file<%v> successfully: %v\n", structureFile, err)
-		}
-	}()
-
-	if _, err = structureFile.Write(raw); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "error while writing to structure file"))
-		return
-	}
-
-	appStructure.printSummary(settings.Summary, fileName)
-}
-
 func (structure *AppStructure) printSummary(summary SummaryType, fileName string) {
 	if structure == nil || summary == SummaryTypeNone {
 		return
@@ -440,6 +265,93 @@ func (structure *AppStructure) printSummary(summary SummaryType, fileName string
 		buf.WriteString(fmt.Sprintf(table.Format, obj.Id, obj.Visualization, obj.Type))
 		buf.WriteString(ansiReset)
 	}
+}
+
+func evaluateActionList(actions []scenario.Action, includeRaw bool, summary SummaryType) []scenario.Action {
+	appStructureScenario := make([]scenario.Action, 0, len(actions))
+	for _, act := range actions {
+		info, subActions := act.AppStructureAction()
+		if info != nil {
+			if info.Include {
+				appStructureScenario = append(appStructureScenario, act)
+			}
+			if info.IsAppAction {
+				appStructureScenario = append(appStructureScenario, scenario.Action{
+					ActionCore: scenario.ActionCore{
+						Type:  "getappstructure",
+						Label: "Get app structure",
+					},
+					Settings: &getAppStructureSettings{
+						IncludeRaw: includeRaw,
+						Summary:    summary,
+					},
+				})
+
+			}
+			if len(subActions) > 0 {
+				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw, summary)...)
+			}
+		}
+	}
+	return appStructureScenario
+}
+
+// GetAppStructures for all apps in scenario
+func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error {
+	// find all auth and actions
+	appStructureScenario := cfg.getAppStructureScenario(includeRaw, cfg.Settings.LogSettings.getSummaryType())
+	if len(appStructureScenario) < 1 {
+		return AppStructureNoScenarioActionsError{}
+	}
+
+	// Replace scheduler with 1 iteration 1 user simple scheduler
+	cfg.Scheduler = &scheduler.SimpleScheduler{
+		Scheduler: scheduler.Scheduler{
+			SchedType: scheduler.SchedSimple,
+		},
+		Settings: scheduler.SimpleSchedSettings{
+			ExecutionTime:   -1,
+			Iterations:      1,
+			ConcurrentUsers: 1,
+			RampupDelay:     1.0,
+		},
+	}
+
+	if err := cfg.Scheduler.Validate(); err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Setup outputs folder
+	outputsDir, err := setupOutputs(cfg.Settings.OutputsSettings)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	logSettings := cfg.Settings.LogSettings
+
+	fileName := cfg.Settings.LogSettings.FileName.String()
+	ext := filepath.Ext(fileName)
+	appStructureLogPath := fmt.Sprintf("%s-appstructure%s", strings.TrimSuffix(fileName, ext), ext)
+	stmpl, err := session.NewSyncedTemplate(appStructureLogPath)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	logSettings.FileName = *stmpl
+
+	log, err := setupLogging(ctx, logSettings, nil, nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	logEntry := log.NewLogEntry()
+	logEntry.Log(logger.DebugLevel, fmt.Sprintf("outputs folder: %s", outputsDir))
+
+	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
+	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, includeRaw bool) error {
