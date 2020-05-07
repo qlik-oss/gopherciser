@@ -128,8 +128,8 @@ For more information on how to use the `objdef` command, see [Supporting extensi
 
 Sub-commands:
 
-* `connect`   (or `c`): Test connection using settings provided by the config file.
-* `structure` (or `s`): Get app structure using settings provided by the config file.
+* `connect`   (or `c`): Test the connection using the settings provided in the config file.
+* `structure` (or `s`): Get the app structure using the settings provided in the config file.
 * `validate`  (or `v`): Validate a scenario script.
 * `template`  (or `tmpl` or `t`): Generate a template scenario script.
 
@@ -153,13 +153,13 @@ Sub-commands:
   * `6` or `no`: Default logs and status output turned off.
   * `7` or `onlystatus`: Default logs turned off, but status output turned on.
 * `-o` or `--output string`: Script output folder. Defaults to working folder.
-* `-r` or `--raw`: Include raw properties in structure.
+* `-r` or `--raw`: Include raw properties in the structure.
 * `--summary string`: Set the type of summary to display after the test run. Defaults to `simple`.
-  * `0` or `undefined`: Simple, prints count of objects and warnings, and all warnings.
+  * `0` or `undefined`: Simple summary, includes the number of objects and warnings and lists all warnings.
   * `1` or `none`: No summary.
-  * `2` or `simple`: Simple, prints count of objects and warnings, and all warnings.
-  * `3` or `extended`: Extended summary, includes list of all objects in structure.
-  * `4` or `full`: Currently same as `extended` summary, includes list of all objects in structure.
+  ?* `2` or `simple`: Simple summary, includes the number of objects and warnings and lists all warnings.
+  * `3` or `extended`: Extended summary, includes a list of all objects in the structure.
+  * `4` or `full`: Currently the same as the `extended` summary, includes list of all objects in structure.
 * `-t`, `--traffic`: Log traffic information.
 * `-m`, `--trafficmetrics`: Log metrics information.
 
