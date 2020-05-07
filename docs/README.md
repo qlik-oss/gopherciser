@@ -157,7 +157,7 @@ Sub-commands:
 * `--summary string`: Set the type of summary to display after the test run. Defaults to `simple`.
   * `0` or `undefined`: Simple summary, includes the number of objects and warnings and lists all warnings.
   * `1` or `none`: No summary.
-  ?* `2` or `simple`: Simple summary, includes the number of objects and warnings and lists all warnings.
+  * `2` or `simple`: Simple summary, includes the number of objects and warnings and lists all warnings.
   * `3` or `extended`: Extended summary, includes a list of all objects in the structure.
   * `4` or `full`: Currently the same as the `extended` summary, includes a list of all objects in the structure.
 * `-t`, `--traffic`: Log traffic information.
