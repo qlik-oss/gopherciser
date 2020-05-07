@@ -16,6 +16,8 @@ github.com/buger/jsonparser v0.0.0-20191204142016-1a29609e0929 h1:MW/JDk68Rny52y
 github.com/buger/jsonparser v0.0.0-20191204142016-1a29609e0929/go.mod h1:tgcrVJ81GPSF0mz+0nu1Xaz0fazGPrmmJfJtxjbHhUQ=
 github.com/buger/jsonparser v0.0.0-20200322175846-f7e751efca13 h1:+qUNY4VRkEH46bLUwxCyUU+iOGJMQBVibAaYzWiwWcg=
 github.com/buger/jsonparser v0.0.0-20200322175846-f7e751efca13/go.mod h1:tgcrVJ81GPSF0mz+0nu1Xaz0fazGPrmmJfJtxjbHhUQ=
+github.com/buger/jsonparser v0.0.0-20200507200006-c912c6b9a0a4 h1:hvnWLyPud83yX5ScRWzo25eOjlACD6xEJ456I64TGA8=
+github.com/buger/jsonparser v0.0.0-20200507200006-c912c6b9a0a4/go.mod h1:tgcrVJ81GPSF0mz+0nu1Xaz0fazGPrmmJfJtxjbHhUQ=
 github.com/cespare/xxhash v1.1.0 h1:a6HrQnmkObjyL+Gs60czilIUGqrzKutQD6XZog3p+ko=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/cespare/xxhash/v2 v2.1.1 h1:6MnRN8NT7+YBpUIWxHtefFZOKTAPgGjpQSxqLNn0+qY=
