@@ -128,8 +128,40 @@ For more information on how to use the `objdef` command, see [Supporting extensi
 
 Sub-commands:
 
-* `validate` (or `v`): Validate a scenario script.
-* `template` (or `tmpl` or `t`): Generate a template scenario script.
+* `connect`   (or `c`): Test the connection using the settings provided in the config file.
+* `structure` (or `s`): Get the app structure using the settings provided in the config file.
+* `validate`  (or `v`): Validate a scenario script.
+* `template`  (or `tmpl` or `t`): Generate a template scenario script.
+
+`connect` command flags:
+
+* `-c`, `--config string`: Connect using the specified scenario config file.
+* `-h`, `--help`: Show the help for the `connect` command.
+
+`structure` command flags:
+
+* `-c`, `--config string`: Connect using the specified scenario config file.
+* `--debug`: Log debug information.
+* `-h`, `--help`: Show the help for the `structure` command.
+* `--logformat string`: Set the specified log format. The log format specified in the scenario setup file is used by default. If no log format is specified, `tsvfile` is used.
+  * `0` or `tsvfile`: TSV file.
+  * `1` or `tsvconsole`: TSV console.
+  * `2` or `jsonfile`: JSON file.
+  * `3` or `jsonconsole`: JSON console.
+  * `4` or `console`: Console.
+  * `5` or `combined`: Combined (TSV file + JSON console).
+  * `6` or `no`: Default logs and status output turned off.
+  * `7` or `onlystatus`: Default logs turned off, but status output turned on.
+* `-o` or `--output string`: Script output folder. Defaults to working folder.
+* `-r` or `--raw`: Include raw properties in the structure.
+* `--summary string`: Set the type of summary to display after the test run. Defaults to `simple`.
+  * `0` or `undefined`: Simple summary, includes the number of objects and warnings and lists all warnings.
+  * `1` or `none`: No summary.
+  * `2` or `simple`: Simple summary, includes the number of objects and warnings and lists all warnings.
+  * `3` or `extended`: Extended summary, includes a list of all objects in the structure.
+  * `4` or `full`: Currently the same as the `extended` summary, includes a list of all objects in the structure.
+* `-t`, `--traffic`: Log traffic information.
+* `-m`, `--trafficmetrics`: Log metrics information.
 
 `validate` command flags:
 

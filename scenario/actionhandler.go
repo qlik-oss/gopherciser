@@ -21,6 +21,8 @@ import (
 )
 
 type (
+	// *** Interfaces which could be implemented on action settings ***
+
 	// ActionSettings scenario action interface for mandatory methods
 	ActionSettings interface {
 		// Execute action
@@ -37,6 +39,16 @@ type (
 	ContainerAction interface {
 		IsContainerAction()
 	}
+
+	// AppStructureAction returns if this action should be included
+	// when doing an "get app structure" from script, IsAppAction tells the scenario
+	// to insert a "getappstructure" action after that action using data from
+	// sessionState.CurrentApp. A list of Sub action to be evaluated can also be included
+	AppStructureAction interface {
+		AppStructureAction() (*AppStructureInfo, []Action)
+	}
+
+	// ****************************************************************
 
 	ActionCore struct {
 		Type     string `json:"action" doc-key:"config.scenario.action"`
@@ -57,6 +69,12 @@ type (
 
 	// AbortedError action was aborted
 	AbortedError struct{}
+
+	// AppStructureActionContainer
+	AppStructureInfo struct {
+		IsAppAction bool
+		Include     bool
+	}
 )
 
 const (
@@ -371,6 +389,16 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 	err := logResult(sessionState, actionState, actionState.Details, containerActionEntry)
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
 	return errors.WithStack(err)
+}
+
+// AppStructureAction returns if this action should be included when getting app structure
+// and any additional sub actions which should also be included
+func (act *Action) AppStructureAction() (*AppStructureInfo, []Action) {
+	appStruct, ok := act.Settings.(AppStructureAction)
+	if !ok {
+		return nil, nil
+	}
+	return appStruct.AppStructureAction()
 }
 
 func logResult(sessionState *session.State, actionState *action.State, details string, containerActionEntry *logger.ActionEntry) error {
