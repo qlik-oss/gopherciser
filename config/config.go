@@ -123,6 +123,7 @@ const (
 	ansiBoldRed    = "\x1b[1;31m"
 	ansiBoldYellow = "\x1b[1;33m"
 	ansiBoldBlue   = "\x1b[1;34m"
+	ansiBoldWhite  = "\x1b[1;37m"
 )
 
 // LogFormat enum

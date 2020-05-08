@@ -11,9 +11,11 @@ import (
 
 var (
 	scriptOverwrite bool
-)
 
-const ExitCodeConnectionError = 1
+	// structure command parameters
+	outputFolder string
+	includeRaw   bool
+)
 
 func init() {
 	RootCmd.AddCommand(scriptCmd)
@@ -30,6 +32,13 @@ func init() {
 	// template sub command
 	AddConfigParameter(templateCmd)
 	templateCmd.Flags().BoolVarP(&scriptOverwrite, "force", "f", false, "overwrite existing script file")
+
+	// structure sub command
+	scriptCmd.AddCommand(structureCmd)
+	AddAllSharedParameters(structureCmd)
+	AddLoggingParameters(structureCmd)
+	structureCmd.Flags().StringVarP(&outputFolder, "output", "o", "", "script output folder. Defaults to working folder")
+	structureCmd.Flags().BoolVarP(&includeRaw, "raw", "r", false, "include raw properties in structure")
 }
 
 // scriptCmd represents the script command
@@ -128,12 +137,12 @@ var testConnectionCmd = &cobra.Command{
 			if err := cmd.Help(); err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			}
-			os.Exit(ExitCodeConnectionError)
+			os.Exit(ExitCodeMissingParameter)
 		}
 		cfg, err := unmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			os.Exit(ExitCodeConnectionError)
+			os.Exit(ExitCodeJSONParseError)
 		}
 
 		if err = cfg.TestConnection(context.Background()); err != nil {
@@ -142,5 +151,54 @@ var testConnectionCmd = &cobra.Command{
 		}
 
 		_, _ = os.Stderr.WriteString("Connection Successful!\n")
+	},
+}
+
+var structureCmd = &cobra.Command{
+	Use:     "structure",
+	Aliases: []string{"s"},
+	Short:   "Get app structure",
+	Long: `Get app structure using settings provided by the config file.
+Will save one .structure file per app in script in the folder defined by output parameter.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if cfgFile == "" {
+			_, _ = os.Stderr.WriteString("Error: No config provided\n")
+			if err := cmd.Help(); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			}
+			os.Exit(ExitCodeMissingParameter)
+		}
+
+		// Read object definition overrides and additions
+		if err := ReadObjectDefinitions(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "ObjectDefError: %s\n", err)
+			os.Exit(ExitCodeObjectDefError)
+		}
+
+		cfg, err := unmarshalConfigFile()
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			os.Exit(ExitCodeJSONParseError)
+		}
+
+		// Override output folder
+		cfg.Settings.OutputsSettings.Dir = outputFolder
+
+		// Override log settings in case of parameters being set
+		if err := ConfigOverrideLogSettings(cfg); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			os.Exit(ExitCodeLogFormatError)
+		}
+
+		err = cfg.GetAppStructures(context.Background(), includeRaw)
+		switch err.(type) {
+		case config.AppStructureNoScenarioActionsError:
+			// Not an error but print info
+			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
+		case nil:
+		default:
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			os.Exit(ExitCodeAppStructure)
+		}
 	},
 }

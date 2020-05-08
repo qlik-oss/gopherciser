@@ -40,44 +40,12 @@ type (
 )
 
 var (
-	traffic          bool
-	trafficMetrics   bool
-	debug            bool
 	metricsPort      int
 	metricsAddress   string
 	metricsLabel     string
 	metricsGroupings []string
-	logFormat        string
 	profTyp          string
 	objDefFile       string
-	summaryType      string
-)
-
-// Unfortunately go doesn't support negative exit codes,
-// so same logic as sdkexerciser can't be used (positive for error count and negative for other errors)
-// as exit codes seems to be limited to 8 bits (even though defined as an int),
-// we will use setting the highest bit as a representation of negative values,
-// i.e. errors not corresponding to simulation errors. Exit codes with highest bit set to 0
-// corresponds to error count from simulation, where 0x7F will represent >127 errors.
-const (
-	// ExitCodeExecutionError error during execution
-	ExitCodeExecutionError int = 0x80 + iota
-	// ExitCodeJSONParseError error parsing JSON config
-	ExitCodeJSONParseError
-	// ExitCodeJSONValidateError validating JSON config failed
-	ExitCodeJSONValidateError
-	// ExitCodeLogFormatError error resolving log format
-	ExitCodeLogFormatError
-	// ExitCodeObjectDefError error reading object definitions
-	ExitCodeObjectDefError
-	// ExitCodeProfilingError error starting profiling
-	ExitCodeProfilingError
-	// ExitCodeMetricError error starting prometheus
-	ExitCodeMetricError
-	// ExitCodeOsError error when interacting with host OS
-	ExitCodeOsError
-	// ExitCodeSummaryTypeError incorrect summary type
-	ExitCodeSummaryTypeError
 )
 
 // *** Custom errors ***
@@ -136,7 +104,7 @@ var executeCmd = &cobra.Command{
 			if err := cmd.Help(); err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			}
-			return
+			os.Exit(ExitCodeMissingParameter)
 		}
 
 		if execErr := execute(); execErr != nil {
@@ -199,11 +167,7 @@ func init() {
 	executeCmd.Flags().StringVarP(&objDefFile, "definitions", "d", "", `Custom object definitions and overrides.`)
 
 	// Logging
-	executeCmd.Flags().BoolVarP(&traffic, "traffic", "t", false, "Log traffic. Logging traffic is heavy and should only be done for debugging purposes.")
-	executeCmd.Flags().BoolVarP(&trafficMetrics, "trafficmetrics", "m", false, "Log traffic metrics.")
-	executeCmd.Flags().BoolVar(&debug, "debug", false, "Log debug info.")
-	executeCmd.Flags().StringVar(&logFormat, "logformat", "", getLogFormatHelpString())
-	executeCmd.Flags().StringVar(&summaryType, "summary", "", getSummaryTypeHelpString())
+	AddLoggingParameters(executeCmd)
 
 	// Prometheus
 	executeCmd.Flags().IntVar(&metricsPort, "metrics", 0, "Export via http prometheus metrics.")
@@ -228,33 +192,8 @@ func execute() error {
 	}
 
 	// === logging section ===
-
-	if trafficMetrics {
-		cfg.SetTrafficMetricsLogging()
-	}
-
-	if traffic {
-		cfg.SetTrafficLogging()
-	}
-
-	if debug {
-		cfg.SetDebugLogging()
-	}
-
-	if logFormat != "" {
-		var errLogformat error
-		cfg.Settings.LogSettings.Format, errLogformat = resolveLogFormat(logFormat)
-		if errLogformat != nil {
-			return LogFormatError(fmt.Sprintf("error resolving log format<%s>: %v", logFormat, errLogformat))
-		}
-	}
-
-	if summaryType != "" {
-		if summary, errSummaryType := resolveSummaryType(); errSummaryType != nil {
-			return SummaryTypeError(fmt.Sprintf("error resolving summary type<%s>: %v", summaryType, errSummaryType))
-		} else {
-			cfg.Settings.LogSettings.Summary = summary
-		}
+	if err := ConfigOverrideLogSettings(cfg); err != nil {
+		return errors.WithStack(err)
 	}
 
 	// === object definition section ===
@@ -326,34 +265,12 @@ func ReadObjectDefinitions() error {
 	return nil
 }
 
-func getLogFormatHelpString() string {
-	buf := helpers.NewBuffer()
-	buf.WriteString("Set a log format to be used. One of:\n")
-	config.LogFormatType(0).GetEnumMap().ForEachSorted(func(k int, v string) {
-		addEnumToBuf(buf, k, v)
-	})
-	buf.WriteString("Defaults to in-script definition and falls back on ")
-	defaultFormat, _ := config.LogFormatType(0).GetEnumMap().String(0)
-	buf.WriteString(defaultFormat)
-	buf.WriteString("\n")
-	return buf.String()
-}
-
 func addEnumToBuf(buf *helpers.Buffer, k int, v string) {
 	buf.WriteString("[")
 	buf.WriteString(strconv.Itoa(k))
 	buf.WriteString("]: ")
 	buf.WriteString(v)
 	buf.WriteString("\n")
-}
-
-func getSummaryTypeHelpString() string {
-	buf := helpers.NewBuffer()
-	buf.WriteString("Set a summary type to be used. One of:\n")
-	config.SummaryType(0).GetEnumMap().ForEachSorted(func(k int, v string) {
-		addEnumToBuf(buf, k, v)
-	})
-	return buf.String()
 }
 
 func resolveLogFormat(param string) (config.LogFormatType, error) {

@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus/push"
+
+	"github.com/qlik-oss/gopherciser/version"
 )
 
 func setupMetrics(actions []string) error {
@@ -22,6 +25,7 @@ func setupMetrics(actions []string) error {
 	prometheus.MustRegister(GopherActiveUsers)
 	prometheus.MustRegister(GopherResponseTimes)
 	prometheus.MustRegister(GopherActionLatencyHist)
+	prometheus.MustRegister(BuildInfo)
 
 	err := gopherRegistry.Register(GopherActions)
 	if err != nil {
@@ -51,12 +55,18 @@ func setupMetrics(actions []string) error {
 	if err != nil {
 		return err
 	}
+	err = gopherRegistry.Register(BuildInfo)
+	if err != nil {
+		return err
+	}
 
 	// Initialize metrics
 	for _, action := range actions {
 		GopherActions.WithLabelValues("success", action).Add(0)
 		GopherActions.WithLabelValues("failure", action).Add(0)
 	}
+
+	BuildInfo.WithLabelValues(version.Version, version.Revision, runtime.Version(), runtime.GOARCH, runtime.GOOS).Set(1)
 
 	return nil
 }
