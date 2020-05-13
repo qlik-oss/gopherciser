@@ -211,6 +211,7 @@ func DefaultClient(connectionSettings ConnectionSettings, state *State) (*http.C
 		if err != nil {
 			return client, errors.Wrap(err, "failed creating cookie jar")
 		}
+		state.Cookies = client.Jar
 	}
 
 	return client, nil
@@ -413,7 +414,7 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		}
 
 		if request.ContentReader == nil {
-			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, logEntry, handler.headers.GetHeader(host)); errRequest != nil {
+			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
 				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
 			}
 		} else {
@@ -436,7 +437,7 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 	}()
 }
 
-func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, logEntry *logger.LogEntry, headers http.Header) error {
+func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
 
 	destination := request.Destination
 	if handler.virtualProxy != "" {

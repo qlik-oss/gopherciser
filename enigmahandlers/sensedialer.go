@@ -53,6 +53,7 @@ func setupDialer(dialer *enigma.Dialer, timeout time.Duration) {
 			return nil, errors.WithStack(err)
 		}
 
+		wsHeader := httpHeader.Clone()
 		if dialer.Jar != nil {
 			// cookie needs to be set using http not ws scheme
 			switch u.Scheme {
@@ -69,13 +70,13 @@ func setupDialer(dialer *enigma.Dialer, timeout time.Duration) {
 				}
 			}
 			if len(cookieStrings) > 0 {
-				httpHeader.Add("Cookie", strings.Join(cookieStrings, "; "))
+				wsHeader.Add("Cookie", strings.Join(cookieStrings, "; "))
 			}
 		}
 
 		wsDialer := ws.Dialer{
 			Timeout: timeout,
-			Header:  ws.HandshakeHeaderHTTP(httpHeader),
+			Header:  ws.HandshakeHeaderHTTP(wsHeader),
 			OnHeader: func(key, value []byte) error {
 				if strings.ToLower(string(key)) == "set-cookie" {
 					// http doesn't expose cookie parser so we need to fake a http response to have it parsed
