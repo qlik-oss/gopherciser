@@ -112,6 +112,8 @@ type (
 		SheetId *string `json:"sheetId,omitempty"`
 		// SelectionFields fields bookmark would select in
 		SelectionFields string `json:"selectionFields"`
+		// RawProperties of Bookmark object
+		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
 
 	// AppStructureReport reports warnings and fetched objects for app structure
@@ -385,9 +387,10 @@ func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.
 				return errors.WithStack(err)
 			}
 		case ObjectTypeBookmark:
-			if err := structure.handleBookmark(ctx, app, id); err != nil {
+			if err := structure.handleBookmark(ctx, app, id, includeRaw); err != nil {
 				return errors.WithStack(err)
 			}
+			return nil
 		case ObjectTypeAutoChart:
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
@@ -782,7 +785,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 	return nil
 }
 
-func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string) error {
+func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
 	bookmark, err := app.Doc.GetBookmark(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -812,6 +815,9 @@ func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobj
 
 	structureBookmark.Title = meta.Title
 	structureBookmark.Description = meta.Description
+	if includeRaw {
+		structureBookmark.RawProperties = properties
+	}
 
 	idPath := senseobjdef.NewDataPath("/qInfo/qId")
 	rawId, err := idPath.Lookup(properties)
