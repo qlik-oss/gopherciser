@@ -125,7 +125,7 @@ type (
 		AppMeta AppStructureAppMeta `json:"meta"`
 		// Objects in Sense app
 		Objects map[string]AppStructureObject `json:"objects"`
-		// Bookmarks list of bookmarks in the app
+		// Bookmark list of bookmarks in the app
 		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
 
 		logEntry      *logger.LogEntry
@@ -136,11 +136,11 @@ type (
 	// AppStructureNestedObject is the type returned by an action when prompted for selectable objects
 	AppStructureNestedObject struct {
 		// NestedObjects children of the parent object
-		NestedObjects *AppStructureNestedObject
+		NestedObjects map[string]*AppStructureNestedObject
 		// Objects first level app objects returned by the current action
-		Objects []AppStructureObject
-		// Bookmarks bookmarks returned by the current action
-		Bookmarks []AppStructureBookmark
+		Object *AppStructureObject
+		// Bookmark bookmarks returned by the current action
+		Bookmark *AppStructureBookmark
 	}
 
 	ObjectType                         int
