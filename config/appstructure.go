@@ -133,6 +133,16 @@ type (
 		structureLock sync.Mutex
 	}
 
+	// AppStructureNestedObject is the type returned by an action when prompted for selectable objects
+	AppStructureNestedObject struct {
+		// NestedObjects children of the parent object
+		NestedObjects *AppStructureNestedObject
+		// Objects first level app objects returned by the current action
+		Objects []AppStructureObject
+		// Bookmarks bookmarks returned by the current action
+		Bookmarks []AppStructureBookmark
+	}
+
 	ObjectType                         int
 	AppStructureObjectNotFoundError    string
 	AppStructureNoScenarioActionsError struct{}
