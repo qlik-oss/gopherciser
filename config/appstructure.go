@@ -25,7 +25,6 @@ import (
 )
 
 type (
-
 	// MetaDef meta information for Library objects such as dimension and measure
 	MetaDef struct {
 		// Title of library item
@@ -578,7 +577,6 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 	metaDef := senseobjdef.NewDataPath("/qMetaDef")
 	rawMetaDef, _ := metaDef.Lookup(properties)
 	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
-
 	enumTyp, _ := ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
 
 	// Should we look for measures and dimensions?
@@ -690,6 +688,11 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 	if len(obj.Dimensions) < 1 {
 		obj.Selectable = false
 	}
+
+	resolveTitle(obj, properties, []string{
+		"/title",
+		fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
+	})
 
 	return nil
 }
@@ -843,4 +846,26 @@ func (report *AppStructureReport) AddWarning(warning string) {
 	}
 
 	report.warnings = append(report.warnings, warning)
+}
+
+func resolveTitle(obj *AppStructureObject, properties json.RawMessage, paths []string) {
+	if obj.MetaDef.Title != "" {
+		return // We already have a title
+	}
+
+	for _, path := range paths {
+		title := stringFromDataPath(path, properties)
+		if title != "" {
+			obj.MetaDef.Title = title
+			return
+		}
+	}
+}
+
+func stringFromDataPath(path string, data json.RawMessage) string {
+	dataPath := senseobjdef.NewDataPath(path)
+	rawData, _ := dataPath.Lookup(data)
+	var str string
+	_ = jsonit.Unmarshal(rawData, &str)
+	return str
 }
