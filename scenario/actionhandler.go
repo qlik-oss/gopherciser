@@ -2,7 +2,7 @@ package scenario
 
 import (
 	"encoding/json"
-	"github.com/qlik-oss/gopherciser/config"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"reflect"
 	"strings"
 	"sync"
@@ -56,7 +56,7 @@ type (
 	// * removed []string - ids of objects that are removed (including any children) by this action
 	// * clear bool - specifies whether this action will clear all previous items
 	AffectsAppObjectsAction interface {
-		AffectsAppObjectsAction(config.AppStructure) (*config.AppStructureNestedObject, []string, bool)
+		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructureNestedObject, []string, bool)
 	}
 
 	// ****************************************************************
