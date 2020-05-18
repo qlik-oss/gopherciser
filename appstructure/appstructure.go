@@ -153,3 +153,31 @@ func (err AppStructureObjectNotFoundError) Error() string {
 func (err AppStructureNoScenarioActionsError) Error() string {
 	return "no applicable actions in scenario"
 }
+
+// GetSelectables get selectable objects from app structure
+func (structure *AppStructure) GetSelectables(rooObject string) ([]AppStructureObject, error) {
+	rootObj, ok := structure.Objects[rooObject]
+	if !ok {
+		return nil, AppStructureObjectNotFoundError(rooObject)
+	}
+
+	return structure.addSelectableChildren(rootObj), nil
+}
+
+func (structure *AppStructure) addSelectableChildren(obj AppStructureObject) []AppStructureObject {
+	selectables := make([]AppStructureObject, 0, 1)
+	if obj.Selectable {
+		selectables = append(selectables, obj)
+	}
+
+	for id := range obj.Children {
+		child, ok := structure.Objects[id]
+		if !ok {
+			continue
+		}
+
+		selectableChildren := structure.addSelectableChildren(child)
+		selectables = append(selectables, selectableChildren...)
+	}
+	return selectables
+}

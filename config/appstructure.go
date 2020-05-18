@@ -300,34 +300,6 @@ func (structure *GeneratedAppStructure) AddBookmark(bookmark appstructure.AppStr
 	structure.Bookmarks[bookmark.ID] = bookmark
 }
 
-// GetSelectables get selectable objects from app structure
-func (structure *GeneratedAppStructure) GetSelectables(rooObject string) ([]appstructure.AppStructureObject, error) {
-	rootObj, ok := structure.Objects[rooObject]
-	if !ok {
-		return nil, appstructure.AppStructureObjectNotFoundError(rooObject)
-	}
-
-	return structure.addSelectableChildren(rootObj), nil
-}
-
-func (structure *GeneratedAppStructure) addSelectableChildren(obj appstructure.AppStructureObject) []appstructure.AppStructureObject {
-	selectables := make([]appstructure.AppStructureObject, 0, 1)
-	if obj.Selectable {
-		selectables = append(selectables, obj)
-	}
-
-	for id := range obj.Children {
-		child, ok := structure.Objects[id]
-		if !ok {
-			continue
-		}
-
-		selectableChildren := structure.addSelectableChildren(child)
-		selectables = append(selectables, selectableChildren...)
-	}
-	return selectables
-}
-
 func (structure *GeneratedAppStructure) warn(warning string) {
 	structure.report.AddWarning(warning)
 	if structure.logEntry != nil {

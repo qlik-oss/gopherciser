@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"math"
 	"sync"
 
@@ -710,4 +711,25 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 	default:
 		return errors.Errorf("object<%s> has hypercube error<%+v>", id, *err)
 	}
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructureNestedObject, []string, bool) {
+	selectables, err := structure.GetSelectables(settings.ID)
+	if err != nil {
+		return nil, nil, false
+	}
+	newObjs := appstructure.AppStructureNestedObject{
+		NestedObjects: make(map[string]*appstructure.AppStructureNestedObject, 0),
+		Object:        nil,
+		Bookmark:      nil,
+	}
+	for _, obj := range selectables {
+		newObjs.NestedObjects[obj.Id] = &appstructure.AppStructureNestedObject{
+			NestedObjects: nil,
+			Object:        &obj,
+			Bookmark:      nil,
+		}
+	}
+	return &newObjs, nil, true
 }
