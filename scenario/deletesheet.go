@@ -20,7 +20,7 @@ type (
 	DeleteSheetSettings struct {
 		DeletionMode SheetDeletionModeEnum `json:"mode" displayname:"Deletion mode" doc-key:"deletesheet.mode"`
 		Title        string                `json:"title" displayname:"Sheet title" doc-key:"deletesheet.title"`
-		ID           string                `json:"id" displayname:"Sheet ID" doc-key:"deletesheet.id"`
+		ID           string                `json:"id" displayname:"Sheet ID" doc-key:"deletesheet.id" appstructure:"sheet"`
 	}
 )
 

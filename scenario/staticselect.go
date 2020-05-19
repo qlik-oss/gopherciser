@@ -18,7 +18,7 @@ type (
 	// StaticSelectSettings selection settings
 	StaticSelectSettings struct {
 		//ID object id
-		ID string `json:"id" displayname:"Object ID" doc-key:"staticselect.id"`
+		ID string `json:"id" displayname:"Object ID" doc-key:"staticselect.id" appstructure:"object"`
 		//Path object selection path
 		Path string `json:"path" displayname:"Object selection path" doc-key:"staticselect.path"`
 		//Rows to select
