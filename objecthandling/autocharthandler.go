@@ -5,11 +5,14 @@ import (
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
-	AutoChartHandler struct{}
+	AutoChartHandler struct {
+		DefaultHandler
+	}
 )
 
 // GetObject implement ObjectHandler interface
@@ -21,12 +24,7 @@ func (handler *AutoChartHandler) SetObjectAndEvents(sessionState *session.State,
 	handleAutoChart(sessionState, actionState, genObj, obj)
 }
 
-// DoSelect implement ObjectHandler interface
-func (handler *AutoChartHandler) DoSelect() error {
-	return nil
-}
-
-// ObjectChanged implement ObjectHandler interface
-func (handler *AutoChartHandler) ObjectChanged() error {
-	return nil
+func (handler *AutoChartHandler) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
+	// Todo add handling
+	return handler.DefaultHandler.GetObjectDefinition(objectType)
 }

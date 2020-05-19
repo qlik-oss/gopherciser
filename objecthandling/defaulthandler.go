@@ -1,9 +1,11 @@
 package objecthandling
 
 import (
+	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -24,12 +26,14 @@ func (handler *DefaultHandler) SetObjectAndEvents(sessionState *session.State, a
 	}
 }
 
-// DoSelect implement ObjectHandler interface
-func (handler *DefaultHandler) DoSelect() error {
-	return nil
-}
+func (handler *DefaultHandler) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
+	def, defErr := senseobjdef.GetObjectDef(objectType)
+	if defErr != nil {
+		return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.Wrapf(defErr, "Failed to get object<%s> selection definitions", objectType)
+	}
 
-// ObjectChanged implement ObjectHandler interface
-func (handler *DefaultHandler) ObjectChanged() error {
-	return nil
+	if validateErr := def.Validate(); validateErr != nil {
+		return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.Wrapf(validateErr, "Error validating object<%s> selection definitions<%+v>", objectType, def)
+	}
+	return def.Select.Path, def.Select.Type, def.DataDef.Type, nil
 }

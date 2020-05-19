@@ -3,7 +3,6 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"math"
 	"sort"
 	"strconv"
@@ -16,7 +15,9 @@ import (
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/globals/constant"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/objecthandling"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -227,150 +228,7 @@ func (settings SelectionSettings) Execute(sessionState *session.State, actionSta
 	switch t := gob.EnigmaObject.(type) {
 	case *enigma.GenericObject:
 		genObj := gob.EnigmaObject.(*enigma.GenericObject)
-
-		// Get selection definitions for object
-		def, defErr := senseobjdef.GetObjectDef(genObj.GenericType)
-		if defErr != nil {
-			actionState.AddErrors(errors.Wrapf(defErr, "Failed to get object<%s> selection definitions", genObj.GenericType))
-			return
-		}
-
-		if validateErr := def.Validate(); validateErr != nil {
-			actionState.AddErrors(errors.Wrapf(validateErr, "Error validating object<%s> selection definitions<%+v>", genObj.GenericType, def))
-			return
-		}
-
-		if settings.WrapSelections {
-			// Start selections
-			sessionState.QueueRequest(func(ctx context.Context) error {
-				return genObj.BeginSelections(ctx, []string{def.Select.Path})
-			}, actionState, false, fmt.Sprintf("Begin selection error: %v", err))
-
-			sessionState.Wait(actionState)
-			if actionState.Errors() != nil {
-				return
-			}
-		}
-
-		cardinal, cardinalErr := getCardinal(gob, def, settings.Dimension)
-		if cardinalErr != nil {
-			actionState.AddErrors(errors.Wrapf(cardinalErr, "Failed to get cardinal for object<%s>", gob.ID))
-			return
-		}
-		if cardinal < 0 {
-			actionState.AddErrors(errors.Errorf("object<%s> has illegal cardinal<%d>", gob.ID, cardinal))
-			return
-		}
-
-		rnd := sessionState.Randomizer()
-		if rnd == nil {
-			actionState.AddErrors(errors.New("No randomizer set on connection"))
-			return
-		}
-
-		var selectPos []int
-		var selectBins []string
-		switch settings.Type {
-		case RandomFromAll:
-			var fillErr error
-			selectPos, fillErr = fillSelectPosFromAll(settings.Min, settings.Max, cardinal, rnd)
-			actionState.AddErrors(fillErr)
-		case RandomFromExcluded:
-			fallthrough // handled within getPossible
-		case RandomDeselect:
-			fallthrough
-		case RandomFromEnabled:
-			columns := false
-			switch def.Select.Type {
-			case senseobjdef.SelectTypeHypercubeColumnValues:
-				columns = true
-			}
-			possible, bins, errPossible := getPossible(gob, def, settings.Dimension, settings.Type, columns)
-			if errPossible != nil {
-				actionState.AddErrors(errors.WithStack(errPossible))
-				break
-			}
-			if bins != nil {
-				var fillErr error
-				selectBins, fillErr = fillSelectBinsFromBins(settings.Min, settings.Max, bins, rnd)
-				actionState.AddErrors(fillErr)
-			} else {
-				var fillErr error
-				selectPos, fillErr = fillSelectPosFromPossible(settings.Min, settings.Max, possible, rnd)
-				actionState.AddErrors(fillErr)
-			}
-		default:
-			actionState.AddErrors(errors.Errorf("Unknown select type<%s>", settings.Type.String()))
-		}
-
-		if actionState.Errors() != nil {
-			return
-		}
-
-		if len(selectPos) < 1 && len(selectBins) < 1 {
-			sessionState.LogEntry.Logf(logger.WarningLevel, "Nothing to select in object<%s>", gob.ID)
-			return
-		}
-
-		if selectBins != nil {
-			actionState.Details = fmt.Sprintf("%s;%v", gob.ID, selectBins)
-		} else {
-			actionState.Details = fmt.Sprintf("%s;%v", gob.ID, selectPos)
-		}
-
-		var selectFunc func(ctx context.Context) (bool, error)
-		switch def.Select.Type {
-		case senseobjdef.SelectTypeListObjectValues:
-			selectFunc = func(ctx context.Context) (bool, error) {
-				return genObj.SelectListObjectValues(ctx, def.Select.Path, selectPos, true, false)
-			}
-		case senseobjdef.SelectTypeHypercubeColumnValues:
-			fallthrough
-		case senseobjdef.SelectTypeHypercubeValues:
-			if len(selectBins) > 0 {
-				selectInfo, convertErr := convertBinsToSelectInfo(selectBins)
-				if convertErr != nil {
-					actionState.AddErrors(errors.WithStack(convertErr))
-					return
-				}
-				selectFunc = func(ctx context.Context) (bool, error) {
-					return genObj.MultiRangeSelectHyperCubeValues(ctx, def.Select.Path, selectInfo, false, false)
-				}
-			} else {
-				selectFunc = func(ctx context.Context) (bool, error) {
-					if len(selectPos) < 1 {
-						return false, errors.Errorf("SelectHyperCubeValues SelectPos is nil")
-					}
-					return genObj.SelectHyperCubeValues(ctx, def.Select.Path, settings.Dimension, selectPos, true)
-				}
-			}
-		default:
-			actionState.AddErrors(errors.Errorf("Unknown select type<%v> for object<%v> type<%s>",
-				def.Select.Type, gob.Type, genObj.GenericType))
-			return
-		}
-
-		// Select
-		sessionState.QueueRequest(func(ctx context.Context) error {
-			sessionState.LogEntry.LogDebugf("Select in object<%s> h<%d> type<%s>", genObj.GenericId, genObj.Handle, genObj.GenericType)
-			success, err := selectFunc(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "Failed to select in object<%s>", genObj.GenericId)
-			}
-			if !success {
-				return errors.Errorf("Select in object<%s> unsuccessful", genObj.GenericId)
-			}
-			sessionState.LogEntry.LogDebug(fmt.Sprint("Successful select in", genObj.GenericId))
-
-			if settings.WrapSelections {
-				//End Selections
-				sessionState.QueueRequest(func(ctx context.Context) error {
-					return genObj.EndSelections(ctx, settings.Accept)
-				}, actionState, true, "End selections failed")
-			}
-
-			return nil
-		}, actionState, true, fmt.Sprintf("Failed to select in %s", genObj.GenericId))
+		DoSelect(sessionState, actionState, genObj, gob, settings.WrapSelections, settings.Accept, settings.Dimension, settings.Min, settings.Max, settings.Type)
 	default:
 		actionState.AddErrors(errors.Errorf("Unknown object type<%T>", t))
 		return
@@ -415,12 +273,8 @@ func (u *uniqueInts) HasValue(v int) bool {
 }
 
 // TODO support stack hypercube and pivot hypercube + maps etc
-func getCardinal(obj *enigmahandlers.Object, selectDef *senseobjdef.ObjectDef, dimension int) (int, error) {
-	if selectDef == nil {
-		return -1, errors.Errorf("selection def is nil")
-	}
-
-	switch selectDef.DataDef.Type {
+func getCardinal(obj *enigmahandlers.Object, dataDefType senseobjdef.DataDefType, dimension int) (int, error) {
+	switch dataDefType {
 	case senseobjdef.DataDefListObject:
 		listobject := obj.ListObject()
 		if listobject == nil {
@@ -642,7 +496,7 @@ func cutPosition(index int, slice *[]int) error {
 }
 
 //getPossible returns []possible, []bins, error
-func getPossible(obj *enigmahandlers.Object, def *senseobjdef.ObjectDef, dim int,
+func getPossible(obj *enigmahandlers.Object, dataDefType senseobjdef.DataDefType, dim int,
 	selectionType SelectionType, columns bool) ([]int, []string, error) {
 	if selectStateHandler == nil {
 		return nil, nil, errors.Errorf("No select state handler")
@@ -652,7 +506,7 @@ func getPossible(obj *enigmahandlers.Object, def *senseobjdef.ObjectDef, dim int
 	var possible []int
 	var bins []string
 	var err error
-	switch def.DataDef.Type {
+	switch dataDefType {
 	case senseobjdef.DataDefListObject:
 		possible, err = getPossibleFromListObject(obj.ID, obj.ListObject(), dim, columns, selectionType)
 	case senseobjdef.DataDefHyperCube:
@@ -691,10 +545,10 @@ func getPossible(obj *enigmahandlers.Object, def *senseobjdef.ObjectDef, dim int
 		case constant.HyperCubeDataModeTreeL:
 			return nil, nil, errors.Errorf("Hypercube tree mode not supported")
 		default:
-			return nil, nil, errors.Errorf("Hypercube mode<%d> not supported", def.DataDef.Type)
+			return nil, nil, errors.Errorf("Hypercube mode<%d> not supported", dataDefType)
 		}
 	default:
-		return nil, nil, errors.Errorf("DataDef type<%d> not implemented", def.DataDef.Type)
+		return nil, nil, errors.Errorf("DataDef type<%d> not implemented", dataDefType)
 	}
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
@@ -1004,4 +858,144 @@ func convertBinToSelectInfo(bin string) (*enigma.NxMultiRangeSelectInfo, error) 
 	}
 
 	return &selectInfo, nil
+}
+
+func DoSelect(sessionState *session.State, actionState *action.State, genObj *enigma.GenericObject, gob *enigmahandlers.Object, wrap, accept bool, dimension, min, max int, selectionType SelectionType) {
+	selectPath, selectType, dataDefType, err := objecthandling.GlobalObjectHandler.GetObjectHandler(genObj.GenericType).GetObjectDefinition(genObj.GenericType)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	if wrap {
+		// Start selections
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			return genObj.BeginSelections(ctx, []string{selectPath})
+		}, actionState, false, "")
+
+		sessionState.Wait(actionState)
+		if actionState.Errors() != nil {
+			return
+		}
+	}
+
+	cardinal, cardinalErr := getCardinal(gob, dataDefType, dimension)
+	if cardinalErr != nil {
+		actionState.AddErrors(errors.Wrapf(cardinalErr, "Failed to get cardinal for object<%s>", gob.ID))
+		return
+	}
+	if cardinal < 0 {
+		actionState.AddErrors(errors.Errorf("object<%s> has illegal cardinal<%d>", gob.ID, cardinal))
+		return
+	}
+
+	rnd := sessionState.Randomizer()
+	if rnd == nil {
+		actionState.AddErrors(errors.New("No randomizer set on connection"))
+		return
+	}
+
+	var selectPos []int
+	var selectBins []string
+	switch selectionType {
+	case RandomFromAll:
+		var fillErr error
+		selectPos, fillErr = fillSelectPosFromAll(min, max, cardinal, rnd)
+		actionState.AddErrors(fillErr)
+	case RandomFromExcluded:
+		fallthrough // handled within getPossible
+	case RandomDeselect:
+		fallthrough
+	case RandomFromEnabled:
+		columns := false
+		switch selectType {
+		case senseobjdef.SelectTypeHypercubeColumnValues:
+			columns = true
+		}
+		possible, bins, errPossible := getPossible(gob, dataDefType, dimension, selectionType, columns)
+		if errPossible != nil {
+			actionState.AddErrors(errors.WithStack(errPossible))
+			break
+		}
+		if bins != nil {
+			var fillErr error
+			selectBins, fillErr = fillSelectBinsFromBins(min, max, bins, rnd)
+			actionState.AddErrors(fillErr)
+		} else {
+			var fillErr error
+			selectPos, fillErr = fillSelectPosFromPossible(min, max, possible, rnd)
+			actionState.AddErrors(fillErr)
+		}
+	default:
+		actionState.AddErrors(errors.Errorf("Unknown select type<%s>", selectionType.String()))
+	}
+
+	if actionState.Errors() != nil {
+		return
+	}
+
+	if len(selectPos) < 1 && len(selectBins) < 1 {
+		sessionState.LogEntry.Logf(logger.WarningLevel, "Nothing to select in object<%s>", gob.ID)
+		return
+	}
+
+	if selectBins != nil {
+		actionState.Details = fmt.Sprintf("%s;%v", gob.ID, selectBins)
+	} else {
+		actionState.Details = fmt.Sprintf("%s;%v", gob.ID, selectPos)
+	}
+
+	var selectFunc func(ctx context.Context) (bool, error)
+	switch selectType {
+	case senseobjdef.SelectTypeListObjectValues:
+		selectFunc = func(ctx context.Context) (bool, error) {
+			return genObj.SelectListObjectValues(ctx, selectPath, selectPos, true, false)
+		}
+	case senseobjdef.SelectTypeHypercubeColumnValues:
+		fallthrough
+	case senseobjdef.SelectTypeHypercubeValues:
+		if len(selectBins) > 0 {
+			selectInfo, convertErr := convertBinsToSelectInfo(selectBins)
+			if convertErr != nil {
+				actionState.AddErrors(errors.WithStack(convertErr))
+				return
+			}
+			selectFunc = func(ctx context.Context) (bool, error) {
+				return genObj.MultiRangeSelectHyperCubeValues(ctx, selectPath, selectInfo, false, false)
+			}
+		} else {
+			selectFunc = func(ctx context.Context) (bool, error) {
+				if len(selectPos) < 1 {
+					return false, errors.Errorf("SelectHyperCubeValues SelectPos is nil")
+				}
+				return genObj.SelectHyperCubeValues(ctx, selectPath, dimension, selectPos, true)
+			}
+		}
+	default:
+		actionState.AddErrors(errors.Errorf("Unknown select type<%v> for object<%v> type<%s>",
+			selectType, gob.Type, genObj.GenericType))
+		return
+	}
+
+	// Select
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		sessionState.LogEntry.LogDebugf("Select in object<%s> h<%d> type<%s>", genObj.GenericId, genObj.Handle, genObj.GenericType)
+		success, err := selectFunc(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to select in object<%s>", genObj.GenericId)
+		}
+		if !success {
+			return errors.Errorf("Select in object<%s> unsuccessful", genObj.GenericId)
+		}
+		sessionState.LogEntry.LogDebug(fmt.Sprint("Successful select in", genObj.GenericId))
+
+		if wrap {
+			//End Selections
+			sessionState.QueueRequest(func(ctx context.Context) error {
+				return genObj.EndSelections(ctx, accept)
+			}, actionState, true, "End selections failed")
+		}
+
+		return nil
+	}, actionState, true, fmt.Sprintf("Failed to select in %s", genObj.GenericId))
 }

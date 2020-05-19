@@ -20,8 +20,7 @@ import (
 type (
 	ObjectHandler interface {
 		SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject)
-		//DoSelect() error
-		//ObjectChanged() error
+		GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error)
 	}
 
 	ObjectHandlerMap struct {
@@ -54,6 +53,10 @@ func init() {
 func (objects *ObjectHandlerMap) RegisterHandler(objectType string, handler ObjectHandler, override bool) error {
 	objects.writeLock.Lock()
 	defer objects.writeLock.Unlock()
+
+	if objects.m == nil {
+		objects.m = make(map[string]ObjectHandler)
+	}
 
 	// Does a handler exit?
 	_, exists := objects.m[objectType]
