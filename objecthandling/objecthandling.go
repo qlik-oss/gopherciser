@@ -17,6 +17,19 @@ import (
 	"sync"
 )
 
+type (
+	ObjectHandler interface {
+		SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject)
+		//DoSelect() error
+		//ObjectChanged() error
+	}
+
+	ObjectHandlerMap struct {
+		m         map[string]ObjectHandler
+		writeLock sync.Mutex
+	}
+)
+
 var (
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
@@ -26,8 +39,43 @@ const (
 	maxNbrTicks = 300
 )
 
-// GetAndAddObject get and add object to object handling
-func GetAndAddObject(sessionState *session.State, actionState *action.State, name, oType string) {
+var (
+	GlobalObjectHandler ObjectHandlerMap
+)
+
+func init() {
+	// Register default object handlers
+	if err := GlobalObjectHandler.RegisterHandler("auto-chart", &AutoChartHandler{}, false); err != nil {
+		panic(err)
+	}
+}
+
+// RegisterHandler for object type, override existing handler with override flag
+func (objects *ObjectHandlerMap) RegisterHandler(objectType string, handler ObjectHandler, override bool) error {
+	objects.writeLock.Lock()
+	defer objects.writeLock.Unlock()
+
+	// Does a handler exit?
+	_, exists := objects.m[objectType]
+	if exists && !override {
+		return errors.New(fmt.Sprintf("object type<%s> already has a handler registered", objectType))
+	}
+
+	objects.m[objectType] = handler
+	return nil
+}
+
+// GetObjectHandler for objectType
+func (objects *ObjectHandlerMap) GetObjectHandler(objectType string) ObjectHandler {
+	handler, ok := objects.m[objectType]
+	if ok {
+		return handler
+	}
+	return &DefaultHandler{}
+}
+
+// GetAndAddObjectAsync get and add object to object handling
+func GetAndAddObjectAsync(sessionState *session.State, actionState *action.State, name, oType string) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("object<%s> type<%s> found", name, oType)
 		sense := sessionState.Connection.Sense()
@@ -47,24 +95,8 @@ func GetAndAddObject(sessionState *session.State, actionState *action.State, nam
 			return errors.Wrapf(err, "Failed to add object<%s> to object list", name)
 		}
 
-		if genObj.GenericType == "auto-chart" {
-			sessionState.QueueRequest(func(ctx context.Context) error {
-				return getObjectLayout(sessionState, actionState, obj)
-			}, actionState, true, "")
-
-			handleAutoChart(sessionState, actionState, genObj, obj)
-			return nil
-		}
-
-		setObjectDataAndEvents(sessionState, actionState, obj, genObj)
-
-		children := obj.ChildList()
-		if children != nil && children.Items != nil {
-			sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", genObj.GenericId, genObj.GenericType)
-			for _, child := range children.Items {
-				GetAndAddObject(sessionState, actionState, child.Info.Id, child.Info.Type)
-			}
-		}
+		handler := GlobalObjectHandler.GetObjectHandler(genObj.GenericType)
+		handler.SetObjectAndEvents(sessionState, actionState, obj, genObj)
 
 		return nil
 	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))

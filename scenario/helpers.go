@@ -2,12 +2,12 @@ package scenario
 
 import (
 	"context"
-	"github.com/qlik-oss/gopherciser/objecthandling"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/objecthandling"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -60,7 +60,7 @@ func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action
 
 	for _, v := range sheetEntry.Data.Cells {
 		sessionState.LogEntry.LogDebugf("subscribe to object<%s> type<%s>", v.Name, v.Type)
-		objecthandling.GetAndAddObject(sessionState, actionState, v.Name, v.Type)
+		objecthandling.GetAndAddObjectAsync(sessionState, actionState, v.Name, v.Type)
 	}
 
 	return nil
@@ -73,20 +73,6 @@ func getSheetEntry(sessionState *session.State, actionState *action.State, app *
 	}
 
 	return sheetList.GetSheetEntry(sheetid)
-}
-
-// ResolveAppName return guid or appname with replaced session variables
-func ResolveAppName(sessionState *session.State, appguid string, appName *session.SyncedTemplate) (string, error) {
-	if appName.String() != "" {
-		appName, err := sessionState.ReplaceSessionVariables(appName)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-
-		return appName, nil
-	}
-	return appguid, nil
-
 }
 
 // GetCurrentSheet from objects
