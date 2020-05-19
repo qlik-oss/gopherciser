@@ -104,14 +104,14 @@ type (
 		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
 	}
 
-	// AppStructureNestedObject is the type returned by an action when prompted for selectable objects
-	AppStructureNestedObject struct {
-		// NestedObjects children of the parent object
-		NestedObjects map[string]*AppStructureNestedObject
+	// AppStructurePopulatedObjects is the type returned by an action when prompted for selectable objects
+	AppStructurePopulatedObjects struct {
+		// Parent id of the parent object
+		Parent string
 		// Objects first level app objects returned by the current action
-		Object *AppStructureObject
+		Objects []*AppStructureObject
 		// Bookmark bookmarks returned by the current action
-		Bookmark *AppStructureBookmark
+		Bookmarks []*AppStructureBookmark
 	}
 
 	ObjectType                         int

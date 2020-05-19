@@ -714,22 +714,18 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructureNestedObject, []string, bool) {
+func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	selectables, err := structure.GetSelectables(settings.ID)
 	if err != nil {
 		return nil, nil, false
 	}
-	newObjs := appstructure.AppStructureNestedObject{
-		NestedObjects: make(map[string]*appstructure.AppStructureNestedObject, 0),
-		Object:        nil,
-		Bookmark:      nil,
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent:    settings.ID,
+		Objects:   make([]*appstructure.AppStructureObject, 0),
+		Bookmarks: nil,
 	}
 	for _, obj := range selectables {
-		newObjs.NestedObjects[obj.Id] = &appstructure.AppStructureNestedObject{
-			NestedObjects: nil,
-			Object:        &obj,
-			Bookmark:      nil,
-		}
+		newObjs.Objects = append(newObjs.Objects, &obj)
 	}
 	return &newObjs, nil, true
 }

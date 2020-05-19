@@ -52,11 +52,11 @@ type (
 	// AffectsAppObjectsAction is an interface that should be implemented by all actions that affect
 	// the availability of selectable objects for app structure consumption. App structure of the current
 	// app is passed as an argument. The return is
-	// * added *config.AppStructureNestedObject - objects to be added to the selectable list by this action
+	// * added *config.AppStructurePopulatedObjects - objects to be added to the selectable list by this action
 	// * removed []string - ids of objects that are removed (including any children) by this action
 	// * clear bool - specifies whether this action will clear all previous items
 	AffectsAppObjectsAction interface {
-		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructureNestedObject, []string, bool)
+		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool)
 	}
 
 	// ****************************************************************
