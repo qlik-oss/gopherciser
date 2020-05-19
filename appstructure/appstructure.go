@@ -109,9 +109,11 @@ type (
 		// Parent id of the parent object
 		Parent string
 		// Objects first level app objects returned by the current action
-		Objects []*AppStructureObject
+		Objects []AppStructureObject
+		// Sheets objects of sheet type
+		Sheets []AppStructureObject
 		// Bookmark bookmarks returned by the current action
-		Bookmarks []*AppStructureBookmark
+		Bookmarks []AppStructureBookmark
 	}
 
 	ObjectType                         int
