@@ -318,5 +318,8 @@ func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.A
 			newObjs.Sheets = append(newObjs.Sheets, obj)
 		}
 	}
+	for _, v := range structure.Bookmarks {
+		newObjs.Bookmarks = append(newObjs.Bookmarks, v)
+	}
 	return &newObjs, nil, true, true
 }

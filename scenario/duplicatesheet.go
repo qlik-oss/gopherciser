@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -112,4 +113,13 @@ func (settings DuplicateSheetSettings) Validate() error {
 	}
 
 	return nil
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+	if !settings.ChangeSheet {
+		return nil, nil, false, false // Do nothing
+	} else {
+		return nil, nil, false, true // Remove previous sheet objects
+	}
 }

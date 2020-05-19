@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -78,4 +79,40 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 	actionState.Details = fmt.Sprintf("%v;%s", sheetID != "", sheetID) // log details in results as {Has sheet};{Sheet ID}
 
 	sessionState.Wait(actionState)
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+	id := settings.BookMarkSettings.ID
+	if id == "" { // No ID, specified, search by title
+		title := settings.BookMarkSettings.Title.String()
+		for _, v := range structure.Bookmarks {
+			if v.Title == title {
+				id = v.ID
+				break
+			}
+		}
+	}
+	if id == "" { // Bookmark not found
+		return nil, nil, false, false
+	}
+	bookmark := structure.Bookmarks[id]
+	if bookmark.SheetId == nil { // Bookmark not associated with a sheet
+		return nil, nil, false, false
+	}
+
+	// Found sheet id, now find sheet objects
+	selectables, err := structure.GetSelectables(*bookmark.SheetId)
+	if err != nil {
+		return nil, nil, false, false
+	}
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent:    settings.ID,
+		Objects:   make([]appstructure.AppStructureObject, 0),
+		Bookmarks: nil,
+	}
+	for _, obj := range selectables {
+		newObjs.Objects = append(newObjs.Objects, obj)
+	}
+	return &newObjs, nil, false, true
 }
