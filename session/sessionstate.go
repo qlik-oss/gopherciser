@@ -17,6 +17,7 @@ import (
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
@@ -95,6 +96,11 @@ type (
 		Session uint64
 		Thread  uint64
 		Local   interface{}
+	}
+
+	ObjectHandlerInstance interface {
+		SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject)
+		GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error)
 	}
 )
 

@@ -5,18 +5,25 @@ import (
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
+	AutoChartInstance struct {
+		DefaultHandlerInstance
+	}
+
 	AutoChartHandler struct {
 		DefaultHandler
 	}
 )
 
+func (handler *AutoChartHandler) Instance(id string) session.ObjectHandlerInstance {
+	return &AutoChartInstance{DefaultHandlerInstance{Id: id}}
+}
+
 // GetObject implement ObjectHandler interface
-func (handler *AutoChartHandler) SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		return getObjectLayout(sessionState, actionState, obj)
 	}, actionState, true, "")
@@ -25,6 +32,6 @@ func (handler *AutoChartHandler) SetObjectAndEvents(sessionState *session.State,
 }
 
 // GetObjectDefinition implement ObjectHandler interface
-func (handler *AutoChartHandler) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
-	return handler.DefaultHandler.GetObjectDefinition(objectType)
-}
+//func (instance *AutoChartInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
+//	return instance.GetObjectDefinition(objectType)
+//}

@@ -10,11 +10,20 @@ import (
 )
 
 type (
+	DefaultHandlerInstance struct {
+		Id string
+	}
 	DefaultHandler struct{}
 )
 
+func (handler *DefaultHandler) Instance(id string) session.ObjectHandlerInstance {
+	return &DefaultHandlerInstance{
+		Id: id,
+	}
+}
+
 // GetObject implement ObjectHandler interface
-func (handler *DefaultHandler) SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func (instance *DefaultHandlerInstance) SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	setObjectDataAndEvents(sessionState, actionState, obj, genObj)
 
 	children := obj.ChildList()
@@ -26,7 +35,7 @@ func (handler *DefaultHandler) SetObjectAndEvents(sessionState *session.State, a
 	}
 }
 
-func (handler *DefaultHandler) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
+func (instance *DefaultHandlerInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
 	def, defErr := senseobjdef.GetObjectDef(objectType)
 	if defErr != nil {
 		return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.Wrapf(defErr, "Failed to get object<%s> selection definitions", objectType)

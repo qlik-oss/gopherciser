@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sync"
+
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -13,17 +16,14 @@ import (
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
-	"math"
-	"sync"
 )
 
 type (
 	ObjectHandler interface {
-		SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject)
-		GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error)
+		Instance(id string) session.ObjectHandlerInstance
 	}
 
-	ObjectHandlerMap struct {
+	objectHandlerMap struct {
 		m         map[string]ObjectHandler
 		writeLock sync.Mutex
 	}
@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	GlobalObjectHandler ObjectHandlerMap
+	GlobalObjectHandler objectHandlerMap
 )
 
 func init() {
@@ -50,7 +50,7 @@ func init() {
 }
 
 // RegisterHandler for object type, override existing handler with override flag
-func (objects *ObjectHandlerMap) RegisterHandler(objectType string, handler ObjectHandler, override bool) error {
+func (objects *objectHandlerMap) RegisterHandler(objectType string, handler ObjectHandler, override bool) error {
 	objects.writeLock.Lock()
 	defer objects.writeLock.Unlock()
 
@@ -69,7 +69,7 @@ func (objects *ObjectHandlerMap) RegisterHandler(objectType string, handler Obje
 }
 
 // GetObjectHandler for objectType
-func (objects *ObjectHandlerMap) GetObjectHandler(objectType string) ObjectHandler {
+func (objects *objectHandlerMap) GetObjectHandler(objectType string) ObjectHandler {
 	handler, ok := objects.m[objectType]
 	if ok {
 		return handler
@@ -99,7 +99,8 @@ func GetAndAddObjectAsync(sessionState *session.State, actionState *action.State
 		}
 
 		handler := GlobalObjectHandler.GetObjectHandler(genObj.GenericType)
-		handler.SetObjectAndEvents(sessionState, actionState, obj, genObj)
+		objInstance := handler.Instance(genObj.GenericId)
+		objInstance.SetObjectAndEvents(sessionState, actionState, obj, genObj)
 
 		return nil
 	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))

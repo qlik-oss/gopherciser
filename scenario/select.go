@@ -823,7 +823,10 @@ func convertBinToSelectInfo(bin string) (*enigma.NxMultiRangeSelectInfo, error) 
 }
 
 func DoSelect(sessionState *session.State, actionState *action.State, genObj *enigma.GenericObject, gob *enigmahandlers.Object, wrap, accept bool, dimension, min, max int, selectionType SelectionType) {
-	selectPath, selectType, dataDefType, err := objecthandling.GlobalObjectHandler.GetObjectHandler(genObj.GenericType).GetObjectDefinition(genObj.GenericType)
+	handler := objecthandling.GlobalObjectHandler.GetObjectHandler(genObj.GenericType)
+	objInstance := handler.Instance(genObj.GenericId)
+
+	selectPath, selectType, dataDefType, err := objInstance.GetObjectDefinition(genObj.GenericType)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
