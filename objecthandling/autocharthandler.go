@@ -24,7 +24,7 @@ func (handler *AutoChartHandler) SetObjectAndEvents(sessionState *session.State,
 	handleAutoChart(sessionState, actionState, genObj, obj)
 }
 
+// GetObjectDefinition implement ObjectHandler interface
 func (handler *AutoChartHandler) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
-	// Todo add handling
 	return handler.DefaultHandler.GetObjectDefinition(objectType)
 }

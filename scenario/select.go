@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -44,8 +43,6 @@ type (
 	}
 
 	selectStates int
-
-	uniqueInts map[int]struct{}
 )
 
 const (
@@ -237,41 +234,6 @@ func (settings SelectionSettings) Execute(sessionState *session.State, actionSta
 	sessionState.Wait(actionState)
 }
 
-//AddValue to unique list
-func (u *uniqueInts) AddValue(v int) {
-	if u == nil || *u == nil {
-		*u = make(map[int]struct{})
-	}
-	var emptyStruct struct{}
-	(*u)[v] = emptyStruct
-}
-
-//Array of unique integers
-func (u *uniqueInts) Array() []int {
-	if u == nil || *u == nil {
-		return []int{}
-	}
-
-	a := make([]int, len(*u))
-	a = a[:0]
-
-	for k := range *u {
-		a = append(a, k)
-	}
-	// sort the keys so seeded randomization always gets the same order
-	sort.Ints(a)
-	return a
-}
-
-//HasValue test if collection includes value
-func (u *uniqueInts) HasValue(v int) bool {
-	if u == nil || *u == nil {
-		return false
-	}
-	_, exist := (*u)[v]
-	return exist
-}
-
 // TODO support stack hypercube and pivot hypercube + maps etc
 func getCardinal(obj *enigmahandlers.Object, dataDefType senseobjdef.DataDefType, dimension int) (int, error) {
 	switch dataDefType {
@@ -368,7 +330,7 @@ func fillSelectPosFromAll(min, max, cardinal int, rnd helpers.Randomizer) ([]int
 		return positions, nil
 	}
 
-	selectPos := make(uniqueInts)
+	selectPos := make(helpers.UniqueInts)
 
 	failSafe := 0
 	for len(selectPos) < selectQty {
@@ -411,7 +373,7 @@ func fillSelectPosFromPossible(min, max int, possible []int, rnd helpers.Randomi
 		return possible, nil
 	}
 
-	selectPos := make(uniqueInts)
+	selectPos := make(helpers.UniqueInts)
 	failSafe := 0
 	for len(selectPos) < selectQty {
 		elValue, elPos, err := rnd.RandIntPos(possible)
@@ -459,7 +421,7 @@ func fillSelectBinsFromBins(min, max int, bins []string, rnd helpers.Randomizer)
 		return bins, nil
 	}
 
-	selectPos := make(uniqueInts)
+	selectPos := make(helpers.UniqueInts)
 	failSafe := 0
 	for len(selectPos) < selectQty {
 		pos := rnd.Rand(binsLength)
@@ -609,7 +571,7 @@ func getPossibleFromMatrix(matrix []enigma.NxCellRows, id string, dim int, stype
 		return nil, errors.Errorf("object<%s> matrix has no rows", id)
 	}
 
-	possibleMap := make(uniqueInts)
+	possibleMap := make(helpers.UniqueInts)
 
 	for ri, row := range matrix {
 		if len(row) < dim+1 {
@@ -659,7 +621,7 @@ func getPossibleFromStackedHyperCube(id string, hypercube *enigmahandlers.HyperC
 		return nil, errors.Errorf("object<%s> Stacked hypercube contains no datapages", id)
 	}
 
-	var possibleMap uniqueInts
+	var possibleMap helpers.UniqueInts
 	for _, page := range dataPages {
 		if err = getDataFromNxStackPage(id, page, dim, &possibleMap); err != nil {
 			return nil, errors.WithStack(err)
@@ -669,7 +631,7 @@ func getPossibleFromStackedHyperCube(id string, hypercube *enigmahandlers.HyperC
 	return possibleMap.Array(), nil
 }
 
-func getDataFromNxStackPage(id string, page *enigma.NxStackPage, dim int, possibleMap *uniqueInts) error {
+func getDataFromNxStackPage(id string, page *enigma.NxStackPage, dim int, possibleMap *helpers.UniqueInts) error {
 	if page == nil || (*page).Data == nil { //No data in page
 		return nil
 	}
@@ -687,7 +649,7 @@ func getDataFromNxStackPage(id string, page *enigma.NxStackPage, dim int, possib
 	return nil
 }
 
-func recursiveDataFromStackedPivotCell(cell *enigma.NxStackedPivotCell, currentDim, getDim int, possibleMap *uniqueInts) {
+func recursiveDataFromStackedPivotCell(cell *enigma.NxStackedPivotCell, currentDim, getDim int, possibleMap *helpers.UniqueInts) {
 	if cell == nil {
 		return
 	}
