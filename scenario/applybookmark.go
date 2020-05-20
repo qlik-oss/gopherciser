@@ -111,8 +111,6 @@ func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstruc
 		Objects:   make([]appstructure.AppStructureObject, 0),
 		Bookmarks: nil,
 	}
-	for _, obj := range selectables {
-		newObjs.Objects = append(newObjs.Objects, obj)
-	}
+	newObjs.Objects = append(newObjs.Objects, selectables...)
 	return &newObjs, nil, false, true
 }
