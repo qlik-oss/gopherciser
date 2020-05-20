@@ -67,7 +67,21 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 		return
 	}
 
-	sessionState.Wait(actionState)
+	// Send GetApplayout request
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.Doc.GetAppLayout(ctx)
+		return errors.WithStack(err)
+	}, actionState, false, "GetAppLayout request failed")
+
+	// Get and add Bookmark to session objects
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := settings.getBookmarkObject(sessionState, actionState, uplink)
+		return errors.WithStack(err)
+	}, actionState, true, "failed to get bookmark")
+
+	if sessionState.Wait(actionState) {
+		return // An error occurred
+	}
 
 	if sheetID != "" {
 		sessionState.LogEntry.LogDebug(fmt.Sprint("ApplyBookmark: Change sheet to ", sheetID))

@@ -19,6 +19,7 @@ type (
 		Layout            *enigma.NxAppLayout
 		sheetList         *SheetList
 		bookmarkList      *BookmarkList
+		bookmarks         map[string]*enigma.GenericBookmark
 		currentSelections *CurrentSelections
 		localeInfo        *enigma.LocaleInfo
 		mutex             sync.Mutex
@@ -120,6 +121,73 @@ func (app *App) setBookmarkList(sessionState SessionState, bl *BookmarkList) {
 		sessionState.DeRegisterEvent(app.bookmarkList.enigmaObject.Handle)
 	}
 	app.bookmarkList = bl
+}
+
+func (app *App) GetBookmarkObject(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericBookmark, error) {
+	// Ge id from map of bookmarks
+	bm := app.getBookmarkFromMap(id)
+	if bm != nil {
+		return bm, nil
+	}
+
+	// Bookmark object not in map, get it
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		var err error
+		bm, err = app.Doc.GetBookmark(ctx, id)
+		if err != nil {
+			return errors.Wrap(err, "failed to get bookmark object")
+		}
+		if _, err := bm.GetLayout(ctx); err != nil {
+			return errors.Wrap(err, "failed to get bookmark layout")
+		}
+
+		app.addBookmarkToMap(bm)
+
+		// Update data when object gets a changed event
+		onBookmarkChanged := func(ctx context.Context, actionState *action.State) error {
+			_, err := bm.GetLayout(ctx)
+			return errors.WithStack(err)
+		}
+
+		// remove from list when event gets de-registered
+		onEventDeregister := func() {
+			if app == nil {
+				return
+			}
+			app.mutex.Lock()
+			defer app.mutex.Unlock()
+			if app.bookmarks != nil {
+				delete(app.bookmarks, id)
+			}
+		}
+		sessionState.RegisterEvent(bm.Handle, onBookmarkChanged, onEventDeregister, true)
+		return err
+	}); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return bm, nil
+}
+
+func (app *App) getBookmarkFromMap(id string) *enigma.GenericBookmark {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.bookmarks == nil {
+		app.bookmarks = make(map[string]*enigma.GenericBookmark)
+	}
+	return app.bookmarks[id]
+}
+
+func (app *App) addBookmarkToMap(bm *enigma.GenericBookmark) {
+	if bm == nil {
+		return
+	}
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.bookmarks == nil {
+		app.bookmarks = make(map[string]*enigma.GenericBookmark)
+	}
+	app.bookmarks[bm.GenericId] = bm
 }
 
 func (app *App) GetAggregatedSelectionFields() string {

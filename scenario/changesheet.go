@@ -45,6 +45,15 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 		return errors.WithStack(err)
 	}, actionState, false, "error getting locale info")
 
+	// Get Configuration
+	// Client does a GetConfiguration request, this however seems to be missing from enigma.go
+
+	// Send GetApplayout request
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.Doc.GetAppLayout(ctx)
+		return errors.WithStack(err)
+	}, actionState, false, "GetAppLayout request failed")
+
 	// Get sheet
 	if _, _, err := getSheet(sessionState, actionState, uplink, settings.ID); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to get sheet"))
