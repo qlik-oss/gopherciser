@@ -93,6 +93,8 @@ type (
 		SheetId *string `json:"sheetId,omitempty"`
 		// SelectionFields fields bookmark would select in
 		SelectionFields string `json:"selectionFields"`
+		// RawProperties of Bookmark object
+		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
 
 	// AppStructure of Sense app

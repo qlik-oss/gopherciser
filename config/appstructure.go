@@ -253,9 +253,10 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 				return errors.WithStack(err)
 			}
 		case appstructure.ObjectTypeBookmark:
-			if err := structure.handleBookmark(ctx, app, id); err != nil {
+			if err := structure.handleBookmark(ctx, app, id, includeRaw); err != nil {
 				return errors.WithStack(err)
 			}
+			return nil
 		case appstructure.ObjectTypeAutoChart:
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
@@ -528,6 +529,11 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 		obj.Selectable = false
 	}
 
+	resolveTitle(obj, properties, []string{
+		"/title",
+		fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
+	})
+
 	return nil
 }
 
@@ -622,7 +628,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	return nil
 }
 
-func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string) error {
+func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
 	bookmark, err := app.Doc.GetBookmark(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -652,6 +658,9 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 
 	structureBookmark.Title = meta.Title
 	structureBookmark.Description = meta.Description
+	if includeRaw {
+		structureBookmark.RawProperties = properties
+	}
 
 	idPath := senseobjdef.NewDataPath("/qInfo/qId")
 	rawId, err := idPath.Lookup(properties)
@@ -665,6 +674,28 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	structure.AddBookmark(structureBookmark)
 
 	return nil
+}
+
+func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
+	if obj.MetaDef.Title != "" {
+		return // We already have a title
+	}
+
+	for _, path := range paths {
+		title := stringFromDataPath(path, properties)
+		if title != "" {
+			obj.MetaDef.Title = title
+			return
+		}
+	}
+}
+
+func stringFromDataPath(path string, data json.RawMessage) string {
+	dataPath := senseobjdef.NewDataPath(path)
+	rawData, _ := dataPath.Lookup(data)
+	var str string
+	_ = jsonit.Unmarshal(rawData, &str)
+	return str
 }
 
 // AddWarning to app structure report

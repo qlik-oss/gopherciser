@@ -343,3 +343,11 @@ func fillArtifactsFromSpace(sessionState *session.State, actionState *action.Sta
 func (openHub ElasticOpenHubSettings) Validate() (err error) {
 	return nil
 }
+
+// AppStructureAction implements AppStructureAction interface
+func (openHub ElasticOpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action) {
+	return &AppStructureInfo{
+		IsAppAction: false,
+		Include:     true,
+	}, nil
+}
