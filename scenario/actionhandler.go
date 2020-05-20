@@ -54,10 +54,9 @@ type (
 	// app is passed as an argument. The return is
 	// * added *config.AppStructurePopulatedObjects - objects to be added to the selectable list by this action
 	// * removed []string - ids of objects that are removed (including any children) by this action
-	// * clearAll bool - specifies whether this action will clear all previous items
 	// * clearObjects bool - clears all objects except bookmarks and sheets
 	AffectsAppObjectsAction interface {
-		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool)
+		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool)
 	}
 
 	// ****************************************************************

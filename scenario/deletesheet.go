@@ -167,7 +167,7 @@ func (settings *DeleteSheetSettings) destroySheetById(sessionState *session.Stat
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	switch settings.DeletionMode {
 	case SingleSheet:
 		if settings.ID != "" {
@@ -176,7 +176,7 @@ func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructu
 					continue
 				}
 				if obj.Id == settings.ID {
-					return nil, []string{settings.ID}, false, false
+					return nil, []string{settings.ID}, false
 				}
 			}
 		} else if settings.Title != "" {
@@ -185,11 +185,11 @@ func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructu
 					continue
 				}
 				if obj.Title == settings.Title {
-					return nil, []string{obj.Id}, false, false
+					return nil, []string{obj.Id}, false
 				}
 			}
 		}
-		return nil, nil, false, false // Not found
+		return nil, nil, false // Not found
 	case MatchingSheets:
 		list := make([]string, 0)
 		for _, obj := range structure.Objects {
@@ -200,11 +200,11 @@ func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructu
 				list = append(list, obj.Id)
 			}
 		}
-		return nil, list, false, false
+		return nil, list, false
 	case AllUnpublished:
 		// Cannot be determined here
-		return nil, nil, false, false
+		return nil, nil, false
 	default:
-		return nil, nil, false, false
+		return nil, nil, false
 	}
 }

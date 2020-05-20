@@ -82,7 +82,7 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	id := settings.BookMarkSettings.ID
 	if id == "" { // No ID, specified, search by title
 		title := settings.BookMarkSettings.Title.String()
@@ -94,17 +94,17 @@ func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstruc
 		}
 	}
 	if id == "" { // Bookmark not found
-		return nil, nil, false, false
+		return nil, nil, false
 	}
 	bookmark := structure.Bookmarks[id]
 	if bookmark.SheetId == nil { // Bookmark not associated with a sheet
-		return nil, nil, false, false
+		return nil, nil, false
 	}
 
 	// Found sheet id, now find sheet objects
 	selectables, err := structure.GetSelectables(*bookmark.SheetId)
 	if err != nil {
-		return nil, nil, false, false
+		return nil, nil, false
 	}
 	newObjs := appstructure.AppStructurePopulatedObjects{
 		Parent:    settings.ID,
@@ -112,5 +112,5 @@ func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstruc
 		Bookmarks: nil,
 	}
 	newObjs.Objects = append(newObjs.Objects, selectables...)
-	return &newObjs, nil, false, true
+	return &newObjs, nil, true
 }

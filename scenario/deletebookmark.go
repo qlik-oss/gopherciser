@@ -194,18 +194,18 @@ func (settings DeleteBookmarkSettings) destroyBookmarkById(sessionState *session
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings DeleteBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+func (settings DeleteBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	switch settings.DeletionMode {
 	case SingleBookmark:
 		for _, obj := range structure.Bookmarks {
 			if settings.ID != "" && obj.ID == settings.ID {
-				return nil, []string{settings.ID}, false, false
+				return nil, []string{settings.ID}, false
 			}
 			if obj.Title == settings.Title.String() {
-				return nil, []string{obj.ID}, false, false
+				return nil, []string{obj.ID}, false
 			}
 		}
-		return nil, nil, false, false // Not found
+		return nil, nil, false // Not found
 	case MatchingBookmarks:
 		list := make([]string, 0)
 		for _, obj := range structure.Bookmarks {
@@ -213,14 +213,14 @@ func (settings DeleteBookmarkSettings) AffectsAppObjectsAction(structure appstru
 				list = append(list, obj.ID)
 			}
 		}
-		return nil, list, false, false
+		return nil, list, false
 	case AllBookmarks:
 		list := make([]string, 0)
 		for _, obj := range structure.Bookmarks {
 			list = append(list, obj.ID)
 		}
-		return nil, list, false, false
+		return nil, list, false
 	default:
-		return nil, nil, false, false
+		return nil, nil, false
 	}
 }

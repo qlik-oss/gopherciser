@@ -116,10 +116,10 @@ func (settings DuplicateSheetSettings) Validate() error {
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	if !settings.ChangeSheet {
-		return nil, nil, false, false // Do nothing
+		return nil, nil, false // Do nothing
 	} else {
-		return nil, nil, false, true // Remove previous sheet objects
+		return nil, nil, true // Remove previous sheet objects
 	}
 }

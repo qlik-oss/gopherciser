@@ -91,9 +91,9 @@ func (settings CreateSheetSettings) Execute(sessionState *session.State,
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	if settings.ID == "" {
-		return nil, nil, false, false
+		return nil, nil, false
 	}
 	newObjs := appstructure.AppStructurePopulatedObjects{
 		Parent: settings.ID,
@@ -112,5 +112,5 @@ func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructu
 		ExtendsId:              "",
 		Visualization:          "",
 	})
-	return &newObjs, nil, false, false
+	return &newObjs, nil, false
 }

@@ -307,7 +307,7 @@ func (connectWs connectWsSettings) Validate() error {
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	newObjs := appstructure.AppStructurePopulatedObjects{
 		Parent:    settings.App.String(),
 		Objects:   make([]appstructure.AppStructureObject, 0),
@@ -321,5 +321,5 @@ func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.A
 	for _, v := range structure.Bookmarks {
 		newObjs.Bookmarks = append(newObjs.Bookmarks, v)
 	}
-	return &newObjs, nil, true, true
+	return &newObjs, nil, true
 }
