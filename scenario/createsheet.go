@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"context"
+	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -87,4 +88,29 @@ func (settings CreateSheetSettings) Execute(sessionState *session.State,
 	}
 
 	sessionState.Wait(actionState)
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool, bool) {
+	if settings.ID == "" {
+		return nil, nil, false, false
+	}
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent: settings.ID,
+		Sheets: make([]appstructure.AppStructureObject, 0),
+	}
+	newObjs.Sheets = append(newObjs.Sheets, appstructure.AppStructureObject{
+		AppObjectDef:           appstructure.AppObjectDef{Id: settings.ID, Type: "sheet"},
+		MetaDef:                appstructure.MetaDef{Title: settings.Title},
+		RawBaseProperties:      nil,
+		RawExtendedProperties:  nil,
+		RawGeneratedProperties: nil,
+		Children:               nil,
+		Selectable:             false,
+		Dimensions:             nil,
+		Measures:               nil,
+		ExtendsId:              "",
+		Visualization:          "",
+	})
+	return &newObjs, nil, false, false
 }
