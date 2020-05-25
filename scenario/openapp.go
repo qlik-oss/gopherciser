@@ -315,7 +315,7 @@ func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.A
 	}
 	for _, obj := range structure.Objects {
 		if obj.Type == "sheet" {
-			newObjs.Sheets = append(newObjs.Sheets, obj)
+			newObjs.Objects = append(newObjs.Objects, obj)
 		}
 	}
 	for _, v := range structure.Bookmarks {

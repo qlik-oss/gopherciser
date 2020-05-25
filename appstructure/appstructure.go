@@ -112,8 +112,6 @@ type (
 		Parent string
 		// Objects first level app objects returned by the current action
 		Objects []AppStructureObject
-		// Sheets objects of sheet type
-		Sheets []AppStructureObject
 		// Bookmark bookmarks returned by the current action
 		Bookmarks []AppStructureBookmark
 	}

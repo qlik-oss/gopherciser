@@ -96,10 +96,10 @@ func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructu
 		return nil, nil, false
 	}
 	newObjs := appstructure.AppStructurePopulatedObjects{
-		Parent: settings.ID,
-		Sheets: make([]appstructure.AppStructureObject, 0),
+		Parent:  settings.ID,
+		Objects: make([]appstructure.AppStructureObject, 0),
 	}
-	newObjs.Sheets = append(newObjs.Sheets, appstructure.AppStructureObject{
+	newObjs.Objects = append(newObjs.Objects, appstructure.AppStructureObject{
 		AppObjectDef:           appstructure.AppObjectDef{Id: settings.ID, Type: "sheet"},
 		MetaDef:                appstructure.MetaDef{Title: settings.Title},
 		RawBaseProperties:      nil,
