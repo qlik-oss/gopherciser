@@ -113,10 +113,10 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 	}
 
 	//TODO Investigate performance impact of datapath lookup and optimize!
-	if err := setChildList(rawLayout, obj); err != nil {
+	if err := SetChildList(rawLayout, obj); err != nil {
 		return errors.Wrapf(err, "failed to get childlist for object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 	}
-	if err := setChildren(rawLayout, obj); err != nil {
+	if err := SetChildren(rawLayout, obj); err != nil {
 		return errors.Wrapf(err, "failed to get children for object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 	}
 
@@ -150,7 +150,7 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 				enigmaObject.GenericType)
 		}
 
-		if err = setListObject(rawLayout, obj, def.DataDef.Path); err != nil {
+		if err = SetListObject(rawLayout, obj, def.DataDef.Path); err != nil {
 			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 		}
 	case senseobjdef.DataDefHyperCube:
@@ -159,7 +159,7 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 				"object<%s> is defined as hypercube carrier, but has not hypercube path definition",
 				enigmaObject.GenericType)
 		}
-		if err = setHyperCube(rawLayout, obj, def.DataDef.Path); err != nil {
+		if err = SetHyperCube(rawLayout, obj, def.DataDef.Path); err != nil {
 			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 		}
 	default:
@@ -187,20 +187,20 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 		switch r.Type {
 		case senseobjdef.DataTypeLayout:
 		case senseobjdef.DataTypeListObject:
-			updateListObjectDataAsync(sessionState, actionState, enigmaObject, obj, r)
+			UpdateListObjectDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		case senseobjdef.DataTypeHyperCubeDataColumns:
 			columns = true
 			fallthrough
 		case senseobjdef.DataTypeHyperCubeData:
-			updateObjectHyperCubeDataAsync(sessionState, actionState, enigmaObject, obj, r, columns)
+			UpdateObjectHyperCubeDataAsync(sessionState, actionState, enigmaObject, obj, r, columns)
 		case senseobjdef.DataTypeHyperCubeReducedData:
-			updateObjectHyperCubeReducedDataAsync(sessionState, actionState, enigmaObject, obj, r)
+			UpdateObjectHyperCubeReducedDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		case senseobjdef.DataTypeHyperCubeBinnedData:
-			updateObjectHyperCubeBinnedDataAsync(sessionState, actionState, enigmaObject, obj, r)
+			UpdateObjectHyperCubeBinnedDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		case senseobjdef.DataTypeHyperCubeStackData:
-			updateObjectHyperCubeStackDataAsync(sessionState, actionState, enigmaObject, obj, r)
+			UpdateObjectHyperCubeStackDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		case senseobjdef.DataTypeHyperCubeContinuousData:
-			updateObjectHyperCubeContinuousDataAsync(sessionState, actionState, enigmaObject, obj, r)
+			UpdateObjectHyperCubeContinuousDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		default:
 			sessionState.LogEntry.Logf(logger.WarningLevel,
 				"Get Data for object type<%s> not supported", enigmaObject.GenericType)
@@ -269,7 +269,7 @@ func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj 
 	wg.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
-		return getObjectProperties(sessionState, actionState, obj)
+		return GetObjectProperties(sessionState, actionState, obj)
 	}, actionState, true, "")
 
 	wg.Add(1)
@@ -286,7 +286,7 @@ func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj 
 	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
 }
 
-func setChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
+func SetChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	childDataPath := senseobjdef.NewDataPath("qChildList")
 
 	rawChildren, err := childDataPath.Lookup(rawLayout)
@@ -308,7 +308,7 @@ func setChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	return nil
 }
 
-func setChildren(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
+func SetChildren(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	childDataPath := senseobjdef.NewDataPath("children")
 
 	rawChildren, err := childDataPath.Lookup(rawLayout)
@@ -330,7 +330,7 @@ func setChildren(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	return nil
 }
 
-func setListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path senseobjdef.DataPath) error {
+func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path senseobjdef.DataPath) error {
 	rawListObject, err := path.Lookup(rawLayout)
 	if err != nil {
 		return errors.Wrap(err, "error getting listObject")
@@ -345,7 +345,7 @@ func setListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path s
 	return nil
 }
 
-func setHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path senseobjdef.DataPath) error {
+func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path senseobjdef.DataPath) error {
 	rawHyperCube, err := path.Lookup(rawLayout)
 	if err != nil {
 		return errors.Wrap(err, "error getting hypercube")
@@ -360,7 +360,7 @@ func setHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path se
 	return nil
 }
 
-func getObjectProperties(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
+func GetObjectProperties(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
 	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 	if !ok {
 		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
@@ -379,7 +379,7 @@ func getObjectProperties(sessionState *State, actionState *action.State, obj *en
 	return sessionState.SendRequest(actionState, getProperties)
 }
 
-func updateObjectHyperCubeDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
+func UpdateObjectHyperCubeDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests, columns bool) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hyper cube data for object<%s>", gob.GenericId)
@@ -437,7 +437,7 @@ func updateObjectHyperCubeDataAsync(sessionState *State, actionState *action.Sta
 	}, actionState, true, fmt.Sprintf("Failed to update object hypercube data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
+func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hypercube reduced data for object<%s>", gob.GenericId)
@@ -484,7 +484,7 @@ func updateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 	}, actionState, true, fmt.Sprintf("Failed to update object hypercube reduced data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
+func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hypercube binned data for object<%s>", gob.GenericId)
@@ -562,7 +562,7 @@ func updateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *acti
 	}, actionState, true, fmt.Sprintf("Failed to update object binned data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeStackDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
+func UpdateObjectHyperCubeStackDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hypercube stack data for object<%s>", gob.GenericId)
@@ -604,7 +604,7 @@ func updateObjectHyperCubeStackDataAsync(sessionState *State, actionState *actio
 	}, actionState, true, fmt.Sprintf("Failed to update object stack data for object<%s>", gob.GenericId))
 }
 
-func updateListObjectDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
+func UpdateListObjectDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get listobject data for object<%s>", gob.GenericId)
@@ -629,7 +629,7 @@ func updateListObjectDataAsync(sessionState *State, actionState *action.State, g
 	}, actionState, true, fmt.Sprintf("Failed to get listobject data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
+func UpdateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get continuous data for object<%s>", gob.GenericId)
@@ -638,7 +638,7 @@ func updateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 			return errors.WithStack(err)
 		}
 		maxLines := maxNbrLines
-		start, end, err := getFullContinuousRange(hypercube)
+		start, end, err := GetFullContinuousRange(hypercube)
 		sessionState.LogEntry.LogDebugf("Get continuous data for object with start <%v> and end <%v>", start, end)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get continuous data for object<%s>", obj.ID)
@@ -646,7 +646,7 @@ func updateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 		_, _, err = gob.GetHyperCubeContinuousData(ctx, requestDef.Path, &enigma.NxContinuousDataOptions{
 			Start:          start,
 			End:            end,
-			NbrPoints:      getApproriateNrOfBins(hypercube),
+			NbrPoints:      GetApproriateNrOfBins(hypercube),
 			MaxNbrTicks:    maxNbrTicks,
 			MaxNumberLines: &maxLines,
 		}, false)
@@ -696,7 +696,7 @@ func checkEngineErr(err error, sessionState *State, req string) error {
 // 		max: n
 // 	}
 // },
-func getFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64, enigma.Float64, error) {
+func GetFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64, enigma.Float64, error) {
 	if hypercube == nil || hypercube.DimensionInfo == nil || len(hypercube.DimensionInfo) < 1 {
 		return -1, -1, errors.Errorf("hypercube has no dimension")
 	}
@@ -720,7 +720,7 @@ func getFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64
 // 	return t.qHyperCube.qDimensionInfo.length > 1 && (e = Math.max(1, Math.min(h.maxNumberOfLines, t.qHyperCube.qDimensionInfo[1].qStateCounts.qLocked + t.qHyperCube.qDimensionInfo[1].qStateCounts.qOption + t.qHyperCube.qDimensionInfo[1].qStateCounts.qSelected)), n = 4),
 // 	Math.ceil(2e3 / (e * n))
 // },
-func getApproriateNrOfBins(hypercube *enigmahandlers.HyperCube) int {
+func GetApproriateNrOfBins(hypercube *enigmahandlers.HyperCube) int {
 	e := 1
 	if hypercube != nil && hypercube.MeasureInfo != nil {
 		e = len(hypercube.MeasureInfo)
