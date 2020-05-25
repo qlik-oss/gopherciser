@@ -99,7 +99,7 @@ func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name, 
 	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))
 }
 
-func getObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
+func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
 	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 	if !ok {
 		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
@@ -275,13 +275,13 @@ func setObjectDataAndEvents(sessionState *State, actionState *action.State, obj 
 	wg.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
-		return getObjectLayout(sessionState, actionState, obj)
+		return GetObjectLayout(sessionState, actionState, obj)
 	}, actionState, true, "")
 
 	wg.Wait()
 
 	event := func(ctx context.Context, as *action.State) error {
-		return getObjectLayout(sessionState, as, obj)
+		return GetObjectLayout(sessionState, as, obj)
 	}
 	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
 }
