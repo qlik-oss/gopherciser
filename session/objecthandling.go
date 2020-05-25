@@ -92,8 +92,7 @@ func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name, 
 			return errors.Wrapf(err, "Failed to add object<%s> to object list", name)
 		}
 
-		handler := GlobalObjectHandler.GetObjectHandler(genObj.GenericType)
-		objInstance := handler.Instance(genObj.GenericId)
+		objInstance := sessionState.GetObjectHandlerInstance(genObj.GenericId, genObj.GenericType)
 		objInstance.SetObjectAndEvents(sessionState, actionState, obj, genObj)
 
 		return nil

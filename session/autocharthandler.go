@@ -29,8 +29,3 @@ func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *State, actio
 
 	handleAutoChart(sessionState, actionState, genObj, obj)
 }
-
-// GetObjectDefinition implement ObjectHandler interface
-//func (instance *AutoChartInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
-//	return instance.GetObjectDefinition(objectType)
-//}
