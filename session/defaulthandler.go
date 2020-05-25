@@ -1,4 +1,4 @@
-package objecthandling
+package session
 
 import (
 	"github.com/pkg/errors"
@@ -6,7 +6,6 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
-	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
@@ -16,14 +15,14 @@ type (
 	DefaultHandler struct{}
 )
 
-func (handler *DefaultHandler) Instance(id string) session.ObjectHandlerInstance {
+func (handler *DefaultHandler) Instance(id string) ObjectHandlerInstance {
 	return &DefaultHandlerInstance{
 		Id: id,
 	}
 }
 
 // GetObject implement ObjectHandler interface
-func (instance *DefaultHandlerInstance) SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func (instance *DefaultHandlerInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	setObjectDataAndEvents(sessionState, actionState, obj, genObj)
 
 	children := obj.ChildList()

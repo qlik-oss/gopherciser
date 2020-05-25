@@ -7,7 +7,6 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
-	"github.com/qlik-oss/gopherciser/objecthandling"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -60,7 +59,7 @@ func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action
 
 	for _, v := range sheetEntry.Data.Cells {
 		sessionState.LogEntry.LogDebugf("subscribe to object<%s> type<%s>", v.Name, v.Type)
-		objecthandling.GetAndAddObjectAsync(sessionState, actionState, v.Name, v.Type)
+		session.GetAndAddObjectAsync(sessionState, actionState, v.Name, v.Type)
 	}
 
 	return nil

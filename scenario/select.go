@@ -16,7 +16,6 @@ import (
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
-	"github.com/qlik-oss/gopherciser/objecthandling"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -823,7 +822,7 @@ func convertBinToSelectInfo(bin string) (*enigma.NxMultiRangeSelectInfo, error) 
 }
 
 func DoSelect(sessionState *session.State, actionState *action.State, genObj *enigma.GenericObject, gob *enigmahandlers.Object, wrap, accept bool, dimension, min, max int, selectionType SelectionType) {
-	handler := objecthandling.GlobalObjectHandler.GetObjectHandler(genObj.GenericType)
+	handler := session.GlobalObjectHandler.GetObjectHandler(genObj.GenericType)
 	objInstance := handler.Instance(genObj.GenericId)
 
 	selectPath, selectType, dataDefType, err := objInstance.GetObjectDefinition(genObj.GenericType)

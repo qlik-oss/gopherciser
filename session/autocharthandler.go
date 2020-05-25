@@ -1,11 +1,10 @@
-package objecthandling
+package session
 
 import (
 	"context"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
@@ -18,12 +17,12 @@ type (
 	}
 )
 
-func (handler *AutoChartHandler) Instance(id string) session.ObjectHandlerInstance {
+func (handler *AutoChartHandler) Instance(id string) ObjectHandlerInstance {
 	return &AutoChartInstance{DefaultHandlerInstance{Id: id}}
 }
 
 // GetObject implement ObjectHandler interface
-func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		return getObjectLayout(sessionState, actionState, obj)
 	}, actionState, true, "")

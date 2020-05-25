@@ -1,4 +1,4 @@
-package objecthandling
+package session
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"math"
 	"sync"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -15,22 +14,17 @@ import (
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
-	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
 	ObjectHandler interface {
-		Instance(id string) session.ObjectHandlerInstance
+		Instance(id string) ObjectHandlerInstance
 	}
 
 	objectHandlerMap struct {
 		m         map[string]ObjectHandler
 		writeLock sync.Mutex
 	}
-)
-
-var (
-	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 const (
@@ -78,7 +72,7 @@ func (objects *objectHandlerMap) GetObjectHandler(objectType string) ObjectHandl
 }
 
 // GetAndAddObjectAsync get and add object to object handling
-func GetAndAddObjectAsync(sessionState *session.State, actionState *action.State, name, oType string) {
+func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name, oType string) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("object<%s> type<%s> found", name, oType)
 		sense := sessionState.Connection.Sense()
@@ -106,7 +100,7 @@ func GetAndAddObjectAsync(sessionState *session.State, actionState *action.State
 	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))
 }
 
-func getObjectLayout(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) error {
+func getObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
 	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 	if !ok {
 		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
@@ -219,7 +213,7 @@ func getObjectLayout(sessionState *session.State, actionState *action.State, obj
 	return nil
 }
 
-func handleAutoChart(sessionState *session.State, actionState *action.State, autochartGen *enigma.GenericObject, autochartObj *enigmahandlers.Object) {
+func handleAutoChart(sessionState *State, actionState *action.State, autochartGen *enigma.GenericObject, autochartObj *enigmahandlers.Object) {
 	uplink := sessionState.Connection.Sense()
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
@@ -270,7 +264,7 @@ func handleAutoChart(sessionState *session.State, actionState *action.State, aut
 	}, actionState, true, "Failed handling autochart")
 }
 
-func setObjectDataAndEvents(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func setObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -367,7 +361,7 @@ func setHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path se
 	return nil
 }
 
-func getObjectProperties(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) error {
+func getObjectProperties(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
 	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 	if !ok {
 		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
@@ -386,7 +380,7 @@ func getObjectProperties(sessionState *session.State, actionState *action.State,
 	return sessionState.SendRequest(actionState, getProperties)
 }
 
-func updateObjectHyperCubeDataAsync(sessionState *session.State, actionState *action.State, gob *enigma.GenericObject,
+func updateObjectHyperCubeDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests, columns bool) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hyper cube data for object<%s>", gob.GenericId)
@@ -444,7 +438,7 @@ func updateObjectHyperCubeDataAsync(sessionState *session.State, actionState *ac
 	}, actionState, true, fmt.Sprintf("Failed to update object hypercube data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeReducedDataAsync(sessionState *session.State, actionState *action.State, gob *enigma.GenericObject,
+func updateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hypercube reduced data for object<%s>", gob.GenericId)
@@ -491,7 +485,7 @@ func updateObjectHyperCubeReducedDataAsync(sessionState *session.State, actionSt
 	}, actionState, true, fmt.Sprintf("Failed to update object hypercube reduced data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeBinnedDataAsync(sessionState *session.State, actionState *action.State, gob *enigma.GenericObject,
+func updateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hypercube binned data for object<%s>", gob.GenericId)
@@ -569,7 +563,7 @@ func updateObjectHyperCubeBinnedDataAsync(sessionState *session.State, actionSta
 	}, actionState, true, fmt.Sprintf("Failed to update object binned data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeStackDataAsync(sessionState *session.State, actionState *action.State, gob *enigma.GenericObject,
+func updateObjectHyperCubeStackDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get hypercube stack data for object<%s>", gob.GenericId)
@@ -611,7 +605,7 @@ func updateObjectHyperCubeStackDataAsync(sessionState *session.State, actionStat
 	}, actionState, true, fmt.Sprintf("Failed to update object stack data for object<%s>", gob.GenericId))
 }
 
-func updateListObjectDataAsync(sessionState *session.State, actionState *action.State, gob *enigma.GenericObject,
+func updateListObjectDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get listobject data for object<%s>", gob.GenericId)
@@ -636,7 +630,7 @@ func updateListObjectDataAsync(sessionState *session.State, actionState *action.
 	}, actionState, true, fmt.Sprintf("Failed to get listobject data for object<%s>", gob.GenericId))
 }
 
-func updateObjectHyperCubeContinuousDataAsync(sessionState *session.State, actionState *action.State, gob *enigma.GenericObject,
+func updateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get continuous data for object<%s>", gob.GenericId)
@@ -676,7 +670,7 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 	}
 }
 
-func checkEngineErr(err error, sessionState *session.State, req string) error {
+func checkEngineErr(err error, sessionState *State, req string) error {
 	switch err.(type) {
 	case enigma.Error:
 		switch err.(enigma.Error).Code() {
