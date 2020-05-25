@@ -23,7 +23,7 @@ func (handler *DefaultHandler) Instance(id string) ObjectHandlerInstance {
 
 // GetObject implement ObjectHandler interface
 func (instance *DefaultHandlerInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
-	setObjectDataAndEvents(sessionState, actionState, obj, genObj)
+	SetObjectDataAndEvents(sessionState, actionState, obj, genObj)
 
 	children := obj.ChildList()
 	if children != nil && children.Items != nil {

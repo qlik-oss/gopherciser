@@ -254,7 +254,7 @@ func handleAutoChart(sessionState *State, actionState *action.State, autochartGe
 		}
 
 		// Get properties, layout and onchange logic of sessionObject
-		setObjectDataAndEvents(sessionState, actionState, obj, genObj)
+		SetObjectDataAndEvents(sessionState, actionState, obj, genObj)
 
 		// Add to autochart tracking table
 		uplink.Objects.AddObjectLink(autochartObj.Handle, obj.Handle)
@@ -263,7 +263,7 @@ func handleAutoChart(sessionState *State, actionState *action.State, autochartGe
 	}, actionState, true, "Failed handling autochart")
 }
 
-func setObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
