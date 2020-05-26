@@ -17,7 +17,7 @@ type (
 	// DuplicateSheetSettings clone object settings
 	DuplicateSheetSettings struct {
 		// ID of object to clone
-		ID string `json:"id" displayname:"Sheet ID" doc-key:"duplicatesheet.id" appstructure:"sheet"`
+		ID string `json:"id" displayname:"Sheet ID" doc-key:"duplicatesheet.id" appstructure:"active:sheet"`
 		// ChangeSheet after cloning
 		ChangeSheet bool `json:"changesheet" displayname:"Change to sheet after creation" doc-key:"duplicatesheet.changesheet"`
 		// Save object changes after clone

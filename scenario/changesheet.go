@@ -22,7 +22,7 @@ import (
 type (
 	// ChangeSheetSettings settings for change sheet action
 	ChangeSheetSettings struct {
-		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id" appstructure:"sheet"`
+		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id" appstructure:"active:sheet"`
 	}
 )
 

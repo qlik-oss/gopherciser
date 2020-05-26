@@ -13,7 +13,7 @@ import (
 type (
 	BookMarkSettings struct {
 		Title session.SyncedTemplate `json:"title" displayname:"Bookmark title" doc-key:"bookmark.title"`
-		ID    string                 `json:"id" displayname:"Bookmark ID" doc-key:"bookmark.id" appstructure:"bookmark"`
+		ID    string                 `json:"id" displayname:"Bookmark ID" doc-key:"bookmark.id" appstructure:"active:bookmark"`
 	}
 )
 
