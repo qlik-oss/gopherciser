@@ -132,7 +132,6 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 	}
 
 	sessionState.LogEntry.LogDebugf("object<%s> objectdef<%+v>", obj.ID, def)
-
 	if def.DataDef.Type == senseobjdef.DataDefUnknown {
 		sessionState.LogEntry.Logf(logger.WarningLevel,
 			"object<%s> type<%s> has unknown data carrier, please add definition to config",
@@ -140,71 +139,8 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 		return nil
 	}
 
-	switch def.DataDef.Type {
-	case senseobjdef.DataDefNoData:
-		return nil
-	case senseobjdef.DataDefListObject:
-		if string(def.DataDef.Path) == "" {
-			return errors.Errorf(
-				"object<%s> is defined as listobject carrier, but has not listobject path definition",
-				enigmaObject.GenericType)
-		}
-
-		if err = SetListObject(rawLayout, obj, def.DataDef.Path); err != nil {
-			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
-		}
-	case senseobjdef.DataDefHyperCube:
-		if def.DataDef.Path == "" {
-			return errors.Errorf(
-				"object<%s> is defined as hypercube carrier, but has not hypercube path definition",
-				enigmaObject.GenericType)
-		}
-		if err = SetHyperCube(rawLayout, obj, def.DataDef.Path); err != nil {
-			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
-		}
-	default:
-		sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object type<%s> not supported", enigmaObject.GenericType)
-		return nil
-	}
-
-	dataRequests, err := def.Evaluate(rawLayout)
-	if err != nil {
-		return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
-	}
-
-	sessionState.LogEntry.LogDebugf("object<%s> type<%s> request evaluation result<%+v>", obj.ID, enigmaObject.GenericType, dataRequests)
-
-	if obj.HyperCube() != nil {
-		sessionState.LogEntry.LogDebugf("object<%s> type<%s> hypercube mode<%s>", obj.ID, enigmaObject.GenericType, obj.HyperCube().Mode)
-	}
-
-	if dataRequests == nil || len(dataRequests) < 1 {
-		return nil
-	}
-
-	for _, r := range dataRequests {
-		columns := false
-		switch r.Type {
-		case senseobjdef.DataTypeLayout:
-		case senseobjdef.DataTypeListObject:
-			UpdateListObjectDataAsync(sessionState, actionState, enigmaObject, obj, r)
-		case senseobjdef.DataTypeHyperCubeDataColumns:
-			columns = true
-			fallthrough
-		case senseobjdef.DataTypeHyperCubeData:
-			UpdateObjectHyperCubeDataAsync(sessionState, actionState, enigmaObject, obj, r, columns)
-		case senseobjdef.DataTypeHyperCubeReducedData:
-			UpdateObjectHyperCubeReducedDataAsync(sessionState, actionState, enigmaObject, obj, r)
-		case senseobjdef.DataTypeHyperCubeBinnedData:
-			UpdateObjectHyperCubeBinnedDataAsync(sessionState, actionState, enigmaObject, obj, r)
-		case senseobjdef.DataTypeHyperCubeStackData:
-			UpdateObjectHyperCubeStackDataAsync(sessionState, actionState, enigmaObject, obj, r)
-		case senseobjdef.DataTypeHyperCubeContinuousData:
-			UpdateObjectHyperCubeContinuousDataAsync(sessionState, actionState, enigmaObject, obj, r)
-		default:
-			sessionState.LogEntry.Logf(logger.WarningLevel,
-				"Get Data for object type<%s> not supported", enigmaObject.GenericType)
-		}
+	if err := SetObjectData(sessionState, actionState, rawLayout, def, obj, enigmaObject); err != nil {
+		return errors.WithStack(err)
 	}
 
 	sessionState.LogEntry.LogDebugf("Getting layout for object<%s> handle<%d> type<%s> END", obj.ID, obj.Handle, enigmaObject.GenericType)
@@ -734,4 +670,72 @@ func GetApproriateNrOfBins(hypercube *enigmahandlers.HyperCube) int {
 		e = int(math.Max(1.0, math.Min(float64(maxNbrLines), float64(states))))
 	}
 	return int(math.Ceil(2000.0 / float64(e*n)))
+}
+
+// SetObjectData sets data to obj from layout and data requests according to objectDef
+func SetObjectData(sessionState *State, actionState *action.State, rawLayout json.RawMessage, objectDef *senseobjdef.ObjectDef,
+	obj *enigmahandlers.Object, enigmaObject *enigma.GenericObject) error {
+	switch objectDef.DataDef.Type {
+	case senseobjdef.DataDefNoData:
+		return nil
+	case senseobjdef.DataDefListObject:
+		if string(objectDef.DataDef.Path) == "" {
+			return errors.Errorf(
+				"object<%s> is defined as listobject carrier, but has not listobject path definition", enigmaObject.GenericType)
+		}
+
+		if err := SetListObject(rawLayout, obj, objectDef.DataDef.Path); err != nil {
+			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
+		}
+	case senseobjdef.DataDefHyperCube:
+		if objectDef.DataDef.Path == "" {
+			return errors.Errorf(
+				"object<%s> is defined as hypercube carrier, but has not hypercube path definition", enigmaObject.GenericType)
+		}
+		if err := SetHyperCube(rawLayout, obj, objectDef.DataDef.Path); err != nil {
+			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
+		}
+	default:
+		sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object type<%s> not supported", enigmaObject.GenericType)
+		return nil
+	}
+
+	// Evaluate data requests
+	dataRequests, err := objectDef.Evaluate(rawLayout)
+	if err != nil {
+		return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
+	}
+	sessionState.LogEntry.LogDebugf("object<%s> type<%s> request evaluation result<%+v>", obj.ID, enigmaObject.GenericType, dataRequests)
+	if obj.HyperCube() != nil {
+		sessionState.LogEntry.LogDebugf("object<%s> type<%s> hypercube mode<%s>", obj.ID, enigmaObject.GenericType, obj.HyperCube().Mode)
+	}
+	if dataRequests == nil || len(dataRequests) < 1 {
+		return nil
+	}
+
+	for _, r := range dataRequests {
+		columns := false
+		switch r.Type {
+		case senseobjdef.DataTypeLayout:
+		case senseobjdef.DataTypeListObject:
+			UpdateListObjectDataAsync(sessionState, actionState, enigmaObject, obj, r)
+		case senseobjdef.DataTypeHyperCubeDataColumns:
+			columns = true
+			fallthrough
+		case senseobjdef.DataTypeHyperCubeData:
+			UpdateObjectHyperCubeDataAsync(sessionState, actionState, enigmaObject, obj, r, columns)
+		case senseobjdef.DataTypeHyperCubeReducedData:
+			UpdateObjectHyperCubeReducedDataAsync(sessionState, actionState, enigmaObject, obj, r)
+		case senseobjdef.DataTypeHyperCubeBinnedData:
+			UpdateObjectHyperCubeBinnedDataAsync(sessionState, actionState, enigmaObject, obj, r)
+		case senseobjdef.DataTypeHyperCubeStackData:
+			UpdateObjectHyperCubeStackDataAsync(sessionState, actionState, enigmaObject, obj, r)
+		case senseobjdef.DataTypeHyperCubeContinuousData:
+			UpdateObjectHyperCubeContinuousDataAsync(sessionState, actionState, enigmaObject, obj, r)
+		default:
+			sessionState.LogEntry.Logf(logger.WarningLevel,
+				"Get Data for object type<%s> not supported", enigmaObject.GenericType)
+		}
+	}
+	return nil
 }
