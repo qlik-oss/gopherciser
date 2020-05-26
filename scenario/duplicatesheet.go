@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/qlik-oss/gopherciser/appstructure"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -45,8 +46,17 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 	var sheetID string
 	cloneObject := func(ctx context.Context) error {
 		var err error
-		sheetID, err = app.Doc.CloneObject(ctx, sessionState.IDMap.Get(settings.ID))
-		return err
+		origSheetId := sessionState.IDMap.Get(settings.ID)
+		sheetID, err = app.Doc.CloneObject(ctx, origSheetId)
+
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// Send GetChildInfos request for original sheet for api compliance
+		getSheetChildInfosAsync(sessionState, actionState, app, origSheetId)
+
+		return nil
 	}
 	if err := sessionState.SendRequest(actionState, cloneObject); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to clone object"))
@@ -84,6 +94,12 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		}
 	}
 
+	// Send GetChildInfos request for cloned sheet for api compliance
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := sheet.GetChildInfos(ctx)
+		return errors.WithStack(err)
+	}, actionState, false, fmt.Sprintf("failed to get child infos for sheet<%s>", sheet.ID))
+
 	// Set new sheet as the "active" sheet
 	if settings.ChangeSheet {
 		sessionState.Wait(actionState) // wait until sheetList has been updated
@@ -107,7 +123,6 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 
 // Validate clone object settings
 func (settings DuplicateSheetSettings) Validate() error {
-
 	if settings.ID == "" {
 		return errors.New("Duplicate sheet needs an id of a sheet to duplicate")
 	}
@@ -122,4 +137,16 @@ func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstru
 	} else {
 		return nil, nil, true // Remove previous sheet objects
 	}
+}
+  
+func getSheetChildInfosAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id string) {
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		sheetObject, err := senseobjects.GetSheet(ctx, app, id)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		_, err = sheetObject.GetChildInfos(ctx)
+		return errors.WithStack(err)
+	}, actionState, false, fmt.Sprintf("failed to get child infos for sheet<%s>", id))
 }
