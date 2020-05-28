@@ -12,7 +12,7 @@ import (
 )
 
 type (
-	// ElasticMoveAppSettings settings for moving an app between spaces
+	// ElasticPublishAppSettings settings for moving an app between spaces
 	ElasticPublishAppSettings struct {
 		session.AppSelection
 		DestinationSpace

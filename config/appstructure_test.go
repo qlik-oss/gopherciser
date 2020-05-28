@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"strings"
 	"testing"
@@ -4248,7 +4249,7 @@ var structureJSON = []byte(`{
 }`)
 
 func TestConfig_GetSelectables(t *testing.T) {
-	var structure AppStructure
+	var structure appstructure.AppStructure
 	if err := jsonit.Unmarshal(structureJSON, &structure); err != nil {
 		t.Fatal(err)
 	}
@@ -4285,7 +4286,7 @@ func TestConfig_GetSelectables(t *testing.T) {
 
 	_, err = structure.GetSelectables("not-a-real-object-id")
 	switch err.(type) {
-	case AppStructureObjectNotFoundError:
+	case appstructure.AppStructureObjectNotFoundError:
 	default:
 		t.Error("Expected AppStructureObjectNotFoundError, got:", err)
 	}

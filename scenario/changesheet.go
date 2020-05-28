@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"math"
 	"sync"
 
@@ -21,7 +22,7 @@ import (
 type (
 	// ChangeSheetSettings settings for change sheet action
 	ChangeSheetSettings struct {
-		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id"`
+		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id" appstructure:"active:sheet"`
 	}
 )
 
@@ -719,4 +720,19 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 	default:
 		return errors.Errorf("object<%s> has hypercube error<%+v>", id, *err)
 	}
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+	selectables, err := structure.GetSelectables(settings.ID)
+	if err != nil {
+		return nil, nil, false
+	}
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent:    settings.ID,
+		Objects:   make([]appstructure.AppStructureObject, 0),
+		Bookmarks: nil,
+	}
+	newObjs.Objects = append(newObjs.Objects, selectables...)
+	return &newObjs, nil, true
 }

@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -303,4 +304,22 @@ func (connectWs connectWsSettings) Execute(sessionState *session.State, actionSt
 
 func (connectWs connectWsSettings) Validate() error {
 	return nil
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent:    settings.App.String(),
+		Objects:   make([]appstructure.AppStructureObject, 0),
+		Bookmarks: nil,
+	}
+	for _, obj := range structure.Objects {
+		if obj.Type == "sheet" {
+			newObjs.Objects = append(newObjs.Objects, obj)
+		}
+	}
+	for _, v := range structure.Bookmarks {
+		newObjs.Bookmarks = append(newObjs.Bookmarks, v)
+	}
+	return &newObjs, nil, true
 }

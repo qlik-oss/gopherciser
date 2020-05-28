@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"os"
 
 	"github.com/qlik-oss/gopherciser/config"
@@ -192,7 +193,7 @@ Will save one .structure file per app in script in the folder defined by output 
 
 		err = cfg.GetAppStructures(context.Background(), includeRaw)
 		switch err.(type) {
-		case config.AppStructureNoScenarioActionsError:
+		case appstructure.AppStructureNoScenarioActionsError:
 			// Not an error but print info
 			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
 		case nil:

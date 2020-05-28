@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -20,7 +21,7 @@ type (
 	DeleteSheetSettings struct {
 		DeletionMode SheetDeletionModeEnum `json:"mode" displayname:"Deletion mode" doc-key:"deletesheet.mode"`
 		Title        string                `json:"title" displayname:"Sheet title" doc-key:"deletesheet.title"`
-		ID           string                `json:"id" displayname:"Sheet ID" doc-key:"deletesheet.id"`
+		ID           string                `json:"id" displayname:"Sheet ID" doc-key:"deletesheet.id" appstructure:"active:sheet"`
 	}
 )
 
@@ -163,4 +164,47 @@ func (settings *DeleteSheetSettings) destroySheetById(sessionState *session.Stat
 		*numDeleted++
 		return nil
 	}, actionState, true, "error destroying sheet")
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+	switch settings.DeletionMode {
+	case SingleSheet:
+		if settings.ID != "" {
+			for _, obj := range structure.Objects {
+				if obj.Type != "sheet" {
+					continue
+				}
+				if obj.Id == settings.ID {
+					return nil, []string{settings.ID}, false
+				}
+			}
+		} else if settings.Title != "" {
+			for _, obj := range structure.Objects {
+				if obj.Type != "sheet" {
+					continue
+				}
+				if obj.Title == settings.Title {
+					return nil, []string{obj.Id}, false
+				}
+			}
+		}
+		return nil, nil, false // Not found
+	case MatchingSheets:
+		list := make([]string, 0)
+		for _, obj := range structure.Objects {
+			if obj.Type != "sheet" {
+				continue
+			}
+			if (settings.ID != "" && obj.Id == settings.ID) || obj.Title == settings.Title {
+				list = append(list, obj.Id)
+			}
+		}
+		return nil, list, false
+	case AllUnpublished:
+		// Cannot be determined here
+		return nil, nil, false
+	default:
+		return nil, nil, false
+	}
 }

@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"encoding/json"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"reflect"
 	"strings"
 	"sync"
@@ -46,6 +47,16 @@ type (
 	// sessionState.CurrentApp. A list of Sub action to be evaluated can also be included
 	AppStructureAction interface {
 		AppStructureAction() (*AppStructureInfo, []Action)
+	}
+
+	// AffectsAppObjectsAction is an interface that should be implemented by all actions that affect
+	// the availability of selectable objects for app structure consumption. App structure of the current
+	// app is passed as an argument. The return is
+	// * added *config.AppStructurePopulatedObjects - objects to be added to the selectable list by this action
+	// * removed []string - ids of objects that are removed (including any children) by this action
+	// * clearObjects bool - clears all objects except bookmarks and sheets
+	AffectsAppObjectsAction interface {
+		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool)
 	}
 
 	// ****************************************************************

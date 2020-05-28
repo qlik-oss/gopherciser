@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ type (
 	// DuplicateSheetSettings clone object settings
 	DuplicateSheetSettings struct {
 		// ID of object to clone
-		ID string `json:"id" displayname:"Sheet ID" doc-key:"duplicatesheet.id"`
+		ID string `json:"id" displayname:"Sheet ID" doc-key:"duplicatesheet.id" appstructure:"active:sheet"`
 		// ChangeSheet after cloning
 		ChangeSheet bool `json:"changesheet" displayname:"Change to sheet after creation" doc-key:"duplicatesheet.changesheet"`
 		// Save object changes after clone
@@ -129,6 +130,15 @@ func (settings DuplicateSheetSettings) Validate() error {
 	return nil
 }
 
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+	if !settings.ChangeSheet {
+		return nil, nil, false // Do nothing
+	} else {
+		return nil, nil, true // Remove previous sheet objects
+	}
+}
+  
 func getSheetChildInfosAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id string) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sheetObject, err := senseobjects.GetSheet(ctx, app, id)
