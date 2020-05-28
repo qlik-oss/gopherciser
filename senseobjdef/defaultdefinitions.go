@@ -296,21 +296,6 @@ var (
 		&Select{SelectTypeHypercubeValues, "/qUndoExclude/box/qHyperCubeDef"},
 	}
 
-	//// DefaultAutoChart object definitions for auto-chart
-	//DefaultAutoChart = ObjectDef{
-	//	DataDef{DataDefHyperCube, "/qHyperCube"},
-	//	[]Data{
-	//		{
-	//			Requests: []GetDataRequests{
-	//				{
-	//					Type: DataTypeLayout,
-	//				},
-	//			},
-	//		},
-	//	},
-	//	nil,
-	//}
-
 	// DefaultWaterfallChart object definitions for waterfallchart
 	DefaultWaterfallChart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
@@ -518,24 +503,23 @@ var (
 	}
 
 	DefaultObjectDefs = ObjectDefs{
-		"listbox":          &DefaultListboxDef,
-		"filterpane":       &DefaultFilterpane,
-		"barchart":         &DefaultBarchart,
-		"scatterplot":      &DefaultScatterplot,
-		"map":              &DefaultMap,
-		"combochart":       &DefaultCombochart,
-		"table":            &DefaultTable,
-		"pivot-table":      &DefaultPivotTable,
-		"linechart":        &DefaultLinechart,
-		"piechart":         &DefaultPiechart,
-		"treemap":          &DefaultTreemap,
-		"text-image":       &DefaultTextImage,
-		"kpi":              &DefaultKpi,
-		"gauge":            &DefaultGauge,
-		"boxplot":          &DefaultBoxplot,
-		"distributionplot": &DefaultDistributionplot,
-		"histogram":        &DefaultHistogram,
-		//"auto-chart":            &DefaultAutoChart,
+		"listbox":               &DefaultListboxDef,
+		"filterpane":            &DefaultFilterpane,
+		"barchart":              &DefaultBarchart,
+		"scatterplot":           &DefaultScatterplot,
+		"map":                   &DefaultMap,
+		"combochart":            &DefaultCombochart,
+		"table":                 &DefaultTable,
+		"pivot-table":           &DefaultPivotTable,
+		"linechart":             &DefaultLinechart,
+		"piechart":              &DefaultPiechart,
+		"treemap":               &DefaultTreemap,
+		"text-image":            &DefaultTextImage,
+		"kpi":                   &DefaultKpi,
+		"gauge":                 &DefaultGauge,
+		"boxplot":               &DefaultBoxplot,
+		"distributionplot":      &DefaultDistributionplot,
+		"histogram":             &DefaultHistogram,
 		"waterfallchart":        &DefaultWaterfallChart,
 		"qlik-funnel-chart-ext": &DefaultQlikFunnelChartExt,
 		"qlik-sankey-chart-ext": &DefaultQlikSankeyChartExt,
