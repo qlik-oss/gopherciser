@@ -87,7 +87,7 @@ func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name, 
 			return errors.Wrapf(err, "Failed go get object<%s>", name)
 		}
 
-		obj, err := sense.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeSheetObject, name, genObj)
+		obj, err := sense.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeGenericObject, name, genObj)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to add object<%s> to object list", name)
 		}
@@ -183,7 +183,7 @@ func handleAutoChart(sessionState *State, actionState *action.State, autochartGe
 		sessionState.LogEntry.LogDebugf("created session object<%s> from auto-chart<%s>", genObj.GenericId, autochartObj.ID)
 
 		// Add to object structure
-		obj, errAdd := uplink.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeSheetObject,
+		obj, errAdd := uplink.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeGenericObject,
 			genObj.GenericId, genObj)
 		if errAdd != nil {
 			return errors.Wrapf(errAdd, "Failed to add session object<%s> to object list", genObj.GenericId)

@@ -248,7 +248,7 @@ func (settings RandomActionSettings) IsContainerAction() {}
 func getSelectableObjectsOnSheet(sessionState *session.State) []*enigmahandlers.Object {
 	uplink := sessionState.Connection.Sense()
 	// Get all objects on sheet
-	handles := uplink.Objects.GetAllObjectHandles(true, enigmahandlers.ObjTypeSheetObject)
+	handles := uplink.Objects.GetAllObjectHandles(true, enigmahandlers.ObjTypeGenericObject)
 	n := len(handles)
 	if n < 1 {
 		sessionState.LogEntry.Log(logger.InfoLevel, "Nothing to select - no sheet objects in scope")

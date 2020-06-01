@@ -104,7 +104,7 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		sessionState.Wait(actionState) // wait until sheetList has been updated
 
 		// clear current subscribed objects
-		clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheetObject)
+		clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
 		if errClearObject != nil {
 			sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 		}

@@ -92,7 +92,7 @@ func GetCurrentSheet(uplink *enigmahandlers.SenseUplink) (*senseobjects.Sheet, e
 
 // ClearCurrentSheet and currently subscribed objects
 func ClearCurrentSheet(uplink *enigmahandlers.SenseUplink, sessionState *session.State) {
-	clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheetObject)
+	clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
 	if errClearObject != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}
