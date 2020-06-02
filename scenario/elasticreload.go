@@ -20,6 +20,7 @@ type (
 	ElasticReloadCore struct {
 		// PollInterval time in-between polling for reload status
 		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
+		SaveLog      bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
 	}
 
 	//ElasticReloadSettings specify app to reload
@@ -123,6 +124,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	}
 
 	status := postReloadResponse.Status
+	prevStatus := status
 	log := ""
 	reloadTime := ""
 
@@ -148,7 +150,11 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 			return
 		}
 
+		prevStatus = status
 		status = reloadStatus.Status
+		if status != prevStatus {
+			sessionState.LogEntry.LogDebugf("StatusChange: <%s> -> <%s>", prevStatus, status)
+		}
 		log = reloadStatus.Log
 		reloadTime = reloadStatus.Duration
 	}
@@ -158,6 +164,8 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		return
 	}
 
-	sessionState.LogEntry.LogInfo("ReloadLog", log)
+	if settings.ElasticReloadCore.SaveLog {
+		sessionState.LogEntry.LogInfo("ReloadLog", log)
+	}
 	sessionState.LogEntry.LogInfo("ReloadDuration", reloadTime)
 }
