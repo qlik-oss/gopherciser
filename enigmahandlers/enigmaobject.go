@@ -65,8 +65,8 @@ const (
 	ObjTypeApp ObjectType = iota
 	// ObjTypeSheet object is a sheet
 	ObjTypeSheet
-	// ObjTypeSheetObject object is sheet object
-	ObjTypeSheetObject
+	// ObjTypeGenericObject object is sheet object
+	ObjTypeGenericObject
 )
 
 // SetProperties set/update properties of object

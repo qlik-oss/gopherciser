@@ -213,33 +213,6 @@ func TestFillPos(t *testing.T) {
 	validateIntArraySortable(t, "selectpos4", selectPos, []int{4, 9, 56}, true)
 }
 
-func TestUniqueInts(t *testing.T) {
-	m := make(uniqueInts)
-	a := m.Array()
-	if m.Array() == nil {
-		t.Fatalf("uniqueInts array was nil")
-	}
-	validateIntArray(t, "uniqueInts", a, []int{})
-
-	m.AddValue(5)
-	m.AddValue(5)
-	m.AddValue(22)
-	a = m.Array()
-	if a == nil {
-		t.Fatalf("uniqueInts array was nil")
-	}
-
-	validateIntArraySortable(t, "uniqueInts", a, []int{5, 22}, true)
-
-	if !m.HasValue(5) {
-		t.Error("uniqueInts collection doesn't contain expected value: 5")
-	}
-
-	if m.HasValue(10) {
-		t.Error("uniqueInts collection contains unexpected value: 10")
-	}
-}
-
 func validateString(t *testing.T, key, value, expected string) {
 	t.Helper()
 	if value != expected {

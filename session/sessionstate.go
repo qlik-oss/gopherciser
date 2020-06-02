@@ -17,6 +17,7 @@ import (
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
@@ -87,6 +88,9 @@ type (
 
 		events  map[int]*Event // todo support multiple events per handle?
 		eventMu sync.Mutex
+
+		objects     map[string]ObjectHandlerInstance
+		objectsLock sync.Mutex
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -95,6 +99,11 @@ type (
 		Session uint64
 		Thread  uint64
 		Local   interface{}
+	}
+
+	ObjectHandlerInstance interface {
+		SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject)
+		GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error)
 	}
 )
 
@@ -567,4 +576,25 @@ func (state *State) WSFailed() {
 		state.LogEntry.LogError(errors.New("websocket unexpectedly closed"))
 		state.Cancel()
 	}
+}
+
+// GetObjectHandlerInstance for object ID and type
+func (state *State) GetObjectHandlerInstance(id, typ string) ObjectHandlerInstance {
+	state.objectsLock.Lock()
+	defer state.objectsLock.Unlock()
+
+	if state.objects == nil {
+		state.objects = make(map[string]ObjectHandlerInstance)
+	}
+
+	instance, ok := state.objects[id]
+	if ok {
+		return instance
+	}
+
+	handler := GlobalObjectHandler.GetObjectHandler(typ)
+	instance = handler.Instance(id)
+	state.objects[id] = instance
+
+	return instance
 }

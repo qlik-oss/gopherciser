@@ -296,21 +296,6 @@ var (
 		&Select{SelectTypeHypercubeValues, "/qUndoExclude/box/qHyperCubeDef"},
 	}
 
-	// DefaultAutoChart object definitions for auto-chart
-	DefaultAutoChart = ObjectDef{
-		DataDef{DataDefHyperCube, "/qHyperCube"},
-		[]Data{
-			{
-				Requests: []GetDataRequests{
-					{
-						Type: DataTypeLayout,
-					},
-				},
-			},
-		},
-		nil,
-	}
-
 	// DefaultWaterfallChart object definitions for waterfallchart
 	DefaultWaterfallChart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
@@ -535,7 +520,6 @@ var (
 		"boxplot":               &DefaultBoxplot,
 		"distributionplot":      &DefaultDistributionplot,
 		"histogram":             &DefaultHistogram,
-		"auto-chart":            &DefaultAutoChart,
 		"waterfallchart":        &DefaultWaterfallChart,
 		"qlik-funnel-chart-ext": &DefaultQlikFunnelChartExt,
 		"qlik-sankey-chart-ext": &DefaultQlikSankeyChartExt,

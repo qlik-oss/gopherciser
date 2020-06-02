@@ -2,10 +2,8 @@ package scenario
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -61,7 +59,7 @@ func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action
 
 	for _, v := range sheetEntry.Data.Cells {
 		sessionState.LogEntry.LogDebugf("subscribe to object<%s> type<%s>", v.Name, v.Type)
-		GetAndAddObject(sessionState, actionState, v.Name, v.Type)
+		session.GetAndAddObjectAsync(sessionState, actionState, v.Name, v.Type)
 	}
 
 	return nil
@@ -74,64 +72,6 @@ func getSheetEntry(sessionState *session.State, actionState *action.State, app *
 	}
 
 	return sheetList.GetSheetEntry(sheetid)
-}
-
-// GetAndAddObject get and add object to object handling
-func GetAndAddObject(sessionState *session.State, actionState *action.State, name, oType string) {
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		sessionState.LogEntry.LogDebugf("object<%s> type<%s> found", name, oType)
-		sense := sessionState.Connection.Sense()
-
-		var genObj *enigma.GenericObject
-		getObject := func(ctx context.Context) error {
-			var err error
-			genObj, err = sense.CurrentApp.Doc.GetObject(ctx, name)
-			return err
-		}
-		if err := sessionState.SendRequest(actionState, getObject); err != nil {
-			return errors.Wrapf(err, "Failed go get object<%s>", name)
-		}
-
-		obj, err := sense.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeSheetObject, name, genObj)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to add object<%s> to object list", name)
-		}
-
-		if genObj.GenericType == "auto-chart" {
-			sessionState.QueueRequest(func(ctx context.Context) error {
-				return getObjectLayout(sessionState, actionState, obj)
-			}, actionState, true, "")
-
-			handleAutoChart(sessionState, actionState, genObj, obj)
-			return nil
-		}
-
-		setObjectDataAndEvents(sessionState, actionState, obj, genObj)
-
-		children := obj.ChildList()
-		if children != nil && children.Items != nil {
-			sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", genObj.GenericId, genObj.GenericType)
-			for _, child := range children.Items {
-				GetAndAddObject(sessionState, actionState, child.Info.Id, child.Info.Type)
-			}
-		}
-
-		return nil
-	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))
-}
-
-// ResolveAppName return guid or appname with replaced session variables
-func ResolveAppName(sessionState *session.State, appguid string, appName *session.SyncedTemplate) (string, error) {
-	if appName.String() != "" {
-		appName, err := sessionState.ReplaceSessionVariables(appName)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-
-		return appName, nil
-	}
-	return appguid, nil
-
 }
 
 // GetCurrentSheet from objects
@@ -152,7 +92,7 @@ func GetCurrentSheet(uplink *enigmahandlers.SenseUplink) (*senseobjects.Sheet, e
 
 // ClearCurrentSheet and currently subscribed objects
 func ClearCurrentSheet(uplink *enigmahandlers.SenseUplink, sessionState *session.State) {
-	clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheetObject)
+	clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
 	if errClearObject != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}

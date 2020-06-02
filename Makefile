@@ -60,3 +60,6 @@ test:
 # Run all tests with verbose output
 alltests:
 	GO111MODULE=on go test -race -mod=readonly -v ./... -count=1
+
+# Run quickbuild test and linting. Good to run e.g. before pushing to remote
+verify: quickbuild test lint-min
