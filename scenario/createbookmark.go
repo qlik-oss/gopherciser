@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"github.com/qlik-oss/enigma-go"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"time"
 
 	"github.com/pkg/errors"
@@ -117,4 +118,21 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 	}
 
 	sessionState.Wait(actionState)
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings CreateBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+	if settings.ID == "" {
+		return nil, nil, false
+	}
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent:    settings.ID,
+		Bookmarks: make([]appstructure.AppStructureBookmark, 0),
+	}
+	newObjs.Bookmarks = append(newObjs.Bookmarks, appstructure.AppStructureBookmark{
+		ID:          settings.ID,
+		Title:       settings.Title.String(),
+		Description: settings.Description, //TODO: Should specify current sheet
+	})
+	return &newObjs, nil, false
 }

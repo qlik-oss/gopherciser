@@ -2,8 +2,10 @@ package scenario
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -11,7 +13,7 @@ import (
 type (
 	// ChangeSheetSettings settings for change sheet action
 	ChangeSheetSettings struct {
-		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id"`
+		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id" appstructure:"active:sheet"`
 	}
 )
 
@@ -67,4 +69,19 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 	}
 
 	sessionState.Wait(actionState)
+}
+
+// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
+func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+	selectables, err := structure.GetSelectables(settings.ID)
+	if err != nil {
+		return nil, nil, false
+	}
+	newObjs := appstructure.AppStructurePopulatedObjects{
+		Parent:    settings.ID,
+		Objects:   make([]appstructure.AppStructureObject, 0),
+		Bookmarks: nil,
+	}
+	newObjs.Objects = append(newObjs.Objects, selectables...)
+	return &newObjs, nil, true
 }

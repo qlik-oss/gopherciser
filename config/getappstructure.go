@@ -7,9 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/session"
 	"os"
+	"sync"
 )
 
 type (
@@ -48,13 +50,19 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	appStructure := &AppStructure{
-		AppMeta: AppStructureAppMeta{
+	innerAs := appstructure.AppStructure{
+		AppMeta: appstructure.AppStructureAppMeta{
 			Title: app.Layout.Title,
 			Guid:  app.GUID,
-		},
-		logEntry: sessionState.LogEntry,
+		}}
+
+	appStructure := &GeneratedAppStructure{
+		innerAs,
+		sessionState.LogEntry,
+		AppStructureReport{},
+		sync.Mutex{},
 	}
+	appStructure.logEntry = sessionState.LogEntry
 
 	for _, info := range allInfos {
 		if info == nil {

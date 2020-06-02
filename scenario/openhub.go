@@ -83,3 +83,11 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 		sessionState.LogEntry.Log(logger.WarningLevel, err)
 	}
 }
+
+// AppStructureAction implements AppStructureAction interface
+func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action) {
+	return &AppStructureInfo{
+		IsAppAction: false,
+		Include:     true,
+	}, nil
+}

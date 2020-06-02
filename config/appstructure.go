@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/InVisionApp/tabular"
-	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"path/filepath"
 	"strconv"
@@ -25,159 +25,27 @@ import (
 )
 
 type (
-
-	// MetaDef meta information for Library objects such as dimension and measure
-	MetaDef struct {
-		// Title of library item
-		Title string `json:"title,omitempty"`
-		// Description of library item
-		Description string `json:"description,omitempty"`
-		// Tags of  of library item
-		Tags []string `json:"tags,omitempty"`
-	}
-
-	// AppObjectDef title and ID of a Sense object
-	AppObjectDef struct {
-		// Id of object
-		Id string `json:"id"`
-		// Type of Sense object
-		Type string `json:"type"`
-	}
-
-	AppStructureMeasureMeta struct {
-		// Meta information, only included for library items
-		Meta *MetaDef `json:"meta,omitempty"`
-		// LibraryId connects measure to separately defined measure
-		LibraryId string `json:"libraryId,omitempty"`
-		// Label of on measure
-		Label string `json:"label,omitempty"`
-		// Def the actual measure definition
-		Def string `json:"def,omitempty"`
-	}
-
-	AppStructureDimensionMeta struct {
-		// Meta information, only included for library items
-		Meta *MetaDef `json:"meta,omitempty"`
-		// LibraryId connects dimension to separately defined dimension
-		LibraryId string `json:"libraryId,omitempty"`
-		// LabelExpression optional parameter with label expression
-		LabelExpression string `json:"labelExpression,omitempty"`
-		// Defs definitions of dimension
-		Defs []string `json:"defs,omitempty"`
-		// Labels of dimension
-		Labels []string `json:"labels,omitempty"`
-	}
-
-	// AppStructureObject sense object structure
-	AppStructureObject struct {
-		AppObjectDef
-		MetaDef
-		// RawBaseProperties of Sense object
-		RawBaseProperties json.RawMessage `json:"rawBaseProperties,omitempty"`
-		// RawExtendedProperties of extended Sense object
-		RawExtendedProperties json.RawMessage `json:"rawExtendedProperties,omitempty"`
-		// RawGeneratedProperties inner generated properties of auto-chart
-		RawGeneratedProperties json.RawMessage `json:"rawGeneratedProperties,omitempty"`
-		// Children to the sense object
-		Children map[string]string `json:"children,omitempty"`
-		// Selectable true if select can be done in object
-		Selectable bool `json:"selectable"`
-		// Dimensions meta information of dimensions defined in object
-		Dimensions []AppStructureDimensionMeta `json:"dimensions,omitempty"`
-		// Measures meta information of measures defined in object
-		Measures []AppStructureMeasureMeta `json:"measures,omitempty"`
-		// ExtendsId ID of linked object
-		ExtendsId string `json:"extendsId,omitempty"`
-		// Visualization visualization of object, if exists
-		Visualization string `json:"visualization,omitempty"`
-	}
-
-	// AppStructureAppMeta meta information about the app
-	AppStructureAppMeta struct {
-		// Title of the app
-		Title string `json:"title"`
-		// Guid of the app
-		Guid string `json:"guid"`
-	}
-
-	// AppStructureBookmark list of bookmarks in the app
-	AppStructureBookmark struct {
-		// ID of bookmark
-		ID string `json:"id"`
-		// Title of bookmark
-		Title string `json:"title"`
-		// Description of bookmark
-		Description string `json:"description"`
-		// SheetId connected sheet ID, null if none
-		SheetId *string `json:"sheetId,omitempty"`
-		// SelectionFields fields bookmark would select in
-		SelectionFields string `json:"selectionFields"`
-	}
-
 	// AppStructureReport reports warnings and fetched objects for app structure
 	AppStructureReport struct {
 		warnings     []string
 		warningsLock sync.Mutex
 	}
 
-	// AppStructure of Sense app
-	AppStructure struct {
-		AppMeta AppStructureAppMeta `json:"meta"`
-		// Objects in Sense app
-		Objects map[string]AppStructureObject `json:"objects"`
-		// Bookmarks list of bookmarks in the app
-		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
+	// GeneratedAppStructure of Sense app
+	GeneratedAppStructure struct {
+		appstructure.AppStructure
 
 		logEntry      *logger.LogEntry
 		report        AppStructureReport
 		structureLock sync.Mutex
 	}
-
-	ObjectType                         int
-	AppStructureObjectNotFoundError    string
-	AppStructureNoScenarioActionsError struct{}
 )
-
-const (
-	ObjectTypeDefault ObjectType = iota
-	ObjectTypeDimension
-	ObjectTypeMeasure
-	ObjectTypeBookmark
-	ObjectTypeMasterObject
-	ObjectTypeAutoChart
-	ObjectSheet
-	ObjectLoadModel
-	ObjectAppprops
-)
-
-var (
-	ObjectTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
-		"dimension":    int(ObjectTypeDimension),
-		"measure":      int(ObjectTypeMeasure),
-		"bookmark":     int(ObjectTypeBookmark),
-		"masterobject": int(ObjectTypeMasterObject),
-		"auto-chart":   int(ObjectTypeAutoChart),
-		"sheet":        int(ObjectSheet),
-		"loadmodel":    int(ObjectLoadModel),
-		"appprops":     int(ObjectAppprops),
-	})
-)
-
-// Error object was not found in app structure
-func (err AppStructureObjectNotFoundError) Error() string {
-	return string(err)
-}
-
-// Error no applicable actions found in scenario
-func (err AppStructureNoScenarioActionsError) Error() string {
-	return "no applicable actions in scenario"
-}
 
 func (cfg *Config) getAppStructureScenario(includeRaw bool, summary SummaryType) []scenario.Action {
 	return evaluateActionList(cfg.Scenario, includeRaw, summary)
 }
 
-func (structure *AppStructure) printSummary(summary SummaryType, fileName string) {
+func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileName string) {
 	if structure == nil || summary == SummaryTypeNone {
 		return
 	}
@@ -301,7 +169,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	// find all auth and actions
 	appStructureScenario := cfg.getAppStructureScenario(includeRaw, cfg.Settings.LogSettings.getSummaryType())
 	if len(appStructureScenario) < 1 {
-		return AppStructureNoScenarioActionsError{}
+		return appstructure.AppStructureNoScenarioActionsError{}
 	}
 
 	// Replace scheduler with 1 iteration 1 user simple scheduler
@@ -354,41 +222,42 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	return nil
 }
 
-func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, includeRaw bool) error {
+func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, includeRaw bool) error {
 	if structure == nil {
 		return errors.New("appStructure object is nil")
 	}
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		obj := AppStructureObject{
-			AppObjectDef: AppObjectDef{
+		obj := appstructure.AppStructureObject{
+			AppObjectDef: appstructure.AppObjectDef{
 				Id:   id,
 				Type: typ,
 			},
 		}
 
-		objectType := ObjectTypeDefault
-		if oType, err := ObjectTypeEnumMap.Int(typ); err == nil {
-			objectType = ObjectType(oType)
+		objectType := appstructure.ObjectTypeDefault
+		if oType, err := appstructure.ObjectTypeEnumMap.Int(typ); err == nil {
+			objectType = appstructure.ObjectType(oType)
 		}
 
 		sessionState.LogEntry.Log(logger.DebugLevel, fmt.Sprintf("get structure for object id<%s> type<%s>", id, typ))
 
 		// handle some special types
 		switch objectType {
-		case ObjectTypeDimension:
+		case appstructure.ObjectTypeDimension:
 			if err := structure.handleDimension(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case ObjectTypeMeasure:
+		case appstructure.ObjectTypeMeasure:
 			if err := structure.handleMeasure(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case ObjectTypeBookmark:
-			if err := structure.handleBookmark(ctx, app, id); err != nil {
+		case appstructure.ObjectTypeBookmark:
+			if err := structure.handleBookmark(ctx, app, id, includeRaw); err != nil {
 				return errors.WithStack(err)
 			}
-		case ObjectTypeAutoChart:
+			return nil
+		case appstructure.ObjectTypeAutoChart:
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
@@ -413,61 +282,33 @@ func (structure *AppStructure) getStructureForObjectAsync(sessionState *session.
 }
 
 // AddObject to structure
-func (structure *AppStructure) AddObject(obj AppStructureObject) {
+func (structure *GeneratedAppStructure) AddObject(obj appstructure.AppStructureObject) {
 	structure.structureLock.Lock()
 	defer structure.structureLock.Unlock()
 	if structure.Objects == nil {
-		structure.Objects = make(map[string]AppStructureObject)
+		structure.Objects = make(map[string]appstructure.AppStructureObject)
 	}
 	structure.Objects[obj.Id] = obj
 }
 
 // AddBookmark to structure
-func (structure *AppStructure) AddBookmark(bookmark AppStructureBookmark) {
+func (structure *GeneratedAppStructure) AddBookmark(bookmark appstructure.AppStructureBookmark) {
 	structure.structureLock.Lock()
 	defer structure.structureLock.Unlock()
 	if structure.Bookmarks == nil {
-		structure.Bookmarks = make(map[string]AppStructureBookmark)
+		structure.Bookmarks = make(map[string]appstructure.AppStructureBookmark)
 	}
 	structure.Bookmarks[bookmark.ID] = bookmark
 }
 
-// GetSelectables get selectable objects from app structure
-func (structure *AppStructure) GetSelectables(rooObject string) ([]AppStructureObject, error) {
-	rootObj, ok := structure.Objects[rooObject]
-	if !ok {
-		return nil, AppStructureObjectNotFoundError(rooObject)
-	}
-
-	return structure.addSelectableChildren(rootObj), nil
-}
-
-func (structure *AppStructure) addSelectableChildren(obj AppStructureObject) []AppStructureObject {
-	selectables := make([]AppStructureObject, 0, 1)
-	if obj.Selectable {
-		selectables = append(selectables, obj)
-	}
-
-	for id := range obj.Children {
-		child, ok := structure.Objects[id]
-		if !ok {
-			continue
-		}
-
-		selectableChildren := structure.addSelectableChildren(child)
-		selectables = append(selectables, selectableChildren...)
-	}
-	return selectables
-}
-
-func (structure *AppStructure) warn(warning string) {
+func (structure *GeneratedAppStructure) warn(warning string) {
 	structure.report.AddWarning(warning)
 	if structure.logEntry != nil {
 		structure.logEntry.Log(logger.WarningLevel, warning)
 	}
 }
 
-func (structure *AppStructure) handleDefaultObject(ctx context.Context, app *senseobjects.App, id, typ string, obj *AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
 	genObj, err := app.Doc.GetObject(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -506,7 +347,7 @@ func (structure *AppStructure) handleDefaultObject(ctx context.Context, app *sen
 	return errors.WithStack(structure.handleObject(typ, obj))
 }
 
-func (structure *AppStructure) handleAutoChart(ctx context.Context, app *senseobjects.App, id string, obj *AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleAutoChart(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
 	genObj, err := app.Doc.GetObject(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -523,7 +364,7 @@ func (structure *AppStructure) handleAutoChart(ctx context.Context, app *senseob
 		return errors.WithStack(err)
 	}
 
-	return errors.WithStack(structure.handleObject(ObjectTypeEnumMap.StringDefault(int(ObjectTypeAutoChart), "auto-chart"), obj))
+	return errors.WithStack(structure.handleObject(appstructure.ObjectTypeEnumMap.StringDefault(int(appstructure.ObjectTypeAutoChart), "auto-chart"), obj))
 }
 
 func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
@@ -532,7 +373,7 @@ func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
 	return properties
 }
 
-func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppStructureObject) error {
+func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *appstructure.AppStructureObject) error {
 	childInfos, err := genObj.GetChildInfos(ctx)
 	if err != nil {
 		return errors.WithStack(err)
@@ -551,7 +392,7 @@ func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *AppS
 	return nil
 }
 
-func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructure.AppStructureObject) error {
 	// figure out which properties to use
 	var properties json.RawMessage
 	if obj.RawGeneratedProperties != nil {
@@ -576,11 +417,11 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 	rawMetaDef, _ := metaDef.Lookup(properties)
 	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
 
-	enumTyp, _ := ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
+	enumTyp, _ := appstructure.ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
 
 	// Should we look for measures and dimensions?
-	switch ObjectType(enumTyp) {
-	case ObjectSheet, ObjectAppprops, ObjectLoadModel:
+	switch appstructure.ObjectType(enumTyp) {
+	case appstructure.ObjectSheet, appstructure.ObjectAppprops, appstructure.ObjectLoadModel:
 		// Known object which does not have measures and dimensions
 		return nil
 	}
@@ -617,13 +458,13 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 		if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
 			return errors.WithStack(err)
 		}
-		obj.Dimensions = make([]AppStructureDimensionMeta, 0, len(dimensions))
+		obj.Dimensions = make([]appstructure.AppStructureDimensionMeta, 0, len(dimensions))
 		for _, dimension := range dimensions {
 			if dimension == nil {
 				continue
 			}
 
-			obj.Dimensions = append(obj.Dimensions, AppStructureDimensionMeta{
+			obj.Dimensions = append(obj.Dimensions, appstructure.AppStructureDimensionMeta{
 				LibraryId:       dimension.LibraryId,
 				LabelExpression: dimension.Def.LabelExpression,
 				Defs:            dimension.Def.FieldDefs,
@@ -638,12 +479,12 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 		if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
 			return errors.WithStack(err)
 		}
-		obj.Measures = make([]AppStructureMeasureMeta, 0, len(measures))
+		obj.Measures = make([]appstructure.AppStructureMeasureMeta, 0, len(measures))
 		for _, measure := range measures {
 			if measure == nil {
 				continue
 			}
-			obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+			obj.Measures = append(obj.Measures, appstructure.AppStructureMeasureMeta{
 				LibraryId: measure.LibraryId,
 				Label:     measure.Def.Label,
 				Def:       measure.Def.Def,
@@ -657,7 +498,7 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 		if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
 			return errors.WithStack(err)
 		}
-		obj.Dimensions = []AppStructureDimensionMeta{
+		obj.Dimensions = []appstructure.AppStructureDimensionMeta{
 			{
 				LibraryId:       listObject.LibraryId,
 				LabelExpression: listObject.Def.LabelExpression,
@@ -667,11 +508,11 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 		}
 
 		if obj.Measures == nil {
-			obj.Measures = make([]AppStructureMeasureMeta, 0, len(listObject.Expressions))
+			obj.Measures = make([]appstructure.AppStructureMeasureMeta, 0, len(listObject.Expressions))
 		}
 
 		for _, expression := range listObject.Expressions {
-			obj.Measures = append(obj.Measures, AppStructureMeasureMeta{
+			obj.Measures = append(obj.Measures, appstructure.AppStructureMeasureMeta{
 				LibraryId: expression.LibraryId,
 				Def:       expression.Expr,
 			})
@@ -688,10 +529,15 @@ func (structure *AppStructure) handleObject(typ string, obj *AppStructureObject)
 		obj.Selectable = false
 	}
 
+	resolveTitle(obj, properties, []string{
+		"/title",
+		fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
+	})
+
 	return nil
 }
 
-func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
 	genMeasure, err := app.Doc.GetMeasure(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -714,7 +560,7 @@ func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobje
 	}
 
 	// Save meta information to structure
-	var meta MetaDef
+	var meta appstructure.MetaDef
 	metaPath := senseobjdef.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
@@ -725,7 +571,7 @@ func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobje
 		}
 	}
 
-	obj.Measures = []AppStructureMeasureMeta{
+	obj.Measures = []appstructure.AppStructureMeasureMeta{
 		{
 			Meta:  &meta,
 			Label: measure.Label,
@@ -736,7 +582,7 @@ func (structure *AppStructure) handleMeasure(ctx context.Context, app *senseobje
 	return nil
 }
 
-func (structure *AppStructure) handleDimension(ctx context.Context, app *senseobjects.App, id string, obj *AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
 	genDim, err := app.Doc.GetDimension(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -759,7 +605,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 	}
 
 	// Add dimension meta information to structure
-	var meta MetaDef
+	var meta appstructure.MetaDef
 	metaPath := senseobjdef.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
@@ -770,7 +616,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 		}
 	}
 
-	obj.Dimensions = []AppStructureDimensionMeta{
+	obj.Dimensions = []appstructure.AppStructureDimensionMeta{
 		{
 			Meta:            &meta,
 			LabelExpression: dimension.LabelExpression,
@@ -782,7 +628,7 @@ func (structure *AppStructure) handleDimension(ctx context.Context, app *senseob
 	return nil
 }
 
-func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string) error {
+func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
 	bookmark, err := app.Doc.GetBookmark(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -793,13 +639,13 @@ func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobj
 		return errors.WithStack(err)
 	}
 
-	var structureBookmark AppStructureBookmark
+	var structureBookmark appstructure.AppStructureBookmark
 	if err := jsonit.Unmarshal(properties, &structureBookmark); err != nil {
 		return errors.WithStack(err)
 	}
 
 	// Get bookmark meta information
-	var meta MetaDef // meta shares title and description from this struct
+	var meta appstructure.MetaDef // meta shares title and description from this struct
 	metaPath := senseobjdef.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(properties)
 	if err != nil {
@@ -812,6 +658,9 @@ func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobj
 
 	structureBookmark.Title = meta.Title
 	structureBookmark.Description = meta.Description
+	if includeRaw {
+		structureBookmark.RawProperties = properties
+	}
 
 	idPath := senseobjdef.NewDataPath("/qInfo/qId")
 	rawId, err := idPath.Lookup(properties)
@@ -825,6 +674,28 @@ func (structure *AppStructure) handleBookmark(ctx context.Context, app *senseobj
 	structure.AddBookmark(structureBookmark)
 
 	return nil
+}
+
+func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
+	if obj.MetaDef.Title != "" {
+		return // We already have a title
+	}
+
+	for _, path := range paths {
+		title := stringFromDataPath(path, properties)
+		if title != "" {
+			obj.MetaDef.Title = title
+			return
+		}
+	}
+}
+
+func stringFromDataPath(path string, data json.RawMessage) string {
+	dataPath := senseobjdef.NewDataPath(path)
+	rawData, _ := dataPath.Lookup(data)
+	var str string
+	_ = jsonit.Unmarshal(rawData, &str)
+	return str
 }
 
 // AddWarning to app structure report
