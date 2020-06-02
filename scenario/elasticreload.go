@@ -124,7 +124,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	}
 
 	status := postReloadResponse.Status
-	prevStatus := status
+	var prevStatus string
 	log := ""
 	reloadTime := ""
 
