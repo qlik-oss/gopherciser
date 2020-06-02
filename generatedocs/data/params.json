@@ -376,6 +376,9 @@
     "elasticreload.pollinterval": [
         "Reload status polling interval (seconds). Defaults to 5 seconds, if omitted."
     ],
+    "elasticreload.log": [
+        "Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large."
+    ],
     "elasticshareapp.appguid": [
         "GUID of the app to share."
     ],
