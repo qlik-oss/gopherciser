@@ -41,6 +41,7 @@ const (
 )
 
 const (
+	statusCreated     = "CREATED"
 	statusQueued      = "QUEUED"
 	statusReloading   = "RELOADING"
 	statusSuccess     = "SUCCEEDED"
@@ -125,7 +126,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	log := ""
 	reloadTime := ""
 
-	for status == statusQueued || status == statusReloading || status == statusInterrupted {
+	for status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
 		helpers.WaitFor(sessionState.BaseContext(), time.Duration(settings.PollInterval))
 		if sessionState.IsAbortTriggered() {
 			return
