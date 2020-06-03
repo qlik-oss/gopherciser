@@ -7,15 +7,15 @@ import (
 
 var (
 	// Threads - Total started threads
-	Threads atomichandlers.AtomicCounter
+	//Threads atomichandlers.AtomicCounter
 	// Sessions - Total started sessions
-	Sessions atomichandlers.AtomicCounter
+	//Sessions atomichandlers.AtomicCounter
 	// Users - Total unique users
-	Users atomichandlers.AtomicCounter
+	//Users atomichandlers.AtomicCounter
 	// Errors - Total errors
-	Errors atomichandlers.AtomicCounter
+	//Errors atomichandlers.AtomicCounter
 	// Warnings - Total warnings
-	Warnings atomichandlers.AtomicCounter
+	//Warnings atomichandlers.AtomicCounter
 	// ActionID - Unique global action id
 	ActionID atomichandlers.AtomicCounter
 	// Requests - Total requests sent

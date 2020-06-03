@@ -74,6 +74,7 @@ type (
 		OutputsDir   string
 		CurrentApp   *ArtifactEntry
 		CurrentUser  *elasticstructs.User
+		Counters     *statistics.ExecutionCounters
 
 		rand          *rand
 		trafficLogger enigmahandlers.ITrafficLogger
@@ -127,7 +128,7 @@ func (rnd *DefaultRandomizer) Reset(instance, session uint64, onlyInstanceSeed b
 	rnd.Randomizer = randomizer.NewSeededRandomizer(seed)
 }
 
-func newSessionState(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string) *State {
+func newSessionState(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string, counters *statistics.ExecutionCounters) *State {
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
@@ -145,6 +146,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		Pending:        NewPendingHandler(32),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		events:         make(map[int]*Event),
+		Counters:       counters,
 	}
 
 	if state.Timeout < time.Millisecond {
@@ -155,10 +157,10 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 }
 
 // New instance of session state
-func New(ctx context.Context, outputsDir string, timeout time.Duration,
-	user *users.User, session, instance uint64, virtualProxy string, onlyInstanceSeed bool) *State {
+func New(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, session, instance uint64,
+	virtualProxy string, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) *State {
 
-	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy)
+	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy, counters)
 
 	rnd := &DefaultRandomizer{}
 	rnd.Reset(instance, session, onlyInstanceSeed)
@@ -168,8 +170,9 @@ func New(ctx context.Context, outputsDir string, timeout time.Duration,
 }
 
 // New instance of session state with custom randomizer
-func NewWithRandomizer(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string, rnd helpers.Randomizer) *State {
-	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy)
+func NewWithRandomizer(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string,
+	rnd helpers.Randomizer, counters *statistics.ExecutionCounters) *State {
+	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy, counters)
 	state.SetRandomizer(rnd, false)
 	return state
 }

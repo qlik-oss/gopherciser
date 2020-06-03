@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/statistics"
 )
@@ -20,29 +19,31 @@ func TestConfigSummary(t *testing.T) {
 
 	startTime := time.Now().Add(-5 * time.Minute)
 
+	counters := &statistics.ExecutionCounters{}
+
 	// clean summaries
 
 	fmt.Println("simple (clean):")
-	summary(log, SummaryTypeSimple, startTime)
+	summary(log, SummaryTypeSimple, startTime, counters)
 	fmt.Println()
 
 	fmt.Println("extended (clean):")
-	summary(log, SummaryTypeExtended, startTime)
+	summary(log, SummaryTypeExtended, startTime, counters)
 	fmt.Println()
 
 	fmt.Println("full (clean):")
-	summary(log, SummaryTypeFull, startTime)
+	summary(log, SummaryTypeFull, startTime, counters)
 	fmt.Println()
 
 	// "dirty" summaries
 
 	// make dirty
 	statistics.SetGlobalLevel(statistics.StatsLevelOn)
-	globals.Errors.Add(3)
-	globals.Warnings.Add(23)
-	globals.Users.Add(6)
-	globals.Threads.Add(4)
-	globals.Sessions.Add(666)
+	counters.Errors.Add(3)
+	counters.Warnings.Add(23)
+	counters.Users.Add(6)
+	counters.Threads.Add(4)
+	counters.Sessions.Add(666)
 	statistics.IncOpenedApps()
 	statistics.IncCreatedApps()
 
@@ -63,11 +64,11 @@ func TestConfigSummary(t *testing.T) {
 	chStats.Requests.Add(123)
 
 	fmt.Println("simple (dirty):")
-	summary(log, SummaryTypeSimple, startTime)
+	summary(log, SummaryTypeSimple, startTime, counters)
 	fmt.Println()
 
 	fmt.Println("extended (dirty):")
-	summary(log, SummaryTypeExtended, startTime)
+	summary(log, SummaryTypeExtended, startTime, counters)
 	fmt.Println()
 
 	statistics.SetGlobalLevel(statistics.StatsLevelFull)
@@ -77,14 +78,14 @@ func TestConfigSummary(t *testing.T) {
 	usersStats.Sent.Add(432)
 
 	fmt.Println("full (dirty):")
-	summary(log, SummaryTypeFull, startTime)
+	summary(log, SummaryTypeFull, startTime, counters)
 	fmt.Println()
 
 	// Reset global counter to not effect other tests
-	globals.Errors.Reset()
-	globals.Warnings.Reset()
-	globals.Users.Reset()
-	globals.Threads.Reset()
-	globals.Sessions.Reset()
+	counters.Errors.Reset()
+	counters.Warnings.Reset()
+	counters.Users.Reset()
+	counters.Threads.Reset()
+	counters.Sessions.Reset()
 	statistics.DestroyGlobalCollector()
 }

@@ -3,12 +3,12 @@ package users
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"runtime"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals"
 )
 
 type (
@@ -194,6 +194,6 @@ func (value *UserGenerator) UnmarshalJSON(arg []byte) error {
 }
 
 // GetNext user to simulate
-func (value *UserGenerator) GetNext() *User {
-	return value.Settings.Iterate(globals.Users.Inc())
+func (value *UserGenerator) GetNext(counters *statistics.ExecutionCounters) *User {
+	return value.Settings.Iterate(counters.Users.Inc())
 }

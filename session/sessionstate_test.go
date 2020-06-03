@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -145,7 +146,8 @@ func TestState_RestMethod(t *testing.T) {
 }
 
 func TestState_SessionVariables(t *testing.T) {
-	state := New(context.Background(), "", 60, nil, 1, 1, "", false)
+	counters := &statistics.ExecutionCounters{}
+	state := New(context.Background(), "", 60, nil, 1, 1, "", false, counters)
 	state.SetLogEntry(&logger.LogEntry{
 		Session: &logger.SessionEntry{
 			Thread:  5,
@@ -207,7 +209,8 @@ func TestState_SessionVariables(t *testing.T) {
 }
 
 func setupStateForCLTest() (*State, *eventCounter, *eventCounter, *eventCounter, *eventCounter) {
-	state := New(context.Background(), "", 60, nil, 1, 1, "", false)
+	counters := &statistics.ExecutionCounters{}
+	state := New(context.Background(), "", 60, nil, 1, 1, "", false, counters)
 	state.Rest = NewRestHandler(state.ctx, 64, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
 
 	event0 := registerEvent(state, 0)

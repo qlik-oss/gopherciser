@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"context"
-	"github.com/qlik-oss/gopherciser/globals"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"testing"
 	"time"
 
@@ -85,6 +85,7 @@ func TestOnlyInstanceSeed(t *testing.T) {
 			OnlyInstanceSeed: true,
 		},
 	}
+	counters := &statistics.ExecutionCounters{}
 
 	deRef := *sched1
 	sched2 := &deRef
@@ -93,8 +94,8 @@ func TestOnlyInstanceSeed(t *testing.T) {
 	actionsToAdd := 10
 	actions, resultP := FillScenario(actionsToAdd)
 
-	runUserIteration(t, sched1, actions)
-	runUserIteration(t, sched2, actions)
+	runUserIteration(t, sched1, actions, counters)
+	runUserIteration(t, sched2, actions, counters)
 
 	result := *resultP
 	t.Log("results:", result)
@@ -133,17 +134,19 @@ func TestReuseUserRandomizer(t *testing.T) {
 		},
 	}
 
+	counters := &statistics.ExecutionCounters{}
+
 	actionsToAdd := 16
 	if actionsToAdd%2 != 0 { // actionsToAdd need to be an even number
 		t.Fatalf("actionsToAdd<%d> not divisible by 2", actionsToAdd)
 	}
 	actions, resultP := FillScenario(actionsToAdd)
 
-	globals.Sessions.Reset()
-	runUserIterationReuseUser(t, sched, actions)
+	counters.Sessions.Reset()
+	runUserIterationReuseUser(t, sched, actions, counters)
 	sched.Settings.Iterations = 2
-	globals.Sessions.Reset()
-	runUserIterationReuseUser(t, sched, actions[:(actionsToAdd/2)])
+	counters.Sessions.Reset()
+	runUserIterationReuseUser(t, sched, actions[:(actionsToAdd/2)], counters)
 
 	result := *resultP
 	t.Log("results:", result)
@@ -174,24 +177,24 @@ func TestReuseUserRandomizer(t *testing.T) {
 	}
 }
 
-func runUserIteration(t *testing.T, sched *SimpleScheduler, actions []scenario.Action) {
+func runUserIteration(t *testing.T, sched *SimpleScheduler, actions []scenario.Action, counters *statistics.ExecutionCounters) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	if err := sched.iterator(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
+	if err := sched.iterator(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone(), counters); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func runUserIterationReuseUser(t *testing.T, sched *SimpleScheduler, actions []scenario.Action) {
+func runUserIterationReuseUser(t *testing.T, sched *SimpleScheduler, actions []scenario.Action, counters *statistics.ExecutionCounters) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	if err := sched.iterator(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone()); err != nil {
+	if err := sched.iterator(ctx, time.Minute, nil, actions, "", users.NewUserGeneratorNone(), counters); err != nil {
 		t.Fatal(err)
 	}
 }
