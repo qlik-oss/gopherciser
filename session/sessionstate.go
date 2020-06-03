@@ -204,9 +204,9 @@ func (state *State) SetLogEntry(entry *logger.LogEntry) {
 	state.LogEntry = entry
 
 	if entry.ShouldLogTraffic() {
-		state.trafficLogger = enigmahandlers.NewTrafficLogger(entry)
+		state.trafficLogger = enigmahandlers.NewTrafficLogger(entry, state.Counters)
 	} else {
-		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter()
+		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter(state.Counters)
 	}
 
 	state.Rest = NewRestHandler(state.ctx, 64, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)

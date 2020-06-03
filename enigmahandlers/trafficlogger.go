@@ -2,8 +2,8 @@ package enigmahandlers
 
 import (
 	"github.com/qlik-oss/gopherciser/atomichandlers"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (
@@ -11,15 +11,17 @@ type (
 	TrafficLogger struct {
 		LogEntry *logger.LogEntry
 		Requests *atomichandlers.AtomicCounter
+		Counters *statistics.ExecutionCounters
 	}
 )
 
 // NewTrafficLogger create new instance of traffic logger with default values
-func NewTrafficLogger(logEntry *logger.LogEntry) *TrafficLogger {
+func NewTrafficLogger(logEntry *logger.LogEntry, counters *statistics.ExecutionCounters) *TrafficLogger {
 	var req atomichandlers.AtomicCounter
 	return &TrafficLogger{
 		LogEntry: logEntry,
 		Requests: &req,
+		Counters: counters,
 	}
 }
 
@@ -32,9 +34,9 @@ func (tl *TrafficLogger) Opened() {
 func (tl *TrafficLogger) Sent(message []byte) {
 	tl.LogEntry.LogDetail(logger.TrafficLevel, string(message), "Sent")
 	if tl.Requests != nil {
-		tl.Requests.Inc()
+		tl.Requests.Inc() // Increase local request counter
 	}
-	globals.Requests.Inc()
+	tl.Counters.Requests.Inc() // Increase execution wide request counter
 }
 
 // Received message received on socket

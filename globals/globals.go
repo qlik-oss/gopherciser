@@ -19,7 +19,7 @@ var (
 	// ActionID - Unique global action id
 	//ActionID atomichandlers.AtomicCounter
 	// Requests - Total requests sent
-	Requests atomichandlers.AtomicCounter
+	//Requests atomichandlers.AtomicCounter
 	// ActiveUsers - Currently active users
 	ActiveUsers atomichandlers.AtomicCounter
 	// AppCounter -  App counter for round robin access
