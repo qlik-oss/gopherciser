@@ -24,17 +24,13 @@ func (handler *AutoChartHandler) Instance(id string) ObjectHandlerInstance {
 
 // GetObject implement ObjectHandler interface
 func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
-	instance.GetObjectLayout(sessionState, actionState, obj)
+	instance.GetObjectLayout(sessionState, actionState, obj, genObj)
 	handleAutoChart(sessionState, actionState, genObj, obj)
 }
 
 // GetObjectLayout for auto-chart main object
-func (instance *AutoChartInstance) GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) {
+func (instance *AutoChartInstance) GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, enigmaObject *enigma.GenericObject) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
-		if !ok {
-			return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
-		}
 		sessionState.LogEntry.LogDebugf("Getting layout for object<%s> handle<%d> type<%s> START", obj.ID, obj.Handle, enigmaObject.GenericType)
 
 		rawLayout, layoutErr := sessionState.SendRequestRaw(actionState, enigmaObject.GetLayoutRaw)
