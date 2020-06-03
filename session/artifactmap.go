@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/logger"
 )
 
@@ -301,7 +300,7 @@ func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error)
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	appNumber := globals.AppCounter.Inc() - 1
+	appNumber := sessionState.Counters.AppCounter.Inc() - 1
 	n := len(am.AppList)
 	if n < 1 {
 		return ArtifactEntry{}, errors.New("cannot select app round robin: ArtifactMap is empty")
