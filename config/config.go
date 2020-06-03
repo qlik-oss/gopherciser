@@ -558,7 +558,9 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 
 	// start statistics collection if summarylevel high enough
 	summaryType := cfg.Settings.LogSettings.getSummaryType()
-	setupStatistics(summaryType)
+	if err := cfg.setupStatistics(summaryType); err != nil {
+		return errors.WithStack(err)
+	}
 
 	// Log test summary after test is done
 	defer summary(log, summaryType, time.Now(), &cfg.Counters)
@@ -570,6 +572,18 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 		return errors.WithStack(execErr)
 	}
 
+	return nil
+}
+
+func (cfg *Config) setupStatistics(summary SummaryType) error {
+	switch summary {
+	case SummaryTypeExtended:
+		cfg.Counters.StatisticsCollector = statistics.NewCollector()
+		return errors.WithStack(cfg.Counters.StatisticsCollector.SetLevel(statistics.StatsLevelOn))
+	case SummaryTypeFull:
+		cfg.Counters.StatisticsCollector = statistics.NewCollector()
+		return errors.WithStack(cfg.Counters.StatisticsCollector.SetLevel(statistics.StatsLevelFull))
+	}
 	return nil
 }
 
@@ -701,8 +715,8 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			{"Total users", "TotUsers", strconv.FormatUint(counters.Users.Current(), 10), ansiBoldBlue},
 			{"Total threads", "TotThreads", strconv.FormatUint(counters.Threads.Current(), 10), ansiBoldBlue},
 			{"Total sessions", "TotSesssions", strconv.FormatUint(counters.Sessions.Current(), 10), ansiBoldBlue},
-			{"Total apps opened", "OpenedApps", strconv.FormatUint(statistics.OpenedApps(), 10), ansiBoldBlue},
-			{"Total apps created", "CreatedApps", strconv.FormatUint(statistics.CreatedApps(), 10), ansiBoldBlue},
+			{"Total apps opened", "OpenedApps", strconv.FormatUint(counters.StatisticsCollector.OpenedApps(), 10), ansiBoldBlue},
+			{"Total apps created", "CreatedApps", strconv.FormatUint(counters.StatisticsCollector.CreatedApps(), 10), ansiBoldBlue},
 		}...)
 	default:
 		// default to simple summary
@@ -730,7 +744,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	buf.WriteString("\n")
 
 	summaryHeaders := make(SummaryHeader)
-	actionTblData := make([]SummaryActionDataEntry, 0, statistics.GlobalActionsLen())
+	actionTblData := make([]SummaryActionDataEntry, 0, counters.StatisticsCollector.ActionsLen())
 
 	// Create headers and default column sizes
 	summaryHeaders["actn"] = &SummaryHeaderEntry{"Action", 6}
@@ -746,7 +760,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 
 	// todo max column size and truncate?
 	// Calculate column lengths and fill data struct
-	statistics.ForEachAction(func(stats *statistics.ActionStats) {
+	counters.StatisticsCollector.ForEachAction(func(stats *statistics.ActionStats) {
 		// add data entry
 		resp, successful := stats.RespAvg.Average()
 		failed := stats.Failed.Current()
@@ -812,7 +826,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	buf.WriteString("\n")
 
 	summaryHeaders = make(SummaryHeader)
-	requestsTblData := make([]SummaryRequestDataEntry, 0, statistics.GlobalRESTRequestLen())
+	requestsTblData := make([]SummaryRequestDataEntry, 0, counters.StatisticsCollector.RESTRequestLen())
 
 	// Create headers and default column sizes
 	summaryHeaders["path"] = &SummaryHeaderEntry{"Endpoint", 8}
@@ -822,7 +836,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	summaryHeaders["sent"] = &SummaryHeaderEntry{"Sent (Bytes)", 11}
 	summaryHeaders["recvd"] = &SummaryHeaderEntry{"Received (Bytes)", 16}
 
-	statistics.ForEachRequest(func(stats *statistics.RequestStats) {
+	counters.StatisticsCollector.ForEachRequest(func(stats *statistics.RequestStats) {
 		resp, requests := stats.RespAvg.Average()
 		entry := SummaryRequestDataEntry{
 			Method:   stats.Method(),
@@ -897,15 +911,6 @@ func (header SummaryHeader) Col(key string, tbl *tabular.Table) {
 // ColRJ sets column (Right Justified) in table from header entry
 func (header SummaryHeader) ColRJ(key string, tbl *tabular.Table) {
 	tbl.ColRJ(key, header[key].FullName, header[key].ColSize)
-}
-
-func setupStatistics(summary SummaryType) {
-	switch summary {
-	case SummaryTypeExtended:
-		statistics.SetGlobalLevel(statistics.StatsLevelOn)
-	case SummaryTypeFull:
-		statistics.SetGlobalLevel(statistics.StatsLevelFull)
-	}
 }
 
 func setupOutputs(settings OutputsSettings) (string, error) {

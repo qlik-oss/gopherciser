@@ -594,7 +594,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 	// get request statics collector
 	var requestStats *statistics.RequestStats
 	if req.URL != nil && req.URL.Path != "" {
-		requestStats = statistics.GetOrAddGlobalRequestStats(req.Method, req.URL.Path)
+		requestStats = transport.Counters.StatisticsCollector.GetOrAddRequestStats(req.Method, req.URL.Path)
 	}
 
 	if transport.LogEntry.ShouldLogTrafficMetrics() || requestStats != nil {

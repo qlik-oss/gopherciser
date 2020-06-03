@@ -17,7 +17,6 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (
@@ -487,7 +486,7 @@ func logResults(sessionState *session.State, isContainerAction, success bool, se
 		sessionState.LogEntry.LogInfo("containeractionend", "")
 	} else {
 		sessionState.LogEntry.LogResult(success, sessionState.EW.Warnings(), sessionState.EW.Errors(), sent, received, requests, responsetime, details)
-		actionStats := statistics.GetOrAddGlobalActionStats(sessionState.LogEntry.Action.Action, sessionState.LogEntry.Action.Label, sessionState.LogEntry.Session.AppGUID)
+		actionStats := sessionState.Counters.StatisticsCollector.GetOrAddActionStats(sessionState.LogEntry.Action.Action, sessionState.LogEntry.Action.Label, sessionState.LogEntry.Session.AppGUID)
 		if actionStats != nil {
 			actionStats.WarnCount.Add(sessionState.EW.Warnings())
 			actionStats.ErrCount.Add(sessionState.EW.Errors())

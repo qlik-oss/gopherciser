@@ -38,16 +38,19 @@ func TestConfigSummary(t *testing.T) {
 	// "dirty" summaries
 
 	// make dirty
-	statistics.SetGlobalLevel(statistics.StatsLevelOn)
+	counters.StatisticsCollector = statistics.NewCollector()
+	if err := counters.StatisticsCollector.SetLevel(statistics.StatsLevelOn); err != nil {
+		t.Fatal(err)
+	}
 	counters.Errors.Add(3)
 	counters.Warnings.Add(23)
 	counters.Users.Add(6)
 	counters.Threads.Add(4)
 	counters.Sessions.Add(666)
-	statistics.IncOpenedApps()
-	statistics.IncCreatedApps()
+	counters.StatisticsCollector.IncOpenedApps()
+	counters.StatisticsCollector.IncCreatedApps()
 
-	openStats := statistics.GetOrAddGlobalActionStats("openapp", "open my cool app", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
+	openStats := counters.StatisticsCollector.GetOrAddActionStats("openapp", "open my cool app", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
 	openStats.RespAvg.AddSample(uint64(time.Millisecond * 10))
 	openStats.Received.Add(123)
 	openStats.Sent.Add(123)
@@ -55,7 +58,7 @@ func TestConfigSummary(t *testing.T) {
 	openStats.WarnCount.Add(1)
 	openStats.Requests.Add(123)
 
-	chStats := statistics.GetOrAddGlobalActionStats("changesheet", "very very very very very very very very very very very very very long label", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
+	chStats := counters.StatisticsCollector.GetOrAddActionStats("changesheet", "very very very very very very very very very very very very very long label", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
 	chStats.RespAvg.AddSample(uint64(time.Minute*5 + 4*time.Millisecond))
 	chStats.Received.Add(123)
 	chStats.Sent.Add(123)
@@ -71,8 +74,10 @@ func TestConfigSummary(t *testing.T) {
 	summary(log, SummaryTypeExtended, startTime, counters)
 	fmt.Println()
 
-	statistics.SetGlobalLevel(statistics.StatsLevelFull)
-	usersStats := statistics.GetOrAddGlobalRequestStats("GET", "/api/v1/user/me")
+	if err := counters.StatisticsCollector.SetLevel(statistics.StatsLevelFull); err != nil {
+		t.Fatal(err)
+	}
+	usersStats := counters.StatisticsCollector.GetOrAddRequestStats("GET", "/api/v1/user/me")
 	usersStats.RespAvg.AddSample(uint64(time.Millisecond * 400))
 	usersStats.Received.Add(2)
 	usersStats.Sent.Add(432)
@@ -87,5 +92,4 @@ func TestConfigSummary(t *testing.T) {
 	counters.Users.Reset()
 	counters.Threads.Reset()
 	counters.Sessions.Reset()
-	statistics.DestroyGlobalCollector()
 }

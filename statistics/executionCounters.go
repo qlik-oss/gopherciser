@@ -3,6 +3,7 @@ package statistics
 import "github.com/qlik-oss/gopherciser/atomichandlers"
 
 type (
+	// ExecutionCounters counts values during a execution
 	ExecutionCounters struct {
 		// Threads - Total started threads
 		Threads atomichandlers.AtomicCounter
@@ -24,5 +25,7 @@ type (
 		AppCounter atomichandlers.AtomicCounter
 		// RestRequestID - Added to REST traffic log to connect Request and Response
 		RestRequestID atomichandlers.AtomicCounter
+		// StatisticsCollector optional collection of statistics
+		StatisticsCollector *Collector
 	}
 )

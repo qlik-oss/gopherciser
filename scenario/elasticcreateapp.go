@@ -9,7 +9,6 @@ import (
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (
@@ -71,7 +70,7 @@ func (settings ElasticCreateAppSettings) Execute(sessionState *session.State, ac
 	}
 
 	// Update created apps global counter
-	statistics.IncCreatedApps()
+	sessionState.Counters.StatisticsCollector.IncCreatedApps()
 
 	appImportResponseRaw := postApp.ResponseBody
 	var appImportResponse elasticstructs.AppImportResponse
