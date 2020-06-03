@@ -3,7 +3,6 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/statistics"
 	"os"
 	"time"
 
@@ -13,11 +12,11 @@ import (
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -175,8 +174,8 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 		userName = user.UserName
 	}
 
-	globals.ActiveUsers.Inc()
-	defer globals.ActiveUsers.Dec()
+	counters.ActiveUsers.Inc()
+	defer counters.ActiveUsers.Dec()
 
 	buildmetrics.AddUser()
 	defer buildmetrics.RemoveUser()

@@ -21,7 +21,7 @@ var (
 	// Requests - Total requests sent
 	//Requests atomichandlers.AtomicCounter
 	// ActiveUsers - Currently active users
-	ActiveUsers atomichandlers.AtomicCounter
+	//ActiveUsers atomichandlers.AtomicCounter
 	// AppCounter -  App counter for round robin access
 	AppCounter atomichandlers.AtomicCounter
 	// RestRequestID - Added to REST traffic log to connect Request and Response

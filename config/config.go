@@ -17,7 +17,6 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
@@ -1048,7 +1047,7 @@ func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan cha
 			errorColor, "Err<", strconv.FormatUint(myErrors, 10), ">", ansiReset,
 			ansiStatus, " ",
 			warningColor, "Warn<", strconv.FormatUint(warnings, 10), ">", ansiReset,
-			ansiStatus, " ActvSess<", strconv.FormatUint(globals.ActiveUsers.Current(), 10), ">",
+			ansiStatus, " ActvSess<", strconv.FormatUint(counters.ActiveUsers.Current(), 10), ">",
 			" TotSess<", strconv.FormatUint(counters.Sessions.Current(), 10), ">",
 			" Actns<", strconv.FormatUint(counters.ActionID.Current(), 10), ">",
 			" Reqs<", strconv.FormatUint(counters.Requests.Current(), 10), ">",
