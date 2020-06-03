@@ -17,7 +17,7 @@ var (
 	// Warnings - Total warnings
 	//Warnings atomichandlers.AtomicCounter
 	// ActionID - Unique global action id
-	ActionID atomichandlers.AtomicCounter
+	//ActionID atomichandlers.AtomicCounter
 	// Requests - Total requests sent
 	Requests atomichandlers.AtomicCounter
 	// ActiveUsers - Currently active users

@@ -651,7 +651,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 
 	errs := counters.Errors.Current()
 	warnings := counters.Warnings.Current()
-	actions := strconv.FormatUint(globals.ActionID.Current(), 10)
+	actions := strconv.FormatUint(counters.ActionID.Current(), 10)
 	requests := strconv.FormatUint(globals.Requests.Current(), 10)
 
 	entry.LogErrorReport("TotErrWarn", errs, warnings)
@@ -1050,7 +1050,7 @@ func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan cha
 			warningColor, "Warn<", strconv.FormatUint(warnings, 10), ">", ansiReset,
 			ansiStatus, " ActvSess<", strconv.FormatUint(globals.ActiveUsers.Current(), 10), ">",
 			" TotSess<", strconv.FormatUint(counters.Sessions.Current(), 10), ">",
-			" Actns<", strconv.FormatUint(globals.ActionID.Current(), 10), ">",
+			" Actns<", strconv.FormatUint(counters.ActionID.Current(), 10), ">",
 			" Reqs<", strconv.FormatUint(globals.Requests.Current(), 10), ">",
 			ansiReset, "\n",
 		}

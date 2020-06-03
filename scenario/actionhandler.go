@@ -14,7 +14,6 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
@@ -370,7 +369,7 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 func (act *Action) startAction(sessionState *session.State) *logger.ActionEntry {
 	actionEntry := &logger.ActionEntry{
 		Action:   act.Type,
-		ActionID: globals.ActionID.Inc(),
+		ActionID: sessionState.Counters.ActionID.Inc(),
 		Label:    act.Label,
 	}
 	act.setActionStart(sessionState, actionEntry, "START")
