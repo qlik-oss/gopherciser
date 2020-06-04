@@ -558,7 +558,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 
 	// start statistics collection if summarylevel high enough
 	summaryType := cfg.Settings.LogSettings.getSummaryType()
-	if err := cfg.setupStatistics(summaryType); err != nil {
+	if err := cfg.SetupStatistics(summaryType); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -575,7 +575,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	return nil
 }
 
-func (cfg *Config) setupStatistics(summary SummaryType) error {
+func (cfg *Config) SetupStatistics(summary SummaryType) error {
 	switch summary {
 	case SummaryTypeExtended:
 		cfg.Counters.StatisticsCollector = statistics.NewCollector()
