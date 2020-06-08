@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"testing"
 	"time"
 
@@ -66,7 +67,8 @@ func TestIterated(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	session := session.New(ctx, "", time.Second*10, nil, 1, 1, "", false)
+	counters := &statistics.ExecutionCounters{}
+	session := session.New(ctx, "", time.Second*10, nil, 1, 1, "", false, counters)
 	defer session.Disconnect()
 
 	session.Connection = new(enigmahandlers.SenseConnection)

@@ -543,7 +543,7 @@ func TestCustomLogger(t *testing.T) {
 
 	t.Run("debugLevel", func(t *testing.T) {
 		expected := append(expectedInfoLevel, []writerEntry{
-			{logger.InfoLevel, "", "8", "TotActions", ""},
+			{logger.InfoLevel, "", "4", "TotActions", ""},
 			{logger.DebugLevel, "", "Disconnect session", "", "user1"},
 			{logger.DebugLevel, "", "Disconnect session", "", "user2"},
 			{logger.DebugLevel, "", "Disconnect session", "", "user3"},
@@ -572,7 +572,7 @@ func TestCustomLogger(t *testing.T) {
 
 	t.Run("trafficLog", func(t *testing.T) {
 		expected := append(expectedInfoLevel, []writerEntry{
-			{logger.InfoLevel, "", "12", "TotActions", ""},
+			{logger.InfoLevel, "", "4", "TotActions", ""},
 			{logger.TrafficLevel, "Sent", "traffic message", "", "user1"},
 			{logger.MetricsLevel, "WS1GetListObjectData", "", "", "user1"},
 		}...)

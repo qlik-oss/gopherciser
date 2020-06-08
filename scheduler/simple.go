@@ -2,13 +2,13 @@ package scheduler
 
 import (
 	"context"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
@@ -57,8 +57,8 @@ func (sched SimpleScheduler) Validate() error {
 }
 
 // Execute execute schedule
-func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeout time.Duration,
-	scenario []scenario.Action, outputsDir string, users users.UserGenerator, connectionSettings *connection.ConnectionSettings) (err error) {
+func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeout time.Duration, scenario []scenario.Action, outputsDir string,
+	users users.UserGenerator, connectionSettings *connection.ConnectionSettings, counters *statistics.ExecutionCounters) (err error) {
 
 	sched.connectionSettings = connectionSettings
 
@@ -94,7 +94,7 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 		go func() {
 			defer wg.Done()
 
-			if err := sched.iterator(ctx, timeout, log, scenario, outputsDir, users); err != nil {
+			if err := sched.iterator(ctx, timeout, log, scenario, outputsDir, users, counters); err != nil {
 				func() { // wrapped in function to minimize locking time
 					mErrLock.Lock()
 					defer mErrLock.Unlock()
@@ -110,9 +110,13 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 }
 
 func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration, log *logger.Log,
-	scenario []scenario.Action, outputsDir string, users users.UserGenerator) (err error) {
+	scenario []scenario.Action, outputsDir string, users users.UserGenerator, counters *statistics.ExecutionCounters) (err error) {
 
-	thread := globals.Threads.Inc()
+	if counters == nil {
+		return errors.New("execution counters are nil")
+	}
+
+	thread := counters.Threads.Inc()
 
 	var (
 		mErr            *multierror.Error
@@ -136,8 +140,8 @@ func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration
 			break
 		}
 
-		user := users.GetNext()
-		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed)
+		user := users.GetNext(counters)
+		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed, counters)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}

@@ -206,7 +206,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	}
 	logSettings.FileName = *stmpl
 
-	log, err := setupLogging(ctx, logSettings, nil, nil)
+	log, err := setupLogging(ctx, logSettings, nil, nil, &cfg.Counters)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -215,7 +215,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	logEntry.Log(logger.DebugLevel, fmt.Sprintf("outputs folder: %s", outputsDir))
 
 	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
-	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings); err != nil {
+	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters); err != nil {
 		return errors.WithStack(err)
 	}
 

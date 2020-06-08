@@ -10,15 +10,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/action"
-
 	"github.com/InVisionApp/tabular"
 	"github.com/buger/jsonparser"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
@@ -105,6 +103,8 @@ type (
 
 		// CustomLoggers list of custom loggers.
 		CustomLoggers []*logger.Logger `json:"-"`
+		// Counters
+		Counters statistics.ExecutionCounters `json:"-"`
 	}
 
 	//SummaryEntry title, value and color combo for summary printout
@@ -330,6 +330,7 @@ func NewExampleConfig() (*Config, error) {
 			},
 		},
 		nil,
+		statistics.ExecutionCounters{},
 	}
 
 	return cfg, nil
@@ -381,6 +382,7 @@ func NewEmptyConfig() (*Config, error) {
 			},
 		},
 		nil,
+		statistics.ExecutionCounters{},
 	}
 
 	return cfg, nil
@@ -403,7 +405,6 @@ func (cfg *Config) UnmarshalJSON(arg []byte) error {
 	if err != nil {
 		return errors.Wrap(err, "failed unmarhaling scheduler")
 	}
-
 	return nil
 }
 
@@ -463,16 +464,17 @@ func (cfg *Config) Validate() error {
 }
 
 func (cfg *Config) TestConnection(ctx context.Context) error {
-	user := cfg.LoginSettings.GetNext()
+	user := cfg.LoginSettings.GetNext(&cfg.Counters)
 	cfg.Settings.LogSettings.Format = LogFormatNoLogs
-	log, err := setupLogging(ctx, cfg.Settings.LogSettings, cfg.CustomLoggers, nil)
+	log, err := setupLogging(ctx, cfg.Settings.LogSettings, cfg.CustomLoggers, nil, nil)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	if log == nil {
 		return errors.New("setup logging returned nil logger")
 	}
-	sessionState := session.New(ctx, "", time.Duration(cfg.Settings.Timeout)*time.Second, user, 1, 1, cfg.ConnectionSettings.VirtualProxy, false)
+	sessionState := session.New(ctx, "", time.Duration(cfg.Settings.Timeout)*time.Second, user, 1, 1,
+		cfg.ConnectionSettings.VirtualProxy, false, &cfg.Counters)
 	logEntry := log.NewLogEntry()
 	sessionState.SetLogEntry(logEntry)
 	sessionState.LogEntry.Session = &logger.SessionEntry{}
@@ -523,7 +525,7 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error {
 	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
 	// Setup logging
-	log, err := setupLogging(ctx, cfg.Settings.LogSettings, cfg.CustomLoggers, templateData)
+	log, err := setupLogging(ctx, cfg.Settings.LogSettings, cfg.CustomLoggers, templateData, &cfg.Counters)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -556,18 +558,32 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 
 	// start statistics collection if summarylevel high enough
 	summaryType := cfg.Settings.LogSettings.getSummaryType()
-	setupStatistics(summaryType)
+	if err := cfg.SetupStatistics(summaryType); err != nil {
+		return errors.WithStack(err)
+	}
 
 	// Log test summary after test is done
-	defer summary(log, summaryType, time.Now())
+	defer summary(log, summaryType, time.Now(), &cfg.Counters)
 
 	execErr := cfg.Scheduler.Execute(
-		ctx, log, timeout, cfg.Scenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings,
+		ctx, log, timeout, cfg.Scenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters,
 	)
 	if execErr != nil {
 		return errors.WithStack(execErr)
 	}
 
+	return nil
+}
+
+func (cfg *Config) SetupStatistics(summary SummaryType) error {
+	switch summary {
+	case SummaryTypeExtended:
+		cfg.Counters.StatisticsCollector = statistics.NewCollector()
+		return errors.WithStack(cfg.Counters.StatisticsCollector.SetLevel(statistics.StatsLevelOn))
+	case SummaryTypeFull:
+		cfg.Counters.StatisticsCollector = statistics.NewCollector()
+		return errors.WithStack(cfg.Counters.StatisticsCollector.SetLevel(statistics.StatsLevelFull))
+	}
 	return nil
 }
 
@@ -641,15 +657,15 @@ func (summary *SummaryType) EntryEnd() string {
 	}
 }
 
-func summary(log *logger.Log, summary SummaryType, startTime time.Time) {
+func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters *statistics.ExecutionCounters) {
 	testDuration := time.Since(startTime)
 
 	entry := logger.NewLogEntry(log)
 
-	errs := globals.Errors.Current()
-	warnings := globals.Warnings.Current()
-	actions := strconv.FormatUint(globals.ActionID.Current(), 10)
-	requests := strconv.FormatUint(globals.Requests.Current(), 10)
+	errs := counters.Errors.Current()
+	warnings := counters.Warnings.Current()
+	actions := strconv.FormatUint(counters.ActionID.Current(), 10)
+	requests := strconv.FormatUint(counters.Requests.Current(), 10)
 
 	entry.LogErrorReport("TotErrWarn", errs, warnings)
 	entry.LogInfo("TotActions", actions)
@@ -696,11 +712,11 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time) {
 		return
 	case SummaryTypeFull, SummaryTypeExtended:
 		summaryData = append(summaryData, []SummaryEntry{
-			{"Total users", "TotUsers", strconv.FormatUint(globals.Users.Current(), 10), ansiBoldBlue},
-			{"Total threads", "TotThreads", strconv.FormatUint(globals.Threads.Current(), 10), ansiBoldBlue},
-			{"Total sessions", "TotSesssions", strconv.FormatUint(globals.Sessions.Current(), 10), ansiBoldBlue},
-			{"Total apps opened", "OpenedApps", strconv.FormatUint(statistics.OpenedApps(), 10), ansiBoldBlue},
-			{"Total apps created", "CreatedApps", strconv.FormatUint(statistics.CreatedApps(), 10), ansiBoldBlue},
+			{"Total users", "TotUsers", strconv.FormatUint(counters.Users.Current(), 10), ansiBoldBlue},
+			{"Total threads", "TotThreads", strconv.FormatUint(counters.Threads.Current(), 10), ansiBoldBlue},
+			{"Total sessions", "TotSesssions", strconv.FormatUint(counters.Sessions.Current(), 10), ansiBoldBlue},
+			{"Total apps opened", "OpenedApps", strconv.FormatUint(counters.StatisticsCollector.OpenedApps(), 10), ansiBoldBlue},
+			{"Total apps created", "CreatedApps", strconv.FormatUint(counters.StatisticsCollector.CreatedApps(), 10), ansiBoldBlue},
 		}...)
 	default:
 		// default to simple summary
@@ -728,7 +744,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time) {
 	buf.WriteString("\n")
 
 	summaryHeaders := make(SummaryHeader)
-	actionTblData := make([]SummaryActionDataEntry, 0, statistics.GlobalActionsLen())
+	actionTblData := make([]SummaryActionDataEntry, 0, counters.StatisticsCollector.ActionsLen())
 
 	// Create headers and default column sizes
 	summaryHeaders["actn"] = &SummaryHeaderEntry{"Action", 6}
@@ -744,7 +760,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time) {
 
 	// todo max column size and truncate?
 	// Calculate column lengths and fill data struct
-	statistics.ForEachAction(func(stats *statistics.ActionStats) {
+	counters.StatisticsCollector.ForEachAction(func(stats *statistics.ActionStats) {
 		// add data entry
 		resp, successful := stats.RespAvg.Average()
 		failed := stats.Failed.Current()
@@ -810,7 +826,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time) {
 	buf.WriteString("\n")
 
 	summaryHeaders = make(SummaryHeader)
-	requestsTblData := make([]SummaryRequestDataEntry, 0, statistics.GlobalRESTRequestLen())
+	requestsTblData := make([]SummaryRequestDataEntry, 0, counters.StatisticsCollector.RESTRequestLen())
 
 	// Create headers and default column sizes
 	summaryHeaders["path"] = &SummaryHeaderEntry{"Endpoint", 8}
@@ -820,7 +836,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time) {
 	summaryHeaders["sent"] = &SummaryHeaderEntry{"Sent (Bytes)", 11}
 	summaryHeaders["recvd"] = &SummaryHeaderEntry{"Received (Bytes)", 16}
 
-	statistics.ForEachRequest(func(stats *statistics.RequestStats) {
+	counters.StatisticsCollector.ForEachRequest(func(stats *statistics.RequestStats) {
 		resp, requests := stats.RespAvg.Average()
 		entry := SummaryRequestDataEntry{
 			Method:   stats.Method(),
@@ -897,15 +913,6 @@ func (header SummaryHeader) ColRJ(key string, tbl *tabular.Table) {
 	tbl.ColRJ(key, header[key].FullName, header[key].ColSize)
 }
 
-func setupStatistics(summary SummaryType) {
-	switch summary {
-	case SummaryTypeExtended:
-		statistics.SetGlobalLevel(statistics.StatsLevelOn)
-	case SummaryTypeFull:
-		statistics.SetGlobalLevel(statistics.StatsLevelFull)
-	}
-}
-
 func setupOutputs(settings OutputsSettings) (string, error) {
 	if settings.Dir == "" {
 		return "", nil
@@ -935,7 +942,7 @@ func addTSVFileLogger(log *logger.Log, filename string) error {
 	return nil
 }
 
-func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*logger.Logger, templateData interface{}) (*logger.Log, error) {
+func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*logger.Logger, templateData interface{}, counters *statistics.ExecutionCounters) (*logger.Log, error) {
 	log := logger.NewLog(logger.LogSettings{
 		Traffic: settings.Traffic,
 		Metrics: settings.TrafficMetrics,
@@ -993,7 +1000,7 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 
 	if settings.shouldLogStatus() {
 		// status output
-		go statusPrinter(ctx, 10*time.Second, log.Closed)
+		go statusPrinter(ctx, 10*time.Second, log.Closed, counters)
 	}
 
 	if settings.TrafficMetrics {
@@ -1017,15 +1024,15 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 }
 
 // statusPrinter should be started as goroutine
-func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan chan interface{}) {
+func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan chan interface{}, counters *statistics.ExecutionCounters) {
 	errorColor := ansiStatus
 	warningColor := ansiStatus
 
 	buf := helpers.NewBuffer()
 
 	for {
-		myErrors := globals.Errors.Current()
-		warnings := globals.Warnings.Current()
+		myErrors := counters.Errors.Current()
+		warnings := counters.Warnings.Current()
 
 		if myErrors > 0 {
 			errorColor = ansiBoldRed
@@ -1045,10 +1052,10 @@ func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan cha
 			errorColor, "Err<", strconv.FormatUint(myErrors, 10), ">", ansiReset,
 			ansiStatus, " ",
 			warningColor, "Warn<", strconv.FormatUint(warnings, 10), ">", ansiReset,
-			ansiStatus, " ActvSess<", strconv.FormatUint(globals.ActiveUsers.Current(), 10), ">",
-			" TotSess<", strconv.FormatUint(globals.Sessions.Current(), 10), ">",
-			" Actns<", strconv.FormatUint(globals.ActionID.Current(), 10), ">",
-			" Reqs<", strconv.FormatUint(globals.Requests.Current(), 10), ">",
+			ansiStatus, " ActvSess<", strconv.FormatUint(counters.ActiveUsers.Current(), 10), ">",
+			" TotSess<", strconv.FormatUint(counters.Sessions.Current(), 10), ">",
+			" Actns<", strconv.FormatUint(counters.ActionID.Current(), 10), ">",
+			" Reqs<", strconv.FormatUint(counters.Requests.Current(), 10), ">",
 			ansiReset, "\n",
 		}
 

@@ -3,16 +3,15 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/appstructure"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (
@@ -124,8 +123,8 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
-	// Update opened apps global counter
-	statistics.IncOpenedApps()
+	// Update opened apps counter
+	sessionState.Counters.StatisticsCollector.IncOpenedApps()
 
 	setOpenStart()
 	actionState.NoResults = false // make sure to report results for main action

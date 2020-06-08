@@ -12,11 +12,11 @@ import (
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -34,6 +34,7 @@ type (
 			string, // outputsDir
 			users.UserGenerator,
 			*connection.ConnectionSettings,
+			*statistics.ExecutionCounters,
 		) error
 		RequireScenario() bool
 	}
@@ -127,7 +128,7 @@ func setLogEntry(sessionState *session.State, log *logger.Log, session, thread u
 func onError(sessionState *session.State) func(entry *logger.LogEntry) bool {
 	return func(entry *logger.LogEntry) bool {
 		sessionState.EW.IncErr()
-		globals.Errors.Inc()
+		sessionState.Counters.Errors.Inc()
 		if sessionState.LogEntry != nil && sessionState.LogEntry.Action != nil {
 			buildmetrics.ReportError(sessionState.LogEntry.Action.Action, sessionState.LogEntry.Action.Label)
 		}
@@ -138,7 +139,7 @@ func onError(sessionState *session.State) func(entry *logger.LogEntry) bool {
 func onWarning(sessionState *session.State) func(entry *logger.LogEntry) bool {
 	return func(entry *logger.LogEntry) bool {
 		sessionState.EW.IncWarn()
-		globals.Warnings.Inc()
+		sessionState.Counters.Warnings.Inc()
 		if sessionState.LogEntry != nil && sessionState.LogEntry.Action != nil {
 			buildmetrics.ReportWarning(sessionState.LogEntry.Action.Action, sessionState.LogEntry.Action.Label)
 		}
@@ -155,10 +156,10 @@ func (sched *Scheduler) Validate() error {
 	return sched.TimeBuf.Validate()
 }
 
-func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log,
-	userScenario []scenario.Action, thread uint64, outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool) error {
+func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
+	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) error {
 
-	sessionID := globals.Sessions.Inc()
+	sessionID := counters.Sessions.Inc()
 	instanceID := sched.InstanceNumber
 	if instanceID < 1 {
 		instanceID = 1
@@ -166,15 +167,15 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	var iteration int
 	var mErr *multierror.Error
 
-	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.connectionSettings.VirtualProxy, onlyInstanceSeed)
+	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.connectionSettings.VirtualProxy, onlyInstanceSeed, counters)
 
 	userName := ""
 	if user != nil {
 		userName = user.UserName
 	}
 
-	globals.ActiveUsers.Inc()
-	defer globals.ActiveUsers.Dec()
+	counters.ActiveUsers.Inc()
+	defer counters.ActiveUsers.Dec()
 
 	buildmetrics.AddUser()
 	defer buildmetrics.RemoveUser()
@@ -192,7 +193,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 		}
 
 		if iteration > 1 {
-			sessionID := globals.Sessions.Inc()
+			sessionID := counters.Sessions.Inc()
 			sessionState.Randomizer().Reset(instanceID, sessionID, onlyInstanceSeed)
 		}
 

@@ -21,7 +21,6 @@ import (
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -546,7 +545,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 		isApp = contentIsBinary(req.Header)
 	}
 
-	requestID := globals.RestRequestID.Inc()
+	requestID := transport.Counters.RestRequestID.Inc()
 
 	reqSize := int64(0)
 	if req.ContentLength > 0 {
@@ -595,7 +594,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 	// get request statics collector
 	var requestStats *statistics.RequestStats
 	if req.URL != nil && req.URL.Path != "" {
-		requestStats = statistics.GetOrAddGlobalRequestStats(req.Method, req.URL.Path)
+		requestStats = transport.Counters.StatisticsCollector.GetOrAddRequestStats(req.Method, req.URL.Path)
 	}
 
 	if transport.LogEntry.ShouldLogTrafficMetrics() || requestStats != nil {

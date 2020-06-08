@@ -14,11 +14,9 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (
@@ -370,7 +368,7 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 func (act *Action) startAction(sessionState *session.State) *logger.ActionEntry {
 	actionEntry := &logger.ActionEntry{
 		Action:   act.Type,
-		ActionID: globals.ActionID.Inc(),
+		ActionID: sessionState.Counters.ActionID.Inc(),
 		Label:    act.Label,
 	}
 	act.setActionStart(sessionState, actionEntry, "START")
@@ -488,7 +486,7 @@ func logResults(sessionState *session.State, isContainerAction, success bool, se
 		sessionState.LogEntry.LogInfo("containeractionend", "")
 	} else {
 		sessionState.LogEntry.LogResult(success, sessionState.EW.Warnings(), sessionState.EW.Errors(), sent, received, requests, responsetime, details)
-		actionStats := statistics.GetOrAddGlobalActionStats(sessionState.LogEntry.Action.Action, sessionState.LogEntry.Action.Label, sessionState.LogEntry.Session.AppGUID)
+		actionStats := sessionState.Counters.StatisticsCollector.GetOrAddActionStats(sessionState.LogEntry.Action.Action, sessionState.LogEntry.Action.Label, sessionState.LogEntry.Session.AppGUID)
 		if actionStats != nil {
 			actionStats.WarnCount.Add(sessionState.EW.Warnings())
 			actionStats.ErrCount.Add(sessionState.EW.Errors())

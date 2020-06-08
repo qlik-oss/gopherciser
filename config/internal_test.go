@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/statistics"
 )
@@ -20,33 +19,38 @@ func TestConfigSummary(t *testing.T) {
 
 	startTime := time.Now().Add(-5 * time.Minute)
 
+	counters := &statistics.ExecutionCounters{}
+
 	// clean summaries
 
 	fmt.Println("simple (clean):")
-	summary(log, SummaryTypeSimple, startTime)
+	summary(log, SummaryTypeSimple, startTime, counters)
 	fmt.Println()
 
 	fmt.Println("extended (clean):")
-	summary(log, SummaryTypeExtended, startTime)
+	summary(log, SummaryTypeExtended, startTime, counters)
 	fmt.Println()
 
 	fmt.Println("full (clean):")
-	summary(log, SummaryTypeFull, startTime)
+	summary(log, SummaryTypeFull, startTime, counters)
 	fmt.Println()
 
 	// "dirty" summaries
 
 	// make dirty
-	statistics.SetGlobalLevel(statistics.StatsLevelOn)
-	globals.Errors.Add(3)
-	globals.Warnings.Add(23)
-	globals.Users.Add(6)
-	globals.Threads.Add(4)
-	globals.Sessions.Add(666)
-	statistics.IncOpenedApps()
-	statistics.IncCreatedApps()
+	counters.StatisticsCollector = statistics.NewCollector()
+	if err := counters.StatisticsCollector.SetLevel(statistics.StatsLevelOn); err != nil {
+		t.Fatal(err)
+	}
+	counters.Errors.Add(3)
+	counters.Warnings.Add(23)
+	counters.Users.Add(6)
+	counters.Threads.Add(4)
+	counters.Sessions.Add(666)
+	counters.StatisticsCollector.IncOpenedApps()
+	counters.StatisticsCollector.IncCreatedApps()
 
-	openStats := statistics.GetOrAddGlobalActionStats("openapp", "open my cool app", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
+	openStats := counters.StatisticsCollector.GetOrAddActionStats("openapp", "open my cool app", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
 	openStats.RespAvg.AddSample(uint64(time.Millisecond * 10))
 	openStats.Received.Add(123)
 	openStats.Sent.Add(123)
@@ -54,7 +58,7 @@ func TestConfigSummary(t *testing.T) {
 	openStats.WarnCount.Add(1)
 	openStats.Requests.Add(123)
 
-	chStats := statistics.GetOrAddGlobalActionStats("changesheet", "very very very very very very very very very very very very very long label", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
+	chStats := counters.StatisticsCollector.GetOrAddActionStats("changesheet", "very very very very very very very very very very very very very long label", "dc2c9170-871d-4093-b4cf-df6c1fcb1c01")
 	chStats.RespAvg.AddSample(uint64(time.Minute*5 + 4*time.Millisecond))
 	chStats.Received.Add(123)
 	chStats.Sent.Add(123)
@@ -63,28 +67,29 @@ func TestConfigSummary(t *testing.T) {
 	chStats.Requests.Add(123)
 
 	fmt.Println("simple (dirty):")
-	summary(log, SummaryTypeSimple, startTime)
+	summary(log, SummaryTypeSimple, startTime, counters)
 	fmt.Println()
 
 	fmt.Println("extended (dirty):")
-	summary(log, SummaryTypeExtended, startTime)
+	summary(log, SummaryTypeExtended, startTime, counters)
 	fmt.Println()
 
-	statistics.SetGlobalLevel(statistics.StatsLevelFull)
-	usersStats := statistics.GetOrAddGlobalRequestStats("GET", "/api/v1/user/me")
+	if err := counters.StatisticsCollector.SetLevel(statistics.StatsLevelFull); err != nil {
+		t.Fatal(err)
+	}
+	usersStats := counters.StatisticsCollector.GetOrAddRequestStats("GET", "/api/v1/user/me")
 	usersStats.RespAvg.AddSample(uint64(time.Millisecond * 400))
 	usersStats.Received.Add(2)
 	usersStats.Sent.Add(432)
 
 	fmt.Println("full (dirty):")
-	summary(log, SummaryTypeFull, startTime)
+	summary(log, SummaryTypeFull, startTime, counters)
 	fmt.Println()
 
 	// Reset global counter to not effect other tests
-	globals.Errors.Reset()
-	globals.Warnings.Reset()
-	globals.Users.Reset()
-	globals.Threads.Reset()
-	globals.Sessions.Reset()
-	statistics.DestroyGlobalCollector()
+	counters.Errors.Reset()
+	counters.Warnings.Reset()
+	counters.Users.Reset()
+	counters.Threads.Reset()
+	counters.Sessions.Reset()
 }

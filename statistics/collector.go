@@ -1,6 +1,7 @@
 package statistics
 
 import (
+	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -11,19 +12,18 @@ type (
 
 	// Collector of statistics
 	Collector struct {
-		Counters
 		Actions      ActionStatsMap
 		RestRequests RequestStatsMap
 		Level        StatsLevel
 
+		// totOpenedApps increases each time an app is opened
+		totOpenedApps atomichandlers.AtomicCounter
+		// totCreatedApps increases each time ann app is created
+		totCreatedApps atomichandlers.AtomicCounter
+
 		actionsLock  sync.RWMutex
 		requestsLock sync.RWMutex
 	}
-)
-
-var (
-	// globalCollector global collector of statistics (allocated by SetGlobalLevel)
-	globalCollector *Collector
 )
 
 // StatsLevel enum
@@ -36,7 +36,6 @@ const (
 // NewCollector of statistics
 func NewCollector() *Collector {
 	return &Collector{
-		Counters:     Counters{},
 		Actions:      make(ActionStatsMap),
 		RestRequests: make(RequestStatsMap),
 		actionsLock:  sync.RWMutex{},
@@ -77,11 +76,6 @@ func (collector *Collector) readActionWithKey(key string) *ActionStats {
 	return collector.Actions[key]
 }
 
-// GetOrAddActionStats from action map of global collector, returns nil if statistics is turned off
-func GetOrAddGlobalActionStats(name, label, appGUID string) *ActionStats {
-	return globalCollector.GetOrAddActionStats(name, label, appGUID)
-}
-
 // GetOrAddRequestStats from REST request map, returns nil if StatsLevel is lower than "full"
 func (collector *Collector) GetOrAddRequestStats(method, path string) *RequestStats {
 	if collector == nil || !collector.IsFull() {
@@ -115,11 +109,6 @@ func (collector *Collector) readRequestWithKey(key string) *RequestStats {
 	return collector.RestRequests[key]
 }
 
-// GetOrAddGlobalRequestStats from REST request map of global collector, returns nil if StatsLevel is lower than "full"
-func GetOrAddGlobalRequestStats(method, path string) *RequestStats {
-	return globalCollector.GetOrAddRequestStats(method, path)
-}
-
 // SetLevel of statistics collected
 func (collector *Collector) SetLevel(level StatsLevel) error {
 	if collector == nil {
@@ -127,14 +116,6 @@ func (collector *Collector) SetLevel(level StatsLevel) error {
 	}
 	collector.Level = level
 	return nil
-}
-
-// SetGlobalLevel of statistics collected of global collector
-func SetGlobalLevel(level StatsLevel) {
-	if globalCollector == nil {
-		globalCollector = NewCollector()
-	}
-	_ = globalCollector.SetLevel(level) // only error is when nil, and we allocate collector just before this
 }
 
 // IsOn statistics collection is turned on
@@ -160,11 +141,6 @@ func (collector *Collector) ForEachAction(f func(stats *ActionStats)) {
 	}
 }
 
-// ForEachAction locks map and execute function for each ActionStats entry of global collector
-func ForEachAction(f func(stats *ActionStats)) {
-	globalCollector.ForEachAction(f)
-}
-
 // ForEachRequest read lock map and execute function for each RequestStats entry
 func (collector *Collector) ForEachRequest(f func(stats *RequestStats)) {
 	if collector == nil {
@@ -178,28 +154,50 @@ func (collector *Collector) ForEachRequest(f func(stats *RequestStats)) {
 	}
 }
 
-// ForEachRequest read lock map and execute function for each RequestStats entry of global collector
-func ForEachRequest(f func(stats *RequestStats)) {
-	globalCollector.ForEachRequest(f)
-}
-
-// DestroyGlobalCollector set global connector to nil, mostly to be used in tests.
-func DestroyGlobalCollector() {
-	globalCollector = nil
-}
-
-// GlobalActionsLen length of action stats map of global collector
-func GlobalActionsLen() int {
-	if globalCollector == nil {
+// ActionsLen length of action stats map of collector
+func (collector *Collector) ActionsLen() int {
+	if collector == nil {
 		return 0
 	}
-	return len(globalCollector.Actions)
+	return len(collector.Actions)
 }
 
-// GlobalRESTRequestLen length of REST requests stats map of global collector
-func GlobalRESTRequestLen() int {
-	if globalCollector == nil {
+// RESTRequestLen length of REST requests stats map of collector
+func (collector *Collector) RESTRequestLen() int {
+	if collector == nil {
 		return 0
 	}
-	return len(globalCollector.RestRequests)
+	return len(collector.RestRequests)
+}
+
+// OpenedApps total opened apps counted
+func (collector *Collector) OpenedApps() uint64 {
+	if collector == nil {
+		return 0
+	}
+	return collector.totOpenedApps.Current()
+}
+
+// IncOpenedApps increase total opened apps counted by one
+func (collector *Collector) IncOpenedApps() {
+	if collector == nil {
+		return
+	}
+	collector.totOpenedApps.Inc()
+}
+
+// CreatedApps total apps created count
+func (collector *Collector) CreatedApps() uint64 {
+	if collector == nil {
+		return 0
+	}
+	return collector.totCreatedApps.Current()
+}
+
+// IncCreatedApps increase total created apps counted by one
+func (collector *Collector) IncCreatedApps() {
+	if collector == nil {
+		return
+	}
+	collector.totCreatedApps.Inc()
 }
