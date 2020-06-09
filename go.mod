@@ -12,7 +12,7 @@ require (
 	github.com/gobwas/ws v1.0.3
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/json-iterator/go v1.1.9
+	github.com/json-iterator/go v1.1.10
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
 	github.com/qlik-oss/enigma-go v1.1.2
