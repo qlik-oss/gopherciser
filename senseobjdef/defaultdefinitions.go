@@ -402,6 +402,26 @@ var (
 		nil,
 	}
 
+	DefaultBulletChart = ObjectDef{
+		DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCube",
+		},
+		[]Data{
+			{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			},
+		},
+		&Select{
+			Type: SelectTypeHypercubeValues,
+			Path: "/qHyperCubeDef",
+		},
+	}
+
 	DefaultQlikBarplusChart = ObjectDef{
 		DataDef{
 			Type: DataDefHyperCube,
@@ -527,6 +547,7 @@ var (
 		"mekkochart":            &DefaultMekkoChart,
 		"qlik-radar-chart":      &DefaultQlikRadarChart,
 		"qlik-bullet-chart":     &DefaultQlikBulletChart,
+		"bulletchart":           &DefaultBulletChart,
 		"qlik-barplus-chart":    &DefaultQlikBarplusChart,
 		"qlik-multi-kpi":        &DefaultQlikMultiKPIChart,
 		"qlik-network-chart":    &DefaultQlikNetworkChart,
