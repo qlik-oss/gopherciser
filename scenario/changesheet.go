@@ -31,7 +31,7 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 
 	uplink := sessionState.Connection.Sense()
 
-	ClearCurrentSheet(uplink, sessionState)
+	ClearObjectSubscriptions(sessionState)
 
 	// Get or create current selection object
 	sessionState.QueueRequest(func(ctx context.Context) error {

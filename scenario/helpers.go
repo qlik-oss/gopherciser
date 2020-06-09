@@ -59,7 +59,7 @@ func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action
 
 	for _, v := range sheetEntry.Data.Cells {
 		sessionState.LogEntry.LogDebugf("subscribe to object<%s> type<%s>", v.Name, v.Type)
-		session.GetAndAddObjectAsync(sessionState, actionState, v.Name, v.Type)
+		session.GetAndAddObjectAsync(sessionState, actionState, v.Name)
 	}
 
 	return nil
@@ -90,15 +90,18 @@ func GetCurrentSheet(uplink *enigmahandlers.SenseUplink) (*senseobjects.Sheet, e
 	return sheetObj, nil
 }
 
-// ClearCurrentSheet and currently subscribed objects
-func ClearCurrentSheet(uplink *enigmahandlers.SenseUplink, sessionState *session.State) {
-	clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
+// ClearObjectSubscriptions and currently subscribed objects
+func ClearObjectSubscriptions(sessionState *session.State) {
+	upLink := sessionState.Connection.Sense()
+	// Clear subscribed objects
+	clearedObjects, errClearObject := upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
 	if errClearObject != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}
 	sessionState.DeRegisterEvents(clearedObjects)
 
-	clearedObjects, errClearObject = uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheet)
+	// Clear any sheets set
+	clearedObjects, errClearObject = upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheet)
 	if errClearObject != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}

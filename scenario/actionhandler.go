@@ -132,6 +132,7 @@ const (
 	ActionDeleteSheet             = "deletesheet"
 	ActionPublishBookmark         = "publishbookmark"
 	ActionUnPublishBookmark       = "unpublishbookmark"
+	ActionSubscribeObjects        = "subscribeobjects"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -249,6 +250,7 @@ func ResetDefaultActions() {
 		ActionDeleteSheet:             DeleteSheetSettings{},
 		ActionPublishBookmark:         PublishBookmarkSettings{},
 		ActionUnPublishBookmark:       UnPublishBookmarkSettings{},
+		ActionSubscribeObjects:        SubscribeObjectsSettings{},
 	}
 }
 

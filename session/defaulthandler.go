@@ -29,7 +29,7 @@ func (instance *DefaultHandlerInstance) SetObjectAndEvents(sessionState *State, 
 	if children != nil && children.Items != nil {
 		sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", genObj.GenericId, genObj.GenericType)
 		for _, child := range children.Items {
-			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id, child.Info.Type)
+			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id)
 		}
 	}
 }
