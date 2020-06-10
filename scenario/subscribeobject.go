@@ -40,10 +40,11 @@ func (settings SubscribeObjectsSettings) Execute(sessionState *session.State, ac
 	}
 
 	for _, id := range settings.IDs {
-		session.GetAndAddObjectAsync(sessionState, actionState, id) // todo make id keyable
+		session.GetAndAddObjectAsync(sessionState, actionState, sessionState.IDMap.Get(id))
 	}
 
 	sessionState.Wait(actionState)
+	DebugPrintObjectSubscriptions(sessionState)
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface, returns:

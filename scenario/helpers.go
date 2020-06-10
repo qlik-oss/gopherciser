@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -52,7 +53,7 @@ func getSheet(sessionState *session.State, actionState *action.State, upLink *en
 
 func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetID string) error {
 	sheetID = sessionState.IDMap.Get(sheetID)
-	sheetEntry, err := getSheetEntry(sessionState, actionState, app, sheetID)
+	sheetEntry, err := GetSheetEntry(sessionState, actionState, app, sheetID)
 	if err != nil {
 		return errors.Wrap(err, "failed to subscribe to objects")
 	}
@@ -65,7 +66,7 @@ func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action
 	return nil
 }
 
-func getSheetEntry(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetid string) (*senseobjects.SheetNxContainerEntry, error) {
+func GetSheetEntry(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetid string) (*senseobjects.SheetNxContainerEntry, error) {
 	sheetList, err := app.GetSheetList(sessionState, actionState)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -106,6 +107,23 @@ func ClearObjectSubscriptions(sessionState *session.State) {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}
 	sessionState.DeRegisterEvents(clearedObjects)
+}
+
+func DebugPrintObjectSubscriptions(sessionState *session.State) {
+	if !sessionState.LogEntry.ShouldLogDebug() {
+		return
+	}
+
+	upLink := sessionState.Connection.Sense()
+	objectsPointers := upLink.Objects.GetObjectsOfType(enigmahandlers.ObjTypeGenericObject)
+	objects := make([]string, 0, len(objectsPointers))
+	for _, object := range objectsPointers {
+		if object == nil {
+			continue
+		}
+		objects = append(objects, object.ID)
+	}
+	sessionState.LogEntry.LogDebug(fmt.Sprintf("current object subscriptions: %v", objects))
 }
 
 // Contains check whether any element in the supplied list matches (match func(s string) bool)
