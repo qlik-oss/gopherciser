@@ -133,6 +133,7 @@ const (
 	ActionPublishBookmark         = "publishbookmark"
 	ActionUnPublishBookmark       = "unpublishbookmark"
 	ActionSubscribeObjects        = "subscribeobjects"
+	ActionUnsubscribeObjects      = "unsubscribeobjects"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -251,6 +252,7 @@ func ResetDefaultActions() {
 		ActionPublishBookmark:         PublishBookmarkSettings{},
 		ActionUnPublishBookmark:       UnPublishBookmarkSettings{},
 		ActionSubscribeObjects:        SubscribeObjectsSettings{},
+		ActionUnsubscribeObjects:      UnsubscribeObjects{},
 	}
 }
 
