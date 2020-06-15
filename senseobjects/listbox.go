@@ -92,14 +92,20 @@ func (listBox *ListBox) GetListObjectData(ctx context.Context) ([]*enigma.NxData
 	if err != nil {
 		return nil, err
 	}
-	return listBox.enigmaObject.GetListObjectData(ctx, string(objDef.Data[0].Requests[0].Path), []*enigma.NxPage{
-		{
-			Left:   0,
-			Top:    0,
-			Width:  1,
-			Height: listBox.layout.GenericObjectLayout.ListObject.Size.Cy,
-		},
-	})
+
+	nxPages := make([]*enigma.NxPage, 0, len(listBox.layout.GenericObjectLayout.ListObject.DataPages))
+	for _, nxDataPage := range listBox.layout.GenericObjectLayout.ListObject.DataPages {
+		area := nxDataPage.Area
+		nxPage := enigma.NxPage{
+			Left:   area.Left,
+			Top:    area.Top,
+			Width:  area.Width,
+			Height: area.Height,
+		}
+		nxPages = append(nxPages, &nxPage)
+	}
+
+	return listBox.enigmaObject.GetListObjectData(ctx, string(objDef.Data[0].Requests[0].Path), nxPages)
 }
 
 // Layout for listBox

@@ -250,7 +250,7 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 		return err
 	})
 	if err != nil {
-		actionState.AddErrors(errors.Errorf("failed to get listobject data for field <%s>", binding.SelectAppParamName))
+		actionState.AddErrors(errors.Wrapf(err, "failed to get listobject data for field <%s>", binding.SelectAppParamName))
 	}
 	for _, dataPage := range dataPages {
 		for _, listObjectValue := range dataPage.Matrix {
