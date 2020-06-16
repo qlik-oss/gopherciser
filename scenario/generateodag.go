@@ -246,11 +246,11 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 	var dataPages []*enigma.NxDataPage
 	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		var err error
-		dataPages, err = obj.GetListObjectData(ctx)
+		dataPages, err = obj.GetHypercubeData(ctx)
 		return err
 	})
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed to get listobject data for field <%s>", binding.SelectAppParamName))
+		actionState.AddErrors(errors.Wrapf(err, "failed to get hypercube data for field <%s>", binding.SelectAppParamName))
 	}
 	for _, dataPage := range dataPages {
 		for _, listObjectValue := range dataPage.Matrix {
@@ -373,11 +373,11 @@ func GetOdagSelectionBindings(host string, odagLinkId string, sessionState *sess
 }
 
 // createFieldListboxAsync creates a listbox session object for specified field
-func createFieldListboxAsync(sessionState *session.State, actionState *action.State, doc *enigma.Doc, field string) (*senseobjects.ListBox, error) {
-	var obj *senseobjects.ListBox
+func createFieldListboxAsync(sessionState *session.State, actionState *action.State, doc *enigma.Doc, field string) (*senseobjects.OdagToolbarNavpoint, error) {
+	var obj *senseobjects.OdagToolbarNavpoint
 	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		var err error
-		obj, err = senseobjects.CreateListBoxObject(ctx, doc, field)
+		obj, err = senseobjects.CreateOdagToolbarNavpoint(ctx, doc, field)
 		return err
 	})
 	if err != nil {

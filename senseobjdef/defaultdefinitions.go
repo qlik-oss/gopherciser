@@ -522,6 +522,26 @@ var (
 		},
 	}
 
+	DefaultOdagToolbarNavpoint = ObjectDef{
+		DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCubeDef",
+		},
+		[]Data{
+			{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			},
+		},
+		&Select{
+			Type: SelectTypeHypercubeValues,
+			Path: "/qHyperCubeDef",
+		},
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -553,5 +573,6 @@ var (
 		"qlik-network-chart":    &DefaultQlikNetworkChart,
 		"qlik-heatmap-chart":    &DefaultQlikHeatmapChart,
 		"sn-org-chart":          &DefaultSNOrgChart,
+		"odag-toolbar-navpoint": &DefaultOdagToolbarNavpoint,
 	}
 )
