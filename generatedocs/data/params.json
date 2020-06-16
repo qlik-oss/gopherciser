@@ -520,16 +520,16 @@
         "Wrap selection with Begin / End selection requests (`true` / `false`)."
     ],
     "subscribeobjects.clear" : [
-        "Clear any previously subscribed objects from subscription list."
+        "Remove any previously subscribed objects from the subscription list."
     ],
     "subscribeobjects.ids" : [
-        "List of object ID's to subscribe to."
+        "List of object IDs to subscribe to."
     ],
     "unsubscribeobjects.clear" : [
-        "Clear any previously subscribed objects from subscription list."
+        "Remove any previously subscribed objects from the subscription list."
     ],
     "unsubscribeobjects.ids" : [
-        "List of object ID's to unsubscribe from."
+        "List of object IDs to unsubscribe from."
     ],
     "thinktime.type": [
         "Type of think time",

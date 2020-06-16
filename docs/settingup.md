@@ -1058,12 +1058,12 @@ Subscribe to any object in the currently active app.
 
 ### Settings
 
-* `clear`: Clear any previously subscribed objects from subscription list.
-* `ids`: List of object ID's to subscribe to.
+* `clear`: Remove any previously subscribed objects from the subscription list.
+* `ids`: List of object IDs to subscribe to.
 
 ### Example
 
-Subscribe to two objects in the currently active app, unsubscribing to any previous subscriptions. 
+Subscribe to two objects in the currently active app and remove any previous subscriptions. 
 
 ```json
 {
@@ -1077,7 +1077,7 @@ Subscribe to two objects in the currently active app, unsubscribing to any previ
 }
 ```
 
-Subscribe to and additional single object (or a list of objects) in the currently active app, adding it to any previous subscriptions. 
+Subscribe to an additional single object (or a list of objects) in the currently active app, adding the new subscription to any previous subscriptions.
 
 ```json
 {
@@ -1215,8 +1215,8 @@ Unsubscribe to any currently subscribed object.
 
 ### Settings
 
-* `ids`: List of object ID's to unsubscribe from.
-* `clear`: Clear any previously subscribed objects from subscription list.
+* `ids`: List of object IDs to unsubscribe from.
+* `clear`: Remove any previously subscribed objects from the subscription list.
 
 ### Example
 

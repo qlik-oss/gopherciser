@@ -1,6 +1,6 @@
 ### Example
 
-Subscribe to two objects in the currently active app, unsubscribing to any previous subscriptions. 
+Subscribe to two objects in the currently active app and remove any previous subscriptions. 
 
 ```json
 {
@@ -14,7 +14,7 @@ Subscribe to two objects in the currently active app, unsubscribing to any previ
 }
 ```
 
-Subscribe to and additional single object (or a list of objects) in the currently active app, adding it to any previous subscriptions. 
+Subscribe to an additional single object (or a list of objects) in the currently active app, adding the new subscription to any previous subscriptions.
 
 ```json
 {
