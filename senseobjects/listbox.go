@@ -86,7 +86,7 @@ func (listBox *ListBox) UpdateProperties(ctx context.Context) error {
 	return nil
 }
 
-// GetHypercubeData get datapages
+// GetListObjectData get datapages
 func (listBox *ListBox) GetListObjectData(ctx context.Context) ([]*enigma.NxDataPage, error) {
 	objDef, err := senseobjdef.GetObjectDef("listbox")
 	if err != nil {
