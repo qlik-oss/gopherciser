@@ -51,19 +51,24 @@ func (settings SubscribeObjectsSettings) Execute(sessionState *session.State, ac
 // * added *config.AppStructurePopulatedObjects - objects to be added to the selectable list by this action
 // * removed []string - ids of objects that are removed (including any children) by this action
 // * clearObjects bool - clears all objects except bookmarks and sheets
-func (settings SubscribeObjectsSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings SubscribeObjectsSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	if len(settings.IDs) < 1 {
 		return nil, nil, settings.ClearCurrent
 	}
-	// todo need to support returning []*appstructure.AppStructurePopulatedObjects, return first object only for now
-	selectables, err := structure.GetSelectables(settings.IDs[0])
-	if err != nil {
-		return nil, nil, settings.ClearCurrent
+
+	parents := make([]*appstructure.AppStructurePopulatedObjects, 0, len(settings.IDs))
+	for _, id := range settings.IDs {
+		selectables, err := structure.GetSelectables(id)
+		if err != nil {
+			return nil, nil, settings.ClearCurrent
+		}
+		newObjs := appstructure.AppStructurePopulatedObjects{
+			Parent:    id,
+			Objects:   selectables,
+			Bookmarks: nil,
+		}
+		parents = append(parents, &newObjs)
 	}
-	newObjs := appstructure.AppStructurePopulatedObjects{
-		Parent:    settings.IDs[0],
-		Objects:   selectables,
-		Bookmarks: nil,
-	}
-	return &newObjs, nil, settings.ClearCurrent
+
+	return parents, nil, settings.ClearCurrent
 }

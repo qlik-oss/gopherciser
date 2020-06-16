@@ -121,7 +121,7 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings CreateBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings CreateBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	if settings.ID == "" {
 		return nil, nil, false
 	}
@@ -134,5 +134,5 @@ func (settings CreateBookmarkSettings) AffectsAppObjectsAction(structure appstru
 		Title:       settings.Title.String(),
 		Description: settings.Description, //TODO: Should specify current sheet
 	})
-	return &newObjs, nil, false
+	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, false
 }

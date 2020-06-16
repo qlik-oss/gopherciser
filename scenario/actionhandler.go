@@ -54,7 +54,7 @@ type (
 	// * removed []string - ids of objects that are removed (including any children) by this action
 	// * clearObjects bool - clears all objects except bookmarks and sheets
 	AffectsAppObjectsAction interface {
-		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool)
+		AffectsAppObjectsAction(appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool)
 	}
 
 	// ****************************************************************

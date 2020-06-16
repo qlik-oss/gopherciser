@@ -55,6 +55,6 @@ func (settings UnsubscribeObjects) Execute(sessionState *session.State, actionSt
 // * added *config.AppStructurePopulatedObjects - objects to be added to the selectable list by this action
 // * removed []string - ids of objects that are removed (including any children) by this action
 // * clearObjects bool - clears all objects except bookmarks and sheets
-func (settings UnsubscribeObjects) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings UnsubscribeObjects) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	return nil, settings.IDs, settings.Clear
 }
