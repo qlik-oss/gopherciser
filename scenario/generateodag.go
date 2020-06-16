@@ -389,11 +389,5 @@ func createOdagToolbarNavpointAsync(sessionState *session.State, actionState *ac
 	if err != nil {
 		return nil, err
 	}
-	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		return obj.UpdateProperties(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
 	return obj, nil
 }

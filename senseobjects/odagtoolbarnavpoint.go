@@ -16,17 +16,10 @@ type (
 		enigma.GenericObjectLayout
 	}
 
-	// OdagToolbarNavpointProperties odag-toolbar-navpoint properties
-	OdagToolbarNavpointProperties struct {
-		Info    enigma.NxInfo    `json:"qInfo,omitempty"`
-		MetaDef enigma.NxMetaDef `json:"qMetaDef,omitempty"`
-	}
-
 	// OdagToolbarNavpoint container with odag-toolbar-navpoint in sense app
 	OdagToolbarNavpoint struct {
 		enigmaObject *enigma.GenericObject
 		layout       *OdagToolbarNavpointLayout
-		properties   *OdagToolbarNavpointProperties
 		mutex        sync.Mutex
 	}
 )
@@ -35,12 +28,6 @@ func (otn *OdagToolbarNavpoint) setLayout(layout *OdagToolbarNavpointLayout) {
 	otn.mutex.Lock()
 	defer otn.mutex.Unlock()
 	otn.layout = layout
-}
-
-func (otn *OdagToolbarNavpoint) setProperties(properties *OdagToolbarNavpointProperties) {
-	otn.mutex.Lock()
-	defer otn.mutex.Unlock()
-	otn.properties = properties
 }
 
 // UpdateLayout get and set a new layout for sheetlist
@@ -61,27 +48,6 @@ func (otn *OdagToolbarNavpoint) UpdateLayout(ctx context.Context) error {
 	}
 
 	otn.setLayout(&layout)
-	return nil
-}
-
-// UpdateProperties get and set properties for odag-toolbar-navpoint
-func (otn *OdagToolbarNavpoint) UpdateProperties(ctx context.Context) error {
-	if otn.enigmaObject == nil {
-		return errors.Errorf("otn enigma object is nil")
-	}
-
-	propertiesRaw, err := otn.enigmaObject.GetPropertiesRaw(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to unmarshal otn properties")
-	}
-
-	var properties OdagToolbarNavpointProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
-	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal otn properties")
-	}
-
-	otn.setProperties(&properties)
 	return nil
 }
 
