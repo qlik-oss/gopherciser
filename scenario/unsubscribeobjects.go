@@ -11,9 +11,9 @@ import (
 type (
 	UnsubscribeObjects struct {
 		// IDs to unsubscribe to
-		IDs []string `json:"ids"`
+		IDs []string `json:"ids" displayname:"ID's'" doc-key:"unsubscribeobjects.ids"` // todo add appstructure:"" when array is supported filling with subscribed objects
 		// All unsubscribes to all objects
-		Clear bool `json:"clear"`
+		Clear bool `json:"clear" displayname:"Clear" doc-key:"unsubscribeobjects.clear"`
 	}
 )
 

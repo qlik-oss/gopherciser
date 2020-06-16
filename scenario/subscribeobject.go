@@ -12,8 +12,8 @@ import (
 
 type (
 	SubscribeObjectsSettings struct {
-		ClearCurrent bool     `json:"clear"`
-		IDs          []string `json:"ids"`
+		ClearCurrent bool     `json:"clear" displayname:"Clear" doc-key:"subscribeobjects.clear"`
+		IDs          []string `json:"ids" displayname:"ID's'" doc-key:"subscribeobjects.ids"` // todo add appstructure:"" when array is supported filling with all objects
 	}
 )
 
