@@ -23,10 +23,10 @@
             "setscript",
             "sheetchanger",
             "staticselect",
+            "subscribeobjects",
             "thinktime",
             "unpublishbookmark",
             "unpublishsheet",
-            "subscribeobjects",
             "unsubscribeobjects"
         ]
     },
