@@ -1165,6 +1165,86 @@ Unpublish sheets in the current app.
 }
 ```
 
+</details><details>
+<summary>subscribeobjects</summary>
+
+## Subscribeobjects action
+
+Subscribe to any object in the currently active app.
+
+### Settings
+
+* `clear`: Clear any previously subscribed objects from subscription list.
+* `ids`: List of object ID's to subscribe to.
+
+### Example
+
+Subscribe to two objects in the currently active app, unsubscribing to any previous subscriptions. 
+
+```json
+{
+    "action" : "subscribeobjects",
+    "label" : "clear subscriptions and subscribe to mBshXB and f2a50cb3-a7e1-40ac-a015-bc4378773312",
+     "disabled": false,
+    "settings" : {
+        "clear" : true,
+        "ids" : ["mBshXB", "f2a50cb3-a7e1-40ac-a015-bc4378773312"]
+    }
+}
+```
+
+Subscribe to and additional single object (or a list of objects) in the currently active app, adding it to any previous subscriptions. 
+
+```json
+{
+    "action" : "subscribeobjects",
+    "label" : "add c430d8e2-0f05-49f1-aa6f-7234e325dc35 to currently subscribed objects",
+     "disabled": false,
+    "settings" : {
+        "clear" : false,
+        "ids" : ["c430d8e2-0f05-49f1-aa6f-7234e325dc35"]
+    }
+}
+```
+</details><details>
+<summary>unsubscribeobjects</summary>
+
+## Unsubscribeobjects action
+
+Unsubscribe to any currently subscribed object.
+
+### Settings
+
+* `ids`: List of object ID's to unsubscribe from.
+* `clear`: Clear any previously subscribed objects from subscription list.
+
+### Example
+
+Unsubscribe from a single object (or a list of objects).
+
+```json
+{
+    "action" : "unsubscribeobjects",
+    "label" : "unsubscribe from object maVjt and its children",
+    "disabled": false,
+    "settings" : {
+        "ids" : ["maVjt"]
+    }
+}
+```
+
+Unsubscribe from all currently subscribed objects.
+
+```json
+{
+    "action" : "unsubscribeobjects",
+    "label" : "unsubscribe from all objects",
+    "disabled": false,
+    "settings" : {
+        "clear": true
+    }
+}
+```
 </details>
 </details><details>
 <summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>

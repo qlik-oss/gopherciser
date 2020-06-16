@@ -25,7 +25,9 @@
             "staticselect",
             "thinktime",
             "unpublishbookmark",
-            "unpublishsheet"
+            "unpublishsheet",
+            "subscribeobjects",
+            "unsubscribeobjects"
         ]
     },
     {
