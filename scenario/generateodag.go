@@ -63,13 +63,14 @@ func (settings GenerateOdagSettings) Validate() error {
 func (settings GenerateOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration
-	err := generateOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
+	err := generateOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint, "")
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
-func generateOdag(sessionState *session.State, settings GenerateOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
+func generateOdag(sessionState *session.State, settings GenerateOdagSettings, actionState *action.State,
+	connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration, selectionAppId string) error {
 	odagLinkName, err := sessionState.ReplaceSessionVariables(&settings.Name)
 	if err != nil {
 		return err
@@ -80,7 +81,7 @@ func generateOdag(sessionState *session.State, settings GenerateOdagSettings, ac
 	}
 
 	// first, find the ID of the ODAG link we want
-	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main)
+	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main, selectionAppId)
 	if err != nil {
 		return errors.Wrap(err, "failed to find ODAG link")
 	}
@@ -315,11 +316,17 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 
 // getOdagLinkByName returns the ODAG link by the specified name
 func getOdagLinkByName(name string, host string, sessionState *session.State,
-	actionState *action.State, odagEndpoint string) (*elasticstructs.OdagGetLink, error) {
+	actionState *action.State, odagEndpoint string, selectionAppId string) (*elasticstructs.OdagGetLink, error) {
+	var destination string
+	if selectionAppId != "" {
+		destination = fmt.Sprintf("%s/%s?selectionAppID=%s", host, odagEndpoint, selectionAppId)
+	} else {
+		destination = fmt.Sprintf("%s/%s", host, odagEndpoint)
+	}
 	odagLinks := session.RestRequest{
 		Method:      session.GET,
 		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/%s", host, odagEndpoint),
+		Destination: destination,
 	}
 	sessionState.Rest.QueueRequest(actionState, true, &odagLinks, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
