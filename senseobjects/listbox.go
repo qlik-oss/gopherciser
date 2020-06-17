@@ -44,7 +44,7 @@ func (listBox *ListBox) setProperties(properties *ListBoxProperties) {
 	listBox.properties = properties
 }
 
-// UpdateLayout get and set a new layout for sheetlist
+// UpdateLayout get and set a new layout for listbox
 func (listBox *ListBox) UpdateLayout(ctx context.Context) error {
 	if listBox.enigmaObject == nil {
 		return errors.Errorf("listBox enigma object is nil")

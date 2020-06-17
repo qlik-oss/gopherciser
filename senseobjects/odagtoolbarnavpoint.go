@@ -30,7 +30,7 @@ func (otn *OdagToolbarNavpoint) setLayout(layout *OdagToolbarNavpointLayout) {
 	otn.layout = layout
 }
 
-// UpdateLayout get and set a new layout for sheetlist
+// UpdateLayout get and set a new layout for odag-toolbar-navpoint
 func (otn *OdagToolbarNavpoint) UpdateLayout(ctx context.Context) error {
 	if otn.enigmaObject == nil {
 		return errors.Errorf("otn enigma object is nil")
