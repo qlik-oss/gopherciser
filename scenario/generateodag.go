@@ -63,13 +63,14 @@ func (settings GenerateOdagSettings) Validate() error {
 func (settings GenerateOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration
-	err := generateOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
+	err := generateOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint, "")
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
-func generateOdag(sessionState *session.State, settings GenerateOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
+func generateOdag(sessionState *session.State, settings GenerateOdagSettings, actionState *action.State,
+	connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration, selectionAppId string) error {
 	odagLinkName, err := sessionState.ReplaceSessionVariables(&settings.Name)
 	if err != nil {
 		return err
@@ -80,7 +81,7 @@ func generateOdag(sessionState *session.State, settings GenerateOdagSettings, ac
 	}
 
 	// first, find the ID of the ODAG link we want
-	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main)
+	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main, selectionAppId)
 	if err != nil {
 		return errors.Wrap(err, "failed to find ODAG link")
 	}
@@ -236,8 +237,8 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 		Values:                []elasticstructs.OdagPostRequestSelectionValue{},
 	}
 
-	// create a listbox session object for the binding field
-	obj, err := createFieldListboxAsync(sessionState, actionState, uplink.CurrentApp.Doc, binding.SelectAppParamName)
+	// create a odag-toolbar-navpoint session object for the binding field
+	obj, err := createOdagToolbarNavpointAsync(sessionState, actionState, uplink.CurrentApp.Doc, binding.SelectAppParamName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error creating session listbox object for <%s>", binding.SelectAppParamName)
 	}
@@ -246,11 +247,11 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 	var dataPages []*enigma.NxDataPage
 	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		var err error
-		dataPages, err = obj.GetListObjectData(ctx)
+		dataPages, err = obj.GetHypercubeData(ctx)
 		return err
 	})
 	if err != nil {
-		actionState.AddErrors(errors.Errorf("failed to get listobject data for field <%s>", binding.SelectAppParamName))
+		actionState.AddErrors(errors.Wrapf(err, "failed to get hypercube data for field <%s>", binding.SelectAppParamName))
 	}
 	for _, dataPage := range dataPages {
 		for _, listObjectValue := range dataPage.Matrix {
@@ -315,11 +316,17 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 
 // getOdagLinkByName returns the ODAG link by the specified name
 func getOdagLinkByName(name string, host string, sessionState *session.State,
-	actionState *action.State, odagEndpoint string) (*elasticstructs.OdagGetLink, error) {
+	actionState *action.State, odagEndpoint string, selectionAppId string) (*elasticstructs.OdagGetLink, error) {
+	var destination string
+	if selectionAppId != "" {
+		destination = fmt.Sprintf("%s/%s?selectionAppID=%s", host, odagEndpoint, selectionAppId)
+	} else {
+		destination = fmt.Sprintf("%s/%s", host, odagEndpoint)
+	}
 	odagLinks := session.RestRequest{
 		Method:      session.GET,
 		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/%s", host, odagEndpoint),
+		Destination: destination,
 	}
 	sessionState.Rest.QueueRequest(actionState, true, &odagLinks, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
@@ -372,12 +379,12 @@ func GetOdagSelectionBindings(host string, odagLinkId string, sessionState *sess
 	return nil, errors.New("failed to find any bindings for the ODAG link") // no bueno
 }
 
-// createFieldListboxAsync creates a listbox session object for specified field
-func createFieldListboxAsync(sessionState *session.State, actionState *action.State, doc *enigma.Doc, field string) (*senseobjects.ListBox, error) {
-	var obj *senseobjects.ListBox
+// createOdagToolbarNavpointAsync creates a listbox session object for specified field
+func createOdagToolbarNavpointAsync(sessionState *session.State, actionState *action.State, doc *enigma.Doc, field string) (*senseobjects.OdagToolbarNavpoint, error) {
+	var obj *senseobjects.OdagToolbarNavpoint
 	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		var err error
-		obj, err = senseobjects.CreateListBoxObject(ctx, doc, field)
+		obj, err = senseobjects.CreateOdagToolbarNavpoint(ctx, doc, field)
 		return err
 	})
 	if err != nil {
@@ -385,12 +392,6 @@ func createFieldListboxAsync(sessionState *session.State, actionState *action.St
 	}
 	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		return obj.UpdateLayout(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		return obj.UpdateProperties(ctx)
 	})
 	if err != nil {
 		return nil, err

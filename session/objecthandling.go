@@ -501,7 +501,7 @@ func UpdateListObjectDataAsync(sessionState *State, actionState *action.State, g
 				Height: requestDef.MaxHeight(),
 			},
 		})
-		err = checkEngineErr(err, sessionState, fmt.Sprintf("object<%s>.GetListObjectData", gob.GenericId))
+		err = checkEngineErr(err, sessionState, fmt.Sprintf("object<%s>.GetHypercubeData", gob.GenericId))
 		if err != nil {
 			return errors.WithStack(err)
 		}
