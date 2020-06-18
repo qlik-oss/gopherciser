@@ -200,14 +200,14 @@ These are the current limitations in Gopherciser:
   * Variance waterfall chart
   * P&L pivot chart object
   * Trellis container extension
-  * Chart suggestions (that is, auto-charts) for box plot, distribution plot, and histogram objects (to get correct measurements for these types of objects, disable chart suggestions in each such object before starting your test)
+  * Chart suggestions (that is, auto-charts) are supported, but only if the objects were created with Qlik Sense Enterprise June 2020 or later. Auto-chart objects created with earlier versions have to be manually updated in your app.   
 * Pivot table: 
   * The only supported selection type is `randomfromall`
   * Values are randomly selected from all values in the table
 * Map: 
   * Selections can only be made in the first layer (that is, layer 0)
 * Visualization bundle:
-  * Selections are not supported in the Heatmap chart
+  * Selections are not fully supported in the Heatmap chart
 
 ## Links
 
