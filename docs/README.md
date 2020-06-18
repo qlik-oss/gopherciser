@@ -200,7 +200,7 @@ These are the current limitations in Gopherciser:
   * Variance waterfall chart
   * P&L pivot chart object
   * Trellis container extension
-  * Chart suggestions (that is, auto-charts) are supported, however only if the objects where created in Qlik Sense June 2020 or later. For auto-chart objects created in earlier version, this needs to be updated manually in your app   
+  * Chart suggestions (that is, auto-charts) are supported, but only if the objects were created with Qlik Sense Enterprise June 2020 or later. Auto-chart objects created with earlier versions have to be manually updated in your app.   
 * Pivot table: 
   * The only supported selection type is `randomfromall`
   * Values are randomly selected from all values in the table
