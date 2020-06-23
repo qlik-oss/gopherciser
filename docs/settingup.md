@@ -311,8 +311,8 @@ Apply a bookmark in the current app.
 
 ### Settings
 
-* `title`: Name of the bookmark.
-* `id`: GUID of the bookmark.
+* `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
+* `id`: ID of the bookmark.
 
 ### Example
 
@@ -394,10 +394,12 @@ Clear all selections in an app.
 
 Create a bookmark from the current selection and selected sheet.
 
+**Note:** Both `title` and `id` can be used to identify the bookmark in subsequent actions. 
+
 ### Settings
 
-* `title`: Name of the bookmark.
-* `id`: GUID of the bookmark.
+* `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
+* `id`: ID of the bookmark.
 * `description`: (optional) Description of the bookmark to create.
 * `nosheet`: Do not include the sheet location in the bookmark.
 * `savelayout`: Include the layout in the bookmark.
@@ -449,8 +451,8 @@ Delete one or more bookmarks in the current app.
 
 ### Settings
 
-* `title`: Name of the bookmark.
-* `id`: GUID of the bookmark.
+* `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
+* `id`: ID of the bookmark.
 * `mode`: 
     * `single`: Delete one bookmark that matches the specified `title` or `id` in the current app.
     * `matching`: Delete all bookmarks with the specified `title` in the current app.
@@ -680,10 +682,12 @@ Request the product version from the server and, optionally, save it to the log.
 
 Publish a bookmark.
 
+**Note:** Specify *either* `title` *or* `id`, not both.
+
 ### Settings
 
-* `title`: Name of the bookmark.
-* `id`: GUID of the bookmark.
+* `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
+* `id`: ID of the bookmark.
 
 ### Example
 
@@ -1107,10 +1111,12 @@ This simulates a think time of 5 seconds.
 
 Unpublish a bookmark.
 
+**Note:** Specify *either* `title` *or* `id`, not both.
+
 ### Settings
 
-* `title`: Name of the bookmark.
-* `id`: GUID of the bookmark.
+* `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
+* `id`: ID of the bookmark.
 
 ### Example
 

@@ -29,7 +29,7 @@ go run ./generatedocs/compile/compile.go
 ### Generating markdown files
 
 ```
-run ./generatedocs/generate/generate.go --output ./docs/settingup.md
+go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
 ```
 
 #### Optional flags
@@ -78,33 +78,31 @@ The documentation structure for actions, groups and config sections follows the 
 * Parameters
 * Examples
 
-The reason for the structure is to make the description and each parameter individually accessible when accessing the documentation programmatically. The description and examples parts are written directly as  markdown files, located in the appropriate action, config or groups subfolder. The following example shows the folder structure for the `applybookmark` action:
+The reason for the structure is to make the description and each parameter individually accessible when accessing the documentation programmatically. The description and examples parts are written directly as  markdown files, located in the appropriate action, config or groups subfolder. The following example shows the folder structure for the `changesheet` action:
 
 ```
 data
     -> actions
-        -> applybookmark
+        -> changesheet
             -> description.md
             -> examples.md
 ``` 
 
-The parameters part is documented in the `params.json` file. The following example shows the parameters for the `applybookmark` action:
+The parameters part is documented in the `params.json` file. The following example shows the parameters for the `changesheet` action:
 
 ```json
 {
-	"applybookmark.title" : ["(optional) Name of the bookmark to apply."],
-	"applybookmark.id" : ["(optional) GUID of the bookmark to apply."]
+	"changesheet.id" : ["GUID of the sheet to change to."]
 }
 ```
 
-In the code for each parameter there is a `doc-key` tag that connects the parameter to its documentation in the `params.json` file. The following example shows the tags for `ApplyBookmarkSettings`:
+In the code for each parameter there is a `doc-key` tag that connects the parameter to its documentation in the `params.json` file. The following example shows the tags for `ChangeSheetSettings`:
 
 ```golang
-//ApplyBookmarkSettings apply bookmark settings
-ApplyBookmarkSettings struct {
-    Title string `json:"title" displayname:"Bookmark title" doc-key:"applybookmark.title"`
-    Id    string `json:"id" displayname:"Bookmark ID" doc-key:"applybookmark.id"`
-}
+// ChangeSheetSettings settings for change sheet action
+	ChangeSheetSettings struct {
+		ID string `json:"id" displayname:"Sheet ID" doc-key:"changesheet.id" appstructure:"active:sheet"`
+	}
 ```
 
 ### Documenting enums
