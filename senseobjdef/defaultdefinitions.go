@@ -522,6 +522,22 @@ var (
 		},
 	}
 
+	DefaultSheet = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			},
+		},
+		Select: nil,
+	}
+
 	DefaultOdagToolbarNavpoint = ObjectDef{
 		DataDef{
 			Type: DataDefHyperCube,
@@ -573,6 +589,7 @@ var (
 		"qlik-network-chart":    &DefaultQlikNetworkChart,
 		"qlik-heatmap-chart":    &DefaultQlikHeatmapChart,
 		"sn-org-chart":          &DefaultSNOrgChart,
+		"sheet":                 &DefaultSheet,
 		"odag-toolbar-navpoint": &DefaultOdagToolbarNavpoint,
 	}
 )

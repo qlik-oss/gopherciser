@@ -134,7 +134,7 @@ func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionSt
 	if children != nil && len(children.Items) > 0 {
 		sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", autochartGen.GenericId, autochartGen.GenericType)
 		for _, child := range children.Items {
-			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id, child.Info.Type)
+			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id)
 		}
 	}
 

@@ -519,6 +519,18 @@
     "staticselect.wrap": [
         "Wrap selection with Begin / End selection requests (`true` / `false`)."
     ],
+    "subscribeobjects.clear" : [
+        "Remove any previously subscribed objects from the subscription list."
+    ],
+    "subscribeobjects.ids" : [
+        "List of object IDs to subscribe to."
+    ],
+    "unsubscribeobjects.clear" : [
+        "Remove any previously subscribed objects from the subscription list."
+    ],
+    "unsubscribeobjects.ids" : [
+        "List of object IDs to unsubscribe from."
+    ],
     "thinktime.type": [
         "Type of think time",
         "`static`: Static think time, defined by `delay`.",

@@ -54,7 +54,7 @@ type (
 	// * removed []string - ids of objects that are removed (including any children) by this action
 	// * clearObjects bool - clears all objects except bookmarks and sheets
 	AffectsAppObjectsAction interface {
-		AffectsAppObjectsAction(appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool)
+		AffectsAppObjectsAction(appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool)
 	}
 
 	// ****************************************************************
@@ -132,6 +132,8 @@ const (
 	ActionDeleteSheet             = "deletesheet"
 	ActionPublishBookmark         = "publishbookmark"
 	ActionUnPublishBookmark       = "unpublishbookmark"
+	ActionSubscribeObjects        = "subscribeobjects"
+	ActionUnsubscribeObjects      = "unsubscribeobjects"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -249,6 +251,8 @@ func ResetDefaultActions() {
 		ActionDeleteSheet:             DeleteSheetSettings{},
 		ActionPublishBookmark:         PublishBookmarkSettings{},
 		ActionUnPublishBookmark:       UnPublishBookmarkSettings{},
+		ActionSubscribeObjects:        SubscribeObjectsSettings{},
+		ActionUnsubscribeObjects:      UnsubscribeObjects{},
 	}
 }
 

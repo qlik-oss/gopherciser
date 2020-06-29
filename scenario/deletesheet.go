@@ -167,7 +167,7 @@ func (settings *DeleteSheetSettings) destroySheetById(sessionState *session.Stat
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings DeleteSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	switch settings.DeletionMode {
 	case SingleSheet:
 		if settings.ID != "" {

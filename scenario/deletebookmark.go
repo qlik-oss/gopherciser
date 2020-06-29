@@ -194,7 +194,7 @@ func (settings DeleteBookmarkSettings) destroyBookmarkById(sessionState *session
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings DeleteBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings DeleteBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	switch settings.DeletionMode {
 	case SingleBookmark:
 		for _, obj := range structure.Bookmarks {

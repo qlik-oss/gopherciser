@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -52,20 +53,20 @@ func getSheet(sessionState *session.State, actionState *action.State, upLink *en
 
 func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetID string) error {
 	sheetID = sessionState.IDMap.Get(sheetID)
-	sheetEntry, err := getSheetEntry(sessionState, actionState, app, sheetID)
+	sheetEntry, err := GetSheetEntry(sessionState, actionState, app, sheetID)
 	if err != nil {
 		return errors.Wrap(err, "failed to subscribe to objects")
 	}
 
 	for _, v := range sheetEntry.Data.Cells {
 		sessionState.LogEntry.LogDebugf("subscribe to object<%s> type<%s>", v.Name, v.Type)
-		session.GetAndAddObjectAsync(sessionState, actionState, v.Name, v.Type)
+		session.GetAndAddObjectAsync(sessionState, actionState, v.Name)
 	}
 
 	return nil
 }
 
-func getSheetEntry(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetid string) (*senseobjects.SheetNxContainerEntry, error) {
+func GetSheetEntry(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetid string) (*senseobjects.SheetNxContainerEntry, error) {
 	sheetList, err := app.GetSheetList(sessionState, actionState)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -90,19 +91,39 @@ func GetCurrentSheet(uplink *enigmahandlers.SenseUplink) (*senseobjects.Sheet, e
 	return sheetObj, nil
 }
 
-// ClearCurrentSheet and currently subscribed objects
-func ClearCurrentSheet(uplink *enigmahandlers.SenseUplink, sessionState *session.State) {
-	clearedObjects, errClearObject := uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
+// ClearObjectSubscriptions and currently subscribed objects
+func ClearObjectSubscriptions(sessionState *session.State) {
+	upLink := sessionState.Connection.Sense()
+	// Clear subscribed objects
+	clearedObjects, errClearObject := upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
 	if errClearObject != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}
 	sessionState.DeRegisterEvents(clearedObjects)
 
-	clearedObjects, errClearObject = uplink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheet)
+	// Clear any sheets set
+	clearedObjects, errClearObject = upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheet)
 	if errClearObject != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
 	}
 	sessionState.DeRegisterEvents(clearedObjects)
+}
+
+func DebugPrintObjectSubscriptions(sessionState *session.State) {
+	if !sessionState.LogEntry.ShouldLogDebug() {
+		return
+	}
+
+	upLink := sessionState.Connection.Sense()
+	objectsPointers := upLink.Objects.GetObjectsOfType(enigmahandlers.ObjTypeGenericObject)
+	objects := make([]string, 0, len(objectsPointers))
+	for _, object := range objectsPointers {
+		if object == nil {
+			continue
+		}
+		objects = append(objects, object.ID)
+	}
+	sessionState.LogEntry.LogDebug(fmt.Sprintf("current object subscriptions: %v", objects))
 }
 
 // Contains check whether any element in the supplied list matches (match func(s string) bool)

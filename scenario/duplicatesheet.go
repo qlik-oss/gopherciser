@@ -131,14 +131,14 @@ func (settings DuplicateSheetSettings) Validate() error {
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	if !settings.ChangeSheet {
 		return nil, nil, false // Do nothing
 	} else {
 		return nil, nil, true // Remove previous sheet objects
 	}
 }
-  
+
 func getSheetChildInfosAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id string) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sheetObject, err := senseobjects.GetSheet(ctx, app, id)

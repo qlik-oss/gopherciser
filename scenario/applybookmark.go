@@ -96,7 +96,7 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) (*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	id := settings.BookMarkSettings.ID
 	if id == "" { // No ID, specified, search by title
 		title := settings.BookMarkSettings.Title.String()
@@ -126,5 +126,5 @@ func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstruc
 		Bookmarks: nil,
 	}
 	newObjs.Objects = append(newObjs.Objects, selectables...)
-	return &newObjs, nil, true
+	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, true
 }

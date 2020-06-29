@@ -72,9 +72,8 @@ func (objects *objectHandlerMap) GetObjectHandler(objectType string) ObjectHandl
 }
 
 // GetAndAddObjectAsync get and add object to object handling
-func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name, oType string) {
+func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name string) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		sessionState.LogEntry.LogDebugf("object<%s> type<%s> found", name, oType)
 		sense := sessionState.Connection.Sense()
 
 		var genObj *enigma.GenericObject

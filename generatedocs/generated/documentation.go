@@ -171,6 +171,10 @@ var (
             Description: "## StaticSelect action\n\nSelect values statically.\n\nThe action supports:\n\n* HyperCube: Normal hypercube\n* ListObject: Normal listbox\n",
             Examples: "### Examples\n\n#### StaticSelect Barchart\n\n```json\n{ \n\"label\": \"Chart Profit per year\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"FERdyN\",\n	 \"path\": \"/qHyperCubeDef\",\n         \"type\": \"hypercubecells\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [2],\n	 \"cols\": [0]\n     }\n}\n```\n\n#### StaticSelect Listbox\n\n```json\n{		\n\"label\": \"ListBox Territory\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"qpxmZm\",\n         \"path\": \"/qListObjectDef\",\n         \"type\": \"listobjectvalues\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [19,8],\n	 \"cols\": [0]\n     }\n}\n```\n",
         },
+        "subscribeobjects": {
+            Description: "## Subscribeobjects action\n\nSubscribe to any object in the currently active app.\n",
+            Examples: "### Example\n\nSubscribe to two objects in the currently active app and remove any previous subscriptions. \n\n```json\n{\n    \"action\" : \"subscribeobjects\",\n    \"label\" : \"clear subscriptions and subscribe to mBshXB and f2a50cb3-a7e1-40ac-a015-bc4378773312\",\n     \"disabled\": false,\n    \"settings\" : {\n        \"clear\" : true,\n        \"ids\" : [\"mBshXB\", \"f2a50cb3-a7e1-40ac-a015-bc4378773312\"]\n    }\n}\n```\n\nSubscribe to an additional single object (or a list of objects) in the currently active app, adding the new subscription to any previous subscriptions.\n\n```json\n{\n    \"action\" : \"subscribeobjects\",\n    \"label\" : \"add c430d8e2-0f05-49f1-aa6f-7234e325dc35 to currently subscribed objects\",\n     \"disabled\": false,\n    \"settings\" : {\n        \"clear\" : false,\n        \"ids\" : [\"c430d8e2-0f05-49f1-aa6f-7234e325dc35\"]\n    }\n}\n```",
+        },
         "thinktime": {
             Description: "## ThinkTime action\n\nSimulate user think time.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
             Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis simulates a think time of 10 to 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis simulates a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
@@ -182,6 +186,10 @@ var (
         "unpublishsheet": {
             Description: "## UnpublishSheet action\n\nUnpublish sheets in the current app.\n",
             Examples: "### Example\n```json\n{\n     \"label\": \"UnpublishSheets\",\n     \"action\": \"unpublishsheet\",\n     \"settings\": {\n       \"mode\": \"allsheets\"        \n     }\n}\n```\n",
+        },
+        "unsubscribeobjects": {
+            Description: "## Unsubscribeobjects action\n\nUnsubscribe to any currently subscribed object.\n",
+            Examples: "### Example\n\nUnsubscribe from a single object (or a list of objects).\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from object maVjt and its children\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"ids\" : [\"maVjt\"]\n    }\n}\n```\n\nUnsubscribe from all currently subscribed objects.\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from all objects\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"clear\": true\n    }\n}\n```",
         },
         "uploaddata": {
             Description: "## UploadData action\n\nUpload a data file to the Data manager.\n",
@@ -335,12 +343,16 @@ var (
         "staticselect.rows": { "Element values to select in the dimension / column."  },  
         "staticselect.type": { "Selection type","`hypercubecells`: Select in hypercube.","`listobjectvalues`: Select in listbox."  },  
         "staticselect.wrap": { "Wrap selection with Begin / End selection requests (`true` / `false`)."  },  
+        "subscribeobjects.clear": { "Remove any previously subscribed objects from the subscription list."  },  
+        "subscribeobjects.ids": { "List of object IDs to subscribe to."  },  
         "thinktime.delay": { "Delay (seconds), used with type `static`."  },  
         "thinktime.dev": { "Deviation (seconds) from `mean` value, used with type `uniform`."  },  
         "thinktime.mean": { "Mean (seconds), used with type `uniform`."  },  
         "thinktime.type": { "Type of think time","`static`: Static think time, defined by `delay`.","`uniform`: Random think time with uniform distribution, defined by `mean` and `dev`."  },  
         "unpublishsheet.mode": { "","`allsheets`: Unpublish all sheets in the app.","`sheetids`: Only unpublish the sheets specified by the `sheetIds` array."  },  
         "unpublishsheet.sheetIds": { "(optional) Array of sheet IDs for the `sheetids` mode."  },  
+        "unsubscribeobjects.clear": { "Remove any previously subscribed objects from the subscription list."  },  
+        "unsubscribeobjects.ids": { "List of object IDs to unsubscribe from."  },  
         "uploaddata.destinationpath": { "(optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted."  },  
         "uploaddata.filename": { "Name of the local file to send as payload."  },  
     }
@@ -376,7 +388,7 @@ var (
             {
                 Name: "commonActions",
                 Title: "Common actions",
-                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","thinktime","unpublishbookmark","unpublishsheet" },
+                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","subscribeobjects","thinktime","unpublishbookmark","unpublishsheet","unsubscribeobjects" },
                 DocEntry: common.DocEntry{
                     Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEfW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
                     Examples: "",
