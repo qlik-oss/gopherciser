@@ -111,6 +111,95 @@ func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionSt
 		},
 	}
 
+	instance.SetObjectDefData(objectDef.Data)
+
+	if objectDef.Select != nil {
+		// de-reference pointer and update path
+		selectDef := *objectDef.Select
+		if selectDef.Path != "" {
+			selectDef.Path = fmt.Sprintf("%s%s", GeneratedPropertiesPath, selectDef.Path)
+		}
+		instance.ObjectDef.Select = &selectDef
+	}
+
+	if err := SetObjectData(sessionState, actionState, rawLayout, instance.ObjectDef, autochartObj, autochartGen); err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	instance.setupEvents(sessionState, autochartObj, autochartGen)
+
+	// Get any child objects
+	children := autochartObj.ChildList()
+	if children != nil && len(children.Items) > 0 {
+		sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", autochartGen.GenericId, autochartGen.GenericType)
+		for _, child := range children.Items {
+			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id)
+		}
+	}
+
+	sessionState.LogEntry.LogDebugf("Getting layout for object<%s> handle<%d> type<%s> END", autochartObj.ID, autochartObj.Handle, autochartGen.GenericType)
+}
+
+func (instance *AutoChartInstance) SetObjectDefData(objDefData []senseobjdef.Data) {
+	if len(objDefData) < 1 {
+		return
+	}
+
+	instance.ObjectDef.Data = make([]senseobjdef.Data, 0, len(objDefData))
+	for _, data := range objDefData {
+		// update paths in data requests
+		requests := make([]senseobjdef.GetDataRequests, 0, len(data.Requests))
+		for _, req := range data.Requests {
+			if req.Path != "" {
+				req.Path = fmt.Sprint(GeneratedPropertiesPath, req.Path)
+			}
+			requests = append(requests, req)
+		}
+		data.Requests = requests
+
+		if data.Constraint != nil {
+			// de-reference pointer and update path in constraint
+			data.Constraint = &senseobjdef.Constraint{
+				Path:     senseobjdef.DataPath(fmt.Sprint(GeneratedPropertiesPath, data.Constraint.Path)),
+				Value:    data.Constraint.Value,
+				Required: data.Constraint.Required,
+			}
+		}
+		instance.ObjectDef.Data = append(instance.ObjectDef.Data, data)
+	}
+}
+
+func (instance *AutoChartInstance) setupEvents(sessionState *State, autochartObj *enigmahandlers.Object, autochartGen *enigma.GenericObject) {
+	event := func(ctx context.Context, as *action.State) error {
+		sessionState.LogEntry.LogDebugf("Getting layout for object<%s> handle<%d> type<%s> START", autochartObj.ID, autochartObj.Handle, autochartGen.GenericType)
+		layout, err := sessionState.SendRequestRaw(as, autochartGen.GetLayoutRaw)
+		if err != nil {
+			return errors.Wrapf(err, "object<%s>.GetLayout", autochartGen.GenericId)
+		}
+
+		if err := SetObjectData(sessionState, as, layout, instance.ObjectDef, autochartObj, autochartGen); err != nil {
+			return errors.WithStack(err)
+		}
+		sessionState.LogEntry.LogDebugf("Getting layout for object<%s> handle<%d> type<%s> END", autochartObj.ID, autochartObj.Handle, autochartGen.GenericType)
+		return nil
+	}
+	sessionState.RegisterEvent(autochartObj.Handle, event, nil, true)
+}
+
+// returns auto-chart raw layout, and generated properties
+func getRawLayoutAndGeneratedProperties(sessionState *State, actionState *action.State,
+	autochartObj *enigmahandlers.Object, autochartGen *enigma.GenericObject) (json.RawMessage, enigma.GenericObjectProperties) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var rawLayout json.RawMessage
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		defer wg.Done()
+		sessionState.LogEntry.LogDebugf("Getting layout for object<%s> handle<%d> type<%s> START", autochartObj.ID, autochartObj.Handle, autochartGen.GenericType)
+		var err error
+		if rawLayout, err = autochartGen.GetLayoutRaw(ctx); err != nil {
+			return errors.Wrapf(err, "object<%s>.GetLayout", autochartGen.GenericId)
+		}
 		return nil
 	}, actionState, true, "")
 
