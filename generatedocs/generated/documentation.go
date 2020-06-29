@@ -24,7 +24,7 @@ var (
             Examples: "### Example\n\n```json\n{\n    \"action\": \"clearall\",\n    \"label\": \"Clear all selections (1)\"\n}\n```\n",
         },
         "createbookmark": {
-            Description: "## CreateBookmark action\n\nCreate a bookmark from the current selection and selected sheet.\n",
+            Description: "## CreateBookmark action\n\nCreate a bookmark from the current selection and selected sheet.\n\n**Note:** Both `title` and `id` can be used to identify the bookmark in subsequent actions. \n",
             Examples: "### Example\n\n```json\n{\n    \"action\": \"createbookmark\",\n    \"settings\": {\n        \"title\": \"my bookmark\",\n        \"description\": \"This bookmark contains some interesting selections\"\n    }\n}\n```\n",
         },
         "createsheet": {
@@ -140,7 +140,7 @@ var (
             Examples: "### Example\n\n```json\n//Keep-alive loop\n{\n    \"action\": \"iterated\",\n    \"settings\" : {\n        \"iterations\" : 10,\n        \"actions\" : [\n            {\n                \"action\" : \"productversion\"\n            },\n            {\n                \"action\": \"thinktime\",\n                \"settings\": {\n                    \"type\": \"static\",\n                    \"delay\": 30\n                }\n            }\n        ]\n    }\n}\n```\n",
         },
         "publishbookmark": {
-            Description: "## PublishBookmark action\n\nPublish a bookmark.\n",
+            Description: "## PublishBookmark action\n\nPublish a bookmark.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
             Examples: "### Example\n\nPublish the bookmark with `id` \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Publish bookmark 1\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nPublish the bookmark with the `title` \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Publish bookmark 2\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
         },
         "publishsheet": {
@@ -180,7 +180,7 @@ var (
             Examples: "### Examples\n\n#### ThinkTime uniform\n\nThis simulates a think time of 10 to 15 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"uniform\",\n         \"mean\": 12.5,\n         \"dev\": 2.5\n     } \n} \n```\n\n#### ThinkTime constant\n\nThis simulates a think time of 5 seconds.\n\n```json\n{\n     \"label\": \"TimerDelay\",\n     \"action\": \"thinktime\",\n     \"settings\": {\n         \"type\": \"static\",\n         \"delay\": 5\n     }\n}\n```\n",
         },
         "unpublishbookmark": {
-            Description: "## UnpublishBookmark action\n\nUnpublish a bookmark.\n",
+            Description: "## UnpublishBookmark action\n\nUnpublish a bookmark.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
             Examples: "### Example\n\nUnpublish the bookmark with `id` \"bookmark1\" that was created earlier on in the script.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 1\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"id\" : \"bookmark1\"\n    }\n}\n```\n\nUnpublish the bookmark with the `title` \"bookmark of testuser\", where \"testuser\" is the username of the simulated user.\n\n```json\n{\n    \"label\" : \"Unpublish bookmark 2\",\n    \"action\": \"unpublishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\" : \"bookmark of {{.UserName}}\"\n    }\n}\n```\n",
         },
         "unpublishsheet": {
@@ -202,8 +202,8 @@ var (
         "appselection.appmode": { "App selection mode","`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.","`guid`: Use the app GUID specified by the `app` parameter.","`name`: Use the app name specified by the `app` parameter.","`random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.","`randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.","`randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.","`randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.","`randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.","`round`: Select an app from the artifact map according to the round-robin principle.","`roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.","`roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.","`roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.","`roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID."  },  
         "appselection.filename": { "Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."  },  
         "appselection.list": { "List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`."  },  
-        "bookmark.id": { "GUID of the bookmark."  },  
-        "bookmark.title": { "Name of the bookmark."  },  
+        "bookmark.id": { "ID of the bookmark."  },  
+        "bookmark.title": { "Name of the bookmark (supports the use of [variables](#session_variables))."  },  
         "canaddtocollection.groups": { "DEPRECATED"  },  
         "changesheet.id": { "GUID of the sheet to change to."  },  
         "config.connectionSettings.allowuntrusted": { "Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."  },  

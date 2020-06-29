@@ -23,9 +23,6 @@ func (settings ElasticCreateAppSettings) Validate() error {
 	if settings.Title.String() == "" {
 		return errors.New("No Title specified")
 	}
-	if settings.Stream.String() == "" && settings.StreamGUID == "" {
-		return errors.New("No Stream specified")
-	}
 	return nil
 }
 

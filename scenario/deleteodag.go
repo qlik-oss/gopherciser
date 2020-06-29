@@ -51,7 +51,7 @@ func deleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 	}
 
 	// first, find the ID of the ODAG link we want
-	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main)
+	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to find ODAG link")
 	}

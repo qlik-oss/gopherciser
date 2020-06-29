@@ -44,7 +44,7 @@ func (listBox *ListBox) setProperties(properties *ListBoxProperties) {
 	listBox.properties = properties
 }
 
-// UpdateLayout get and set a new layout for sheetlist
+// UpdateLayout get and set a new layout for listbox
 func (listBox *ListBox) UpdateLayout(ctx context.Context) error {
 	if listBox.enigmaObject == nil {
 		return errors.Errorf("listBox enigma object is nil")
@@ -92,6 +92,7 @@ func (listBox *ListBox) GetListObjectData(ctx context.Context) ([]*enigma.NxData
 	if err != nil {
 		return nil, err
 	}
+
 	return listBox.enigmaObject.GetListObjectData(ctx, string(objDef.Data[0].Requests[0].Path), []*enigma.NxPage{
 		{
 			Left:   0,

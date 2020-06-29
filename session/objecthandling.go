@@ -147,57 +147,6 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 	return nil
 }
 
-func handleAutoChart(sessionState *State, actionState *action.State, autochartGen *enigma.GenericObject, autochartObj *enigmahandlers.Object) {
-	uplink := sessionState.Connection.Sense()
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		rawAutoChartProperties, err := sessionState.SendRequestRaw(actionState, autochartGen.GetPropertiesRaw)
-		if err != nil {
-			return errors.Wrapf(err, "object<%s>.GetProperties", autochartGen.GenericId)
-		}
-
-		var autoChartProp enigma.GenericObjectProperties
-		if err = jsonit.Unmarshal(rawAutoChartProperties, &autoChartProp); err != nil {
-			return errors.Wrap(err, "Failed to unmarshal auto-chart properties to GenericObjectProperties")
-		}
-		autochartObj.SetProperties(&autoChartProp)
-
-		// Look up current object type
-		generatedPropPath := senseobjdef.NewDataPath("qUndoExclude/generated")
-		rawGeneratedProp, errDataPath := generatedPropPath.Lookup(rawAutoChartProperties)
-		if errDataPath != nil {
-			return errors.Wrapf(errDataPath, "Failed to get generated properties for autochart<%s>", autochartGen.GenericId)
-		}
-
-		// Create sessionObject of type
-		var genObj *enigma.GenericObject
-		createSessionObject := func(ctx context.Context) error {
-			var err error
-			genObj, err = uplink.CurrentApp.Doc.CreateSessionObjectRaw(ctx, rawGeneratedProp)
-			return err
-		}
-		if err := sessionState.SendRequest(actionState, createSessionObject); err != nil {
-			return errors.Wrapf(err, "Failed to create session object from autochart<%s>", autochartObj.ID)
-		}
-		sessionState.LogEntry.LogDebugf("created session object<%s> from auto-chart<%s>", genObj.GenericId, autochartObj.ID)
-
-		// Add to object structure
-		obj, errAdd := uplink.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeGenericObject,
-			genObj.GenericId, genObj)
-		if errAdd != nil {
-			return errors.Wrapf(errAdd, "Failed to add session object<%s> to object list", genObj.GenericId)
-		}
-
-		// Get properties, layout and onchange logic of sessionObject
-		SetObjectDataAndEvents(sessionState, actionState, obj, genObj)
-
-		// Add to autochart tracking table
-		uplink.Objects.AddObjectLink(autochartObj.Handle, obj.Handle)
-
-		return nil
-	}, actionState, true, "Failed handling autochart")
-}
-
 func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	var wg sync.WaitGroup
 
@@ -551,7 +500,7 @@ func UpdateListObjectDataAsync(sessionState *State, actionState *action.State, g
 				Height: requestDef.MaxHeight(),
 			},
 		})
-		err = checkEngineErr(err, sessionState, fmt.Sprintf("object<%s>.GetListObjectData", gob.GenericId))
+		err = checkEngineErr(err, sessionState, fmt.Sprintf("object<%s>.GetHypercubeData", gob.GenericId))
 		if err != nil {
 			return errors.WithStack(err)
 		}

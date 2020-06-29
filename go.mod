@@ -2,6 +2,8 @@ module github.com/qlik-oss/gopherciser
 
 go 1.13
 
+replace github.com/eventials/go-tus => github.com/andrewmostello/go-tus v0.0.0-20200314041820-904a9904af9a
+
 require (
 	github.com/InVisionApp/tabular v0.3.0
 	github.com/buger/jsonparser v1.0.0

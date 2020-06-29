@@ -22,7 +22,8 @@ func (settings ElasticGenerateOdagSettings) Validate() error {
 func (settings ElasticGenerateOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := ElasticOdagEndpointConfiguration
-	err := generateOdag(sessionState, settings.GenerateOdagSettings, actionState, connectionSettings, odagEndpoint)
+	appGuid := sessionState.CurrentApp.GUID
+	err := generateOdag(sessionState, settings.GenerateOdagSettings, actionState, connectionSettings, odagEndpoint, appGuid)
 	if err != nil {
 		actionState.AddErrors(err)
 	}
