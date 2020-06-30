@@ -3,6 +3,7 @@ package scenario
 import (
 	"encoding/json"
 	"github.com/qlik-oss/gopherciser/appstructure"
+	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"reflect"
 	"strings"
 	"sync"
@@ -339,10 +340,11 @@ func (act *Action) Validate() error {
 
 // Execute scenario action
 func (act *Action) Execute(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
-
 	if act.Disabled {
 		return nil
 	}
+restartAction:
+	sessionState.ReconnectWait()
 
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState
@@ -354,7 +356,6 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 	var panicErr error
 	func() {
 		defer helpers.RecoverWithError(&panicErr)
-
 		act.Settings.Execute(sessionState, actionState, connectionSettings, act.Label, func() {
 			act.resetAction(sessionState, originalActionEntry)
 		})
@@ -364,6 +365,20 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 			sessionState.LogEntry.LogError(panicErr)
 		}
 		return errors.WithStack(panicErr)
+	}
+
+	switch helpers.TrueCause(actionState.Errors()).(type) {
+	case enigmahandlers.DisconnectError:
+		sessionState.ReconnectWait()
+		if sessionState.IsAbortTriggered() {
+			if err := sessionState.GetReconnectError(); err != nil {
+				return errors.WithStack(err)
+			}
+			return errors.New("Websocket unexpectedly closed")
+		}
+		goto restartAction
+	case nil:
+	default:
 	}
 
 	return errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))

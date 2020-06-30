@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -131,10 +134,8 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 
 	uplink := sessionState.Connection.Sense()
 
-	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		return openDoc(ctx, uplink, appEntry.GUID)
-	}); err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "Failed to open app GUID<%s>", appEntry.GUID))
+	openApp.doOpen(sessionState, actionState, uplink, appEntry.GUID)
+	if actionState.Failed {
 		return
 	}
 
@@ -187,26 +188,64 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return desktopErr
 	}, actionState, true, "Failed getting authenticated user")
 
-	sheetList, err := uplink.CurrentApp.GetSheetList(sessionState, actionState)
-	if err != nil {
-		actionState.AddErrors(err)
+	openApp.getSheetList(sessionState, actionState, uplink)
+	if actionState.Failed {
 		return
 	}
 
-	slLayout := sheetList.Layout()
-	if slLayout == nil {
-		actionState.AddErrors(errors.New("sheetlist layout is nil"))
-		return
-	}
-
-	if sessionState.LogEntry.ShouldLogDebug() &&
-		slLayout.AppObjectList != nil &&
-		slLayout.AppObjectList.Items != nil {
-
-		for _, v := range slLayout.AppObjectList.Items {
-			sessionState.LogEntry.LogDebugf("Sheet<%s> found", v.Info.Id)
+	// todo flag to ask reconnect or not
+	sessionState.SetReconnectFunc(func(subscribedObjects []string) error {
+		reConnectActionState := &action.State{}
+		connectWS := connectWsSettings{
+			ConnectFunc: connectFunc,
 		}
-	}
+
+		connectWS.Execute(sessionState, reConnectActionState, nil, "", nil)
+		if reConnectActionState.Failed {
+			return reConnectActionState.Errors()
+		}
+
+		upLink := sessionState.Connection.Sense()
+
+		connectMsgChan := upLink.Global.SessionMessageChannel(constant.EventTopicOnConnected)
+		defer upLink.Global.CloseSessionMessageChannel(connectMsgChan)
+
+		if err := sessionState.SendRequest(reConnectActionState, func(ctx context.Context) error {
+			activeDoc, err := upLink.Global.GetActiveDoc(ctx)
+			if err != nil {
+				return errors.WithStack(session.NoActiveDocError{Err: err})
+			} else if activeDoc == nil {
+				return errors.WithStack(session.NoActiveDocError{Msg: "No Active doc found on reconnect."})
+			}
+
+			return setCurrentApp(upLink, activeDoc.GenericId, activeDoc)
+		}); err != nil {
+			return err
+		}
+
+		select {
+		case <-connectMsgChan:
+		case <-sessionState.BaseContext().Done():
+			return reConnectActionState.Errors()
+		}
+
+		openApp.getSheetList(sessionState, reConnectActionState, upLink)
+
+		var wg sync.WaitGroup
+		// re-subscribe to objects
+		for _, id := range subscribedObjects {
+			localId := id
+			wg.Add(1)
+			sessionState.QueueRequest(func(ctx context.Context) error {
+				defer wg.Done()
+				session.GetAndAddObjectSync(sessionState, reConnectActionState, localId)
+				return nil
+			}, reConnectActionState, true, "")
+		}
+		wg.Wait()
+
+		return reConnectActionState.Errors()
+	})
 
 	sessionState.Wait(actionState)
 }
@@ -220,12 +259,16 @@ func (openApp OpenAppSettings) Validate() error {
 	return nil
 }
 
-func openDoc(ctx context.Context, connection *enigmahandlers.SenseUplink, appGUID string) error {
-	doc, err := connection.Global.OpenDoc(ctx, appGUID, "", "", "", false)
+func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID string) error {
+	doc, err := uplink.Global.OpenDoc(ctx, appGUID, "", "", "", false)
 	if err != nil {
 		return err
 	}
-	err = connection.Objects.AddObject(&enigmahandlers.Object{
+	return setCurrentApp(uplink, appGUID, doc)
+}
+
+func setCurrentApp(uplink *enigmahandlers.SenseUplink, appGUID string, doc *enigma.Doc) error {
+	err := uplink.Objects.AddObject(&enigmahandlers.Object{
 		Handle:       doc.ObjectInterface.Handle,
 		Type:         enigmahandlers.ObjTypeApp,
 		EnigmaObject: doc,
@@ -233,7 +276,7 @@ func openDoc(ctx context.Context, connection *enigmahandlers.SenseUplink, appGUI
 	if err != nil {
 		return err
 	}
-	connection.CurrentApp = &senseobjects.App{
+	uplink.CurrentApp = &senseobjects.App{
 		GUID: appGUID,
 		Doc:  doc,
 	}
@@ -263,11 +306,11 @@ func (openApp OpenAppSettings) AppStructureAction() (*AppStructureInfo, []Action
 
 func (connectWs connectWsSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	appGUID, err := connectWs.ConnectFunc()
-	actionState.Details = appGUID
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "Failed connecting to sense server"))
 		return
 	}
+	actionState.Details = appGUID
 
 	if sessionState == nil || sessionState.Connection == nil || sessionState.Connection.Sense() == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("No connection for setting up pushed messages listener"))
@@ -306,9 +349,9 @@ func (connectWs connectWsSettings) Validate() error {
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
+func (openApp OpenAppSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
 	newObjs := appstructure.AppStructurePopulatedObjects{
-		Parent:    settings.App.String(),
+		Parent:    openApp.App.String(),
 		Objects:   make([]appstructure.AppStructureObject, 0),
 		Bookmarks: nil,
 	}
@@ -321,4 +364,44 @@ func (settings OpenAppSettings) AffectsAppObjectsAction(structure appstructure.A
 		newObjs.Bookmarks = append(newObjs.Bookmarks, v)
 	}
 	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, true
+}
+
+func (openApp OpenAppSettings) doOpen(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, appGUID string) {
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		return openDoc(ctx, uplink, appGUID)
+	}); err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "Failed to open app GUID<%s>", appGUID))
+		return
+	}
+
+	if uplink.CurrentApp == nil {
+		actionState.AddErrors(errors.New("No current app"))
+		return
+	}
+	if uplink.CurrentApp.Doc == nil {
+		actionState.AddErrors(errors.New("No current enigma doc"))
+		return
+	}
+}
+func (openApp OpenAppSettings) getSheetList(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink) {
+	sheetList, err := uplink.CurrentApp.GetSheetList(sessionState, actionState)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	slLayout := sheetList.Layout()
+	if slLayout == nil {
+		actionState.AddErrors(errors.New("sheetlist layout is nil"))
+		return
+	}
+
+	if sessionState.LogEntry.ShouldLogDebug() &&
+		slLayout.AppObjectList != nil &&
+		slLayout.AppObjectList.Items != nil {
+
+		for _, v := range slLayout.AppObjectList.Items {
+			sessionState.LogEntry.LogDebugf("Sheet<%s> found", v.Info.Id)
+		}
+	}
 }
