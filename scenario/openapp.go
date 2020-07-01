@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 	"strings"
 )
@@ -210,23 +208,7 @@ func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID st
 	if err != nil {
 		return err
 	}
-	return setCurrentApp(uplink, appGUID, doc)
-}
-
-func setCurrentApp(uplink *enigmahandlers.SenseUplink, appGUID string, doc *enigma.Doc) error {
-	err := uplink.Objects.AddObject(&enigmahandlers.Object{
-		Handle:       doc.ObjectInterface.Handle,
-		Type:         enigmahandlers.ObjTypeApp,
-		EnigmaObject: doc,
-	})
-	if err != nil {
-		return err
-	}
-	uplink.CurrentApp = &senseobjects.App{
-		GUID: appGUID,
-		Doc:  doc,
-	}
-	return nil
+	return uplink.SetCurrentApp(appGUID, doc)
 }
 
 func (openApp OpenAppSettings) GetConnectWsAction(wsLabel string, connectFunc func() (string, error)) Action {
