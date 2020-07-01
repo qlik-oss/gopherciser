@@ -612,7 +612,6 @@ func (state *State) WSFailed() {
 			state.Cancel()
 			return
 		}
-		state.LogEntry.Log(logger.WarningLevel, "Websocket reconnected")
 	}
 }
 
@@ -650,6 +649,14 @@ func (state *State) Reconnect() error {
 	// todo flag to ask reconnect or not
 	defer state.reconnect.reconnectLock.Unlock()
 	state.reconnect.reconnectLock.Lock()
+	reconnectStart := time.Now()
+	defer func() {
+		if state.LogEntry != nil {
+			// todo report time spent in reconnect any differently?
+			state.LogEntry.LogInfo("WebsocketReconnect",
+				fmt.Sprintf("success=%v;TimeSpent=%d", state.reconnect.err == nil, time.Since(reconnectStart).Milliseconds()))
+		}
+	}()
 
 	// Get currently subscribed objects
 	var subscribedObjects []string
