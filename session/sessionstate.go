@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/globals/constant"
 	"net/http"
 	"sync"
 	"time"
@@ -101,7 +102,7 @@ type (
 		reconnectLock sync.Mutex
 		err           error
 
-		reconnectFunc func(objects []string) error
+		reconnectFunc func() (string, error)
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -647,6 +648,7 @@ func (state *State) ReconnectWait() {
 
 // Reconnect attempts reconnecting to previously opened app
 func (state *State) Reconnect() error {
+	// todo flag to ask reconnect or not
 	defer state.reconnect.reconnectLock.Unlock()
 	state.reconnect.reconnectLock.Lock()
 
@@ -668,10 +670,65 @@ func (state *State) Reconnect() error {
 		return nil
 	}
 
-	var err error
+	var err error // todo make reconnect scheme configurable
 	for _, waitTime := range []int{0, 1, 10, 30, 60} {
 		<-time.After(time.Duration(waitTime) * time.Second)
-		err = state.reconnect.reconnectFunc(subscribedObjects)
+
+		reConnectActionState := &action.State{}
+
+		if _, err := state.reconnect.reconnectFunc(); err != nil {
+			return errors.Wrap(err, "Failed connecting to sense server")
+		}
+
+		if err := state.SetupChangeChan(); err != nil {
+			return errors.Wrap(err, "failed to setup change channel")
+		}
+
+		upLink := state.Connection.Sense()
+
+		connectMsgChan := upLink.Global.SessionMessageChannel(constant.EventTopicOnConnected)
+		defer upLink.Global.CloseSessionMessageChannel(connectMsgChan)
+
+		if err := state.SendRequest(reConnectActionState, func(ctx context.Context) error {
+			activeDoc, err := upLink.Global.GetActiveDoc(ctx)
+			if err != nil {
+				return errors.WithStack(NoActiveDocError{Err: err})
+			} else if activeDoc == nil {
+				return errors.WithStack(NoActiveDocError{Msg: "No Active doc found on reconnect."})
+			}
+
+			return upLink.SetCurrentApp(activeDoc.GenericId, activeDoc)
+		}); err != nil {
+			return err
+		}
+
+		select {
+		case <-connectMsgChan:
+		case <-state.BaseContext().Done():
+			return reConnectActionState.Errors()
+		}
+
+		// todo
+		//openApp.getSheetList(state, reConnectActionState, upLink)
+
+		var wg sync.WaitGroup
+		// re-subscribe to objects
+		for _, id := range subscribedObjects {
+			localId := id
+			wg.Add(1)
+			state.QueueRequest(func(ctx context.Context) error {
+				defer wg.Done()
+				GetAndAddObjectSync(state, reConnectActionState, localId)
+				return nil
+			}, reConnectActionState, true, "")
+		}
+		wg.Wait()
+
+		if reConnectActionState.Failed {
+			return reConnectActionState.Errors()
+		}
+
+		//err = state.reconnect.reconnectFunc(subscribedObjects)
 
 		state.reconnect.err = err
 		switch errors.Cause(err).(type) {
@@ -686,7 +743,7 @@ func (state *State) Reconnect() error {
 }
 
 // SetReconnectFunc sets current app re-connect function
-func (state *State) SetReconnectFunc(f func([]string) error) {
+func (state *State) SetReconnectFunc(f func() (string, error)) {
 	if state == nil {
 		return
 	}
@@ -696,4 +753,73 @@ func (state *State) SetReconnectFunc(f func([]string) error) {
 // GetReconnectError from latest finished reconnect attempt
 func (state *State) GetReconnectError() error {
 	return state.reconnect.err
+}
+
+func (state *State) SetupChangeChan() error {
+	if state == nil {
+		return errors.New("use of nil state")
+	}
+
+	if state.Connection == nil {
+		return errors.New("connection is nil")
+	}
+
+	if state.Connection.Sense() == nil {
+		return errors.New("sense uplink is nil")
+	}
+
+	if state.Connection.Sense().Global == nil {
+		return errors.New("uplink global is nil")
+	}
+
+	changeChan := state.Connection.Sense().Global.ChangeListsChannel(true)
+	go func() {
+		for {
+			select {
+			case cl, ok := <-changeChan:
+				if !ok {
+					return
+				}
+
+				if len(cl.Changed) > 0 {
+					state.LogEntry.LogInfo("Pushed ChangedList", fmt.Sprintf("%v", cl.Changed))
+				}
+
+				if len(cl.Closed) > 0 {
+					state.LogEntry.LogInfo("Pushed ClosedList", fmt.Sprintf("%v", cl.Closed))
+				}
+
+				state.TriggerEvents(state.CurrentActionState, cl.Changed, cl.Closed)
+			case <-state.BaseContext().Done():
+				return
+			}
+
+		}
+	}()
+
+	return nil
+}
+
+// GetSheetList create and update sheetlist session object if not existing
+func (state *State) GetSheetList(actionState *action.State, uplink *enigmahandlers.SenseUplink) {
+	sheetList, err := uplink.CurrentApp.GetSheetList(state, actionState)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	slLayout := sheetList.Layout()
+	if slLayout == nil {
+		actionState.AddErrors(errors.New("sheetlist layout is nil"))
+		return
+	}
+
+	if state.LogEntry.ShouldLogDebug() &&
+		slLayout.AppObjectList != nil &&
+		slLayout.AppObjectList.Items != nil {
+
+		for _, v := range slLayout.AppObjectList.Items {
+			state.LogEntry.LogDebugf("Sheet<%s> found", v.Info.Id)
+		}
+	}
 }

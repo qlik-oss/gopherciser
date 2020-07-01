@@ -51,7 +51,7 @@ func getSheet(sessionState *session.State, actionState *action.State, upLink *en
 	return sheetObject, sheet, nil
 }
 
-func subscribeSheetObjects(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetID string) error {
+func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetID string) error {
 	sheetID = sessionState.IDMap.Get(sheetID)
 	sheetEntry, err := GetSheetEntry(sessionState, actionState, app, sheetID)
 	if err != nil {

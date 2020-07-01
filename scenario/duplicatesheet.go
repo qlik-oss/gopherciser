@@ -112,7 +112,7 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		sessionState.DeRegisterEvents(clearedObjects)
 
 		// "change" sheet
-		if err := subscribeSheetObjects(sessionState, actionState, app, sheetID); err != nil {
+		if err := subscribeSheetObjectsAsync(sessionState, actionState, app, sheetID); err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
 		}

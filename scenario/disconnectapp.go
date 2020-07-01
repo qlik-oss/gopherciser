@@ -18,11 +18,13 @@ func (settings DisconnectAppSettings) Validate() error {
 
 // Execute
 func (settings DisconnectAppSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-
 	if err := sessionState.Connection.Disconnect(); err != nil {
 		actionState.AddErrors(err)
 		return
 	}
+
+	// remove re-connect function
+	sessionState.SetReconnectFunc(nil)
 
 	sessionState.Wait(actionState)
 }

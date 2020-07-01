@@ -3,18 +3,15 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"strings"
-	"sync"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
+	"strings"
 )
 
 type (
@@ -188,64 +185,13 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return desktopErr
 	}, actionState, true, "Failed getting authenticated user")
 
-	openApp.getSheetList(sessionState, actionState, uplink)
+	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {
 		return
 	}
 
-	// todo flag to ask reconnect or not
-	sessionState.SetReconnectFunc(func(subscribedObjects []string) error {
-		reConnectActionState := &action.State{}
-		connectWS := connectWsSettings{
-			ConnectFunc: connectFunc,
-		}
-
-		connectWS.Execute(sessionState, reConnectActionState, nil, "", nil)
-		if reConnectActionState.Failed {
-			return reConnectActionState.Errors()
-		}
-
-		upLink := sessionState.Connection.Sense()
-
-		connectMsgChan := upLink.Global.SessionMessageChannel(constant.EventTopicOnConnected)
-		defer upLink.Global.CloseSessionMessageChannel(connectMsgChan)
-
-		if err := sessionState.SendRequest(reConnectActionState, func(ctx context.Context) error {
-			activeDoc, err := upLink.Global.GetActiveDoc(ctx)
-			if err != nil {
-				return errors.WithStack(session.NoActiveDocError{Err: err})
-			} else if activeDoc == nil {
-				return errors.WithStack(session.NoActiveDocError{Msg: "No Active doc found on reconnect."})
-			}
-
-			return setCurrentApp(upLink, activeDoc.GenericId, activeDoc)
-		}); err != nil {
-			return err
-		}
-
-		select {
-		case <-connectMsgChan:
-		case <-sessionState.BaseContext().Done():
-			return reConnectActionState.Errors()
-		}
-
-		openApp.getSheetList(sessionState, reConnectActionState, upLink)
-
-		var wg sync.WaitGroup
-		// re-subscribe to objects
-		for _, id := range subscribedObjects {
-			localId := id
-			wg.Add(1)
-			sessionState.QueueRequest(func(ctx context.Context) error {
-				defer wg.Done()
-				session.GetAndAddObjectSync(sessionState, reConnectActionState, localId)
-				return nil
-			}, reConnectActionState, true, "")
-		}
-		wg.Wait()
-
-		return reConnectActionState.Errors()
-	})
+	// setup re-connect function
+	sessionState.SetReconnectFunc(connectFunc)
 
 	sessionState.Wait(actionState)
 }
@@ -312,36 +258,10 @@ func (connectWs connectWsSettings) Execute(sessionState *session.State, actionSt
 	}
 	actionState.Details = appGUID
 
-	if sessionState == nil || sessionState.Connection == nil || sessionState.Connection.Sense() == nil || sessionState.Connection.Sense() == nil {
-		actionState.AddErrors(errors.New("No connection for setting up pushed messages listener"))
+	if err := sessionState.SetupChangeChan(); err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to setup change channel"))
 		return
 	}
-
-	changeChan := sessionState.Connection.Sense().Global.ChangeListsChannel(true)
-	go func() {
-		for {
-			select {
-			case cl, ok := <-changeChan:
-				if !ok {
-					return
-				}
-
-				if len(cl.Changed) > 0 {
-					sessionState.LogEntry.LogInfo("Pushed ChangedList", fmt.Sprintf("%v", cl.Changed))
-				}
-
-				if len(cl.Closed) > 0 {
-					sessionState.LogEntry.LogInfo("Pushed ClosedList", fmt.Sprintf("%v", cl.Closed))
-				}
-
-				sessionState.TriggerEvents(sessionState.CurrentActionState, cl.Changed, cl.Closed)
-			case <-sessionState.BaseContext().Done():
-				return
-			}
-
-		}
-	}()
-
 }
 
 func (connectWs connectWsSettings) Validate() error {
@@ -381,27 +301,5 @@ func (openApp OpenAppSettings) doOpen(sessionState *session.State, actionState *
 	if uplink.CurrentApp.Doc == nil {
 		actionState.AddErrors(errors.New("No current enigma doc"))
 		return
-	}
-}
-func (openApp OpenAppSettings) getSheetList(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink) {
-	sheetList, err := uplink.CurrentApp.GetSheetList(sessionState, actionState)
-	if err != nil {
-		actionState.AddErrors(err)
-		return
-	}
-
-	slLayout := sheetList.Layout()
-	if slLayout == nil {
-		actionState.AddErrors(errors.New("sheetlist layout is nil"))
-		return
-	}
-
-	if sessionState.LogEntry.ShouldLogDebug() &&
-		slLayout.AppObjectList != nil &&
-		slLayout.AppObjectList.Items != nil {
-
-		for _, v := range slLayout.AppObjectList.Items {
-			sessionState.LogEntry.LogDebugf("Sheet<%s> found", v.Info.Id)
-		}
 	}
 }

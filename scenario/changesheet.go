@@ -63,7 +63,7 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 	}
 
 	// get all objects on sheet
-	if err := subscribeSheetObjects(sessionState, actionState, uplink.CurrentApp, settings.ID); err != nil {
+	if err := subscribeSheetObjectsAsync(sessionState, actionState, uplink.CurrentApp, settings.ID); err != nil {
 		actionState.AddErrors(err)
 		return
 	}
