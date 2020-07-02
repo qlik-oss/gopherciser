@@ -188,7 +188,6 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		Counters:       counters,
 
 		reconnect: ReconnectInfo{
-			//pendingActions: make(chan struct{}),
 			reconnectFunc: nil,
 		},
 	}
@@ -651,7 +650,7 @@ func (state *State) GetObjectHandlerInstance(id, typ string) ObjectHandlerInstan
 
 // ReconnectWait wait in case websocket is getting re-connected
 func (state *State) ReconnectWait() {
-	if state != nil && state.reconnect.reconnectFunc != nil {
+	if state != nil && state.ReconnectSettings.Reconnect && state.reconnect.reconnectFunc != nil {
 		defer state.reconnect.reconnectLock.Unlock()
 		state.reconnect.reconnectLock.Lock()
 	}
@@ -746,7 +745,7 @@ reconnectLoop:
 
 		switch errors.Cause(state.reconnect.err).(type) {
 		case nil:
-			return nil // sucessful re-connect
+			return nil // successful re-connect
 		case NoActiveDocError:
 			break reconnectLoop // invalid doc, don't try more re-connects
 		}
