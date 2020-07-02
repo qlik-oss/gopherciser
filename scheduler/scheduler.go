@@ -47,6 +47,8 @@ type (
 		TimeBuf TimeBuffer `json:"iterationtimebuffer" doc-key:"config.scheduler.iterationtimebuffer"`
 		// InstanceNumber used to ensure different randomizations when running script in multiple different instances
 		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"`
+		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
+		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings"`
 
 		connectionSettings *connection.ConnectionSettings
 	}
@@ -65,9 +67,11 @@ const (
 	SchedSimple
 )
 
-var schedulerTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
-	"simple": int(SchedSimple),
-})
+var (
+	schedulerTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+		"simple": int(SchedSimple),
+	})
+)
 
 func (value Type) GetEnumMap() *enummap.EnumMap {
 	return schedulerTypeEnumMap
@@ -165,9 +169,9 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 		instanceID = 1
 	}
 	var iteration int
-	var mErr *multierror.Error
 
 	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.connectionSettings.VirtualProxy, onlyInstanceSeed, counters)
+	sessionState.ReconnectSettings = sched.ReconnectSettings
 
 	userName := ""
 	if user != nil {
@@ -180,6 +184,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	buildmetrics.AddUser()
 	defer buildmetrics.RemoveUser()
 
+	var mErr *multierror.Error
 	for {
 		sched.TimeBuf.SetDurationStart(time.Now())
 
@@ -199,7 +204,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 
 		setLogEntry(sessionState, log, sessionID, thread, userName)
 
-		err := sched.runIteration(userScenario, sessionState, mErr, ctx)
+		err := sched.runIteration(userScenario, sessionState, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}
@@ -214,14 +219,28 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	return helpers.FlattenMultiError(mErr)
 }
 
-func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionState *session.State, mErr *multierror.Error, ctx context.Context) error {
+func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionState *session.State, ctx context.Context) error {
 	defer sessionState.Reset(ctx)
 	defer sessionState.Disconnect() // make sure to disconnect connections at end of iteration
 	defer logErrReport(sessionState)
 
 	for _, v := range userScenario {
+	restartAction:
+		if sched.ReconnectSettings.Reconnect {
+			sessionState.ReconnectWait()
+		}
+
 		if err := v.Execute(sessionState, sched.connectionSettings); err != nil {
-			if isAborted, _ := scenario.CheckActionError(err); isAborted {
+			if sched.ReconnectSettings.Reconnect && sessionState.IsWebsocketDisconnected(err) {
+				sessionState.ReconnectWait()
+				if sessionState.IsAbortTriggered() {
+					if err := sessionState.GetReconnectError(); err != nil {
+						return errors.WithStack(err)
+					}
+					return errors.New("Websocket unexpectedly closed")
+				}
+				goto restartAction
+			} else if isAborted, _ := scenario.CheckActionError(err); isAborted {
 				return nil
 			} else {
 				if err := sched.TimeBuf.Wait(ctx, true); err != nil {
@@ -233,7 +252,7 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 			}
 		}
 	}
-	return mErr
+	return nil
 }
 
 func logErrReport(sessionState *session.State) {

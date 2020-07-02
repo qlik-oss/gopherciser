@@ -87,6 +87,7 @@ type (
 		Pending            PendingHandler
 		Rest               *RestHandler
 		RequestMetrics     *requestmetrics.RequestMetrics
+		ReconnectSettings  ReconnectSettings
 
 		events  map[int]*Event // todo support multiple events per handle?
 		eventMu sync.Mutex
@@ -95,6 +96,14 @@ type (
 		objectsLock sync.Mutex
 
 		reconnect ReconnectInfo
+	}
+
+	// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
+	ReconnectSettings struct {
+		// Reconnect set to true to attempt reconnecting websocket on disconnect
+		Reconnect bool `json:"reconnect"`
+		// Backoff pattern for reconnect, if empty defaults to defaultReconnectBackoff
+		Backoff []float64 `json:"backoff"`
 	}
 
 	ReconnectInfo struct {
@@ -126,6 +135,10 @@ type (
 const (
 	// DefaultTimeout per request timeout
 	DefaultTimeout = 300 * time.Second
+)
+
+var (
+	defaultReconnectBackoff = []float64{0.0, 1.0, 10.0, 20.0}
 )
 
 // Error implements error interface
@@ -606,7 +619,7 @@ func (state *State) Cancel() {
 
 // WSFailed Should be executed on websocket unexpectedly failing
 func (state *State) WSFailed() {
-	if state != nil {
+	if state != nil && state.ReconnectSettings.Reconnect {
 		if err := state.Reconnect(); err != nil {
 			state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
 			state.Cancel()
@@ -646,7 +659,10 @@ func (state *State) ReconnectWait() {
 
 // Reconnect attempts reconnecting to previously opened app
 func (state *State) Reconnect() error {
-	// todo flag to ask reconnect or not
+	if !state.ReconnectSettings.Reconnect {
+		return nil
+	}
+
 	defer state.reconnect.reconnectLock.Unlock()
 	state.reconnect.reconnectLock.Lock()
 	reconnectStart := time.Now()
@@ -671,15 +687,19 @@ func (state *State) Reconnect() error {
 		})
 	}
 
-	// todo make reconnect scheme configurable
 	if state == nil || state.reconnect.reconnectFunc == nil {
 		state.reconnect.err = nil
 		return nil // we should not try to reconnect
 	}
 
+	backOff := state.ReconnectSettings.Backoff
+	if len(backOff) < 1 {
+		backOff = defaultReconnectBackoff
+	}
+
 reconnectLoop:
-	for _, waitTime := range []int{0, 1, 10, 30, 60} {
-		<-time.After(time.Duration(waitTime) * time.Second)
+	for _, waitTime := range backOff {
+		<-time.After(time.Duration(waitTime * float64(time.Second)))
 
 		reConnectActionState := &action.State{}
 
@@ -746,4 +766,14 @@ func (state *State) SetReconnectFunc(f func() (string, error)) {
 // GetReconnectError from latest finished reconnect attempt
 func (state *State) GetReconnectError() error {
 	return state.reconnect.err
+}
+
+// IsWebsocketDisconnected checks if error is caused by websocket disconnect
+func (state *State) IsWebsocketDisconnected(err error) bool {
+	switch helpers.TrueCause(err).(type) {
+	case enigmahandlers.DisconnectError:
+		return true
+	default:
+		return false
+	}
 }

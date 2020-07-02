@@ -3,7 +3,6 @@ package scenario
 import (
 	"encoding/json"
 	"github.com/qlik-oss/gopherciser/appstructure"
-	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"reflect"
 	"strings"
 	"sync"
@@ -343,8 +342,6 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 	if act.Disabled {
 		return nil
 	}
-restartAction:
-	sessionState.ReconnectWait()
 
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState
@@ -365,20 +362,6 @@ restartAction:
 			sessionState.LogEntry.LogError(panicErr)
 		}
 		return errors.WithStack(panicErr)
-	}
-
-	switch helpers.TrueCause(actionState.Errors()).(type) {
-	case enigmahandlers.DisconnectError:
-		sessionState.ReconnectWait()
-		if sessionState.IsAbortTriggered() {
-			if err := sessionState.GetReconnectError(); err != nil {
-				return errors.WithStack(err)
-			}
-			return errors.New("Websocket unexpectedly closed")
-		}
-		goto restartAction
-	case nil:
-	default:
 	}
 
 	return errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))

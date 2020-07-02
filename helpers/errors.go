@@ -35,6 +35,12 @@ func TrueCause(err error) error {
 			return TrueCause(err.(*multierror.Error).Errors[0])
 		}
 	default:
-		return errors.Cause(err)
+		cause := errors.Cause(err)
+		switch cause.(type) {
+		case *multierror.Error:
+			return TrueCause(cause)
+		default:
+			return cause
+		}
 	}
 }
