@@ -15,7 +15,22 @@ The reason for having an intermediate "programmatically readable" step is to all
 
 ## How: Generating the documentation
 
+To generate new `documentation.go` and `settingup.md` files after updating the documentation data, use the following command in the project root:
+
+```bash
+go generate
+```
+
+The Gopherciser `main.go` file contains the following commands for `go generate`:
+
+```
+//go:generate go run ./generatedocs/compile/compile.go
+//go:generate go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
+```
+
 ### Compiling documentation data to be used by the GUI and for markdown generation
+
+To generate a new `documentation.go` only use the following command:
 
 ```
 go run ./generatedocs/compile/compile.go
@@ -28,6 +43,8 @@ go run ./generatedocs/compile/compile.go
 
 ### Generating markdown files
 
+To generate a new `settingup.md` only use the following command:
+
 ```
 go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
 ```
@@ -36,19 +53,6 @@ go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
 
 * `--template`:  Defaults to `generatedocs/data/settingup.md.template`.
 * `--output`: Defaults to `generatedocs/generated/settingup.md`.
-
-The Gopherciser `main.go` file contains the following commands for `go generate`:
-
-```
-//go:generate go run ./generatedocs/compile/compile.go
-//go:generate go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
-```
-
-To generate new `documentation.go` and `settingup.md` files after updating the documentation data, use the following command in the project root:
-
-```bash
-go generate
-```
 
 ## How: Updating/adding data
 
