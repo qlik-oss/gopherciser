@@ -407,3 +407,19 @@ func (uplink *SenseUplink) retryInterceptor(ctx context.Context, invocation *eni
 	}
 	return response
 }
+
+func (uplink *SenseUplink) SetCurrentApp(appGUID string, doc *enigma.Doc) error {
+	err := uplink.Objects.AddObject(&Object{
+		Handle:       doc.ObjectInterface.Handle,
+		Type:         ObjTypeApp,
+		EnigmaObject: doc,
+	})
+	if err != nil {
+		return err
+	}
+	uplink.CurrentApp = &senseobjects.App{
+		GUID: appGUID,
+		Doc:  doc,
+	}
+	return nil
+}

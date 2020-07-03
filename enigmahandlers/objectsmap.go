@@ -229,3 +229,13 @@ func (o *ObjectsMap) GetAllObjectHandles(lock bool, t ObjectType) []int {
 	sort.Ints(keys)
 	return keys
 }
+
+// Len locks objects map and gets current length
+func (o *ObjectsMap) Len() int {
+	if o == nil {
+		return 0
+	}
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+	return len(o.objects)
+}
