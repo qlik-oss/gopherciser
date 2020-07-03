@@ -73,7 +73,22 @@ func (objects *objectHandlerMap) GetObjectHandler(objectType string) ObjectHandl
 
 // GetAndAddObjectAsync get and add object to object handling
 func GetAndAddObjectAsync(sessionState *State, actionState *action.State, name string) {
+	getAndAddObjectWithCallback(sessionState, actionState, name, func() {})
+}
+
+// GetAndAddObjectSync get and add object to object handling
+func GetAndAddObjectSync(sessionState *State, actionState *action.State, name string) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	getAndAddObjectWithCallback(sessionState, actionState, name, func() {
+		wg.Done()
+	})
+	wg.Wait()
+}
+
+func getAndAddObjectWithCallback(sessionState *State, actionState *action.State, name string, callback func()) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
+		defer callback()
 		sense := sessionState.Connection.Sense()
 
 		var genObj *enigma.GenericObject

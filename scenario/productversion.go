@@ -24,7 +24,7 @@ func (settings ProductVersionSettings) Validate() error {
 
 // Execute ProductVersion action (Implements ActionSettings interface)
 func (settings ProductVersionSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
+	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil || sessionState.Connection.Sense().Global == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
 		return
 	}

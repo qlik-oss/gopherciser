@@ -2,6 +2,7 @@ package enigmahandlers
 
 import (
 	"context"
+	"io"
 	"net"
 	"net/http"
 	neturl "net/url"
@@ -14,9 +15,19 @@ import (
 	"github.com/qlik-oss/enigma-go"
 )
 
-// SenseDialer glue between net.Conn and enigma.Socket implementing required methods
-type SenseDialer struct {
-	net.Conn
+type (
+	// SenseDialer glue between net.Conn and enigma.Socket implementing required methods
+	SenseDialer struct {
+		net.Conn
+	}
+
+	// DisconnectError is sent on websocket disconnect
+	DisconnectError struct{}
+)
+
+// Error implements error interface
+func (err DisconnectError) Error() string {
+	return "Websocket disconnected"
 }
 
 // WriteMessage Write message to a frame on the websocket
@@ -33,6 +44,10 @@ func (dialer *SenseDialer) ReadMessage() (int, []byte, error) {
 
 	for _, m := range msg {
 		data = append(data, m.Payload...)
+	}
+
+	if err == io.EOF {
+		err = DisconnectError{}
 	}
 
 	return len(msg), data, err

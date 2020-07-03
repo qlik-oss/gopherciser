@@ -79,6 +79,9 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	}, actionState, true, "failed to get DocList object")
 	sessionState.Wait(actionState)
 
+	// setup re-connect function
+	sessionState.SetReconnectFunc(connectFunc)
+
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, err)
 	}

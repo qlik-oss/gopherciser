@@ -99,6 +99,13 @@ var executeCmd = &cobra.Command{
 	Short:   "execute exerciser scenario towards a sense installation",
 	Long:    `execute exerciser scenario towards a sense installation`,
 	Run: func(cmd *cobra.Command, args []string) {
+		defer func() {
+			var panicErr error = nil
+			helpers.RecoverWithError(&panicErr)
+			if panicErr != nil {
+				_, _ = os.Stderr.WriteString(fmt.Sprintf("%+v", panicErr))
+			}
+		}()
 		if cfgFile == "" {
 			_, _ = os.Stderr.WriteString("Error: No config provided\n")
 			if err := cmd.Help(); err != nil {

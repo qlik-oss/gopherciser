@@ -339,7 +339,6 @@ func (act *Action) Validate() error {
 
 // Execute scenario action
 func (act *Action) Execute(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
-
 	if act.Disabled {
 		return nil
 	}
@@ -354,7 +353,6 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 	var panicErr error
 	func() {
 		defer helpers.RecoverWithError(&panicErr)
-
 		act.Settings.Execute(sessionState, actionState, connectionSettings, act.Label, func() {
 			act.resetAction(sessionState, originalActionEntry)
 		})

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -86,12 +87,30 @@ type (
 		Pending            PendingHandler
 		Rest               *RestHandler
 		RequestMetrics     *requestmetrics.RequestMetrics
+		ReconnectSettings  ReconnectSettings
 
 		events  map[int]*Event // todo support multiple events per handle?
 		eventMu sync.Mutex
 
 		objects     map[string]ObjectHandlerInstance
 		objectsLock sync.Mutex
+
+		reconnect ReconnectInfo
+	}
+
+	// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
+	ReconnectSettings struct {
+		// Reconnect set to true to attempt reconnecting websocket on disconnect
+		Reconnect bool `json:"reconnect" doc-key:"reconnectsettings.reconnect"`
+		// Backoff pattern for reconnect, if empty defaults to defaultReconnectBackoff
+		Backoff []float64 `json:"backoff" doc-key:"reconnectsettings.backoff"`
+	}
+
+	ReconnectInfo struct {
+		reconnectLock sync.Mutex
+		err           error
+
+		reconnectFunc func() (string, error)
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -106,12 +125,32 @@ type (
 		SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject)
 		GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error)
 	}
+
+	NoActiveDocError struct {
+		Msg string
+		Err error
+	}
 )
 
 const (
 	// DefaultTimeout per request timeout
 	DefaultTimeout = 300 * time.Second
 )
+
+var (
+	defaultReconnectBackoff = []float64{0.0, 1.0, 10.0, 20.0}
+)
+
+// Error implements error interface
+func (err NoActiveDocError) Error() string {
+	if err.Msg == "" {
+		err.Msg = "NoActiveDocError"
+	}
+	if err.Err != nil {
+		return fmt.Sprintf("%s: %v", err.Msg, err.Err)
+	}
+	return err.Msg
+}
 
 // Reset child randomizer with new seed
 func (rnd *DefaultRandomizer) Reset(instance, session uint64, onlyInstanceSeed bool) {
@@ -147,6 +186,10 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		events:         make(map[int]*Event),
 		Counters:       counters,
+
+		reconnect: ReconnectInfo{
+			reconnectFunc: nil,
+		},
 	}
 
 	if state.Timeout < time.Millisecond {
@@ -575,9 +618,12 @@ func (state *State) Cancel() {
 
 // WSFailed Should be executed on websocket unexpectedly failing
 func (state *State) WSFailed() {
-	if state != nil {
-		state.LogEntry.LogError(errors.New("websocket unexpectedly closed"))
-		state.Cancel()
+	if state != nil && state.ReconnectSettings.Reconnect {
+		if err := state.Reconnect(); err != nil {
+			state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
+			state.Cancel()
+			return
+		}
 	}
 }
 
@@ -600,4 +646,133 @@ func (state *State) GetObjectHandlerInstance(id, typ string) ObjectHandlerInstan
 	state.objects[id] = instance
 
 	return instance
+}
+
+// ReconnectWait wait in case websocket is getting re-connected
+func (state *State) ReconnectWait() {
+	if state != nil && state.ReconnectSettings.Reconnect && state.reconnect.reconnectFunc != nil {
+		defer state.reconnect.reconnectLock.Unlock()
+		state.reconnect.reconnectLock.Lock()
+	}
+}
+
+// Reconnect attempts reconnecting to previously opened app
+func (state *State) Reconnect() error {
+	if !state.ReconnectSettings.Reconnect {
+		return nil
+	}
+
+	defer state.reconnect.reconnectLock.Unlock()
+	state.reconnect.reconnectLock.Lock()
+	reconnectStart := time.Now()
+	defer func() {
+		if state.LogEntry != nil {
+			// todo report time spent in reconnect any differently?
+			state.LogEntry.LogInfo("WebsocketReconnect",
+				fmt.Sprintf("success=%v;TimeSpent=%d", state.reconnect.err == nil, time.Since(reconnectStart).Milliseconds()))
+		}
+	}()
+
+	// Get currently subscribed objects
+	var subscribedObjects []string
+	if state.Connection != nil && state.Connection.Sense() != nil {
+		subscribedObjects = make([]string, 0, state.Connection.Sense().Objects.Len())
+		_ = state.Connection.Sense().Objects.ForEach(func(obj *enigmahandlers.Object) error {
+			if obj == nil || obj.ID == "" {
+				return nil
+			}
+			subscribedObjects = append(subscribedObjects, obj.ID)
+			return nil
+		})
+	}
+
+	if state == nil || state.reconnect.reconnectFunc == nil {
+		state.reconnect.err = nil
+		return nil // we should not try to reconnect
+	}
+
+	backOff := state.ReconnectSettings.Backoff
+	if len(backOff) < 1 {
+		backOff = defaultReconnectBackoff
+	}
+
+reconnectLoop:
+	for _, waitTime := range backOff {
+		<-time.After(time.Duration(waitTime * float64(time.Second)))
+
+		reConnectActionState := &action.State{}
+
+		if _, err := state.reconnect.reconnectFunc(); err != nil {
+			state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
+			continue reconnectLoop
+		}
+
+		if err := state.SetupChangeChan(); err != nil {
+			state.reconnect.err = errors.Wrap(err, "failed to setup change channel")
+			continue reconnectLoop
+		}
+
+		upLink := state.Connection.Sense()
+
+		doc, err := state.GetActiveDoc(reConnectActionState, upLink)
+		if err != nil {
+			state.reconnect.err = errors.WithStack(err)
+			break reconnectLoop // no active doc, don't try re connecting again
+		}
+
+		// set active doc as current app
+		if err := upLink.SetCurrentApp(doc.GenericId, doc); err != nil {
+			state.reconnect.err = errors.WithStack(err)
+			break reconnectLoop
+		}
+
+		var wg sync.WaitGroup
+		// re-subscribe to objects
+		for _, id := range subscribedObjects {
+			localId := id
+			wg.Add(1)
+			state.QueueRequest(func(ctx context.Context) error {
+				defer wg.Done()
+				GetAndAddObjectSync(state, reConnectActionState, localId)
+				return nil
+			}, reConnectActionState, true, "")
+		}
+		wg.Wait()
+
+		if reConnectActionState.Failed {
+			state.reconnect.err = reConnectActionState.Errors()
+		}
+
+		switch errors.Cause(state.reconnect.err).(type) {
+		case nil:
+			return nil // successful re-connect
+		case NoActiveDocError:
+			break reconnectLoop // invalid doc, don't try more re-connects
+		}
+	}
+
+	return errors.Wrap(state.reconnect.err, "Reconnect error")
+}
+
+// SetReconnectFunc sets current app re-connect function
+func (state *State) SetReconnectFunc(f func() (string, error)) {
+	if state == nil {
+		return
+	}
+	state.reconnect.reconnectFunc = f
+}
+
+// GetReconnectError from latest finished reconnect attempt
+func (state *State) GetReconnectError() error {
+	return state.reconnect.err
+}
+
+// IsWebsocketDisconnected checks if error is caused by websocket disconnect
+func (state *State) IsWebsocketDisconnected(err error) bool {
+	switch helpers.TrueCause(err).(type) {
+	case enigmahandlers.DisconnectError:
+		return true
+	default:
+		return false
+	}
 }
