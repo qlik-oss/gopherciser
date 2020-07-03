@@ -20,7 +20,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
-	github.com/qlik-oss/enigma-go v1.1.2
+	github.com/qlik-oss/enigma-go v1.1.3-0.20200629052521-574b1c3aa72a
 	github.com/rs/zerolog v1.19.0
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644
 	github.com/spf13/cobra v1.0.0
