@@ -30,7 +30,7 @@ The Gopherciser `main.go` file contains the following commands for `go generate`
 
 ### Compiling documentation data to be used by the GUI and for markdown generation
 
-To generate a new `documentation.go` only use the following command:
+To only generate a new `documentation.go` file, use the following command:
 
 ```
 go run ./generatedocs/compile/compile.go
@@ -43,7 +43,7 @@ go run ./generatedocs/compile/compile.go
 
 ### Generating markdown files
 
-To generate a new `settingup.md` only use the following command:
+To only generate a new `settingup.md` file, use the following command:
 
 ```
 go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
