@@ -141,6 +141,9 @@
     "config.scheduler.settings.concurrentusers": [
         "Number of concurrent users to simulate. Allowed values are positive integers."
     ],
+    "config.scheduler.reconnectsettings" : [
+        "Settings to enable re-connection attempts on unexpected disconnects."
+    ],
     "config.scheduler.settings.reuseusers": [
         "",
         "`true`: Every iteration for each concurrent user uses the same user and session.",
@@ -455,6 +458,12 @@
     ],
     "randomaction.actions.overrides": [
         "(optional) Static overrides to the action. The overrides can include any or all of the settings from the original action, as determined by the `type` field. If nothing is specified, the default values are used."
+    ],
+    "reconnectsettings.reconnect" : [
+        "Enable reconnect attempt when websocket gets disconnected, defaults to false."
+    ],
+    "reconnectsettings.backoff" : [
+        "Reconnect backoff scheme, defaults to [0.0, 1.0, 10.0, 20.0] if left empty"
     ],
     "reload.mode": [
         "Error handling during the reload operation",

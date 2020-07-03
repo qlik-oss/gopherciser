@@ -101,9 +101,9 @@ type (
 	// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
 	ReconnectSettings struct {
 		// Reconnect set to true to attempt reconnecting websocket on disconnect
-		Reconnect bool `json:"reconnect"`
+		Reconnect bool `json:"reconnect" doc-key:"reconnectsettings.reconnect"`
 		// Backoff pattern for reconnect, if empty defaults to defaultReconnectBackoff
-		Backoff []float64 `json:"backoff"`
+		Backoff []float64 `json:"backoff" doc-key:"reconnectsettings.backoff"`
 	}
 
 	ReconnectInfo struct {

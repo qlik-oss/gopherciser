@@ -175,6 +175,9 @@ This section of the JSON file contains scheduler settings for the users in the l
       * `minduration`: Add a time buffer if the iteration duration is less than `duration`.
   * `duration`: Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
 * `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
+* `reconnectsettings`: Settings to enable re-connection attempts on unexpected disconnects.
+  * `reconnect`: Enable reconnect attempt when websocket gets disconnected, defaults to false.
+  * `backoff`: Reconnect backoff scheme, defaults to [0.0, 1.0, 10.0, 20.0] if left empty
 * `settings`: 
   * `executionTime`: Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time.
   * `iterations`: Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations.

@@ -48,7 +48,7 @@ type (
 		// InstanceNumber used to ensure different randomizations when running script in multiple different instances
 		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"`
 		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
-		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings"`
+		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings"`
 
 		connectionSettings *connection.ConnectionSettings
 	}
