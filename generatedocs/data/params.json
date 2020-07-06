@@ -463,7 +463,7 @@
         "Enable re-connection attempts if the WebSocket is disconnected. Defaults to false."
     ],
     "reconnectsettings.backoff" : [
-        "Re-connection backoff scheme. Defaults to `[0.0, 1.0, 10.0, 20.0]`, if left empty",
+        "Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:",
         "`0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect",
         "`1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again",
         "`10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again",

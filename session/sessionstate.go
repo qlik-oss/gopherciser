@@ -138,7 +138,7 @@ const (
 )
 
 var (
-	defaultReconnectBackoff = []float64{0.0, 1.0, 10.0, 20.0}
+	defaultReconnectBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0}
 )
 
 // Error implements error interface

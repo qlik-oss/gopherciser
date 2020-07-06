@@ -177,7 +177,7 @@ This section of the JSON file contains scheduler settings for the users in the l
 * `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
 * `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
   * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to false.
-  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 1.0, 10.0, 20.0]`, if left empty
+  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
       * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
       * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
       * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
