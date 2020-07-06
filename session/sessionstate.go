@@ -665,11 +665,11 @@ func (state *State) Reconnect() error {
 	defer state.reconnect.reconnectLock.Unlock()
 	state.reconnect.reconnectLock.Lock()
 	reconnectStart := time.Now()
+	var attempts int
 	defer func() {
 		if state.LogEntry != nil {
-			// todo report time spent in reconnect any differently?
 			state.LogEntry.LogInfo("WebsocketReconnect",
-				fmt.Sprintf("success=%v;TimeSpent=%d", state.reconnect.err == nil, time.Since(reconnectStart).Milliseconds()))
+				fmt.Sprintf("success=%v;attempts=%d;TimeSpent=%d", state.reconnect.err == nil, attempts, time.Since(reconnectStart).Milliseconds()))
 		}
 	}()
 
@@ -697,11 +697,12 @@ func (state *State) Reconnect() error {
 	}
 
 reconnectLoop:
-	for _, waitTime := range backOff {
+	for i, waitTime := range backOff {
 		<-time.After(time.Duration(waitTime * float64(time.Second)))
 
 		reConnectActionState := &action.State{}
 
+		attempts = i + 1
 		if _, err := state.reconnect.reconnectFunc(); err != nil {
 			state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
 			continue reconnectLoop
@@ -739,10 +740,7 @@ reconnectLoop:
 		}
 		wg.Wait()
 
-		if reConnectActionState.Failed {
-			state.reconnect.err = reConnectActionState.Errors()
-		}
-
+		state.reconnect.err = reConnectActionState.Errors()
 		switch errors.Cause(state.reconnect.err).(type) {
 		case nil:
 			return nil // successful re-connect

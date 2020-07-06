@@ -343,6 +343,27 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 		return nil
 	}
 
+restartAction:
+	if sessionState.ReconnectSettings.Reconnect {
+		sessionState.ReconnectWait()
+	}
+
+	err := act.execute(sessionState, connectionSettings)
+	if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
+		sessionState.ReconnectWait()
+		if sessionState.IsAbortTriggered() {
+			if err := sessionState.GetReconnectError(); err != nil {
+				return errors.WithStack(err)
+			}
+			return errors.New("Websocket unexpectedly closed")
+		}
+		goto restartAction
+	}
+
+	return err
+}
+
+func (act *Action) execute(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState
 
@@ -393,7 +414,7 @@ func (act *Action) setActionStart(sessionState *session.State, actionEntry *logg
 
 func (act *Action) endAction(sessionState *session.State, actionState *action.State, originalActionEntry *logger.ActionEntry) error {
 	var containerActionEntry *logger.ActionEntry
-	if _, ok := act.Settings.(ContainerAction); ok {
+	if act.IsContainerAction() {
 		containerActionEntry = originalActionEntry
 	}
 
@@ -410,6 +431,14 @@ func (act *Action) AppStructureAction() (*AppStructureInfo, []Action) {
 		return nil, nil
 	}
 	return appStruct.AppStructureAction()
+}
+
+// IsContainerAction returns true if action settings implements ContainerAction interface
+func (act *Action) IsContainerAction() bool {
+	if _, ok := act.Settings.(ContainerAction); ok {
+		return true
+	}
+	return false
 }
 
 func logResult(sessionState *session.State, actionState *action.State, details string, containerActionEntry *logger.ActionEntry) error {

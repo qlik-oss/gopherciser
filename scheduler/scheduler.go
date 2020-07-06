@@ -225,31 +225,17 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 	defer logErrReport(sessionState)
 
 	for _, v := range userScenario {
-	restartAction:
-		if sched.ReconnectSettings.Reconnect {
-			sessionState.ReconnectWait()
+		err := v.Execute(sessionState, sched.connectionSettings)
+		if isAborted, _ := scenario.CheckActionError(err); isAborted {
+			return nil
 		}
-
-		if err := v.Execute(sessionState, sched.connectionSettings); err != nil {
-			if sched.ReconnectSettings.Reconnect && sessionState.IsWebsocketDisconnected(err) {
-				sessionState.ReconnectWait()
-				if sessionState.IsAbortTriggered() {
-					if err := sessionState.GetReconnectError(); err != nil {
-						return errors.WithStack(err)
-					}
-					return errors.New("Websocket unexpectedly closed")
-				}
-				goto restartAction
-			} else if isAborted, _ := scenario.CheckActionError(err); isAborted {
-				return nil
-			} else {
-				if err := sched.TimeBuf.Wait(ctx, true); err != nil {
-					logEntry := sessionState.LogEntry.ShallowCopy()
-					logEntry.Action = nil
-					logEntry.LogError(errors.Wrap(err, "time buffer in-between sequences failed"))
-				}
-				return errors.WithStack(err)
-			}
+		if errTimeBuf := sched.TimeBuf.Wait(ctx, true); errTimeBuf != nil {
+			logEntry := sessionState.LogEntry.ShallowCopy()
+			logEntry.Action = nil
+			logEntry.LogError(errors.Wrap(errTimeBuf, "time buffer in-between sequences failed"))
+		}
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
 	return nil
