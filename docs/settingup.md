@@ -165,6 +165,19 @@ This section of the JSON file contains information on the login settings.
 
 This section of the JSON file contains scheduler settings for the users in the load scenario.
 
+### Using "reconnectsettings"
+
+If `reconnectsettings.reconnect` is enabled the tool will attempt the following:
+
+* Re-connect the websocket.
+* Get the currently opened app in re-attached engine session.
+* Re-subscribe to the same object has before getting disconnected.
+* Restart the action which was ongoing during the disconnect.
+* If successful the action where the re-connect happened will be logged as a successful action with changed `action` and `label`, these will instead be `Reconnect(action)` and `Reconnect(label)`.
+* Logs an info row with the info type `WebsocketReconnect` and with a semicolon separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`" where:
+    * `X` is true/false
+    * `Y` is an integer with the amount of re-connection attempts
+    * `Z` is the time spent re-connecting in milliseconds.   
 * `type`: Type of scheduler
     * `simple`: Standard scheduler
 * `iterationtimebuffer`: 
@@ -196,6 +209,8 @@ This section of the JSON file contains scheduler settings for the users in the l
 
 ### Example
 
+Simple scheduler settings:
+
 ```json
 "scheduler": {
    "type": "simple",
@@ -210,6 +225,27 @@ This section of the JSON file contains scheduler settings for the users in the l
        "duration" : "5s"
    },
    "instance" : 2
+}
+```
+
+Simple scheduler set to attempt reconnect on unexpected websocket disconnection 
+
+```json
+"scheduler": {
+   "type": "simple",
+   "settings": {
+       "executiontime": 120,
+       "iterations": -1,
+       "rampupdelay": 7.0,
+       "concurrentusers": 10
+   },
+   "iterationtimebuffer" : {
+       "mode": "onerror",
+       "duration" : "5s"
+   },
+    "reconnectsettings" : {
+      "reconnect" : true
+    }
 }
 ```
 
