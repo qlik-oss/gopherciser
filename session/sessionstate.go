@@ -244,10 +244,8 @@ func (state *State) Reset(ctx context.Context) {
 
 	if state.reconnect.pendingReconnect != nil {
 		close(state.reconnect.pendingReconnect)
-		state.reconnect.pendingReconnect = make(chan struct{})
-	} else {
-		state.reconnect.pendingReconnect = make(chan struct{})
 	}
+	state.reconnect.pendingReconnect = make(chan struct{})
 }
 
 // SetLogEntry set the log entry
