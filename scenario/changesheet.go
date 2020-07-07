@@ -29,7 +29,15 @@ func (settings ChangeSheetSettings) Validate() error {
 func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	actionState.Details = settings.ID
 
+	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
+		actionState.AddErrors(errors.New("not connected to a Sense environment"))
+		return
+	}
+
 	uplink := sessionState.Connection.Sense()
+	if uplink.CurrentApp == nil {
+		actionState.AddErrors(errors.New("not connected to app"))
+	}
 
 	ClearObjectSubscriptions(sessionState)
 

@@ -107,10 +107,10 @@ type (
 	}
 
 	ReconnectInfo struct {
-		reconnectLock sync.Mutex
-		err           error
-
-		reconnectFunc func() (string, error)
+		reconnectLock    sync.Mutex
+		err              error
+		pendingReconnect chan struct{}
+		reconnectFunc    func() (string, error)
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -188,7 +188,8 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		Counters:       counters,
 
 		reconnect: ReconnectInfo{
-			reconnectFunc: nil,
+			reconnectFunc:    nil,
+			pendingReconnect: make(chan struct{}),
 		},
 	}
 
@@ -240,6 +241,13 @@ func (state *State) Reset(ctx context.Context) {
 	state.events = make(map[int]*Event)
 	state.CurrentApp = nil
 	state.CurrentUser = nil
+
+	if state.reconnect.pendingReconnect != nil {
+		close(state.reconnect.pendingReconnect)
+		state.reconnect.pendingReconnect = make(chan struct{})
+	} else {
+		state.reconnect.pendingReconnect = make(chan struct{})
+	}
 }
 
 // SetLogEntry set the log entry
@@ -648,22 +656,42 @@ func (state *State) GetObjectHandlerInstance(id, typ string) ObjectHandlerInstan
 	return instance
 }
 
-// ReconnectWait wait in case websocket is getting re-connected
-func (state *State) ReconnectWait() {
-	if state != nil && state.ReconnectSettings.Reconnect && state.reconnect.reconnectFunc != nil {
-		defer state.reconnect.reconnectLock.Unlock()
-		state.reconnect.reconnectLock.Lock()
+// AwaitReconnect awaits any reconnect lock to be released
+func (state *State) AwaitReconnect() {
+	defer state.reconnect.reconnectLock.Unlock()
+	state.reconnect.reconnectLock.Lock()
+}
+
+// PendingReconnect waits until pending reconnect channel is emptied or context is cancelled
+func (state *State) PendingReconnect() {
+	select {
+	case state.reconnect.pendingReconnect <- struct{}{}:
+	case <-state.ctx.Done():
 	}
 }
 
 // Reconnect attempts reconnecting to previously opened app
 func (state *State) Reconnect() error {
+	defer state.reconnect.reconnectLock.Unlock()
+	state.reconnect.reconnectLock.Lock()
+
 	if !state.ReconnectSettings.Reconnect {
 		return nil
 	}
 
-	defer state.reconnect.reconnectLock.Unlock()
-	state.reconnect.reconnectLock.Lock()
+	defer func() {
+		if state.reconnect.pendingReconnect != nil {
+			// release all pending for reconnect to be done
+			for {
+				select {
+				case <-state.reconnect.pendingReconnect:
+				default:
+					return
+				}
+			}
+		}
+	}()
+
 	reconnectStart := time.Now()
 	var attempts int
 	defer func() {

@@ -2,11 +2,13 @@ package scenario
 
 import (
 	"encoding/json"
-	"github.com/qlik-oss/gopherciser/appstructure"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
@@ -343,32 +345,23 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 		return nil
 	}
 
-restartAction:
-	if sessionState.ReconnectSettings.Reconnect {
-		sessionState.ReconnectWait()
-	}
-
-	err := act.execute(sessionState, connectionSettings)
-	if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
-		sessionState.ReconnectWait()
-		if sessionState.IsAbortTriggered() {
-			if err := sessionState.GetReconnectError(); err != nil {
-				return errors.WithStack(err)
-			}
-			return errors.New("Websocket unexpectedly closed")
-		}
-		goto restartAction
+	restart := true
+	var err error
+	for restart {
+		sessionState.AwaitReconnect()
+		restart, err = act.execute(sessionState, connectionSettings)
 	}
 
 	return err
 }
 
-func (act *Action) execute(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
+func (act *Action) execute(sessionState *session.State, connectionSettings *connection.ConnectionSettings) (bool, error) {
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState
 
 	//check if start action should be delayed
 	originalActionEntry := act.startAction(sessionState)
+	restart := false
 
 	// execute action
 	var panicErr error
@@ -382,10 +375,32 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 		if sessionState != nil && sessionState.LogEntry != nil {
 			sessionState.LogEntry.LogError(panicErr)
 		}
-		return errors.WithStack(panicErr)
+		return false, errors.WithStack(panicErr)
 	}
 
-	return errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))
+	if actionState.Failed {
+		err := actionState.Errors()
+		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
+			fmt.Println("app before reconnect:", sessionState.Connection.Sense().CurrentApp)
+			sessionState.PendingReconnect()
+			fmt.Println("app after reconnect:", sessionState.Connection.Sense().CurrentApp)
+			if sessionState.IsAbortTriggered() {
+				if err = sessionState.GetReconnectError(); err != nil {
+					err = errors.WithStack(err)
+				} else {
+					err = errors.New("Websocket unexpectedly closed")
+				}
+			} else {
+				// Fake an actionState for reconnect as a successful one
+				actionState = &action.State{Details: actionState.Details}
+				sessionState.LogEntry.Action.Action = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Action)
+				sessionState.LogEntry.Action.Label = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Action)
+				restart = true
+			}
+		}
+	}
+
+	return restart, errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))
 }
 
 func (act *Action) startAction(sessionState *session.State) *logger.ActionEntry {
