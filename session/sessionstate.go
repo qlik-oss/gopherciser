@@ -310,7 +310,9 @@ func (state *State) IsAbortTriggered() bool {
 // Wait for all pending requests to finish, returns true if action state has been marked as failed
 func (state *State) Wait(actionState *action.State) bool {
 	state.Pending.WaitForPending(state.ctx)
-	state.Rest.WaitForPending()
+	if state.Rest != nil {
+		state.Rest.WaitForPending()
+	}
 	return actionState.Failed
 }
 

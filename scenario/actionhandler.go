@@ -381,14 +381,12 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 	if actionState.Failed {
 		err := actionState.Errors()
 		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
-			fmt.Println("app before reconnect:", sessionState.Connection.Sense().CurrentApp)
 			sessionState.PendingReconnect()
-			fmt.Println("app after reconnect:", sessionState.Connection.Sense().CurrentApp)
 			if sessionState.IsAbortTriggered() {
 				if err = sessionState.GetReconnectError(); err != nil {
-					err = errors.WithStack(err)
+					actionState.AddErrors(errors.WithStack(err))
 				} else {
-					err = errors.New("Websocket unexpectedly closed")
+					actionState.AddErrors(errors.New("Websocket unexpectedly closed"))
 				}
 			} else {
 				// Fake an actionState for reconnect as a successful one

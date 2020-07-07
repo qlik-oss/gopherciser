@@ -132,17 +132,6 @@ func (settings *RandomActionSettings) UnmarshalJSON(arg []byte) error {
 	return nil
 }
 
-func getDefaultInterThinkTimeSettings() ThinkTimeSettings {
-	return ThinkTimeSettings{
-		helpers.DistributionSettings{
-			Type:      helpers.UniformDistribution,
-			Delay:     0,
-			Mean:      float64(35),
-			Deviation: 25,
-		},
-	}
-}
-
 // Execute random action/-s. Implements ActionSetting interface
 func (settings RandomActionSettings) Execute(sessionState *session.State, state *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	settings.initialize.Do(func() {
