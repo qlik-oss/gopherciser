@@ -392,7 +392,7 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 				// Fake an actionState for reconnect as a successful one
 				actionState = &action.State{Details: actionState.Details}
 				sessionState.LogEntry.Action.Action = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Action)
-				sessionState.LogEntry.Action.Label = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Action)
+				sessionState.LogEntry.Action.Label = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Label)
 				restart = true
 			}
 		}
