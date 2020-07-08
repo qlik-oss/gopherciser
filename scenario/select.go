@@ -830,6 +830,11 @@ func DoSelect(sessionState *session.State, actionState *action.State, genObj *en
 		return
 	}
 
+	if selectType == senseobjdef.SelectTypeUnknown {
+		actionState.AddErrors(errors.Errorf("object<%s> type<%s> does not have a select definition", genObj.GenericId, genObj.Type))
+		return
+	}
+
 	if wrap {
 		// Start selections
 		sessionState.QueueRequest(func(ctx context.Context) error {

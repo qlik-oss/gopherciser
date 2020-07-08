@@ -74,5 +74,14 @@ func (instance *DefaultHandlerInstance) GetObjectDefinition(objectType string) (
 	if validateErr := def.Validate(); validateErr != nil {
 		return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.Wrapf(validateErr, "Error validating object<%s> selection definitions<%+v>", objectType, def)
 	}
-	return def.Select.Path, def.Select.Type, def.DataDef.Type, nil
+
+	selectType := senseobjdef.SelectTypeUnknown
+	selectPath := ""
+
+	if def.Select != nil {
+		selectPath = def.Select.Path
+		selectType = def.Select.Type
+	}
+
+	return selectPath, selectType, def.DataDef.Type, nil
 }
