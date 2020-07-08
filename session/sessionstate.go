@@ -692,6 +692,10 @@ func (state *State) Reconnect() error {
 		}
 	}()
 
+	if state.CurrentActionState != nil {
+		state.CurrentActionState.AddErrors(enigmahandlers.DisconnectError{})
+	}
+
 	reconnectStart := time.Now()
 	var attempts int
 	defer func() {

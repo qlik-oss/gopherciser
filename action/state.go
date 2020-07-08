@@ -22,6 +22,8 @@ type (
 		NoResults bool
 		// Details for action to log on result report
 		Details string
+		// NoRestartOnDisconnect in the case of using websocket reconnect logic, don't restart action when a reconnect has happened
+		NoRestartOnDisconnect bool
 	}
 )
 

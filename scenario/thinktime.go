@@ -23,6 +23,7 @@ type (
 // Execute simulated think time
 func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	actionState.Details = settings.LogDetails()
+	actionState.NoRestartOnDisconnect = true // set action to not be re-started in the case of a websocket disconnect happening during action execution
 	// Fake sent message to not trigger error in onResult interceptor
 	if err := sessionState.RequestMetrics.UpdateSent(time.Now(), 0); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, "Faking sent message in timer delay failed")
