@@ -460,7 +460,7 @@
         "(optional) Static overrides to the action. The overrides can include any or all of the settings from the original action, as determined by the `type` field. If nothing is specified, the default values are used."
     ],
     "reconnectsettings.reconnect" : [
-        "Enable re-connection attempts if the WebSocket is disconnected. Defaults to false."
+        "Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`."
     ],
     "reconnectsettings.backoff" : [
         "Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:",

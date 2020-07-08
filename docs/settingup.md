@@ -176,7 +176,7 @@ This section of the JSON file contains scheduler settings for the users in the l
   * `duration`: Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
 * `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
 * `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
-  * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to false.
+  * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`.
   * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
       * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
       * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
@@ -198,12 +198,12 @@ This section of the JSON file contains scheduler settings for the users in the l
 
 If `reconnectsettings.reconnect` is enabled, the following is attempted:
 
-* Re-connect the WebSocket.
-* Get the currently opened app in the re-attached engine session.
-* Re-subscribe to the same object as before the disconnection.
-* Restart the action that was ongoing when the disconnection occurred.
-* If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
-* Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`"
+1. Re-connect the WebSocket.
+2. Get the currently opened app in the re-attached engine session.
+3. Re-subscribe to the same object as before the disconnection.
+4. If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
+5. Restart the action that was ongoing when the disconnection occurred, unless it's a `thinktime` action which will not be restarted.
+6. Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`"
     * `X`: True/false
     * `Y`: An integer representing the number of re-connection attempts
     * `Z`: The time spent re-connecting (ms)
