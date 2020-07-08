@@ -165,19 +165,6 @@ This section of the JSON file contains information on the login settings.
 
 This section of the JSON file contains scheduler settings for the users in the load scenario.
 
-### Using "reconnectsettings"
-
-If `reconnectsettings.reconnect` is enabled the tool will attempt the following:
-
-* Re-connect the websocket.
-* Get the currently opened app in re-attached engine session.
-* Re-subscribe to the same object has before getting disconnected.
-* Restart the action which was ongoing during the disconnect.
-* If successful the action where the re-connect happened will be logged as a successful action with changed `action` and `label`, these will instead be `Reconnect(action)` and `Reconnect(label)`.
-* Logs an info row with the info type `WebsocketReconnect` and with a semicolon separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`" where:
-    * `X` is true/false
-    * `Y` is an integer with the amount of re-connection attempts
-    * `Z` is the time spent re-connecting in milliseconds.   
 * `type`: Type of scheduler
     * `simple`: Standard scheduler
 * `iterationtimebuffer`: 
@@ -207,6 +194,20 @@ If `reconnectsettings.reconnect` is enabled the tool will attempt the following:
       * `true`: All users and sessions have the same randomization sequence, which only changes if the `instance` flag is changed.
       * `false`: Normal randomization sequence, dependent on both the `instance` parameter and the current user session.
 
+### Using `reconnectsettings`
+
+If `reconnectsettings.reconnect` is enabled, the following is attempted:
+
+* Re-connect the WebSocket.
+* Get the currently opened app in the re-attached engine session.
+* Re-subscribe to the same object as before the disconnection.
+* Restart the action that was ongoing when the disconnection occurred.
+* If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
+* Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`":
+    * `X`: True/false
+    * `Y`: An integer representing the number of re-connection attempts
+    * `Z`: The time spent re-connecting (ms)
+
 ### Example
 
 Simple scheduler settings:
@@ -228,7 +229,7 @@ Simple scheduler settings:
 }
 ```
 
-Simple scheduler set to attempt reconnect on unexpected websocket disconnection 
+Simple scheduler set to attempt re-connection in case of an unexpected WebSocket disconnection: 
 
 ```json
 "scheduler": {
