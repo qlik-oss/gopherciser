@@ -92,6 +92,10 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 
 // Validate connectJWTSettings
 func (connectJWT *ConnectJWTSettings) Validate() error {
+	if connectJWT == nil {
+		return errors.New("no JWT settings defined")
+	}
+
 	// Do we have a key? (if so, also read into memory)
 	key, err := connectJWT.getPrivateKey()
 	if err != nil {
