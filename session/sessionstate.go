@@ -707,13 +707,26 @@ func (state *State) Reconnect() error {
 
 	// Get currently subscribed objects
 	var subscribedObjects []string
+	var sheetObjects []string
 	if state.Connection != nil && state.Connection.Sense() != nil {
 		subscribedObjects = make([]string, 0, state.Connection.Sense().Objects.Len())
 		_ = state.Connection.Sense().Objects.ForEach(func(obj *enigmahandlers.Object) error {
 			if obj == nil || obj.ID == "" {
 				return nil
 			}
-			subscribedObjects = append(subscribedObjects, obj.ID)
+
+			switch obj.Type {
+			case enigmahandlers.ObjTypeSheet:
+				if sheetObjects == nil {
+					sheetObjects = make([]string, 0, 1)
+				}
+				sheetObjects = append(sheetObjects, obj.ID)
+			case enigmahandlers.ObjTypeApp:
+				// will be set when re-attaching session
+			default:
+				subscribedObjects = append(subscribedObjects, obj.ID)
+			}
+
 			return nil
 		})
 	}
@@ -757,6 +770,14 @@ reconnectLoop:
 		if err := upLink.SetCurrentApp(doc.GenericId, doc); err != nil {
 			state.reconnect.err = errors.WithStack(err)
 			break reconnectLoop
+		}
+
+		// Re add any "current" sheets
+		for _, id := range sheetObjects {
+			if _, _, err := state.GetSheet(reConnectActionState, state.Connection.Sense(), id); err != nil {
+				state.reconnect.err = errors.WithStack(err)
+				break reconnectLoop
+			}
 		}
 
 		var wg sync.WaitGroup

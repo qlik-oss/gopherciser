@@ -1,7 +1,6 @@
 package scenario
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -11,45 +10,6 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
-
-func getSheet(sessionState *session.State, actionState *action.State, upLink *enigmahandlers.SenseUplink, id string) (*enigmahandlers.Object, *senseobjects.Sheet, error) {
-	app := upLink.CurrentApp
-	if app == nil {
-		err := errors.New("Not connected to a Sense app")
-		return nil, nil, err
-	}
-
-	var sheet *senseobjects.Sheet
-	getSheet := func(ctx context.Context) error {
-		var err error
-		id = sessionState.IDMap.Get(id)
-		sheet, err = senseobjects.GetSheet(ctx, app, id)
-		return err
-	}
-	if err := sessionState.SendRequest(actionState, getSheet); err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	if sheet == nil {
-		return nil, nil, errors.New("sheet is nil")
-	}
-	sessionState.LogEntry.LogDebugf("Fetched sheet<%s> successfully", id)
-
-	getProperties := func(ctx context.Context) error {
-		_, err := sheet.GetProperties(ctx)
-		return err
-	}
-	if err := sessionState.SendRequest(actionState, getProperties); err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	sheetObject := enigmahandlers.NewObject(sheet.Handle, enigmahandlers.ObjTypeSheet, id, sheet)
-	if err := upLink.Objects.AddObject(sheetObject); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to add object to object list")
-	}
-
-	return sheetObject, sheet, nil
-}
 
 func subscribeSheetObjectsAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, sheetID string) error {
 	sheetID = sessionState.IDMap.Get(sheetID)

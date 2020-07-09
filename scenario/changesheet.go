@@ -67,7 +67,7 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 	}, actionState, false, "GetAppLayout request failed")
 
 	// Get sheet
-	if _, _, err := getSheet(sessionState, actionState, uplink, settings.ID); err != nil {
+	if _, _, err := sessionState.GetSheet(actionState, uplink, settings.ID); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to get sheet"))
 		return
 	}
