@@ -380,7 +380,7 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 	if actionState.Failed {
 		err := actionState.Errors()
 		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
-			sessionState.PendingReconnect()
+			sessionState.AwaitReconnect()
 			if sessionState.IsAbortTriggered() {
 				if err = sessionState.GetReconnectError(); err != nil {
 					actionState.AddErrors(errors.WithStack(err))
