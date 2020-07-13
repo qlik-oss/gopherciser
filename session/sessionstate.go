@@ -107,7 +107,6 @@ type (
 	}
 
 	ReconnectInfo struct {
-		reconnectLock       sync.Mutex
 		err                 error
 		pendingReconnection PendingHandler
 		reconnectFunc       func() (string, error)
@@ -653,6 +652,9 @@ func (state *State) GetObjectHandlerInstance(id, typ string) ObjectHandlerInstan
 
 // AwaitReconnect awaits any reconnect lock to be released
 func (state *State) AwaitReconnect() {
+	if !state.ReconnectSettings.Reconnect {
+		return
+	}
 	state.reconnect.pendingReconnection.WaitForPending(state.ctx)
 }
 
@@ -660,9 +662,6 @@ func (state *State) AwaitReconnect() {
 func (state *State) Reconnect() error {
 	state.reconnect.pendingReconnection.IncPending()
 	defer state.reconnect.pendingReconnection.DecPending()
-
-	defer state.reconnect.reconnectLock.Unlock()
-	state.reconnect.reconnectLock.Lock()
 
 	if !state.ReconnectSettings.Reconnect {
 		return nil
