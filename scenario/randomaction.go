@@ -141,6 +141,9 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 		}
 	})
 
+	// logEntry for randomaction
+	logEntry := sessionState.LogEntry
+
 	// Get action weights
 	weights := make([]int, 0, len(settings.ActionTypes))
 	for _, actionTypeSettings := range settings.ActionTypes {
@@ -148,12 +151,15 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 	}
 
 	for iteration := 0; iteration < settings.Iterations; iteration++ {
+		sessionState.LogEntry = logEntry // reset current log entry to container action
+
 		randomSelection, errSelection := sessionState.Randomizer().RandWeightedInt(weights)
 		if errSelection != nil {
 			state.AddErrors(errors.Wrapf(errSelection, "Failed to randomize action type"))
 			return
 		}
 		selectedAction := settings.ActionTypes[randomSelection]
+		state.Details = selectedAction.Type.String() // set currently selected action type to details for traceability
 
 		sessionState.LogEntry.LogDebugf("randomaction: selected sub action: %s", selectedAction.Type)
 
@@ -179,7 +185,12 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 			item = Action{ActionCore{ActionThinkTime, fmt.Sprintf("%s - generated thinktime", label), false}, selectedAction.itemSettings.(ThinkTimeSettings)}
 		case SheetObjectSelection:
 			// Get selectable objects
-			selectableObjectsOnSheet := getSelectableObjectsOnSheet(sessionState)
+			selectableObjectsOnSheet, err := getSelectableObjectsOnSheet(sessionState)
+			if err != nil {
+				state.AddErrors(err)
+				return
+			}
+
 			n := len(selectableObjectsOnSheet)
 			if n < 1 {
 				sessionState.LogEntry.LogInfo("nosheetobjects", "Cannot select sheet object - no sheet objects")
@@ -203,11 +214,18 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 			item = Action{ActionCore{ActionSelect, fmt.Sprintf("%s - generated select", label), false}, selectedAction.itemSettings.(SelectionSettings)}
 		case ChangeSheet:
 			// Get the sheetlist and select a random sheet
-			sheetList, errSheetList := sessionState.Connection.Sense().CurrentApp.GetSheetList(sessionState, state)
+			currentApp, err := sessionState.CurrentSenseApp()
+			if err != nil {
+				state.AddErrors(err)
+				return
+			}
+
+			sheetList, errSheetList := currentApp.GetSheetList(sessionState, state)
 			if errSheetList != nil {
 				state.AddErrors(errors.WithStack(errSheetList))
 				return
 			}
+
 			items := sheetList.Layout().AppObjectList.Items
 			n := len(items)
 			if n < 1 {
@@ -252,15 +270,18 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 // and sets container action logging to original action entry
 func (settings RandomActionSettings) IsContainerAction() {}
 
-func getSelectableObjectsOnSheet(sessionState *session.State) []*enigmahandlers.Object {
-	uplink := sessionState.Connection.Sense()
+func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers.Object, error) {
+	uplink, err := sessionState.CurrentSenseUplink()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
 	// Get all objects on sheet
 	handles := uplink.Objects.GetAllObjectHandles(true, enigmahandlers.ObjTypeGenericObject)
 	n := len(handles)
 	if n < 1 {
 		sessionState.LogEntry.Log(logger.InfoLevel, "Nothing to select - no sheet objects in scope")
-		return make([]*enigmahandlers.Object, 0)
+		return make([]*enigmahandlers.Object, 0), nil
 	}
 	// Determine what objects are selectable
 	selectableObjects := make([]*enigmahandlers.Object, 0, n)
@@ -281,7 +302,7 @@ func getSelectableObjectsOnSheet(sessionState *session.State) []*enigmahandlers.
 			selectableObjects = append(selectableObjects, obj)
 		}
 	}
-	return selectableObjects
+	return selectableObjects, nil
 }
 
 func overrideSettings(originalSettings ActionSettings, overrideSettings map[string]interface{}) (interface{}, error) {

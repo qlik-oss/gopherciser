@@ -19,6 +19,7 @@ import (
 	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
@@ -801,4 +802,35 @@ func (state *State) IsWebsocketDisconnected(err error) bool {
 	default:
 		return false
 	}
+}
+
+//CurrentSenseApp returns currently set sense app or error if none found
+func (state *State) CurrentSenseApp() (*senseobjects.App, error) {
+	uplink, err := state.CurrentSenseUplink()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if uplink.CurrentApp == nil {
+		return nil, errors.New("no current sense app set")
+	}
+
+	return uplink.CurrentApp, nil
+}
+
+// CurrentSenseUplink return currently set sense uplink or error if none found
+func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
+	if state == nil {
+		return nil, errors.New("nil state")
+	}
+
+	if state.Connection == nil {
+		return nil, errors.New("no current connection set")
+	}
+
+	if state.Connection.Sense() == nil {
+		return nil, errors.New("no current sense uplink set")
+	}
+
+	return state.Connection.Sense(), nil
 }
