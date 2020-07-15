@@ -20,7 +20,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.13{{ checksum "go.sum" }}
+          key: dependency-cache-1.14{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -34,7 +34,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.13{{ checksum "go.sum" }}
+          key: dependency-cache-1.14{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
       - run:
@@ -69,6 +69,33 @@ jobs:
             - changelog.md
             - Dockerfile
             - artifacts
+
+  build-go-1.13:
+    <<: *defaults
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Setup working directory
+          command: |
+            set -x
+            mkdir -p build
+      - restore_cache:
+          key: dependency-cache-1.13{{ checksum "go.sum" }}
+      - run:
+          name: Run Golang tests
+          command: |
+            make alltests
+      - run:
+          name: Build gopherciser for Linux, Darwin and Windows (amd64)
+          command: |
+            make build
+      - save_cache:
+          key: dependency-cache-1.13{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
   publish-github:
     <<: *defaults
@@ -140,6 +167,7 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
+      - build-go-1.13
       - publish-github:
           requires:
             - build
