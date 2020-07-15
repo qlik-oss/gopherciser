@@ -167,5 +167,10 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	if settings.ElasticReloadCore.SaveLog {
 		sessionState.LogEntry.LogInfo("ReloadLog", log)
 	}
-	sessionState.LogEntry.LogInfo("ReloadDuration", reloadTime)
+
+	if duration, err := time.ParseDuration(reloadTime); err != nil || reloadTime == "" {
+		sessionState.LogEntry.LogInfo("ReloadDuration", reloadTime)
+	} else {
+		sessionState.LogEntry.LogInfo("ReloadDuration", fmt.Sprintf("%dms", duration.Milliseconds()))
+	}
 }
