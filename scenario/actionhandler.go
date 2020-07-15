@@ -135,6 +135,7 @@ const (
 	ActionUnPublishBookmark       = "unpublishbookmark"
 	ActionSubscribeObjects        = "subscribeobjects"
 	ActionUnsubscribeObjects      = "unsubscribeobjects"
+	ActionListBoxSelect           = "listboxselect"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -254,6 +255,7 @@ func ResetDefaultActions() {
 		ActionUnPublishBookmark:       UnPublishBookmarkSettings{},
 		ActionSubscribeObjects:        SubscribeObjectsSettings{},
 		ActionUnsubscribeObjects:      UnsubscribeObjects{},
+		ActionListBoxSelect:           ListBoxSelectSettings{},
 	}
 }
 
