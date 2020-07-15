@@ -71,7 +71,7 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 	}
 
 	// Get new sheet
-	_, sheet, err := getSheet(sessionState, actionState, uplink, sheetID)
+	_, sheet, err := sessionState.GetSheet(actionState, uplink, sheetID)
 	if err != nil {
 		actionState.AddErrors(err)
 		return

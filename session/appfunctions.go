@@ -7,6 +7,7 @@ import (
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 )
 
 // GetActiveDoc get active doc from engine
@@ -93,4 +94,44 @@ func (state *State) SetupChangeChan() error {
 	}()
 
 	return nil
+}
+
+// GetSheet get sheet and add to object list
+func (state *State) GetSheet(actionState *action.State, upLink *enigmahandlers.SenseUplink, id string) (*enigmahandlers.Object, *senseobjects.Sheet, error) {
+	app := upLink.CurrentApp
+	if app == nil {
+		err := errors.New("Not connected to a Sense app")
+		return nil, nil, err
+	}
+
+	var sheet *senseobjects.Sheet
+	getSheet := func(ctx context.Context) error {
+		var err error
+		id = state.IDMap.Get(id)
+		sheet, err = senseobjects.GetSheet(ctx, app, id)
+		return err
+	}
+	if err := state.SendRequest(actionState, getSheet); err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	if sheet == nil {
+		return nil, nil, errors.New("sheet is nil")
+	}
+	state.LogEntry.LogDebugf("Fetched sheet<%s> successfully", id)
+
+	getProperties := func(ctx context.Context) error {
+		_, err := sheet.GetProperties(ctx)
+		return err
+	}
+	if err := state.SendRequest(actionState, getProperties); err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	sheetObject := enigmahandlers.NewObject(sheet.Handle, enigmahandlers.ObjTypeSheet, id, sheet)
+	if err := upLink.Objects.AddObject(sheetObject); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to add object to object list")
+	}
+
+	return sheetObject, sheet, nil
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
@@ -107,10 +108,9 @@ type (
 	}
 
 	ReconnectInfo struct {
-		reconnectLock sync.Mutex
-		err           error
-
-		reconnectFunc func() (string, error)
+		err                 error
+		pendingReconnection PendingHandler
+		reconnectFunc       func() (string, error)
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -138,7 +138,7 @@ const (
 )
 
 var (
-	defaultReconnectBackoff = []float64{0.0, 1.0, 10.0, 20.0}
+	defaultReconnectBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0}
 )
 
 // Error implements error interface
@@ -188,7 +188,8 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		Counters:       counters,
 
 		reconnect: ReconnectInfo{
-			reconnectFunc: nil,
+			reconnectFunc:       nil,
+			pendingReconnection: NewPendingHandler(32),
 		},
 	}
 
@@ -302,7 +303,9 @@ func (state *State) IsAbortTriggered() bool {
 // Wait for all pending requests to finish, returns true if action state has been marked as failed
 func (state *State) Wait(actionState *action.State) bool {
 	state.Pending.WaitForPending(state.ctx)
-	state.Rest.WaitForPending()
+	if state.Rest != nil {
+		state.Rest.WaitForPending()
+	}
 	return actionState.Failed
 }
 
@@ -648,40 +651,58 @@ func (state *State) GetObjectHandlerInstance(id, typ string) ObjectHandlerInstan
 	return instance
 }
 
-// ReconnectWait wait in case websocket is getting re-connected
-func (state *State) ReconnectWait() {
-	if state != nil && state.ReconnectSettings.Reconnect && state.reconnect.reconnectFunc != nil {
-		defer state.reconnect.reconnectLock.Unlock()
-		state.reconnect.reconnectLock.Lock()
+// AwaitReconnect awaits any reconnect lock to be released
+func (state *State) AwaitReconnect() {
+	if !state.ReconnectSettings.Reconnect {
+		return
 	}
+	state.reconnect.pendingReconnection.WaitForPending(state.ctx)
 }
 
 // Reconnect attempts reconnecting to previously opened app
 func (state *State) Reconnect() error {
+	state.reconnect.pendingReconnection.IncPending()
+	defer state.reconnect.pendingReconnection.DecPending()
+
 	if !state.ReconnectSettings.Reconnect {
 		return nil
 	}
 
-	defer state.reconnect.reconnectLock.Unlock()
-	state.reconnect.reconnectLock.Lock()
+	if state.CurrentActionState != nil {
+		state.CurrentActionState.AddErrors(enigmahandlers.DisconnectError{})
+	}
+
 	reconnectStart := time.Now()
+	var attempts int
 	defer func() {
 		if state.LogEntry != nil {
-			// todo report time spent in reconnect any differently?
 			state.LogEntry.LogInfo("WebsocketReconnect",
-				fmt.Sprintf("success=%v;TimeSpent=%d", state.reconnect.err == nil, time.Since(reconnectStart).Milliseconds()))
+				fmt.Sprintf("success=%v;attempts=%d;TimeSpent=%d", state.reconnect.err == nil, attempts, time.Since(reconnectStart).Milliseconds()))
 		}
 	}()
 
 	// Get currently subscribed objects
 	var subscribedObjects []string
+	var sheetObjects []string
 	if state.Connection != nil && state.Connection.Sense() != nil {
 		subscribedObjects = make([]string, 0, state.Connection.Sense().Objects.Len())
 		_ = state.Connection.Sense().Objects.ForEach(func(obj *enigmahandlers.Object) error {
 			if obj == nil || obj.ID == "" {
 				return nil
 			}
-			subscribedObjects = append(subscribedObjects, obj.ID)
+
+			switch obj.Type {
+			case enigmahandlers.ObjTypeSheet:
+				if sheetObjects == nil {
+					sheetObjects = make([]string, 0, 1)
+				}
+				sheetObjects = append(sheetObjects, obj.ID)
+			case enigmahandlers.ObjTypeApp:
+				// will be set when re-attaching session
+			default:
+				subscribedObjects = append(subscribedObjects, obj.ID)
+			}
+
 			return nil
 		})
 	}
@@ -697,11 +718,12 @@ func (state *State) Reconnect() error {
 	}
 
 reconnectLoop:
-	for _, waitTime := range backOff {
+	for i, waitTime := range backOff {
 		<-time.After(time.Duration(waitTime * float64(time.Second)))
 
 		reConnectActionState := &action.State{}
 
+		attempts = i + 1
 		if _, err := state.reconnect.reconnectFunc(); err != nil {
 			state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
 			continue reconnectLoop
@@ -726,6 +748,14 @@ reconnectLoop:
 			break reconnectLoop
 		}
 
+		// Re add any "current" sheets
+		for _, id := range sheetObjects {
+			if _, _, err := state.GetSheet(reConnectActionState, state.Connection.Sense(), id); err != nil {
+				state.reconnect.err = errors.WithStack(err)
+				break reconnectLoop
+			}
+		}
+
 		var wg sync.WaitGroup
 		// re-subscribe to objects
 		for _, id := range subscribedObjects {
@@ -739,10 +769,7 @@ reconnectLoop:
 		}
 		wg.Wait()
 
-		if reConnectActionState.Failed {
-			state.reconnect.err = reConnectActionState.Errors()
-		}
-
+		state.reconnect.err = reConnectActionState.Errors()
 		switch errors.Cause(state.reconnect.err).(type) {
 		case nil:
 			return nil // successful re-connect
@@ -775,4 +802,35 @@ func (state *State) IsWebsocketDisconnected(err error) bool {
 	default:
 		return false
 	}
+}
+
+//CurrentSenseApp returns currently set sense app or error if none found
+func (state *State) CurrentSenseApp() (*senseobjects.App, error) {
+	uplink, err := state.CurrentSenseUplink()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if uplink.CurrentApp == nil {
+		return nil, errors.New("no current sense app set")
+	}
+
+	return uplink.CurrentApp, nil
+}
+
+// CurrentSenseUplink return currently set sense uplink or error if none found
+func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
+	if state == nil {
+		return nil, errors.New("nil state")
+	}
+
+	if state.Connection == nil {
+		return nil, errors.New("no current connection set")
+	}
+
+	if state.Connection.Sense() == nil {
+		return nil, errors.New("no current sense uplink set")
+	}
+
+	return state.Connection.Sense(), nil
 }

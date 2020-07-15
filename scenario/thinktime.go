@@ -23,6 +23,7 @@ type (
 // Execute simulated think time
 func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	actionState.Details = settings.LogDetails()
+	actionState.NoRestartOnDisconnect = true // set action to not be re-started in the case of a websocket disconnect happening during action execution
 	// Fake sent message to not trigger error in onResult interceptor
 	if err := sessionState.RequestMetrics.UpdateSent(time.Now(), 0); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, "Faking sent message in timer delay failed")
@@ -41,7 +42,7 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 	// "Think"
 	select {
 	case <-sessionState.BaseContext().Done():
-		// returning withouh updating end time makes log result log info: aborted instead of result: true
+		// returning without updating end time makes log result log info: aborted instead of result: true
 		return
 	case <-time.After(delay):
 	}
@@ -50,6 +51,8 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 	if err := sessionState.RequestMetrics.UpdateReceived(time.Now(), 0); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, "Faking received message in timer delay failed")
 	}
+
+	sessionState.Wait(actionState) // wait for any requests triggered by pushed engine message
 }
 
 // Validate think time settings

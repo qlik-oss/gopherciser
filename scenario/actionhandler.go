@@ -2,7 +2,7 @@ package scenario
 
 import (
 	"encoding/json"
-	"github.com/qlik-oss/gopherciser/appstructure"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -12,6 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -343,11 +344,23 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 		return nil
 	}
 
+	restart := true
+	var err error
+	for restart {
+		sessionState.AwaitReconnect()
+		restart, err = act.execute(sessionState, connectionSettings)
+	}
+
+	return err
+}
+
+func (act *Action) execute(sessionState *session.State, connectionSettings *connection.ConnectionSettings) (bool, error) {
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState
 
 	//check if start action should be delayed
 	originalActionEntry := act.startAction(sessionState)
+	restart := false
 
 	// execute action
 	var panicErr error
@@ -361,10 +374,37 @@ func (act *Action) Execute(sessionState *session.State, connectionSettings *conn
 		if sessionState != nil && sessionState.LogEntry != nil {
 			sessionState.LogEntry.LogError(panicErr)
 		}
-		return errors.WithStack(panicErr)
+		return false, errors.WithStack(panicErr)
 	}
 
-	return errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))
+	if actionState.Failed {
+		err := actionState.Errors()
+		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
+			sessionState.AwaitReconnect()
+			if sessionState.IsAbortTriggered() {
+				if err = sessionState.GetReconnectError(); err != nil {
+					actionState.AddErrors(errors.WithStack(err))
+				} else {
+					actionState.AddErrors(errors.New("Websocket unexpectedly closed"))
+				}
+			} else {
+				// Fake an actionState for reconnect as a successful one
+				restart = !actionState.NoRestartOnDisconnect
+				actionState = &action.State{Details: actionState.Details}
+
+				// rename action and label if we had a reconnect
+				switch act.Settings.(type) {
+				case ThinkTimeSettings:
+					// Don't rename action if it's a thinktime to not affect analyzer results
+				default:
+					sessionState.LogEntry.Action.Action = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Action)
+				}
+				sessionState.LogEntry.Action.Label = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Label)
+			}
+		}
+	}
+
+	return restart, errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))
 }
 
 func (act *Action) startAction(sessionState *session.State) *logger.ActionEntry {
@@ -393,7 +433,7 @@ func (act *Action) setActionStart(sessionState *session.State, actionEntry *logg
 
 func (act *Action) endAction(sessionState *session.State, actionState *action.State, originalActionEntry *logger.ActionEntry) error {
 	var containerActionEntry *logger.ActionEntry
-	if _, ok := act.Settings.(ContainerAction); ok {
+	if act.IsContainerAction() {
 		containerActionEntry = originalActionEntry
 	}
 
@@ -410,6 +450,14 @@ func (act *Action) AppStructureAction() (*AppStructureInfo, []Action) {
 		return nil, nil
 	}
 	return appStruct.AppStructureAction()
+}
+
+// IsContainerAction returns true if action settings implements ContainerAction interface
+func (act *Action) IsContainerAction() bool {
+	if _, ok := act.Settings.(ContainerAction); ok {
+		return true
+	}
+	return false
 }
 
 func logResult(sessionState *session.State, actionState *action.State, details string, containerActionEntry *logger.ActionEntry) error {

@@ -68,18 +68,18 @@ func TestIterated(t *testing.T) {
 	defer cancel()
 
 	counters := &statistics.ExecutionCounters{}
-	session := session.New(ctx, "", time.Second*10, nil, 1, 1, "", false, counters)
-	defer session.Disconnect()
+	sessionState := session.New(ctx, "", time.Second*10, nil, 1, 1, "", false, counters)
+	defer sessionState.Disconnect()
 
-	session.Connection = new(enigmahandlers.SenseConnection)
-	sense := enigmahandlers.NewSenseUplink(ctx, nil, session.RequestMetrics, nil)
+	sessionState.Connection = new(enigmahandlers.SenseConnection)
+	sense := enigmahandlers.NewSenseUplink(ctx, nil, sessionState.RequestMetrics, nil)
 	sense.MockMode = true
-	session.Connection.SetSense(sense)
-	session.LogEntry = logger.NewLogEntry(&logger.Log{})
-	session.LogEntry.Session = &logger.SessionEntry{}
+	sessionState.Connection.SetSense(sense)
+	sessionState.LogEntry = logger.NewLogEntry(&logger.Log{})
+	sessionState.LogEntry.Session = &logger.SessionEntry{}
 
 	startTime := time.Now()
-	if err := item.Execute(session, &connection.ConnectionSettings{}); err != nil {
+	if err := item.Execute(sessionState, &connection.ConnectionSettings{}); err != nil {
 		t.Fatal(err)
 	}
 	elapsed := time.Since(startTime)

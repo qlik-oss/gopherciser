@@ -72,6 +72,15 @@ var (
 		"changesheet":          int(ChangeSheet),
 		"clearall":             int(ClearAll),
 	})
+
+	defaultThinkTimeSettings = ThinkTimeSettings{
+		helpers.DistributionSettings{
+			Type:      helpers.UniformDistribution,
+			Delay:     0,
+			Mean:      float64(35),
+			Deviation: 25,
+		},
+	}
 )
 
 func (value ActionType) GetEnumMap() *enummap.EnumMap {
@@ -98,6 +107,10 @@ func (value ActionType) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
+func (value ActionType) String() string {
+	return actionTypeEnumMap.StringDefault(int(value), "unknown")
+}
+
 // UnmarshalJSON unmarshal ActionType
 func (settings *RandomActionSettings) UnmarshalJSON(arg []byte) error {
 	core := RandomActionSettingsCore{}
@@ -119,23 +132,8 @@ func (settings *RandomActionSettings) UnmarshalJSON(arg []byte) error {
 	return nil
 }
 
-func getDefaultInterThinkTimeSettings() ThinkTimeSettings {
-	defaultMean := float64(35)
-
-	return ThinkTimeSettings{
-		helpers.DistributionSettings{
-			Type:      helpers.UniformDistribution,
-			Delay:     0,
-			Mean:      defaultMean,
-			Deviation: 25,
-		},
-	}
-}
-
 // Execute random action/-s. Implements ActionSetting interface
 func (settings RandomActionSettings) Execute(sessionState *session.State, state *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-	uplink := sessionState.Connection.Sense()
-
 	settings.initialize.Do(func() {
 		// Go to already initialized pointer address and set a new Action value there
 		if settings.InterThinkTimeSettings != nil {
@@ -143,29 +141,42 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 		}
 	})
 
+	// logEntry for randomaction
+	logEntry := sessionState.LogEntry
+
+	// Get action weights
+	weights := make([]int, 0, len(settings.ActionTypes))
+	for _, actionTypeSettings := range settings.ActionTypes {
+		weights = append(weights, actionTypeSettings.Weight)
+	}
+
 	for iteration := 0; iteration < settings.Iterations; iteration++ {
-		weights := make([]int, 0, len(settings.ActionTypes))
-		for _, actionTypeSettings := range settings.ActionTypes {
-			weights = append(weights, actionTypeSettings.Weight)
-		}
+		sessionState.LogEntry = logEntry // reset current log entry to container action
+
 		randomSelection, errSelection := sessionState.Randomizer().RandWeightedInt(weights)
 		if errSelection != nil {
 			state.AddErrors(errors.Wrapf(errSelection, "Failed to randomize action type"))
 			return
 		}
 		selectedAction := settings.ActionTypes[randomSelection]
+		state.Details = selectedAction.Type.String() // set currently selected action type to details for traceability
+
+		sessionState.LogEntry.LogDebugf("randomaction: selected sub action: %s", selectedAction.Type)
+
+		// Await any ongoing reconnection
+		sessionState.AwaitReconnect()
 
 		var item Action
 		switch selectedAction.Type {
 		case ThinkTime:
 			if selectedAction.itemSettings == nil {
-				var err error
-				defaultSettings := settings.InterThinkTimeSettings
-				if defaultSettings == nil {
-					tmp := getDefaultInterThinkTimeSettings()
-					defaultSettings = &tmp
+				thinkTimeSettings := settings.InterThinkTimeSettings
+				if thinkTimeSettings == nil {
+					thinkTimeSettings = &defaultThinkTimeSettings
 				}
-				selectedAction.itemSettings, err = overrideSettings(*defaultSettings, selectedAction.Overrides)
+
+				var err error
+				selectedAction.itemSettings, err = overrideSettings(*thinkTimeSettings, selectedAction.Overrides)
 				if err != nil {
 					state.AddErrors(errors.WithStack(err))
 					return
@@ -174,7 +185,12 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 			item = Action{ActionCore{ActionThinkTime, fmt.Sprintf("%s - generated thinktime", label), false}, selectedAction.itemSettings.(ThinkTimeSettings)}
 		case SheetObjectSelection:
 			// Get selectable objects
-			selectableObjectsOnSheet := getSelectableObjectsOnSheet(sessionState)
+			selectableObjectsOnSheet, err := getSelectableObjectsOnSheet(sessionState)
+			if err != nil {
+				state.AddErrors(err)
+				return
+			}
+
 			n := len(selectableObjectsOnSheet)
 			if n < 1 {
 				sessionState.LogEntry.LogInfo("nosheetobjects", "Cannot select sheet object - no sheet objects")
@@ -198,11 +214,18 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 			item = Action{ActionCore{ActionSelect, fmt.Sprintf("%s - generated select", label), false}, selectedAction.itemSettings.(SelectionSettings)}
 		case ChangeSheet:
 			// Get the sheetlist and select a random sheet
-			sheetList, errSheetList := uplink.CurrentApp.GetSheetList(sessionState, state)
+			currentApp, err := sessionState.CurrentSenseApp()
+			if err != nil {
+				state.AddErrors(err)
+				return
+			}
+
+			sheetList, errSheetList := currentApp.GetSheetList(sessionState, state)
 			if errSheetList != nil {
 				state.AddErrors(errors.WithStack(errSheetList))
 				return
 			}
+
 			items := sheetList.Layout().AppObjectList.Items
 			n := len(items)
 			if n < 1 {
@@ -222,6 +245,7 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 			return
 		}
 
+		sessionState.LogEntry.LogDebugf("randomaction: executing sub action: %s", item.Type)
 		if isAborted, err := CheckActionError(item.Execute(sessionState, connectionSettings)); isAborted {
 			return // action is aborted, we should not continue
 		} else if err != nil {
@@ -232,6 +256,7 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 		if settings.InterThinkTimeSettings == nil {
 			continue
 		}
+
 		if isAborted, err := CheckActionError(settings.interthinktime.Execute(sessionState, connectionSettings)); isAborted {
 			return // action is aborted, we should not continue
 		} else if err != nil {
@@ -245,14 +270,18 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 // and sets container action logging to original action entry
 func (settings RandomActionSettings) IsContainerAction() {}
 
-func getSelectableObjectsOnSheet(sessionState *session.State) []*enigmahandlers.Object {
-	uplink := sessionState.Connection.Sense()
+func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers.Object, error) {
+	uplink, err := sessionState.CurrentSenseUplink()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	// Get all objects on sheet
 	handles := uplink.Objects.GetAllObjectHandles(true, enigmahandlers.ObjTypeGenericObject)
 	n := len(handles)
 	if n < 1 {
 		sessionState.LogEntry.Log(logger.InfoLevel, "Nothing to select - no sheet objects in scope")
-		return make([]*enigmahandlers.Object, 0)
+		return make([]*enigmahandlers.Object, 0), nil
 	}
 	// Determine what objects are selectable
 	selectableObjects := make([]*enigmahandlers.Object, 0, n)
@@ -273,7 +302,7 @@ func getSelectableObjectsOnSheet(sessionState *session.State) []*enigmahandlers.
 			selectableObjects = append(selectableObjects, obj)
 		}
 	}
-	return selectableObjects
+	return selectableObjects, nil
 }
 
 func overrideSettings(originalSettings ActionSettings, overrideSettings map[string]interface{}) (interface{}, error) {
