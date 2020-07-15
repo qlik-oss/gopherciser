@@ -394,7 +394,7 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 
 				// rename action and label if we had a reconnect
 				switch act.Settings.(type) {
-				case ThinkTimeSettings:
+				case ThinkTimeSettings, *ThinkTimeSettings:
 					// Don't rename action if it's a thinktime to not affect analyzer results
 				default:
 					sessionState.LogEntry.Action.Action = fmt.Sprintf("Reconnect(%s)", sessionState.LogEntry.Action.Action)
