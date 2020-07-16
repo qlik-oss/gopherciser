@@ -103,8 +103,6 @@ func (settings ListBoxSelectSettings) Execute(sessionState *session.State, actio
 		actionState.AddErrors(errors.Errorf("Expected generic object , got object type<%T>", t))
 		return
 	}
-
-	sessionState.Wait(actionState)
 }
 
 func (settings ListBoxSelectSettings) doSelect(sessionState *session.State, actionState *action.State, genericObj *enigma.GenericObject) {
@@ -136,43 +134,48 @@ func (settings ListBoxSelectSettings) doSelect(sessionState *session.State, acti
 		return
 	}
 
+	if settings.Wrap {
+		beginSelections := func(ctx context.Context) error {
+			err := genericObj.BeginSelections(ctx, []string{selectPath})
+			return errors.Wrapf(err, "Failed to begin selsection in object<%s>", genericObj.GenericId)
+		}
+		err = sessionState.SendRequest(actionState, beginSelections)
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+	}
+
 	selectListObjects := func(ctx context.Context) error {
-		sessionState.LogEntry.LogDebugf("Select in object<%s> h<%d> type<%s>", genericObj.GenericId, genericObj.Handle, genericObj.GenericType)
+		sessionState.LogEntry.LogDebugf("Listboxselect in object<%s> selecttype<%s> handle<%d> type<%s>", genericObj.GenericId, selectType, genericObj.Handle, genericObj.GenericType)
 
 		success, err := selectFunction(ctx, selectPath, false)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to select in object<%s>", genericObj.GenericId)
+			return errors.Wrapf(err, "Failed to perform lisboxselect in object<%s>", genericObj.GenericId)
 		}
 		if !success {
-			return errors.Errorf("Select in object<%s> unsuccessful", genericObj.GenericId)
+			return errors.Errorf("Listboxselect in object<%s> unsuccessful", genericObj.GenericId)
 		}
 
 		sessionState.LogEntry.LogDebug(fmt.Sprint("Successful select in", genericObj.GenericId))
 
 		return err
 	}
-
-	if settings.Wrap {
-		beginSelections := func(ctx context.Context) error {
-			return genericObj.BeginSelections(ctx, []string{selectPath})
-		}
-		sessionState.QueueRequest(beginSelections, actionState, false, fmt.Sprintf("Failed to select in %s", genericObj.GenericId))
-		sessionState.Wait(actionState)
-		if actionState.Errors() != nil {
-			return
-		}
+	err = sessionState.SendRequest(actionState, selectListObjects)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
 	}
-	sessionState.QueueRequest(selectListObjects, actionState, false, fmt.Sprintf("Failed to select in %s", genericObj.GenericId))
+
 	if settings.Wrap {
 		endSelections := func(ctx context.Context) error {
-			return genericObj.EndSelections(ctx, settings.Accept)
+			err := genericObj.EndSelections(ctx, settings.Accept)
+			return errors.Wrapf(err, "Failed to end selsection in object<%s>", genericObj.GenericId)
 		}
-
-		sessionState.Wait(actionState)
-		if actionState.Errors() != nil {
+		err = sessionState.SendRequest(actionState, endSelections)
+		if err != nil {
+			actionState.AddErrors(err)
 			return
 		}
-
-		sessionState.QueueRequest(endSelections, actionState, true, fmt.Sprintf("Failed to end selection in %s", genericObj.GenericId))
 	}
 }
