@@ -216,7 +216,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 			return
 		}
 		for _, datafilesresp := range datafilesResp.Data {
-			if datafilesresp.QName == "DataFiles" && datafilesresp.Space == " " {
+			if datafilesresp.QName == "DataFiles" && datafilesresp.Space == "" {
 				qID = datafilesresp.QID
 				break
 			}
