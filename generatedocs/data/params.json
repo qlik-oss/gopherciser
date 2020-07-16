@@ -426,6 +426,22 @@
     "iterated.actions": [
         "Actions to iterate"
     ],
+    "listboxselect.id": [
+        "ID of the listbox in which to select values."
+    ],
+    "listboxselect.type": [
+		"Selection type.",
+        "`all`: Select all values.",
+        "`alternative`: Select alternative values.",
+        "`excluded`: Select excluded values.",
+        "`possible`: Select possible values."
+    ],
+    "listboxselect.wrap": [
+        "Wrap selection with Begin / End selection requests (`true` / `false`)."
+    ],
+    "listboxselect.accept": [
+        "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
+    ],
     "productversion.log": [
         "Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."
     ],
