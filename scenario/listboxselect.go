@@ -103,6 +103,7 @@ func (settings ListBoxSelectSettings) Execute(sessionState *session.State, actio
 		actionState.AddErrors(errors.Errorf("Expected generic object , got object type<%T>", t))
 		return
 	}
+	sessionState.Wait(actionState)
 }
 
 func (settings ListBoxSelectSettings) doSelect(sessionState *session.State, actionState *action.State, genericObj *enigma.GenericObject) {
@@ -161,6 +162,7 @@ func (settings ListBoxSelectSettings) doSelect(sessionState *session.State, acti
 
 		return err
 	}
+
 	err = sessionState.SendRequest(actionState, selectListObjects)
 	if err != nil {
 		actionState.AddErrors(err)
