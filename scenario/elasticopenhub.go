@@ -93,7 +93,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 			actionState.AddErrors(errors.New("No favorite collection id"))
 			return
 		}
-		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections/%s/items?limit=30&sort=-createdAt", host, favCollection.ID), actionState, sessionState.LogEntry, nil, func(err error, collectionRequest *session.RestRequest) {
+		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections/%s/items?limit=24&sort=-createdAt", host, favCollection.ID), actionState, sessionState.LogEntry, nil, func(err error, collectionRequest *session.RestRequest) {
 			fillAppMapFromItemRequest(sessionState, actionState, collectionRequest, false)
 		})
 	})
@@ -128,7 +128,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/tenants/me", host), actionState, sessionState.LogEntry, nil)
 
 	// This get items request is done by client, but resulting apps are never shown to users
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=30", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false) // todo should we fill map as these are never shown to user?
 	})
 
@@ -202,8 +202,37 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.PostAsync(fmt.Sprintf("%s/api/v1/policies/evaluation", host), actionState, sessionState.LogEntry, postData, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qlik-groups?tenantId=%s&limit=0&fields=displayName", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/api-keys/configs/%s", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users?tenantId=%s&limit=0&fields=name,picture", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=30&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users?tenantId=%s&limit=0&fields=name,picture,email,status&status=active,disabled", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24&resourceType=sharingservicetask", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles/quota", host), actionState, sessionState.LogEntry, nil)
+
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		var datafilesResp elasticstructs.DataFilesResp
+		var qID string
+		var qName = "DataFiles"
+		if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
+			actionState.AddErrors(errors.Wrap(err, "failed unmarshaling dataconnections data"))
+			return
+		}
+		for _, datafilesresp := range datafilesResp.Data {
+			if datafilesresp.QName == qName && datafilesresp.Space == "" {
+				qID = datafilesresp.QID
+				break
+			}
+
+		}
+
+		if qID == "" {
+			actionState.AddErrors(errors.Errorf("failed to find qID in dataconnections for <%s>", qName))
+		} else {
+			sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState, sessionState.LogEntry, nil)
+		}
+
+	})
+
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
 	})
 
