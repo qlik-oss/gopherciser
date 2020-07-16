@@ -208,11 +208,24 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles/quota", host), actionState, sessionState.LogEntry, nil)
 
-	//To do:  Need to parse response and get the "id" for "qName": "DataFiles"
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		var datafilesResp elasticstructs.DataFilesResp
+		var qID string
+		if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
+			actionState.AddErrors(errors.Wrap(err, "failed unmarshaling collection data"))
+			return
+		}
+		for _, datafilesresp := range datafilesResp.Data {
+			//if datafilesresp.QName == "DataFiles" && datafilesresp.Space == "" {
+			if datafilesresp.QName == "DataFiles" {
+				qID = datafilesresp.QID
+				break
+			}
 
-	// Use this id from above here
-	//sessionState.Rest.GetAsync(fmt.Sprintf("%s /api/v1/qix-datafiles?top=1000&connectionId=<dataconnectionID>", host), actionState, sessionState.LogEntry, postData, nil)
+		}
+
+		sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState, sessionState.LogEntry, nil)
+	})
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
