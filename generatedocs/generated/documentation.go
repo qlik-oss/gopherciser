@@ -127,6 +127,10 @@ var (
             Description: "## Iterated action\n\nLoop one or more actions.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
             Examples: "### Example\n\n```json\n//Visit all sheets twice\n{\n     \"action\": \"iterated\",\n     \"label\": \"\",\n     \"settings\": {\n         \"iterations\" : 2,\n         \"actions\" : [\n            {\n                 \"action\": \"sheetchanger\"\n            },\n            {\n                \"action\": \"thinktime\",\n                \"settings\": {\n                    \"type\": \"static\",\n                    \"delay\": 5\n                }\n            }\n         ]\n     }\n}\n```\n",
         },
+        "listboxselect": {
+            Description: "## ListBoxSelect action\n\nPerform list object specific slectiontypes in listbox.\n\n",
+            Examples: "### Examples\n\n```json\n{\n     \"label\": \"ListBoxSelect\",\n     \"action\": \"ListBoxSelect\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\",\n         \"type\": \"all\",\n         \"wrap\": true,\n         \"accept\": true\n     }\n}\n```\n",
+        },
         "openapp": {
             Description: "## OpenApp action\n\nOpen an app.\n\n**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`, `elasticopenhub` or `elasticexplore`.\n",
             Examples: "### Examples\n\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"guid\",\n         \"app\": \"7967af99-68b6-464a-86de-81de8937dd56\"\n     }\n}\n```\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"randomguidfromlist\",\n         \"list\": [\"7967af99-68b6-464a-86de-81de8937dd56\", \"ca1a9720-0f42-48e5-baa5-597dd11b6cad\"]\n     }\n}\n```\n",
@@ -317,6 +321,10 @@ var (
         "generateodag.linkname": { "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."  },  
         "iterated.actions": { "Actions to iterate"  },  
         "iterated.iterations": { "Number of loops."  },  
+        "listboxselect.accept": { "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."  },  
+        "listboxselect.id": { "ID of the listbox in which to select values."  },  
+        "listboxselect.type": { "Selection type.","`all`: Select all values.","`alternative`: Select alternative values.","`excluded`: Select excluded values.","`possible`: Select possible values."  },  
+        "listboxselect.wrap": { "Wrap selection with Begin / End selection requests (`true` / `false`)."  },  
         "productversion.log": { "Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."  },  
         "publishsheet.mode": { "","`allsheets`: Publish all sheets in the app.","`sheetids`: Only publish the sheets specified by the `sheetIds` array."  },  
         "publishsheet.sheetIds": { "(optional) Array of sheet IDs for the `sheetids` mode."  },  
@@ -391,7 +399,7 @@ var (
             {
                 Name: "commonActions",
                 Title: "Common actions",
-                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","subscribeobjects","thinktime","unpublishbookmark","unpublishsheet","unsubscribeobjects" },
+                Actions: []string{ "applybookmark","changesheet","clearall","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","listboxselect","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","subscribeobjects","thinktime","unpublishbookmark","unpublishsheet","unsubscribeobjects" },
                 DocEntry: common.DocEntry{
                     Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEfW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
                     Examples: "",
