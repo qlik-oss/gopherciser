@@ -41,14 +41,15 @@ const (
 	Excluded
 )
 
+var listBoxSelectTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+	"all":         int(All),
+	"possible":    int(Possible),
+	"alternative": int(Alternative),
+	"excluded":    int(Excluded),
+})
+
 func (ListBoxSelectType) GetEnumMap() *enummap.EnumMap {
-	enumMap, _ := enummap.NewEnumMap(map[string]int{
-		"all":         int(All),
-		"possible":    int(Possible),
-		"alternative": int(Alternative),
-		"excluded":    int(Excluded),
-	})
-	return enumMap
+	return listBoxSelectTypeEnumMap
 }
 
 // UnmarshalJSON unmarshal filter pane selection type
