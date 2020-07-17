@@ -22,11 +22,11 @@ type (
 		// ID object id
 		ID string `json:"id" appstructure:"active:listbox" displayname:"Listbox ID" doc-key:"listboxselect.id"`
 		// Type selection type
-		Type ListBoxSelectType `json:"type" displayname:"Select type" doc-key:"listboxselect.type"`
+		Type ListBoxSelectType `json:"type" displayname:"Selection type" doc-key:"listboxselect.type"`
 		// Accept true - confirm selection. false - abort selection
 		Accept bool `json:"accept" displayname:"Accept selection" doc-key:"listboxselect.accept"`
 		// Wrap selection with Begin / End selection requests
-		Wrap bool `json:"wrap" displayname:"Wrap with begin & end selection" doc-key:"listboxselect.wrap"`
+		Wrap bool `json:"wrap" displayname:"Wrap selection" doc-key:"listboxselect.wrap"`
 	}
 )
 
@@ -41,16 +41,19 @@ const (
 	Excluded
 )
 
-var listBoxSelectTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
-	"all":         int(All),
-	"possible":    int(Possible),
-	"alternative": int(Alternative),
-	"excluded":    int(Excluded),
-})
+func (ListBoxSelectType) GetEnumMap() *enummap.EnumMap {
+	enumMap, _ := enummap.NewEnumMap(map[string]int{
+		"all":         int(All),
+		"possible":    int(Possible),
+		"alternative": int(Alternative),
+		"excluded":    int(Excluded),
+	})
+	return enumMap
+}
 
 // UnmarshalJSON unmarshal filter pane selection type
 func (value *ListBoxSelectType) UnmarshalJSON(json []byte) error {
-	i, err := listBoxSelectTypeEnumMap.UnMarshal(json)
+	i, err := value.GetEnumMap().UnMarshal(json)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal SelectionType")
 	}
@@ -60,7 +63,7 @@ func (value *ListBoxSelectType) UnmarshalJSON(json []byte) error {
 
 // MarshalJSON marshal filter pane selection type
 func (value ListBoxSelectType) MarshalJSON() ([]byte, error) {
-	str, err := listBoxSelectTypeEnumMap.String(int(value))
+	str, err := value.GetEnumMap().String(int(value))
 	if err != nil {
 		return nil, errors.Errorf("Unknown selectiontype<%d>", value)
 	}
@@ -69,7 +72,7 @@ func (value ListBoxSelectType) MarshalJSON() ([]byte, error) {
 
 // String representation of ListBoxSelectType
 func (value ListBoxSelectType) String() string {
-	sType, err := listBoxSelectTypeEnumMap.String(int(value))
+	sType, err := value.GetEnumMap().String(int(value))
 	if err != nil {
 		return strconv.Itoa(int(value))
 	}
