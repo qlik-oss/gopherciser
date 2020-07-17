@@ -57,6 +57,7 @@ type (
 		ResponseStatusCode int
 		ResponseHeaders    http.Header
 		ExtraHeaders       map[string]string
+		NoVirtualProxy     bool
 	}
 
 	// ConnectionSettings interface
@@ -78,6 +79,9 @@ type (
 		FailOnError bool
 		// ContentType defaults to application/json
 		ContentType string
+		// NoVirtualProxy disables the automatic adding of virtualproxy to request when a virtualproxy is defined.
+		// This is useful e.g. when sending requests towards non sense environments as part of custom actions.
+		NoVirtualProxy bool
 	}
 )
 
@@ -306,10 +310,11 @@ func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *actio
 	}
 
 	postRequest := RestRequest{
-		Method:      POST,
-		ContentType: options.ContentType,
-		Content:     content,
-		Destination: url,
+		Method:         POST,
+		ContentType:    options.ContentType,
+		Content:        content,
+		Destination:    url,
+		NoVirtualProxy: options.NoVirtualProxy,
 	}
 
 	handler.QueueRequestWithCallback(actionState, options.FailOnError, &postRequest, logEntry, createStatusCallback(actionState, logEntry, &postRequest, options, callback))
@@ -439,7 +444,7 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
 
 	destination := request.Destination
-	if handler.virtualProxy != "" {
+	if handler.virtualProxy != "" && !request.NoVirtualProxy {
 		host, err := getHost(request.Destination)
 		if err != nil {
 			return err
