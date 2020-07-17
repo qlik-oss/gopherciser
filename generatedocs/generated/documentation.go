@@ -290,7 +290,7 @@ var (
         "elasticduplicateapp.spaceid": { "(optional) GUID of the shared space in which to publish the app."  },  
         "elasticexplore.keepcurrent": { "Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted."  },  
         "elasticexplore.owner": { "Filter apps by owner","`all`: Apps owned by anyone.","`me`: Apps owned by the simulated user.","`others`: Apps not owned by the simulated user."  },  
-        "elasticexplore.paging": { "Go through all app pages in the hub. Defaults to `false` (that is, only include the first 30 apps that the user can see), if omitted."  },  
+        "elasticexplore.paging": { "Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted."  },  
         "elasticexplore.sorting": { "Simulate selecting sort order in the drop-down menu in the hub","`default`: Default sort order (`created`).","`created`: Sort by the time of creation.","`updated`: Sort by the time of modification.","`name`: Sort by name."  },  
         "elasticexplore.space": { "Filter apps by space name (supports the use of [session variables](#session_variables)). **Note:** This filter cannot be used together with `spaceid`."  },  
         "elasticexplore.spaceid": { "Filter apps by space GUID. **Note:** This filter cannot be used together with `space`."  },  

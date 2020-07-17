@@ -1636,7 +1636,7 @@ Explore the hub for apps and fill the artifact map with apps to be used by other
 ### Settings
 
 * `keepcurrent`: Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted.
-* `paging`: Go through all app pages in the hub. Defaults to `false` (that is, only include the first 30 apps that the user can see), if omitted.
+* `paging`: Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted.
 * `sorting`: Simulate selecting sort order in the drop-down menu in the hub
     * `default`: Default sort order (`created`).
     * `created`: Sort by the time of creation.

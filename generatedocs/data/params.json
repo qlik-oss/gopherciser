@@ -320,7 +320,7 @@
         "Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted."
     ],
     "elasticexplore.paging": [
-        "Go through all app pages in the hub. Defaults to `false` (that is, only include the first 30 apps that the user can see), if omitted."
+        "Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted."
     ],
     "elasticexplore.sorting": [
         "Simulate selecting sort order in the drop-down menu in the hub",
