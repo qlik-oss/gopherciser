@@ -1,6 +1,6 @@
 # Extending Gopherciser
 
-Gopherciser can be extended without having to alter its base code.
+Gopherciser can be extended without having to alter its base code. A template repo show casing how to do this can be found [here](https://github.com/qlik-oss/gopherciser-extended-example), including example custom actions.
 
 ## Adding support for extensions and overriding settings for default objects
 
