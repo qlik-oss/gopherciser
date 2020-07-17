@@ -89,12 +89,12 @@ type (
 )
 
 type (
-	// *** Interfaces which could be implemented on action stuct field types ***
+	// *** Interfaces which could be implemented on action struct field types ***
 
 	// Enum interface should be implemented on types used fields of action struct if:
 	// 1. Type is derived from one integer type. Example: `type MyType int`
 	// 2. Type has natural string representations for its values.
-	// Typically you should consider implemeting Enum when declaring global
+	// Typically you should consider implementing Enum when declaring global
 	// constants of a user defined integer type.
 	Enum interface {
 		GetEnumMap() *enummap.EnumMap
