@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -193,6 +194,8 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		}
 		fileId := fileUrlSplit[len(fileUrlSplit)-1]
 
+		fallbackname := filepath.Base(settings.Filename)
+
 		parameters := ""
 		if destSpace != nil {
 			parameters = fmt.Sprintf("&spaceId=%v", destSpace.ID)
@@ -200,7 +203,7 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		postApp = session.RestRequest{
 			Method:      session.POST,
 			ContentType: "application/json",
-			Destination: fmt.Sprintf("%v/api/v1/apps/import?fileId=%v%v", restUrl, fileId, parameters),
+			Destination: fmt.Sprintf("%v/api/v1/apps/import?fileId=%v&fallbackName=%v%v", restUrl, fileId, fallbackname, parameters),
 		}
 	case Legacy:
 		parameters := ""
