@@ -2,13 +2,11 @@ module github.com/qlik-oss/gopherciser
 
 go 1.13
 
-replace github.com/eventials/go-tus => github.com/andrewmostello/go-tus v0.0.0-20200314041820-904a9904af9a
-
 require (
 	github.com/InVisionApp/tabular v0.3.0
 	github.com/buger/jsonparser v1.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/eventials/go-tus v0.0.0-20190617130015-9db47421f6a0
+	github.com/eventials/go-tus v0.0.0-20200718001131-45c7ec8f5d59
 	github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.0.3
@@ -27,6 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tus/tusd v1.3.0 // indirect
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
