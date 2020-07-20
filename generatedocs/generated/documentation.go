@@ -128,7 +128,7 @@ var (
             Examples: "### Example\n\n```json\n//Visit all sheets twice\n{\n     \"action\": \"iterated\",\n     \"label\": \"\",\n     \"settings\": {\n         \"iterations\" : 2,\n         \"actions\" : [\n            {\n                 \"action\": \"sheetchanger\"\n            },\n            {\n                \"action\": \"thinktime\",\n                \"settings\": {\n                    \"type\": \"static\",\n                    \"delay\": 5\n                }\n            }\n         ]\n     }\n}\n```\n",
         },
         "listboxselect": {
-            Description: "## ListBoxSelect action\n\nPerform list object specific slectiontypes in listbox.\n\n",
+            Description: "## ListBoxSelect action\n\nPerform list object specific selectiontypes in listbox.\n\n",
             Examples: "### Examples\n\n```json\n{\n     \"label\": \"ListBoxSelect\",\n     \"action\": \"ListBoxSelect\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\",\n         \"type\": \"all\",\n         \"wrap\": true,\n         \"accept\": true\n     }\n}\n```\n",
         },
         "openapp": {
