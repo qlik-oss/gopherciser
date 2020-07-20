@@ -1,4 +1,4 @@
 ## ListBoxSelect action
 
-Perform list object specific slectiontypes in listbox.
+Perform list object specific selectiontypes in listbox.
 

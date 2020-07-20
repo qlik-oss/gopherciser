@@ -637,7 +637,7 @@ Loop one or more actions.
 
 ## ListBoxSelect action
 
-Perform list object specific slectiontypes in listbox.
+Perform list object specific selectiontypes in listbox.
 
 
 ### Settings

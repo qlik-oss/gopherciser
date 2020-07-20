@@ -15,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
@@ -84,6 +85,19 @@ type (
 	AppStructureInfo struct {
 		IsAppAction bool
 		Include     bool
+	}
+)
+
+type (
+	// *** Interfaces which could be implemented on action struct field types ***
+
+	// Enum interface should be implemented on types used fields of action struct if:
+	// 1. Type is derived from one integer type. Example: `type MyType int`
+	// 2. Type has natural string representations for its values.
+	// Typically you should consider implementing Enum when declaring global
+	// constants of a user defined integer type.
+	Enum interface {
+		GetEnumMap() *enummap.EnumMap
 	}
 )
 

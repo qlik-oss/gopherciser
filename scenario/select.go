@@ -66,10 +66,6 @@ const (
 	selectStateExcludedLocked
 )
 
-type Enum interface {
-	GetEnumMap() *enummap.EnumMap
-}
-
 var selectionTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
 	"randomfromall":      int(RandomFromAll),
 	"randomfromenabled":  int(RandomFromEnabled),
