@@ -229,12 +229,12 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 		if isAborted, _ := scenario.CheckActionError(err); isAborted {
 			return nil
 		}
-		if errTimeBuf := sched.TimeBuf.Wait(ctx, true); errTimeBuf != nil {
-			logEntry := sessionState.LogEntry.ShallowCopy()
-			logEntry.Action = nil
-			logEntry.LogError(errors.Wrap(errTimeBuf, "time buffer in-between sequences failed"))
-		}
 		if err != nil {
+			if errTimeBuf := sched.TimeBuf.Wait(ctx, true); errTimeBuf != nil {
+				logEntry := sessionState.LogEntry.ShallowCopy()
+				logEntry.Action = nil
+				logEntry.LogError(errors.Wrap(errTimeBuf, "time buffer in-between sequences failed"))
+			}
 			return errors.WithStack(err)
 		}
 	}
