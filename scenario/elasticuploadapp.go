@@ -3,6 +3,7 @@ package scenario
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -194,7 +195,8 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		}
 		fileId := fileUrlSplit[len(fileUrlSplit)-1]
 
-		fallbackname := filepath.Base(settings.Filename)
+		query := url.Values{}
+		query.Add("fallbackname", filepath.Base(settings.Filename))
 
 		parameters := ""
 		if destSpace != nil {
@@ -203,7 +205,7 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		postApp = session.RestRequest{
 			Method:      session.POST,
 			ContentType: "application/json",
-			Destination: fmt.Sprintf("%v/api/v1/apps/import?fileId=%v&fallbackName=%v%v", restUrl, fileId, fallbackname, parameters),
+			Destination: fmt.Sprintf("%v/api/v1/apps/import?fileId=%v&%v%v", restUrl, fileId, query.Encode(), parameters),
 		}
 	case Legacy:
 		parameters := ""
