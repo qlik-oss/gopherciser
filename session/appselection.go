@@ -35,7 +35,7 @@ type (
 )
 
 var (
-	appModeEnum, _ = enummap.NewEnumMap(map[string]int{
+	appModeEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"current":            int(AppModeCurrent),
 		"guid":               int(AppModeGUID),
 		"name":               int(AppModeName),

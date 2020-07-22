@@ -46,7 +46,7 @@ const (
 	ClearCollection
 )
 
-var deletionModeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+var deletionModeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"single":          int(Single),
 	"everything":      int(Everything),
 	"clearcollection": int(ClearCollection),

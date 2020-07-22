@@ -98,7 +98,7 @@ const (
 )
 
 var (
-	restMethodEnumMap, _ = enummap.NewEnumMap(map[string]int{
+	restMethodEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 		"get":    int(GET),
 		"post":   int(POST),
 		"delete": int(DELETE),

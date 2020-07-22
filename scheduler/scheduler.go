@@ -68,7 +68,7 @@ const (
 )
 
 var (
-	schedulerTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+	schedulerTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 		"simple": int(SchedSimple),
 	})
 )

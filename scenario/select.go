@@ -66,7 +66,7 @@ const (
 	selectStateExcludedLocked
 )
 
-var selectionTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+var selectionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"randomfromall":      int(RandomFromAll),
 	"randomfromenabled":  int(RandomFromEnabled),
 	"randomfromexcluded": int(RandomFromExcluded),
@@ -78,7 +78,7 @@ func (value SelectionType) GetEnumMap() *enummap.EnumMap {
 }
 
 var (
-	selectStateHandler, _ = enummap.NewEnumMap(map[string]int{
+	selectStateHandler = enummap.NewEnumMapOrPanic(map[string]int{
 		"l":  int(selectStateLocked),
 		"s":  int(selectStateSelected),
 		"o":  int(selectStateOption),

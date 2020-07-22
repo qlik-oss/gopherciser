@@ -47,7 +47,7 @@ const (
 )
 
 var (
-	constraintOperatorEnum, _ = enummap.NewEnumMap(map[string]int{
+	constraintOperatorEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"<": int(lessThanOperator),
 		">": int(largerThanOperator),
 		"=": int(equalOperator),
