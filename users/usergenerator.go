@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/qlik-oss/gopherciser/statistics"
-
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (

@@ -59,7 +59,7 @@ func New() *EnumMap {
 	return em
 }
 
-// NewEnumMap new enum map from map. Returns error if duplicate values and
+// NewEnumMap new enum map from map. Returns error if duplicate values or
 // non-lowercase keys. NewEnumMapOrPanic is preferable for global
 // EnumMap-variables.
 func NewEnumMap(m map[string]int) (*EnumMap, error) {
