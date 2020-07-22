@@ -24,13 +24,11 @@ func CreateFieldListObject(ctx context.Context, doc *enigma.Doc) (*FieldList, er
 			Type: "FieldList",
 		},
 		FieldListDef: &enigma.FieldListDef{
-			ShowSystem:        false,
-			ShowHidden:        false,
-			ShowSemantic:      true,
-			ShowSrcTables:     true,
-			ShowDerivedFields: true,
-
-			// todo not in "selector" list, which ones needed?
+			ShowSystem:         false,
+			ShowHidden:         false,
+			ShowSemantic:       true,
+			ShowSrcTables:      true,
+			ShowDerivedFields:  true,
 			ShowImplicit:       false,
 			ShowDefinitionOnly: false,
 		},
