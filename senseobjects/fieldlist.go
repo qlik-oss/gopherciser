@@ -61,6 +61,13 @@ func (fieldlist *FieldList) setLayout(layout *enigma.GenericObjectLayout) {
 	fieldlist.layout = layout
 }
 
+// Layout of fieldlist object
+func (fieldlist *FieldList) Layout() *enigma.GenericObjectLayout {
+	fieldlist.mutex.Lock()
+	defer fieldlist.mutex.Unlock()
+	return fieldlist.layout
+}
+
 // UpdateProperties update object with new properties from engine
 func (fieldlist *FieldList) UpdateProperties(ctx context.Context) error {
 	properties, err := fieldlist.enigmaObject.GetProperties(ctx)
@@ -76,4 +83,11 @@ func (fieldlist *FieldList) setProperties(properties *enigma.GenericObjectProper
 	fieldlist.mutex.Lock()
 	defer fieldlist.mutex.Unlock()
 	fieldlist.properties = properties
+}
+
+// Properties of fieldlist object
+func (fieldlist *FieldList) Properties() *enigma.GenericObjectProperties {
+	fieldlist.mutex.Lock()
+	defer fieldlist.mutex.Unlock()
+	return fieldlist.properties
 }

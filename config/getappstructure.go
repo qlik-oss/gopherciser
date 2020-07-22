@@ -74,6 +74,10 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		}
 	}
 
+	appStructure.getFieldListAsync(sessionState, actionState, app)
+
+	// todo handle dimension list
+
 	if sessionState.Wait(actionState) {
 		return // An error occurred
 	}

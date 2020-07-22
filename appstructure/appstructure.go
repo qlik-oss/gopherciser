@@ -2,6 +2,7 @@ package appstructure
 
 import (
 	"encoding/json"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/enummap"
 )
 
@@ -97,6 +98,11 @@ type (
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
 
+	// AppStructureField list of fields in the app
+	AppStructureField struct {
+		enigma.NxFieldDescription // todo what do we want from these?
+	}
+
 	// AppStructure of Sense app
 	AppStructure struct {
 		AppMeta AppStructureAppMeta `json:"meta"`
@@ -104,6 +110,8 @@ type (
 		Objects map[string]AppStructureObject `json:"objects"`
 		// Bookmark list of bookmarks in the app
 		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
+		// Fields list of all fields in the app
+		Fields map[string]AppStructureField `json:"fields"`
 	}
 
 	// AppStructurePopulatedObjects is the type returned by an action when prompted for selectable objects
