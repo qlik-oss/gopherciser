@@ -100,7 +100,7 @@ type (
 
 	// AppStructureField list of fields in the app
 	AppStructureField struct {
-		enigma.NxFieldDescription // todo what do we want from these?
+		enigma.NxFieldDescription
 	}
 
 	// AppStructure of Sense app
