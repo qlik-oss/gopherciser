@@ -152,10 +152,11 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		return
 	}
 
-	fmt.Printf("%+v\n", buttonActions)
 	for _, buttonAction := range buttonActions {
-		fmt.Printf("%+v\n", buttonAction)
-		buttonAction.execute(sessionState, actionState, connectionSettings, label, reset)
+		if err := buttonAction.execute(sessionState, actionState); err != nil {
+			actionState.AddErrors(errors.Wrapf(err, "Buttonaction type<%s> label<%s> cid<%s> failed",
+				buttonAction.ActionType, buttonAction.ActionLabel, buttonAction.CID))
+		}
 	}
 
 	sessionState.Wait(actionState)
@@ -179,7 +180,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 			return nil, errors.Wrapf(err, `No "actions"-property exist for object<%s>`, obj.ID)
 		}
 
-		println(string(actionsRaw))
+		// println(string(actionsRaw))
 		actions := []buttonAction{}
 		err = json.Unmarshal(actionsRaw, &actions)
 		if err != nil {
@@ -194,191 +195,172 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
-func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
+	app := sessionState.Connection.Sense().CurrentApp
+	sendReq := func(f func(context.Context) error) error {
+		return sessionState.SendRequest(actionState, f)
+	}
+	// TODO sense browser client does getField only once for the same field
+	// here we do multiple
+	// same may apply to variables
+	// where are these stored?
+
 	switch buttonAction.ActionType {
 	case emptyAction: // do nothing
+		return nil
+
 	case unknownAction:
-		actionState.AddErrors(errors.New("Unknown button action"))
+		return errors.New("Unknown button action")
 
 	case applyBookmark:
-		// ApplyBookmarkSettings{Title: action.Bookmark}.Execute(sessionState, actionState, connectionSettings, label, reset)
-		fmt.Printf("ButtonAction<%s> not implemented\n", buttonAction.ActionType)
+		return sendReq(func(ctx context.Context) error {
+			success, err := app.Doc.ApplyBookmark(ctx, buttonAction.Bookmark /*id*/)
+			if err != nil {
+				return errors.Wrapf(err, "Error applying bookmark<%s>", buttonAction.Bookmark)
+			}
+			if !success {
+				return errors.Errorf("Unsuccessful application bookmark<%s>", buttonAction.Bookmark)
+			}
+			return err
+		})
 
 	case moveBackwardsInSelections:
-		err := sessionState.SendRequest(actionState, sessionState.Connection.Sense().CurrentApp.Doc.Back)
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to move backward in selection"))
-		}
+		return sendReq(app.Doc.Back)
 
 	case moveForwardsInSelections:
-		err := sessionState.SendRequest(actionState, sessionState.Connection.Sense().CurrentApp.Doc.Forward)
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to move forward in selection"))
-		}
+		return sendReq(app.Doc.Forward)
 
 	case clearAllSelections:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			return sessionState.Connection.Sense().CurrentApp.Doc.ClearAll(ctx, buttonAction.SoftLock /*lockedAlso*/, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			return app.Doc.ClearAll(ctx, buttonAction.SoftLock /*lockedAlso*/, "" /*stateName*/)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to clear all selections"))
-		}
 
 	case clearSelectionsInOtherFields:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
 			_, err = field.ClearAllButThis(ctx, buttonAction.SoftLock)
 			return err
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to clear selections in other fields"))
-		}
 
 	case clearSelectionsInField:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
 			_, err = field.Clear(ctx)
 			return err
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to clear selections in field"))
-		}
 
 	case selectAllValuesInField:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Failed to get field<%s>", buttonAction.Field)
 			}
 			_, err = field.SelectAll(ctx, buttonAction.SoftLock)
-			return err
+			return errors.Wrapf(err, "Could not select all values in field<%s>", buttonAction.Field)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to select all values in field"))
-		}
 
 	case selectValuesInField:
-		fmt.Printf("ButtonAction<%s> not implemented\n", buttonAction.ActionType)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to get field<%s>", buttonAction.Field)
+			}
+			_, err = field.SelectValuesRaw(ctx, buttonAction.Value /*TODO unambigous how to do this*/, false /*toggleMode*/, buttonAction.SoftLock)
+			return errors.Wrapf(err, "Could not select values in field<%s>", buttonAction.Field)
+		})
 
 	case selectValuesMatchingSearchCriteria:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
-			_, err = field.Select(ctx, "" /*TODO match*/, buttonAction.SoftLock, 0 /*TODO excludedValuesMode*/)
-			return err
+
+			_, err = field.Select(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*TODO excludedValuesMode*/)
+			return errors.Wrapf(err, "Selection failed in field<%s> searchcritera<%s>", buttonAction.Field, buttonAction.Value)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to select all values in field"))
-		}
 
 	case selectAlternatives:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
 			_, err = field.SelectAlternative(ctx, buttonAction.SoftLock)
 			return err
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to select alternative values in field"))
-		}
 
 	case selectExcluded:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
 			_, err = field.SelectExcluded(ctx, buttonAction.SoftLock)
 			return err
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to select excluded values in field"))
-		}
 
 	case selectPossibleValuesInField:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
-			_, err = field.SelectExcluded(ctx, buttonAction.SoftLock)
-			return err
+			_, err = field.SelectPossible(ctx, buttonAction.SoftLock)
+			return errors.Wrapf(err, "Could not select possible in field<%s>", buttonAction.Field)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to select possible values in field"))
-		}
 
 	case toggleFieldSelection:
 		fmt.Printf("ButtonAction<%s> not implemented\n", buttonAction.ActionType)
+		return nil
 
 	case lockAllSelections:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			return sessionState.Connection.Sense().CurrentApp.Doc.LockAll(ctx, "" /*alternate state name*/)
+		return sendReq(func(ctx context.Context) error {
+			return app.Doc.LockAll(ctx, "" /*alternate state name*/)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to lock all selections"))
-		}
 
 	case lockSpecificField:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
 			_, err = field.Lock(ctx)
 			return err
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to lock field"))
-		}
 
 	case unlockAllSelections:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			return sessionState.Connection.Sense().CurrentApp.Doc.UnlockAll(ctx, "" /*alternate state name*/)
+		return sendReq(func(ctx context.Context) error {
+			return app.Doc.UnlockAll(ctx, "" /*alternate state name*/)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to unlock all selections"))
-		}
 
 	case unlockSpecificField:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			field, err := sessionState.Connection.Sense().CurrentApp.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+		return sendReq(func(ctx context.Context) error {
+			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
 			}
 			_, err = field.Unlock(ctx)
 			return err
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to unlock field"))
-		}
 
 	case setVariableValue:
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			// TODO by name or id?
-			variable, err := sessionState.Connection.Sense().CurrentApp.Doc.GetVariableByName(ctx, buttonAction.Variable)
+		return sendReq(func(ctx context.Context) error {
+			variable, err := app.Doc.GetVariableByName(ctx, buttonAction.Variable)
+			println("var type " + buttonAction.Variable + " " + variable.Type)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Could not get variable<%s>", buttonAction.Variable)
 			}
-			// TODO set string value or int value
 			return variable.SetStringValue(ctx, buttonAction.Value)
 		})
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to unlock field"))
-		}
-	default:
-		actionState.AddErrors(errors.New("Unexpected buttonaction"))
-	}
 
-	// TODO to wait or not to wait?
+	default:
+		return errors.New("Unexpected buttonaction")
+	}
 }
