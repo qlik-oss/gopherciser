@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"sync"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/session"
-	"os"
-	"sync"
 )
 
 type (
@@ -74,9 +75,16 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		}
 	}
 
+	appStructure.getFieldListAsync(sessionState, actionState, app)
+
 	if sessionState.Wait(actionState) {
 		return // An error occurred
 	}
+
+	// TODO clicking the "Selections" tab in sense would normally create a fieldlist and a dimensionlist object
+	// to get dimensions and fields. We however already have master object dimensions in object list
+	// should these be moved to a combined field+dimension list? Leave this as is now and to be decided
+	// when implementing actions using fields and decide what works best for GUI.
 
 	raw, err := json.MarshalIndent(appStructure, "", "  ")
 	if err != nil {

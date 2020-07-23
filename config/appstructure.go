@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/InVisionApp/tabular"
-	"github.com/qlik-oss/gopherciser/appstructure"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/InVisionApp/tabular"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
@@ -674,6 +674,47 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	structure.AddBookmark(structureBookmark)
 
 	return nil
+}
+
+func (structure *GeneratedAppStructure) getFieldListAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App) {
+	// Create fieldlist object and handle fields
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		fieldlist, err := senseobjects.CreateFieldListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+
+		sessionState.QueueRequestWithCallback(fieldlist.UpdateLayout, actionState, true, "", func(err error) {
+			properties := fieldlist.Layout()
+			if properties == nil {
+				actionState.AddErrors(errors.New("fieldlist layout is nil"))
+				return
+			}
+			if properties.FieldList == nil {
+				actionState.AddErrors(errors.New("FieldList missing from fieldlist layout"))
+				return
+			}
+			for _, field := range properties.FieldList.Items {
+				structure.addField(field)
+			}
+		})
+		return nil
+	}, actionState, true, "")
+}
+
+func (structure *GeneratedAppStructure) addField(field *enigma.NxFieldDescription) {
+	if field == nil {
+		return
+	}
+	structure.structureLock.Lock()
+	defer structure.structureLock.Unlock()
+
+	if structure.Fields == nil {
+		structure.Fields = make(map[string]appstructure.AppStructureField)
+	}
+	structure.Fields[field.Name] = appstructure.AppStructureField{
+		NxFieldDescription: *field,
+	}
 }
 
 func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
