@@ -30,12 +30,12 @@ const (
 	SheetIDs
 )
 
-var publishSheetModeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+var publishSheetModeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"allsheets": int(AllSheets),
 	"sheetids":  int(SheetIDs),
 })
 
-func (value PublishSheetMode) GetEnumMap() *enummap.EnumMap{
+func (value PublishSheetMode) GetEnumMap() *enummap.EnumMap {
 	return publishSheetModeEnumMap
 }
 

@@ -37,7 +37,7 @@ const (
 
 var (
 	// ProfileTypeEnum enum of profiling options
-	ProfileTypeEnum, _ = enummap.NewEnumMap(map[string]int{
+	ProfileTypeEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"cpu":          int(ProfileTypeCPU),
 		"block":        int(ProfileTypeBlock),
 		"goroutine":    int(ProfileTypeGoRoutine),

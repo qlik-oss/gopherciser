@@ -125,21 +125,21 @@ const (
 var (
 	od ObjectDefs
 
-	dataDefTypeEnum, _ = enummap.NewEnumMap(map[string]int{
+	dataDefTypeEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"unknown":    int(DataDefUnknown),
 		"listobject": int(DataDefListObject),
 		"hypercube":  int(DataDefHyperCube),
 		"nodata":     int(DataDefNoData),
 	})
 
-	selectTypeEnum, _ = enummap.NewEnumMap(map[string]int{
+	selectTypeEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"unknown":               int(SelectTypeUnknown),
 		"listobjectvalues":      int(SelectTypeListObjectValues),
 		"hypercubevalues":       int(SelectTypeHypercubeValues),
 		"hypercubecolumnvalues": int(SelectTypeHypercubeColumnValues),
 	})
 
-	dataTypeEnum, _ = enummap.NewEnumMap(map[string]int{
+	dataTypeEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"layout":                  int(DataTypeLayout),
 		"listobjectdata":          int(DataTypeListObject),
 		"hypercubedata":           int(DataTypeHyperCubeData),

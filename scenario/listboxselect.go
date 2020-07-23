@@ -41,7 +41,7 @@ const (
 	Excluded
 )
 
-var listBoxSelectTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+var listBoxSelectTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"all":         int(All),
 	"possible":    int(Possible),
 	"alternative": int(Alternative),

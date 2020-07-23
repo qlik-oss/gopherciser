@@ -3,12 +3,12 @@ package users
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/statistics"
 	"runtime"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 type (
@@ -51,7 +51,7 @@ const (
 )
 
 var (
-	userGeneratorTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+	userGeneratorTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 		"userlist": int(UserGeneratorCircular),
 		"prefix":   int(UserGeneratorPrefix),
 		"none":     int(UserGeneratorNone),

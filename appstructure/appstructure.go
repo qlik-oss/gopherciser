@@ -2,6 +2,7 @@ package appstructure
 
 import (
 	"encoding/json"
+
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/enummap"
 )
@@ -142,7 +143,7 @@ const (
 )
 
 var (
-	ObjectTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+	ObjectTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 		"dimension":    int(ObjectTypeDimension),
 		"measure":      int(ObjectTypeMeasure),
 		"bookmark":     int(ObjectTypeBookmark),
