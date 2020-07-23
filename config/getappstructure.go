@@ -81,7 +81,7 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		return // An error occurred
 	}
 
-	// todo clicking the "Selections" tab i sense would normally create a fieldlist and a dimensionlist object
+	// TODO clicking the "Selections" tab in sense would normally create a fieldlist and a dimensionlist object
 	// to get dimensions and fields. We however already have master object dimensions in object list
 	// should these be moved to a combined field+dimension list? Leave this as is now and to be decided
 	// when implementing actions using fields and decide what works best for GUI.
