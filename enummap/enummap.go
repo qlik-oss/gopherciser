@@ -59,7 +59,9 @@ func New() *EnumMap {
 	return em
 }
 
-// NewEnumMap new enum map from map
+// NewEnumMap new enum map from map. Returns error if duplicate values or
+// non-lowercase keys. NewEnumMapOrPanic is preferable for global
+// EnumMap-variables.
 func NewEnumMap(m map[string]int) (*EnumMap, error) {
 	em := &EnumMap{
 		asInt: m,
@@ -82,6 +84,20 @@ func NewEnumMap(m map[string]int) (*EnumMap, error) {
 	return em, nil
 }
 
+// NewEnumMapOrPanic is intended for assignment to global EnumMap-variables,
+// within global scope or init()-function. When used for global variables
+// NewEnumMapOrPanic fails early, which will be detected by any tests in the
+// same package (even with an empty test file). NewEnumMap is preferable in
+// other cases.
+func NewEnumMapOrPanic(m map[string]int) *EnumMap {
+	enumMap, err := NewEnumMap(m)
+	if err != nil {
+		panic(fmt.Errorf("Invalid EnumMap: %s", err))
+	}
+	return enumMap
+}
+
+// AsInt returns string to integer map representation of EnumMap
 func (em *EnumMap) AsInt() map[string]int {
 	return em.asInt
 }

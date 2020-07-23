@@ -57,14 +57,14 @@ const (
 )
 
 var (
-	sortingEnum, _ = enummap.NewEnumMap(map[string]int{
+	sortingEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"default": int(SortingModeDefault),
 		"created": int(SortingModeCreatedAt),
 		"updated": int(SortingModeUpdatedAt),
 		"name":    int(SortingModeName),
 	})
 
-	ownerEnum, _ = enummap.NewEnumMap(map[string]int{
+	ownerEnum = enummap.NewEnumMapOrPanic(map[string]int{
 		"all":    int(OwnerModeAll),
 		"me":     int(OwnerModeMe),
 		"others": int(OwnerModeOthers),

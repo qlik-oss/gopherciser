@@ -66,7 +66,7 @@ const (
 )
 
 var (
-	actionTypeEnumMap, _ = enummap.NewEnumMap(map[string]int{
+	actionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 		"thinktime":            int(ThinkTime),
 		"sheetobjectselection": int(SheetObjectSelection),
 		"changesheet":          int(ChangeSheet),
