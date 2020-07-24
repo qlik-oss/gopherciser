@@ -35,6 +35,14 @@ type (
 		CID                 string           `json:"cId"`
 	}
 
+	buttonNavigationAction struct {
+		Action     string `json:"action"`
+		Sheet      string `json:"sheet"`
+		Story      string `json:"story"`
+		WebsiteURL string `json:"websiteUrl"`
+		SameWindow bool   `json:"sameWindow"`
+	}
+
 	buttonActionType int
 )
 
@@ -146,9 +154,10 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		actionState.AddErrors(errors.Wrapf(err, "Failed getting object<%s> from object list", obj.ID))
 		return
 	}
-	buttonActions, err := buttonActions(sessionState, actionState, obj)
+
+	buttonActions, navigationAction, err := buttonActions(sessionState, actionState, obj)
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "Could not get button actions"))
+		actionState.AddErrors(errors.Wrapf(err, "Failed to get button actions"))
 		return
 	}
 
@@ -160,10 +169,14 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		}
 	}
 
+	err = navigationAction.execute(sessionState, actionState)
+	if err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "Button-navigationaction<%s> failed", navigationAction.Action))
+	}
 	sessionState.Wait(actionState)
 }
 
-func buttonActions(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) ([]buttonAction, error) {
+func buttonActions(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) ([]buttonAction, *buttonNavigationAction, error) {
 	// TODO(atluq): Add buttonActions to enigma.GenericObjectProperties such
 	// that obj.Properties() could be used, instead of
 	// obj.EnigmaObject.GetpropertiesRaw()
@@ -173,26 +186,37 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 
 		propsRaw, err := sessionState.SendRequestRaw(actionState, genericObj.GetPropertiesRaw)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Properties request failed for object<%s>", obj.ID)
+			return nil, nil, errors.Wrapf(err, "Properties request failed for object<%s>", obj.ID)
 		}
 
+		// parse button actions
 		actionsRaw, err := senseobjdef.NewDataPath("actions").Lookup(propsRaw)
 		if err != nil {
-			return nil, errors.Wrapf(err, `No "actions"-property exist for object<%s>`, obj.ID)
+			return nil, nil, errors.Wrapf(err, `No "actions"-property exist for object<%s>`, obj.ID)
 		}
 
-		println(string(actionsRaw))
 		actions := []buttonAction{}
 		err = json.Unmarshal(actionsRaw, &actions)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Could not unmarshal button actions")
+			return nil, nil, errors.Wrapf(err, "Failed to unmarshal button actions")
 		}
 
-		println("actions unmarshaled")
-		return actions, nil
+		// parese navigation action associated with button
+		navigationRaw, err := senseobjdef.NewDataPath("navigation").Lookup(propsRaw)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, `No "navigation"-property exist for object<%s>`, obj.ID)
+		}
+
+		navigationAction := &buttonNavigationAction{}
+		err = json.Unmarshal(navigationRaw, navigationAction)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "Failed to unmarshal button navigation action")
+		}
+
+		return actions, navigationAction, nil
 
 	default:
-		return nil, errors.Errorf("Expected generic object , got object type<%T>", t)
+		return nil, nil, errors.Errorf("Expected generic object , got object type<%T>", t)
 	}
 }
 
@@ -231,7 +255,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	// TODO sense browser client does getField only once for the same field
 	// here we do multiple
 	// same may apply to variables
-	// where are these stored?
+	// where should these be stored?
 
 	switch buttonAction.ActionType {
 	case emptyAction: // do nothing
@@ -299,7 +323,15 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.SelectValuesRaw(ctx, buttonAction.Value /*TODO unambigous how to do this*/, false /*toggleMode*/, buttonAction.SoftLock)
+			// TODO: OBS! not fininshed. how to distingush listvalues
+			values := []*enigma.FieldValue{
+				{
+					Text:      buttonAction.Value,
+					IsNumeric: false,
+					Number:    0,
+				},
+			}
+			_, err = field.SelectValues(ctx, values /*TODO ambigous how to do this*/, false /*toggleMode*/, buttonAction.SoftLock)
 			return errors.Wrapf(err, "Could not select values in field<%s>", buttonAction.Field)
 		})
 
@@ -309,7 +341,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.Select(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*TODO excludedValuesMode*/)
+			_, err = field.Select(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*excludedValuesMode*/)
 			return errors.Wrapf(err, "Selection failed in field<%s> searchcritera<%s>", buttonAction.Field, buttonAction.Value)
 		})
 
@@ -395,4 +427,28 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	default:
 		return errors.New("Unexpected buttonaction")
 	}
+}
+
+func (navAction *buttonNavigationAction) execute(sessionState *session.State, actionState *action.State) error {
+	return nil
+}
+
+func sheetIDs(sessionState *session.State, actionState *action.State) ([]string, error) {
+	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil || sessionState.Connection.Sense().CurrentApp == nil {
+		return nil, errors.New("Not connected to a Sense app")
+	}
+
+	sheetList, err := sessionState.Connection.Sense().CurrentApp.GetSheetList(sessionState, actionState)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// TODO these have to be sorted, which they are not
+	items := sheetList.Layout().AppObjectList.Items
+	sheetIDs := make([]string, 0, len(items))
+	for _, item := range items {
+		sheetIDs = append(sheetIDs, item.Info.Id)
+		// println(item.Data.Title)
+	}
+	return sheetIDs, err
 }
