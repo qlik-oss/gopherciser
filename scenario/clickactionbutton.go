@@ -153,7 +153,8 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	}
 
 	for _, buttonAction := range buttonActions {
-		if err := buttonAction.execute(sessionState, actionState); err != nil {
+		err := buttonAction.execute(sessionState, actionState)
+		if err != nil {
 			actionState.AddErrors(errors.Wrapf(err, "Buttonaction type<%s> label<%s> cid<%s> failed",
 				buttonAction.ActionType, buttonAction.ActionLabel, buttonAction.CID))
 		}
@@ -180,7 +181,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 			return nil, errors.Wrapf(err, `No "actions"-property exist for object<%s>`, obj.ID)
 		}
 
-		// println(string(actionsRaw))
+		println(string(actionsRaw))
 		actions := []buttonAction{}
 		err = json.Unmarshal(actionsRaw, &actions)
 		if err != nil {
@@ -195,8 +196,35 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
+// docWrapper adds simple pre-rpc input validation for a few getters in enigma.Doc
+type docWrapper struct {
+	*enigma.Doc
+}
+
+func (docW docWrapper) GetField(ctx context.Context, fieldName string) (*enigma.Field, error) {
+	if fieldName == "" {
+		return nil, errors.Errorf("Field name is empty string")
+	}
+	field, err := docW.Doc.GetField(ctx, fieldName, "" /*stateName*/)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not get field<%s>", fieldName)
+	}
+	return field, err
+}
+
+func (docW docWrapper) GetVariableByName(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
+	if variableName == "" {
+		return nil, errors.Errorf("Variable name is empty string")
+	}
+	variable, err := docW.Doc.GetVariableByName(ctx, variableName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not get variable<%s>", variableName)
+	}
+	return variable, err
+}
+
 func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
-	app := sessionState.Connection.Sense().CurrentApp
+	doc := docWrapper{sessionState.Connection.Sense().CurrentApp.Doc}
 	sendReq := func(f func(context.Context) error) error {
 		return sessionState.SendRequest(actionState, f)
 	}
@@ -214,7 +242,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case applyBookmark:
 		return sendReq(func(ctx context.Context) error {
-			success, err := app.Doc.ApplyBookmark(ctx, buttonAction.Bookmark /*id*/)
+			success, err := doc.ApplyBookmark(ctx, buttonAction.Bookmark /*id*/)
 			if err != nil {
 				return errors.Wrapf(err, "Error applying bookmark<%s>", buttonAction.Bookmark)
 			}
@@ -225,31 +253,31 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case moveBackwardsInSelections:
-		return sendReq(app.Doc.Back)
+		return sendReq(doc.Back)
 
 	case moveForwardsInSelections:
-		return sendReq(app.Doc.Forward)
+		return sendReq(doc.Forward)
 
 	case clearAllSelections:
 		return sendReq(func(ctx context.Context) error {
-			return app.Doc.ClearAll(ctx, buttonAction.SoftLock /*lockedAlso*/, "" /*stateName*/)
+			return doc.ClearAll(ctx, buttonAction.SoftLock /*lockedAlso*/, "" /*stateName*/)
 		})
 
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.ClearAllButThis(ctx, buttonAction.SoftLock)
-			return err
+			return errors.WithStack(err)
 		})
 
 	case clearSelectionsInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.Clear(ctx)
 			return err
@@ -257,9 +285,9 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAllValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Failed to get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.SelectAll(ctx, buttonAction.SoftLock)
 			return errors.Wrapf(err, "Could not select all values in field<%s>", buttonAction.Field)
@@ -267,9 +295,9 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Failed to get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.SelectValuesRaw(ctx, buttonAction.Value /*TODO unambigous how to do this*/, false /*toggleMode*/, buttonAction.SoftLock)
 			return errors.Wrapf(err, "Could not select values in field<%s>", buttonAction.Field)
@@ -277,20 +305,19 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesMatchingSearchCriteria:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
-
 			_, err = field.Select(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*TODO excludedValuesMode*/)
 			return errors.Wrapf(err, "Selection failed in field<%s> searchcritera<%s>", buttonAction.Field, buttonAction.Value)
 		})
 
 	case selectAlternatives:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.SelectAlternative(ctx, buttonAction.SoftLock)
 			return err
@@ -298,9 +325,9 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectExcluded:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.SelectExcluded(ctx, buttonAction.SoftLock)
 			return err
@@ -308,28 +335,34 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectPossibleValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.SelectPossible(ctx, buttonAction.SoftLock)
 			return errors.Wrapf(err, "Could not select possible in field<%s>", buttonAction.Field)
 		})
 
 	case toggleFieldSelection:
-		fmt.Printf("ButtonAction<%s> not implemented\n", buttonAction.ActionType)
-		return nil
+		return sendReq(func(ctx context.Context) error {
+			field, err := doc.GetField(ctx, buttonAction.Field)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			_, err = field.ToggleSelect(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*excludedValuesMode*/)
+			return errors.Wrapf(err, "Could not select possible in field<%s>", buttonAction.Field)
+		})
 
 	case lockAllSelections:
 		return sendReq(func(ctx context.Context) error {
-			return app.Doc.LockAll(ctx, "" /*alternate state name*/)
+			return doc.LockAll(ctx, "" /*stateName*/)
 		})
 
 	case lockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.Lock(ctx)
 			return err
@@ -337,14 +370,14 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case unlockAllSelections:
 		return sendReq(func(ctx context.Context) error {
-			return app.Doc.UnlockAll(ctx, "" /*alternate state name*/)
+			return doc.UnlockAll(ctx, "" /*stateName*/)
 		})
 
 	case unlockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := app.Doc.GetField(ctx, buttonAction.Field, "" /*stateName*/)
+			field, err := doc.GetField(ctx, buttonAction.Field)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get field<%s>", buttonAction.Field)
+				return errors.WithStack(err)
 			}
 			_, err = field.Unlock(ctx)
 			return err
@@ -352,10 +385,9 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case setVariableValue:
 		return sendReq(func(ctx context.Context) error {
-			variable, err := app.Doc.GetVariableByName(ctx, buttonAction.Variable)
-			println("var type " + buttonAction.Variable + " " + variable.Type)
+			variable, err := doc.GetVariableByName(ctx, buttonAction.Variable)
 			if err != nil {
-				return errors.Wrapf(err, "Could not get variable<%s>", buttonAction.Variable)
+				return errors.WithStack(err)
 			}
 			return variable.SetStringValue(ctx, buttonAction.Value)
 		})
