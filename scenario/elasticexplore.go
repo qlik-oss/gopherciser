@@ -373,7 +373,7 @@ func searchForTag(sessionState *session.State, actionState *action.State, host, 
 		return id, nil
 	}
 
-	query := fmt.Sprintf("%s/api/v1/collections?query=%s&type=public&-updateAt", host, collection)
+	query := fmt.Sprintf("%s/api/v1/collections?query=%s&limit=20&sort=-name&type=public", host, collection)
 	for {
 		var wg sync.WaitGroup
 		wg.Add(1)
