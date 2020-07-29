@@ -15,7 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-const searchResultLimit = "10" //Default from client
+const searchResultLimit = "100" //Default from client
 const searchCollectionsEndpoint = "api/v1/collections"
 const searchAppsEndpoint = "api/v1/items"
 
