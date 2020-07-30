@@ -95,3 +95,13 @@ func Contains(list []string, match func(s string) bool) bool {
 	}
 	return false
 }
+
+// IndexOf returns index of first match in stringSlice or else -1
+func IndexOf(match string, stringSlice []string) (int, bool) {
+	for i, str := range stringSlice {
+		if str == match {
+			return i, true
+		}
+	}
+	return -1, false
+}

@@ -169,7 +169,7 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		}
 	}
 
-	err = navigationAction.execute(sessionState, actionState)
+	err = navigationAction.execute(sessionState, actionState, connectionSettings, label)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Button-navigationaction<%s> failed", navigationAction.Action))
 	}
@@ -429,7 +429,77 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	}
 }
 
-func (navAction *buttonNavigationAction) execute(sessionState *session.State, actionState *action.State) error {
+func (navAction *buttonNavigationAction) execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string) error {
+	sheets, err := sheetIDs(sessionState, actionState)
+	if err != nil {
+		return errors.Wrapf(err, "Error getting sheets")
+	}
+	jsonBytes, _ := json.MarshalIndent(navAction, "", "    ")
+	fmt.Printf("Navigation action: %s", navAction.Action)
+	fmt.Println(string(jsonBytes))
+	switch navAction.Action {
+	case "none":
+	case "firstSheet":
+		if len(sheets) < 1 {
+			return errors.New("No sheets")
+		}
+		changeSheet(sessionState, actionState, sheets[0])
+	case "lastSheet":
+		if len(sheets) < 1 {
+			return errors.New("No sheets")
+		}
+		changeSheet(sessionState, actionState, sheets[len(sheets)-1])
+	case "nextSheet":
+		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
+		if err != nil {
+			return errors.Wrapf(err, "Could not get current sheet")
+		}
+		currentSheetIdx, ok := IndexOf(currentSheet.ID, sheets)
+		if !ok {
+			return errors.Wrapf(err, "Could not get current sheet")
+		}
+		nextSheetIdx := (currentSheetIdx + 1) % len(sheets)
+		if nextSheetIdx != currentSheetIdx {
+			changeSheet(sessionState, actionState, sheets[nextSheetIdx])
+		}
+	case "previousSheet":
+		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
+		if err != nil {
+			return errors.Wrapf(err, "Could not get current sheet")
+		}
+		currentSheetIdx, ok := IndexOf(currentSheet.ID, sheets)
+		if !ok {
+			return errors.Wrapf(err, "Could not get current sheet")
+		}
+		previousSheetIdx := (currentSheetIdx - 1 + len(sheets)) % len(sheets)
+		if previousSheetIdx != currentSheetIdx {
+			changeSheet(sessionState, actionState, sheets[previousSheetIdx])
+		}
+	case "goToSheet", "goToSheetById":
+		ac := Action{
+			ActionCore{
+				Type:  ActionChangeSheet,
+				Label: fmt.Sprintf("button-navigation-%s", navAction.Action),
+			},
+			&ChangeSheetSettings{
+				ID: navAction.Sheet,
+			},
+		}
+
+		if navAction.Sheet == "" {
+			return errors.New("Empty sheet id")
+		}
+
+		if isAborted, err := CheckActionError(ac.Execute(sessionState, connectionSettings)); isAborted {
+			return errors.Wrapf(err, "Change sheet button navigation action was aborted")
+		} else if err != nil {
+			return errors.Wrapf(err, "Change sheet button navigation action failed")
+		}
+
+	default:
+		return errors.Errorf("Unknown button navigation action '%s' ", navAction.Action)
+
+	}
 	return nil
 }
 
@@ -443,12 +513,16 @@ func sheetIDs(sessionState *session.State, actionState *action.State) ([]string,
 		return nil, errors.WithStack(err)
 	}
 
-	// TODO these have to be sorted, which they are not
 	items := sheetList.Layout().AppObjectList.Items
 	sheetIDs := make([]string, 0, len(items))
 	for _, item := range items {
 		sheetIDs = append(sheetIDs, item.Info.Id)
-		// println(item.Data.Title)
+		println(item.Data.Title)
+		println(item.Data.Rank)
 	}
 	return sheetIDs, err
 }
+
+// IsContainerAction implements ContainerAction interface
+// and sets container action logging to original action entry
+func (settings ClickActionButtonSettings) IsContainerAction() {}

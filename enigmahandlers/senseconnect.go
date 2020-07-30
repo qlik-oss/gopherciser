@@ -29,7 +29,8 @@ type (
 		Global     *enigma.Global
 		CurrentApp *senseobjects.App
 		Objects    ObjectsMap
-		Traffic    ITrafficLogger
+		// TODO(atluq): field state here maybe
+		Traffic ITrafficLogger
 
 		ctx                context.Context
 		cancel             context.CancelFunc
