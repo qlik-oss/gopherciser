@@ -209,7 +209,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 
 		// Do we have any tag names
 		for _, collection := range settings.CollectionNames {
-			id, err := searchForTag(sessionState, actionState, host, collection)
+			id, err := searchForTag(sessionState, actionState, host, collection, 100)
 			if err != nil {
 				actionState.AddErrors(errors.WithStack(err))
 				return
@@ -367,13 +367,13 @@ func searchForSpaceByID(sessionState *session.State, actionState *action.State, 
 	}
 }
 
-func searchForTag(sessionState *session.State, actionState *action.State, host, collection string) (string, error) {
+func searchForTag(sessionState *session.State, actionState *action.State, host, collection string, limit int) (string, error) {
 	id, err := sessionState.ArtifactMap.GetStreamID(collection)
 	if err == nil {
 		return id, nil
 	}
 
-	query := fmt.Sprintf("%s/api/v1/collections?query=%s&limit=20&sort=-name&type=public", host, collection)
+	query := fmt.Sprintf("%s/api/v1/collections?query=%s&limit=%d&sort=-name&type=public", host, collection, limit)
 	for {
 		var wg sync.WaitGroup
 		wg.Add(1)
