@@ -196,7 +196,8 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 
 // execute one action contained in a Sense action-button
 func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
-	doc := DocWrapper{sessionState.Connection.Sense().CurrentApp.Doc}
+	uplink := sessionState.Connection.Sense()
+	doc := DocWrapper{uplink.CurrentApp.Doc}
 	sendReq := func(f func(context.Context) error) error {
 		return sessionState.SendRequest(actionState, f)
 	}
@@ -237,7 +238,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -247,7 +252,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case clearSelectionsInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -257,7 +266,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAllValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -267,7 +280,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -285,7 +302,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesMatchingSearchCriteria:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -295,7 +316,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAlternatives:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -305,7 +330,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectExcluded:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -315,7 +344,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectPossibleValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -325,7 +358,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case toggleFieldSelection:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -340,7 +377,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case lockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -355,7 +396,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case unlockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := doc.GetField(ctx, buttonAction.Field)
+			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
+				func(fieldName string) (*enigma.Field, error) {
+					return doc.GetField(ctx, fieldName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}
