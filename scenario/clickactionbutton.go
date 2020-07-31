@@ -16,15 +16,19 @@ import (
 )
 
 type (
-	// ClickActionButtonSettings click action-button settings
+	// ClickActionButtonSettings implements the ActionSettings and
+	// ContainerAction interfaces. Executing this action replicate the
+	// behavour of clicking an "action-button" in Sense.
 	ClickActionButtonSettings struct {
 		// ID object id
 		ID string `json:"id" appstructure:"active:action-button" displayname:"Button ID" doc-key:"clickactionbutton.id"`
 	}
 )
+
 type (
 	// *** Sub actions of an actionButton ***
-	// An actionButton can contain several buttonActions and one buttonNavigationAction
+	// An actionButton can contain multiple buttonActions and one buttonNavigationAction.
+	// These sub-actions are are executed in order when the an action-button is clicked.
 
 	buttonActionType int
 
@@ -84,50 +88,13 @@ const (
 	nextSheet
 	goToSheet
 	goToSheetByID
+	goToStory
+	openWebsite
 )
 
-var buttonActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-	"":                     int(emptyAction),
-	"unknownaction":        int(unknownAction),
-	"applybookmark":        int(applyBookmark),
-	"back":                 int(moveBackwardsInSelections),
-	"forward":              int(moveForwardsInSelections),
-	"clearall":             int(clearAllSelections),
-	"clearallbutthis":      int(clearSelectionsInOtherFields),
-	"clearfield":           int(clearSelectionsInField),
-	"selectall":            int(selectAllValuesInField),
-	"selectvalues":         int(selectValuesInField),
-	"selectmatchingvalues": int(selectValuesMatchingSearchCriteria),
-	"selectalternative":    int(selectAlternatives),
-	"selectexcluded":       int(selectExcluded),
-	"selectpossible":       int(selectPossibleValuesInField),
-	"toggleselect":         int(toggleFieldSelection),
-	"lockall":              int(lockAllSelections),
-	"lockfield":            int(lockSpecificField),
-	"unlockall":            int(unlockAllSelections),
-	"unlockfield":          int(unlockSpecificField),
-	"setvariable":          int(setVariableValue),
-})
-
-var buttonNavActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-	"":                 int(emptyAction),
-	"unknownnavaction": int(unknownNavAction),
-	"none":             int(noneNavAction),
-	"firstsheet":       int(firstSheet),
-	"lastsheet":        int(lastSheet),
-	"previoussheet":    int(previousSheet),
-	"nextsheet":        int(nextSheet),
-	"gotosheet":        int(goToSheet),
-	"gotosheetbyid":    int(goToSheetByID),
-})
-
-func (buttonActionType) GetEnumMap() *enummap.EnumMap {
-	return buttonActionTypeEnumMap
-}
-
-func (buttonNavigationActionType) GetEnumMap() *enummap.EnumMap {
-	return buttonNavActionTypeEnumMap
-}
+// IsContainerAction implements ContainerAction interface
+// and sets container action logging to original action entry
+func (settings ClickActionButtonSettings) IsContainerAction() {}
 
 // Validate filter pane select action
 func (settings ClickActionButtonSettings) Validate() error {
@@ -137,11 +104,7 @@ func (settings ClickActionButtonSettings) Validate() error {
 	return nil
 }
 
-// IsContainerAction implements ContainerAction interface
-// and sets container action logging to original action entry
-func (settings ClickActionButtonSettings) IsContainerAction() {}
-
-// Execute button action
+// Execute button-actions contained in sense action-button
 func (settings ClickActionButtonSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
@@ -153,20 +116,22 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		return
 	}
 
-	uplink := sessionState.Connection.Sense()
+	// retrieve action-button-object
 	objectID := sessionState.IDMap.Get(settings.ID)
-	obj, err := uplink.Objects.GetObjectByID(objectID)
+	obj, err := sessionState.Connection.Sense().Objects.GetObjectByID(objectID)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed getting object<%s> from object list", obj.ID))
 		return
 	}
 
+	// retrieve button-actions
 	buttonActions, navigationAction, err := buttonActions(sessionState, actionState, obj)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to get button actions"))
 		return
 	}
 
+	// run button-actions
 	for _, buttonAction := range buttonActions {
 		err := buttonAction.execute(sessionState, actionState)
 		if err != nil {
@@ -179,6 +144,7 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Button-navigationaction<%s> failed", navigationAction.Action))
 	}
+
 	sessionState.Wait(actionState)
 }
 
@@ -228,6 +194,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
+// execute one action contained in a Sense action-button
 func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
 	doc := DocWrapper{sessionState.Connection.Sense().CurrentApp.Doc}
 	sendReq := func(f func(context.Context) error) error {
@@ -410,9 +377,15 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	}
 }
 
+// execute the navigation-action contained in a Sense action-button
 func (navAction *buttonNavigationAction) execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string) error {
-	if navAction.Action == noneNavAction {
+	switch navAction.Action {
+	case noneNavAction:
 		return nil
+	case emptyNavAction:
+		return errors.New("Empty button navigation action")
+	case unknownNavAction:
+		return errors.New("Unknown button navigation action")
 	}
 
 	sheets, err := sheetIDs(sessionState, actionState)
@@ -420,7 +393,7 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		return errors.Wrapf(err, "Error getting sheets")
 	}
 	if len(sheets) == 0 {
-		return errors.New("No sheets")
+		return errors.New("No sheets in app")
 	}
 
 	var sheetID string
@@ -468,8 +441,10 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		sheetID = navAction.Sheet
 
 	default:
-		return errors.Errorf("Unknown button navigation action '%s' ", navAction.Action)
+		return errors.Errorf("Button navigation action '%s' is not supported", navAction.Action)
 	}
+
+	// Execute changeSheet Action
 	changeSheetAction := Action{
 		ActionCore{
 			Type:  ActionChangeSheet,
@@ -480,9 +455,9 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		},
 	}
 	if isAborted, err := CheckActionError(changeSheetAction.Execute(sessionState, connectionSettings)); isAborted {
-		return errors.Wrapf(err, "Change sheet was aborted")
+		return errors.Wrap(err, "Change sheet was aborted")
 	} else if err != nil {
-		return errors.Wrapf(err, "Change sheet failed")
+		return errors.Wrap(err, "Change sheet failed")
 	}
 	return nil
 }
@@ -505,36 +480,93 @@ func sheetIDs(sessionState *session.State, actionState *action.State) ([]string,
 	return sheetIDs, err
 }
 
-func (value *buttonActionType) UnmarshalJSON(jsonBytes []byte) error {
-	i, err := UnmarshalJSONUsingEnum(value, jsonBytes)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+// Enum, MutableEnum, IntegerEnum, fmt.Stringer, json.Marshaler and
+// json.Unmarshaler implementations for buttonActionType
+
+var buttonActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"":                     int(emptyAction),
+	"unknownaction":        int(unknownAction),
+	"applybookmark":        int(applyBookmark),
+	"back":                 int(moveBackwardsInSelections),
+	"forward":              int(moveForwardsInSelections),
+	"clearall":             int(clearAllSelections),
+	"clearallbutthis":      int(clearSelectionsInOtherFields),
+	"clearfield":           int(clearSelectionsInField),
+	"selectall":            int(selectAllValuesInField),
+	"selectvalues":         int(selectValuesInField),
+	"selectmatchingvalues": int(selectValuesMatchingSearchCriteria),
+	"selectalternative":    int(selectAlternatives),
+	"selectexcluded":       int(selectExcluded),
+	"selectpossible":       int(selectPossibleValuesInField),
+	"toggleselect":         int(toggleFieldSelection),
+	"lockall":              int(lockAllSelections),
+	"lockfield":            int(lockSpecificField),
+	"unlockall":            int(unlockAllSelections),
+	"unlockfield":          int(unlockSpecificField),
+	"setvariable":          int(setVariableValue),
+})
+
+func (buttonActionType) GetEnumMap() *enummap.EnumMap {
+	return buttonActionTypeEnumMap
+}
+
+func (value buttonActionType) Int() int {
+	return int(value)
+}
+
+func (value *buttonActionType) Set(i int) {
 	*value = buttonActionType(i)
-	return nil
+}
+
+func (value *buttonActionType) UnmarshalJSON(jsonBytes []byte) error {
+	return UnmarshalJSON(value, jsonBytes)
 }
 
 func (value buttonActionType) MarshalJSON() ([]byte, error) {
-	return MarshalJSONUsingEnum(value, int(value))
+	return MarshalJSON(value)
 }
 
 func (value buttonActionType) String() string {
-	return StringUsingEnum(value, int(value))
+	return String(value)
+}
+
+// Enum, MutableEnum, IntegerEnum, fmt.Stringer, json.Marshaler and
+// json.Unmarshaler implementations for buttonNavigationActionType
+
+var buttonNavActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"":                 int(emptyAction),
+	"unknownnavaction": int(unknownNavAction),
+	"none":             int(noneNavAction),
+	"firstsheet":       int(firstSheet),
+	"lastsheet":        int(lastSheet),
+	"previoussheet":    int(previousSheet),
+	"nextsheet":        int(nextSheet),
+	"gotosheet":        int(goToSheet),
+	"gotosheetbyid":    int(goToSheetByID),
+	"gotostory":        int(goToStory),
+	"openwebsite":      int(openWebsite),
+})
+
+func (buttonNavigationActionType) GetEnumMap() *enummap.EnumMap {
+	return buttonNavActionTypeEnumMap
+}
+
+func (value buttonNavigationActionType) Int() int {
+	return int(value)
+}
+
+func (value *buttonNavigationActionType) Set(i int) {
+	*value = buttonNavigationActionType(i)
 }
 
 func (value *buttonNavigationActionType) UnmarshalJSON(jsonBytes []byte) error {
-	i, err := UnmarshalJSONUsingEnum(value, jsonBytes)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	*value = buttonNavigationActionType(i)
-	return nil
+	return UnmarshalJSON(value, jsonBytes)
 }
 
 func (value buttonNavigationActionType) MarshalJSON() ([]byte, error) {
-	return MarshalJSONUsingEnum(value, int(value))
+	return MarshalJSON(value)
 }
 
 func (value buttonNavigationActionType) String() string {
-	return StringUsingEnum(value, int(value))
+	return String(value)
 }

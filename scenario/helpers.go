@@ -111,31 +111,43 @@ func IndexOf(match string, stringSlice []string) (int, bool) {
 	return -1, false
 }
 
-func UnmarshalJSONUsingEnum(enum Enum, jsonBytes []byte) (int, error) {
+// TODO move enum related code to its own package
+type (
+	MutableEnum interface {
+		Enum
+		Set(int)
+	}
+	IntegerEnum interface {
+		Enum
+		Int() int
+	}
+)
+
+func String(enum IntegerEnum) string {
+	s, err := enum.GetEnumMap().String(enum.Int())
+	if err != nil {
+		return strconv.Itoa(enum.Int())
+	}
+	return s
+}
+
+func UnmarshalJSON(enum MutableEnum, jsonBytes []byte) error {
 	var enumStr string
 	if err := json.Unmarshal(jsonBytes, &enumStr); err != nil {
-		return -1, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	integerRepresentation, ok := enum.GetEnumMap().AsInt()[strings.ToLower(enumStr)]
 	if !ok {
-		return -1, errors.Errorf(`"%s" is not defined in enum<%T>`, enumStr, enum)
+		return errors.Errorf(`"%s" is not defined in enum<%T>`, enumStr, enum)
 	}
-	return integerRepresentation, nil
+	enum.Set(integerRepresentation)
+	return nil
 }
 
-func StringUsingEnum(enum Enum, integerRepresentation int) string {
-	sType, err := enum.GetEnumMap().String(integerRepresentation)
+func MarshalJSON(enum IntegerEnum) ([]byte, error) {
+	str, err := enum.GetEnumMap().String(enum.Int())
 	if err != nil {
-		return strconv.Itoa(integerRepresentation)
-	}
-	return sType
-
-}
-
-func MarshalJSONUsingEnum(enum Enum, integerRepresentation int) ([]byte, error) {
-	str, err := enum.GetEnumMap().String(integerRepresentation)
-	if err != nil {
-		return nil, errors.Errorf("%d is not in enum<%T>", integerRepresentation, enum)
+		return nil, errors.Errorf("%d is not in enum<%T>", enum.Int(), enum)
 	}
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
