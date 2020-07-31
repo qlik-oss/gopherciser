@@ -27,14 +27,7 @@ func (settings ChangeSheetSettings) Validate() error {
 
 // Execute change sheet action
 func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-	changeSheet(sessionState, actionState, settings.ID)
-	sessionState.Wait(actionState)
-}
-
-// changeSheet changes the sheet of the current app to the sheet with sheetID
-// queued requests are not waited for
-func changeSheet(sessionState *session.State, actionState *action.State, sheetID string) {
-	actionState.Details = sheetID
+	actionState.Details = settings.ID
 
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("not connected to a Sense environment"))
@@ -74,35 +67,28 @@ func changeSheet(sessionState *session.State, actionState *action.State, sheetID
 	}, actionState, false, "GetAppLayout request failed")
 
 	// Get sheet
-	if _, _, err := sessionState.GetSheet(actionState, uplink, sheetID); err != nil {
+	if _, _, err := sessionState.GetSheet(actionState, uplink, settings.ID); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to get sheet"))
 		return
 	}
 
 	// get all objects on sheet
-	if err := subscribeSheetObjectsAsync(sessionState, actionState, uplink.CurrentApp, sheetID); err != nil {
+	if err := subscribeSheetObjectsAsync(sessionState, actionState, uplink.CurrentApp, settings.ID); err != nil {
 		actionState.AddErrors(err)
 		return
 	}
+
+	sessionState.Wait(actionState)
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
 func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
-	return changeSheetAppObjectsDiff(structure, settings.ID)
-}
-
-// changeSheetAppObjectsDiff returns
-// * new selectables ([]*appstructure.AppStructurePopulatedObjects)
-// * selectables to be removed ([]string)
-// * if all selectables except bookmarks and sheets shall be cleared (bool)
-// when changing sheet to sheetID.
-func changeSheetAppObjectsDiff(structure appstructure.AppStructure, sheetID string) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
-	selectables, err := structure.GetSelectables(sheetID)
+	selectables, err := structure.GetSelectables(settings.ID)
 	if err != nil {
 		return nil, nil, false
 	}
 	newObjs := appstructure.AppStructurePopulatedObjects{
-		Parent:    sheetID,
+		Parent:    settings.ID,
 		Objects:   make([]appstructure.AppStructureObject, 0),
 		Bookmarks: nil,
 	}

@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -23,6 +21,13 @@ type (
 		// ID object id
 		ID string `json:"id" appstructure:"active:action-button" displayname:"Button ID" doc-key:"clickactionbutton.id"`
 	}
+)
+type (
+	// *** Sub actions of an actionButton ***
+	// An actionButton can contain several buttonActions and one buttonNavigationAction
+
+	buttonActionType int
+
 	buttonAction struct {
 		ActionLabel         string           `json:"actionLabel"`
 		ActionType          buttonActionType `json:"actionType"`
@@ -35,15 +40,15 @@ type (
 		CID                 string           `json:"cId"`
 	}
 
-	buttonNavigationAction struct {
-		Action     string `json:"action"`
-		Sheet      string `json:"sheet"`
-		Story      string `json:"story"`
-		WebsiteURL string `json:"websiteUrl"`
-		SameWindow bool   `json:"sameWindow"`
-	}
+	buttonNavigationActionType int
 
-	buttonActionType int
+	buttonNavigationAction struct {
+		Action     buttonNavigationActionType `json:"action"`
+		Sheet      string                     `json:"sheet"`
+		Story      string                     `json:"story"`
+		WebsiteURL string                     `json:"websiteUrl"`
+		SameWindow bool                       `json:"sameWindow"`
+	}
 )
 
 const (
@@ -69,6 +74,18 @@ const (
 	setVariableValue
 )
 
+const (
+	emptyNavAction buttonNavigationActionType = iota
+	noneNavAction
+	unknownNavAction
+	firstSheet
+	lastSheet
+	previousSheet
+	nextSheet
+	goToSheet
+	goToSheetByID
+)
+
 var buttonActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"":                     int(emptyAction),
 	"unknownaction":        int(unknownAction),
@@ -92,38 +109,24 @@ var buttonActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"setvariable":          int(setVariableValue),
 })
 
-func (buttonActionType) getEnumMap() *enummap.EnumMap {
+var buttonNavActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"":                 int(emptyAction),
+	"unknownnavaction": int(unknownNavAction),
+	"none":             int(noneNavAction),
+	"firstsheet":       int(firstSheet),
+	"lastsheet":        int(lastSheet),
+	"previoussheet":    int(previousSheet),
+	"nextsheet":        int(nextSheet),
+	"gotosheet":        int(goToSheet),
+	"gotosheetbyid":    int(goToSheetByID),
+})
+
+func (buttonActionType) GetEnumMap() *enummap.EnumMap {
 	return buttonActionTypeEnumMap
 }
 
-func (value *buttonActionType) UnmarshalJSON(jsonBytes []byte) error {
-	var actionStr string
-	if err := json.Unmarshal(jsonBytes, &actionStr); err != nil {
-		return err
-	}
-	i, ok := value.getEnumMap().AsInt()[strings.ToLower(actionStr)]
-	if !ok {
-		*value = unknownAction
-	}
-	*value = buttonActionType(i)
-	return nil
-}
-
-func (value buttonActionType) MarshalJSON() ([]byte, error) {
-	str, err := value.getEnumMap().String(int(value))
-	if err != nil {
-		return nil, errors.Errorf("Unknown selectiontype<%d>", value)
-	}
-	return []byte(fmt.Sprintf(`"%s"`, str)), nil
-}
-
-// String representation of ListBoxSelectType
-func (value buttonActionType) String() string {
-	sType, err := value.getEnumMap().String(int(value))
-	if err != nil {
-		return strconv.Itoa(int(value))
-	}
-	return sType
+func (buttonNavigationActionType) GetEnumMap() *enummap.EnumMap {
+	return buttonNavActionTypeEnumMap
 }
 
 // Validate filter pane select action
@@ -131,9 +134,12 @@ func (settings ClickActionButtonSettings) Validate() error {
 	if settings.ID == "" {
 		return errors.Errorf("Empty object ID")
 	}
-
 	return nil
 }
+
+// IsContainerAction implements ContainerAction interface
+// and sets container action logging to original action entry
+func (settings ClickActionButtonSettings) IsContainerAction() {}
 
 // Execute button action
 func (settings ClickActionButtonSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
@@ -176,10 +182,12 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	sessionState.Wait(actionState)
 }
 
+// buttonAction returns button actions and navigation action for obj
 func buttonActions(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) ([]buttonAction, *buttonNavigationAction, error) {
 	// TODO(atluq): Add buttonActions to enigma.GenericObjectProperties such
 	// that obj.Properties() could be used, instead of
 	// obj.EnigmaObject.GetpropertiesRaw()
+
 	switch t := obj.EnigmaObject.(type) {
 	case *enigma.GenericObject:
 		genericObj := obj.EnigmaObject.(*enigma.GenericObject)
@@ -201,7 +209,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 			return nil, nil, errors.Wrapf(err, "Failed to unmarshal button actions")
 		}
 
-		// parese navigation action associated with button
+		// parse navigation action associated with button
 		navigationRaw, err := senseobjdef.NewDataPath("navigation").Lookup(propsRaw)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, `No "navigation"-property exist for object<%s>`, obj.ID)
@@ -220,35 +228,8 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
-// docWrapper adds simple pre-rpc input validation for a few getters in enigma.Doc
-type docWrapper struct {
-	*enigma.Doc
-}
-
-func (docW docWrapper) GetField(ctx context.Context, fieldName string) (*enigma.Field, error) {
-	if fieldName == "" {
-		return nil, errors.Errorf("Field name is empty string")
-	}
-	field, err := docW.Doc.GetField(ctx, fieldName, "" /*stateName*/)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not get field<%s>", fieldName)
-	}
-	return field, err
-}
-
-func (docW docWrapper) GetVariableByName(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
-	if variableName == "" {
-		return nil, errors.Errorf("Variable name is empty string")
-	}
-	variable, err := docW.Doc.GetVariableByName(ctx, variableName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not get variable<%s>", variableName)
-	}
-	return variable, err
-}
-
 func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
-	doc := docWrapper{sessionState.Connection.Sense().CurrentApp.Doc}
+	doc := DocWrapper{sessionState.Connection.Sense().CurrentApp.Doc}
 	sendReq := func(f func(context.Context) error) error {
 		return sessionState.SendRequest(actionState, f)
 	}
@@ -430,26 +411,29 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 }
 
 func (navAction *buttonNavigationAction) execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string) error {
+	if navAction.Action == noneNavAction {
+		return nil
+	}
+
 	sheets, err := sheetIDs(sessionState, actionState)
 	if err != nil {
 		return errors.Wrapf(err, "Error getting sheets")
 	}
-	jsonBytes, _ := json.MarshalIndent(navAction, "", "    ")
-	fmt.Printf("Navigation action: %s", navAction.Action)
-	fmt.Println(string(jsonBytes))
+	if len(sheets) == 0 {
+		return errors.New("No sheets")
+	}
+
+	var sheetID string
+
 	switch navAction.Action {
-	case "none":
-	case "firstSheet":
-		if len(sheets) < 1 {
-			return errors.New("No sheets")
-		}
-		changeSheet(sessionState, actionState, sheets[0])
-	case "lastSheet":
-		if len(sheets) < 1 {
-			return errors.New("No sheets")
-		}
-		changeSheet(sessionState, actionState, sheets[len(sheets)-1])
-	case "nextSheet":
+
+	case firstSheet:
+		sheetID = sheets[0]
+
+	case lastSheet:
+		sheetID = sheets[len(sheets)-1]
+
+	case nextSheet:
 		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
 		if err != nil {
 			return errors.Wrapf(err, "Could not get current sheet")
@@ -460,9 +444,10 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		}
 		nextSheetIdx := (currentSheetIdx + 1) % len(sheets)
 		if nextSheetIdx != currentSheetIdx {
-			changeSheet(sessionState, actionState, sheets[nextSheetIdx])
+			sheetID = sheets[nextSheetIdx]
 		}
-	case "previousSheet":
+
+	case previousSheet:
 		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
 		if err != nil {
 			return errors.Wrapf(err, "Could not get current sheet")
@@ -473,32 +458,31 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		}
 		previousSheetIdx := (currentSheetIdx - 1 + len(sheets)) % len(sheets)
 		if previousSheetIdx != currentSheetIdx {
-			changeSheet(sessionState, actionState, sheets[previousSheetIdx])
-		}
-	case "goToSheet", "goToSheetById":
-		ac := Action{
-			ActionCore{
-				Type:  ActionChangeSheet,
-				Label: fmt.Sprintf("button-navigation-%s", navAction.Action),
-			},
-			&ChangeSheetSettings{
-				ID: navAction.Sheet,
-			},
+			sheetID = sheets[previousSheetIdx]
 		}
 
+	case goToSheet, goToSheetByID:
 		if navAction.Sheet == "" {
 			return errors.New("Empty sheet id")
 		}
-
-		if isAborted, err := CheckActionError(ac.Execute(sessionState, connectionSettings)); isAborted {
-			return errors.Wrapf(err, "Change sheet button navigation action was aborted")
-		} else if err != nil {
-			return errors.Wrapf(err, "Change sheet button navigation action failed")
-		}
+		sheetID = navAction.Sheet
 
 	default:
 		return errors.Errorf("Unknown button navigation action '%s' ", navAction.Action)
-
+	}
+	changeSheetAction := Action{
+		ActionCore{
+			Type:  ActionChangeSheet,
+			Label: fmt.Sprintf("button-navigation-%s", navAction.Action),
+		},
+		&ChangeSheetSettings{
+			ID: sheetID,
+		},
+	}
+	if isAborted, err := CheckActionError(changeSheetAction.Execute(sessionState, connectionSettings)); isAborted {
+		return errors.Wrapf(err, "Change sheet was aborted")
+	} else if err != nil {
+		return errors.Wrapf(err, "Change sheet failed")
 	}
 	return nil
 }
@@ -517,12 +501,40 @@ func sheetIDs(sessionState *session.State, actionState *action.State) ([]string,
 	sheetIDs := make([]string, 0, len(items))
 	for _, item := range items {
 		sheetIDs = append(sheetIDs, item.Info.Id)
-		println(item.Data.Title)
-		println(item.Data.Rank)
 	}
 	return sheetIDs, err
 }
 
-// IsContainerAction implements ContainerAction interface
-// and sets container action logging to original action entry
-func (settings ClickActionButtonSettings) IsContainerAction() {}
+func (value *buttonActionType) UnmarshalJSON(jsonBytes []byte) error {
+	i, err := UnmarshalJSONUsingEnum(value, jsonBytes)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	*value = buttonActionType(i)
+	return nil
+}
+
+func (value buttonActionType) MarshalJSON() ([]byte, error) {
+	return MarshalJSONUsingEnum(value, int(value))
+}
+
+func (value buttonActionType) String() string {
+	return StringUsingEnum(value, int(value))
+}
+
+func (value *buttonNavigationActionType) UnmarshalJSON(jsonBytes []byte) error {
+	i, err := UnmarshalJSONUsingEnum(value, jsonBytes)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	*value = buttonNavigationActionType(i)
+	return nil
+}
+
+func (value buttonNavigationActionType) MarshalJSON() ([]byte, error) {
+	return MarshalJSONUsingEnum(value, int(value))
+}
+
+func (value buttonNavigationActionType) String() string {
+	return StringUsingEnum(value, int(value))
+}

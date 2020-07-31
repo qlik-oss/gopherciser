@@ -1,9 +1,14 @@
 package scenario
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -104,4 +109,62 @@ func IndexOf(match string, stringSlice []string) (int, bool) {
 		}
 	}
 	return -1, false
+}
+
+func UnmarshalJSONUsingEnum(enum Enum, jsonBytes []byte) (int, error) {
+	var enumStr string
+	if err := json.Unmarshal(jsonBytes, &enumStr); err != nil {
+		return -1, errors.WithStack(err)
+	}
+	integerRepresentation, ok := enum.GetEnumMap().AsInt()[strings.ToLower(enumStr)]
+	if !ok {
+		return -1, errors.Errorf(`"%s" is not defined in enum<%T>`, enumStr, enum)
+	}
+	return integerRepresentation, nil
+}
+
+func StringUsingEnum(enum Enum, integerRepresentation int) string {
+	sType, err := enum.GetEnumMap().String(integerRepresentation)
+	if err != nil {
+		return strconv.Itoa(integerRepresentation)
+	}
+	return sType
+
+}
+
+func MarshalJSONUsingEnum(enum Enum, integerRepresentation int) ([]byte, error) {
+	str, err := enum.GetEnumMap().String(integerRepresentation)
+	if err != nil {
+		return nil, errors.Errorf("%d is not in enum<%T>", integerRepresentation, enum)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
+// DocWrapper adds simple pre-rpc input validation for a few getters in enigma.Doc
+type DocWrapper struct {
+	*enigma.Doc
+}
+
+// GetField adds input validation to enigma.Doc.GetField
+func (docW DocWrapper) GetField(ctx context.Context, fieldName string) (*enigma.Field, error) {
+	if fieldName == "" {
+		return nil, errors.Errorf("Field name is empty string")
+	}
+	field, err := docW.Doc.GetField(ctx, fieldName, "" /*stateName*/)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not get field<%s>", fieldName)
+	}
+	return field, err
+}
+
+// GetVariableByName adds input validation to enigma.Doc.GetVarableByName
+func (docW DocWrapper) GetVariableByName(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
+	if variableName == "" {
+		return nil, errors.Errorf("Variable name is empty string")
+	}
+	variable, err := docW.Doc.GetVariableByName(ctx, variableName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not get variable<%s>", variableName)
+	}
+	return variable, err
 }
