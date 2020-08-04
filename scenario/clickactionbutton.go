@@ -410,7 +410,11 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case setVariableValue:
 		return sendReq(func(ctx context.Context) error {
-			variable, err := doc.GetVariableByName(ctx, buttonAction.Variable)
+			variable, err := uplink.VarCache.LookupWithFallback(buttonAction.Variable,
+				func(varName string) (*enigma.GenericVariable, error) {
+					return doc.GetVariableByName(ctx, varName)
+				},
+			)
 			if err != nil {
 				return errors.WithStack(err)
 			}

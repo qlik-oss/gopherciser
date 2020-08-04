@@ -7,23 +7,27 @@ import (
 )
 
 type (
-	// FieldCache
-	FieldCache struct {
+	// fieldCache
+	fieldCache struct {
 		fieldMap map[string]*enigma.Field
 		mutex    sync.RWMutex
 	}
 )
 
-func (fc *FieldCache) Lookup(name string) (field *enigma.Field, hit bool) {
+func NewFieldCache() fieldCache {
+	return fieldCache{fieldMap: make(map[string]*enigma.Field)}
+
+}
+
+func (fc *fieldCache) Lookup(name string) (field *enigma.Field, hit bool) {
 	fc.mutex.RLock()
 	defer fc.mutex.RUnlock()
 	field, hit = fc.fieldMap[name]
 	return
 }
 
-func (fc *FieldCache) LookupWithFallback(fieldName string, fallback func(fieldName string) (*enigma.Field, error)) (*enigma.Field, error) {
-	field, hit := fc.Lookup(fieldName)
-	if hit {
+func (fc *fieldCache) LookupWithFallback(fieldName string, fallback func(fieldName string) (*enigma.Field, error)) (*enigma.Field, error) {
+	if field, hit := fc.Lookup(fieldName); hit {
 		return field, nil
 	}
 	field, err := fallback(fieldName)
@@ -34,8 +38,8 @@ func (fc *FieldCache) LookupWithFallback(fieldName string, fallback func(fieldNa
 	return field, nil
 }
 
-func (fc *FieldCache) Store(name string, field *enigma.Field) {
+func (fc *fieldCache) Store(name string, field *enigma.Field) {
 	fc.mutex.Lock()
 	defer fc.mutex.Unlock()
-	fc.fieldMap[field.GenericId] = field
+	fc.fieldMap[name] = field
 }

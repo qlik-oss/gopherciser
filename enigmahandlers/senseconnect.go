@@ -29,7 +29,8 @@ type (
 		Global     *enigma.Global
 		CurrentApp *senseobjects.App
 		Objects    ObjectsMap
-		FieldCache FieldCache
+		FieldCache fieldCache
+		VarCache   varCache
 		Traffic    ITrafficLogger
 
 		ctx                context.Context
@@ -76,6 +77,8 @@ func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *req
 		trafficMetrics: metrics,
 		logEntry:       logentry,
 		Traffic:        trafficLogger,
+		FieldCache:     NewFieldCache(),
+		VarCache:       NewVarCache(),
 	}
 }
 
