@@ -432,6 +432,30 @@ Clear all selections in an app.
 ```
 
 </details><details>
+<summary>clickactionbutton</summary>
+
+## ClickActionButton action
+
+Simulate clicking an action-button
+
+
+### Settings
+
+* `id`: ID of the action-button to click.
+
+### Examples
+
+```json
+{
+     "label": "ClickActionButton",
+     "action": "ClickActionButton",
+     "settings": {
+         "id": "951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd",
+     }
+}
+```
+
+</details><details>
 <summary>createbookmark</summary>
 
 ## CreateBookmark action
@@ -2042,29 +2066,6 @@ Upload a data file to the Data manager.
 ```
 
 </details>
-</details>
-<details>
-<summary>Ungrouped actions</summary>
-
-## ClickActionButton action
-
-Simulate clicking an action-button
-
-
-* `id`: ID of the action-button to click.
-
-### Examples
-
-```json
-{
-     "label": "ClickActionButton",
-     "action": "ClickActionButton",
-     "settings": {
-         "id": "951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd",
-     }
-}
-```
-
 </details>
 
 ## Session variables
