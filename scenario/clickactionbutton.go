@@ -19,8 +19,8 @@ import (
 
 type (
 	// ClickActionButtonSettings implements the ActionSettings and
-	// ContainerAction interfaces. Executing this action replicate the
-	// behavour of clicking an "action-button" in Sense.
+	// ContainerAction interfaces. Executing this action replicates the
+	// behaviour of clicking an "action-button" in Sense.
 	ClickActionButtonSettings struct {
 		// ID object id
 		ID string `json:"id" appstructure:"active:action-button" displayname:"Button ID" doc-key:"clickactionbutton.id"`
@@ -30,7 +30,7 @@ type (
 type (
 	// *** Sub actions of an actionButton ***
 	// An actionButton can contain multiple buttonActions and one buttonNavigationAction.
-	// These sub-actions are are executed in order when the an action-button is clicked.
+	// These sub-actions are executed in order when the an action-button is clicked.
 
 	buttonActionType int
 
@@ -106,7 +106,7 @@ func (settings ClickActionButtonSettings) Validate() error {
 	return nil
 }
 
-// Execute button-actions contained in sense action-button
+// Execute button-actions contained by sense action-button
 func (settings ClickActionButtonSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("not connected to a Sense environment"))
@@ -196,7 +196,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
-// execute one action contained in a Sense action-button
+// execute one action contained by a Sense action-button
 func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
 	uplink := sessionState.Connection.Sense()
 	doc := DocWrapper{uplink.CurrentApp.Doc}
