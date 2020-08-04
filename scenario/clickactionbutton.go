@@ -101,7 +101,7 @@ func (settings ClickActionButtonSettings) IsContainerAction() {}
 // Validate filter pane select action
 func (settings ClickActionButtonSettings) Validate() error {
 	if settings.ID == "" {
-		return errors.Errorf("Empty object ID")
+		return errors.Errorf("empty object ID")
 	}
 	return nil
 }
@@ -109,12 +109,12 @@ func (settings ClickActionButtonSettings) Validate() error {
 // Execute button-actions contained in sense action-button
 func (settings ClickActionButtonSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
+		actionState.AddErrors(errors.New("not connected to a Sense environment"))
 		return
 	}
 
 	if sessionState.Connection.Sense().CurrentApp == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense app"))
+		actionState.AddErrors(errors.New("not connected to a Sense app"))
 		return
 	}
 
@@ -122,14 +122,14 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	objectID := sessionState.IDMap.Get(settings.ID)
 	obj, err := sessionState.Connection.Sense().Objects.GetObjectByID(objectID)
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "Failed getting object<%s> from object list", obj.ID))
+		actionState.AddErrors(errors.Wrapf(err, "failed getting object<%s> from object list", obj.ID))
 		return
 	}
 
 	// retrieve button-actions
 	buttonActions, navigationAction, err := buttonActions(sessionState, actionState, obj)
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "Failed to get button actions"))
+		actionState.AddErrors(errors.Wrapf(err, "failed to get button actions"))
 		return
 	}
 
@@ -137,14 +137,14 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	for _, buttonAction := range buttonActions {
 		err := buttonAction.execute(sessionState, actionState)
 		if err != nil {
-			actionState.AddErrors(errors.Wrapf(err, "Buttonaction type<%s> label<%s> cid<%s> failed",
+			actionState.AddErrors(errors.Wrapf(err, "buttonaction type<%s> label<%s> cid<%s> failed",
 				buttonAction.ActionType, buttonAction.ActionLabel, buttonAction.CID))
 		}
 	}
 
 	err = navigationAction.execute(sessionState, actionState, connectionSettings, label)
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "Button-navigationaction<%s> failed", navigationAction.Action))
+		actionState.AddErrors(errors.Wrapf(err, "button-navigationaction<%s> failed", navigationAction.Action))
 	}
 
 	sessionState.Wait(actionState)
@@ -162,37 +162,37 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 
 		propsRaw, err := sessionState.SendRequestRaw(actionState, genericObj.GetPropertiesRaw)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "Properties request failed for object<%s>", obj.ID)
+			return nil, nil, errors.Wrapf(err, "properties request failed for object<%s>", obj.ID)
 		}
 
 		// parse button actions
 		actionsRaw, err := senseobjdef.NewDataPath("actions").Lookup(propsRaw)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, `No "actions"-property exist for object<%s>`, obj.ID)
+			return nil, nil, errors.Wrapf(err, `no "actions"-property exist for object<%s>`, obj.ID)
 		}
 
 		actions := []buttonAction{}
 		err = json.Unmarshal(actionsRaw, &actions)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "Failed to unmarshal button actions")
+			return nil, nil, errors.Wrapf(err, "failed to unmarshal button actions")
 		}
 
 		// parse navigation action associated with button
 		navigationRaw, err := senseobjdef.NewDataPath("navigation").Lookup(propsRaw)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, `No "navigation"-property exist for object<%s>`, obj.ID)
+			return nil, nil, errors.Wrapf(err, `no "navigation"-property exist for object<%s>`, obj.ID)
 		}
 
 		navigationAction := &buttonNavigationAction{}
 		err = json.Unmarshal(navigationRaw, navigationAction)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "Failed to unmarshal button navigation action")
+			return nil, nil, errors.Wrapf(err, "failed to unmarshal button navigation action")
 		}
 
 		return actions, navigationAction, nil
 
 	default:
-		return nil, nil, errors.Errorf("Expected generic object , got object type<%T>", t)
+		return nil, nil, errors.Errorf("expected generic object , got object type<%T>", t)
 	}
 }
 
@@ -209,16 +209,16 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		return nil
 
 	case unknownAction:
-		return errors.New("Unknown button action")
+		return errors.New("unknown button action")
 
 	case applyBookmark:
 		return sendReq(func(ctx context.Context) error {
 			success, err := doc.ApplyBookmark(ctx, buttonAction.Bookmark /*id*/)
 			if err != nil {
-				return errors.Wrapf(err, "Error applying bookmark<%s>", buttonAction.Bookmark)
+				return errors.Wrapf(err, "error applying bookmark<%s>", buttonAction.Bookmark)
 			}
 			if !success {
-				return errors.Errorf("Unsuccessful application bookmark<%s>", buttonAction.Bookmark)
+				return errors.Errorf("unsuccessful application bookmark<%s>", buttonAction.Bookmark)
 			}
 			return err
 		})
@@ -273,7 +273,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 				return errors.WithStack(err)
 			}
 			_, err = field.SelectAll(ctx, buttonAction.SoftLock)
-			return errors.Wrapf(err, "Could not select all values in field<%s>", buttonAction.Field)
+			return errors.Wrapf(err, "could not select all values in field<%s>", buttonAction.Field)
 		})
 
 	case selectValuesInField:
@@ -289,7 +289,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if values := toFieldValues(buttonAction.Value); len(values) != 0 {
 				_, err = field.SelectValues(ctx, values, false /*toggleMode*/, buttonAction.SoftLock)
 			}
-			return errors.Wrapf(err, "Could not select values in field<%s>", buttonAction.Field)
+			return errors.Wrapf(err, "could not select values in field<%s>", buttonAction.Field)
 		})
 
 	case selectValuesMatchingSearchCriteria:
@@ -303,7 +303,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 				return errors.WithStack(err)
 			}
 			_, err = field.Select(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*excludedValuesMode*/)
-			return errors.Wrapf(err, "Selection failed in field<%s> searchcritera<%s>", buttonAction.Field, buttonAction.Value)
+			return errors.Wrapf(err, "selection failed in field<%s> searchcritera<%s>", buttonAction.Field, buttonAction.Value)
 		})
 
 	case selectAlternatives:
@@ -345,7 +345,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 				return errors.WithStack(err)
 			}
 			_, err = field.SelectPossible(ctx, buttonAction.SoftLock)
-			return errors.Wrapf(err, "Could not select possible in field<%s>", buttonAction.Field)
+			return errors.Wrapf(err, "could not select possible in field<%s>", buttonAction.Field)
 		})
 
 	case toggleFieldSelection:
@@ -359,7 +359,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 				return errors.WithStack(err)
 			}
 			_, err = field.ToggleSelect(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*excludedValuesMode*/)
-			return errors.Wrapf(err, "Could not select possible in field<%s>", buttonAction.Field)
+			return errors.Wrapf(err, "could not select possible in field<%s>", buttonAction.Field)
 		})
 
 	case lockAllSelections:
@@ -414,7 +414,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	default:
-		return errors.New("Unexpected buttonaction")
+		return errors.New("unexpected buttonaction")
 	}
 }
 
@@ -424,17 +424,17 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 	case noneNavAction:
 		return nil
 	case emptyNavAction:
-		return errors.New("Empty button navigation action")
+		return errors.New("empty button navigation action")
 	case unknownNavAction:
-		return errors.New("Unknown button navigation action")
+		return errors.New("unknown button navigation action")
 	}
 
 	sheets, err := sheetIDs(sessionState, actionState)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting sheets")
+		return errors.Wrapf(err, "error getting sheets")
 	}
 	if len(sheets) == 0 {
-		return errors.New("No sheets in app")
+		return errors.New("no sheets in app")
 	}
 
 	var sheetID string
@@ -450,11 +450,11 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 	case nextSheet:
 		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
 		if err != nil {
-			return errors.Wrapf(err, "Could not get current sheet")
+			return errors.Wrapf(err, "could not get current sheet")
 		}
 		currentSheetIdx, ok := IndexOf(currentSheet.ID, sheets)
 		if !ok {
-			return errors.Wrapf(err, "Could not get current sheet")
+			return errors.Wrapf(err, "could not index of get current sheet")
 		}
 		nextSheetIdx := (currentSheetIdx + 1) % len(sheets)
 		if nextSheetIdx != currentSheetIdx {
@@ -464,11 +464,11 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 	case previousSheet:
 		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
 		if err != nil {
-			return errors.Wrapf(err, "Could not get current sheet")
+			return errors.Wrapf(err, "could not get current sheet")
 		}
 		currentSheetIdx, ok := IndexOf(currentSheet.ID, sheets)
 		if !ok {
-			return errors.Wrapf(err, "Could not get current sheet")
+			return errors.Wrapf(err, "could not get index of current sheet")
 		}
 		previousSheetIdx := (currentSheetIdx - 1 + len(sheets)) % len(sheets)
 		if previousSheetIdx != currentSheetIdx {
@@ -477,12 +477,12 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 
 	case goToSheet, goToSheetByID:
 		if navAction.Sheet == "" {
-			return errors.New("Empty sheet id")
+			return errors.New("empty sheet id")
 		}
 		sheetID = navAction.Sheet
 
 	default:
-		return errors.Errorf("Button navigation action '%s' is not supported", navAction.Action)
+		return errors.Errorf("button navigation action '%s' is not supported", navAction.Action)
 	}
 
 	// Execute changeSheet Action
@@ -496,16 +496,16 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		},
 	}
 	if isAborted, err := CheckActionError(changeSheetAction.Execute(sessionState, connectionSettings)); isAborted {
-		return errors.Wrap(err, "Change sheet was aborted")
+		return errors.Wrap(err, "change sheet was aborted")
 	} else if err != nil {
-		return errors.Wrap(err, "Change sheet failed")
+		return errors.Wrap(err, "change sheet failed")
 	}
 	return nil
 }
 
 func sheetIDs(sessionState *session.State, actionState *action.State) ([]string, error) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil || sessionState.Connection.Sense().CurrentApp == nil {
-		return nil, errors.New("Not connected to a Sense app")
+		return nil, errors.New("not connected to a Sense app")
 	}
 
 	sheetList, err := sessionState.Connection.Sense().CurrentApp.GetSheetList(sessionState, actionState)

@@ -160,11 +160,11 @@ type DocWrapper struct {
 // GetField adds input validation to enigma.Doc.GetField
 func (docW DocWrapper) GetField(ctx context.Context, fieldName string) (*enigma.Field, error) {
 	if fieldName == "" {
-		return nil, errors.Errorf("Field name is empty string")
+		return nil, errors.Errorf("field name is empty string")
 	}
 	field, err := docW.Doc.GetField(ctx, fieldName, "" /*stateName*/)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Could not get field<%s>", fieldName)
+		return nil, errors.Wrapf(err, "could not get field<%s>", fieldName)
 	}
 	return field, err
 }
@@ -172,11 +172,11 @@ func (docW DocWrapper) GetField(ctx context.Context, fieldName string) (*enigma.
 // GetVariableByName adds input validation to enigma.Doc.GetVarableByName
 func (docW DocWrapper) GetVariableByName(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
 	if variableName == "" {
-		return nil, errors.Errorf("Variable name is empty string")
+		return nil, errors.Errorf("variable name is empty string")
 	}
 	variable, err := docW.Doc.GetVariableByName(ctx, variableName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Could not get variable<%s>", variableName)
+		return nil, errors.Wrapf(err, "could not get variable<%s>", variableName)
 	}
 	return variable, err
 }
