@@ -140,6 +140,8 @@ const (
 	ObjectSheet
 	ObjectLoadModel
 	ObjectAppprops
+	ObjectSnapshot
+	ObjectSnapshotList
 )
 
 var (
@@ -152,6 +154,8 @@ var (
 		"sheet":        int(ObjectSheet),
 		"loadmodel":    int(ObjectLoadModel),
 		"appprops":     int(ObjectAppprops),
+		"snapshot":     int(ObjectSnapshot),
+		"snapshotlist": int(ObjectSnapshotList),
 	})
 )
 
