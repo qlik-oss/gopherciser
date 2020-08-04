@@ -92,6 +92,8 @@ func (settings UploadDataSettings) Execute(sessionState *session.State, actionSt
 		return
 	}
 
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil)
+
 	postData := session.RestRequest{
 		Method:        session.POST,
 		ContentType:   writer.FormDataContentType(),
@@ -121,5 +123,11 @@ func (settings UploadDataSettings) Execute(sessionState *session.State, actionSt
 	if postData.ResponseStatusCode != http.StatusCreated {
 		actionState.AddErrors(errors.New(fmt.Sprintf("failed to upload data file payload: %d <%s>", postData.ResponseStatusCode, postData.ResponseBody)))
 		return
+	}
+
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/%s?connectionId=&top=1000", host, datafileEndpoint), actionState, sessionState.LogEntry, nil)
+	if sessionState.Wait(actionState) {
+		return // we had an error
 	}
 }

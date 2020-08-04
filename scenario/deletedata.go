@@ -90,4 +90,10 @@ func (settings DeleteDataSettings) Execute(sessionState *session.State, actionSt
 	if n == 0 {
 		sessionState.LogEntry.Logf(logger.WarningLevel, "no files deleted")
 	}
+
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/%s?connectionId=&top=1000", host, datafileEndpoint), actionState, sessionState.LogEntry, nil)
+	if sessionState.Wait(actionState) {
+		return // we had an error
+	}
 }
