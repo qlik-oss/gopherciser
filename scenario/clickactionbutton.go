@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -201,10 +203,6 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	sendReq := func(f func(context.Context) error) error {
 		return sessionState.SendRequest(actionState, f)
 	}
-	// TODO sense browser client does getField only once for the same field
-	// here we do multiple
-	// same may apply to variables
-	// where should these be stored?
 
 	switch buttonAction.ActionType {
 	case emptyAction: // do nothing
@@ -288,15 +286,9 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			// TODO: OBS! not fininshed. how to distingush listvalues
-			values := []*enigma.FieldValue{
-				{
-					Text:      buttonAction.Value,
-					IsNumeric: false,
-					Number:    0,
-				},
+			if values := toFieldValues(buttonAction.Value); len(values) != 0 {
+				_, err = field.SelectValues(ctx, values, false /*toggleMode*/, buttonAction.SoftLock)
 			}
-			_, err = field.SelectValues(ctx, values /*TODO ambigous how to do this*/, false /*toggleMode*/, buttonAction.SoftLock)
 			return errors.Wrapf(err, "Could not select values in field<%s>", buttonAction.Field)
 		})
 
@@ -527,6 +519,36 @@ func sheetIDs(sessionState *session.State, actionState *action.State) ([]string,
 		sheetIDs = append(sheetIDs, item.Info.Id)
 	}
 	return sheetIDs, err
+}
+
+// toFieldValues converts ';'-separated string to fieldvalues
+func toFieldValues(fields string) []*enigma.FieldValue {
+	stringValues := strings.Split(fields, ";")
+	values := make([]*enigma.FieldValue, 0, len(stringValues))
+	for _, sv := range stringValues {
+		nbr, err := strconv.ParseFloat(sv, 64)
+
+		// if parse error which is not range error, append text value and continue
+		if err != nil {
+			numErr := err.(*strconv.NumError).Err
+			switch numErr {
+			case strconv.ErrRange:
+				// do nothing, nbr == ±inf is handled by enigma.Float64()
+			default:
+				values = append(values, &enigma.FieldValue{
+					Text:      sv,
+					IsNumeric: false,
+				})
+				continue
+			}
+		}
+
+		values = append(values, &enigma.FieldValue{
+			Number:    enigma.Float64(nbr),
+			IsNumeric: true,
+		})
+	}
+	return values
 }
 
 // Enum, MutableEnum, IntegerEnum, fmt.Stringer, json.Marshaler and
