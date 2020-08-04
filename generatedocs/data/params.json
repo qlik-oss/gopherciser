@@ -367,7 +367,7 @@
     ],
     "elastichubsearch.querysource": [
         "",
-        "`querystring`: The query is provided as a string specified by `query`.",
+        "`string`: The query is provided as a string specified by `query`.",
         "`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."
     ],
     "elastichubsearch.query": [

@@ -302,7 +302,7 @@ var (
         "elasticgenerateodag.linkname": { "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."  },  
         "elastichubsearch.query": { "(optional) Query string (in case of `querystring` as source)."  },  
         "elastichubsearch.queryfile": { "(optional) File from which to read a query (in case of `fromfile` as source)."  },  
-        "elastichubsearch.querysource": { "","`querystring`: The query is provided as a string specified by `query`.","`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."  },  
+        "elastichubsearch.querysource": { "","`string`: The query is provided as a string specified by `query`.","`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."  },  
         "elastichubsearch.searchfor": { "","`collections`: Search for collections only.","`apps`: Search for apps only.","`both`: Search for both collections and apps."  },  
         "elasticpublishapp.cleartags": { "Publish the app without its original tags."  },  
         "elasticreload.log": { "Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large."  },  

@@ -1788,7 +1788,7 @@ Search the hub in a QSEoK deployment.
     * `apps`: Search for apps only.
     * `both`: Search for both collections and apps.
 * `querysource`: 
-    * `querystring`: The query is provided as a string specified by `query`.
+    * `string`: The query is provided as a string specified by `query`.
     * `fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query.
 * `query`: (optional) Query string (in case of `querystring` as source).
 * `queryfile`: (optional) File from which to read a query (in case of `fromfile` as source).
