@@ -36,6 +36,9 @@
     "canaddtocollection.groups": [
         "DEPRECATED"
     ],
+    "clickactionbutton.id": [
+        "ID of the action-button to click."
+    ],
     "config.connectionSettings.mode": [
         "Authentication mode",
         "`jwt`: JSON Web Token",

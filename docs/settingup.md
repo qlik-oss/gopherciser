@@ -2043,6 +2043,29 @@ Upload a data file to the Data manager.
 
 </details>
 </details>
+<details>
+<summary>Ungrouped actions</summary>
+
+## ClickActionButton action
+
+Simulate clicking an action-button
+
+
+* `id`: ID of the action-button to click.
+
+### Examples
+
+```json
+{
+     "label": "ClickActionButton",
+     "action": "ClickActionButton",
+     "settings": {
+         "id": "951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd",
+     }
+}
+```
+
+</details>
 
 ## Session variables
 

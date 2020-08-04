@@ -23,6 +23,10 @@ var (
             Description: "## ClearAll action\n\nClear all selections in an app.\n",
             Examples: "### Example\n\n```json\n{\n    \"action\": \"clearall\",\n    \"label\": \"Clear all selections (1)\"\n}\n```\n",
         },
+        "clickactionbutton": {
+            Description: "## ClickActionButton action\n\nSimulate clicking an action-button\n\n",
+            Examples: "### Examples\n\n```json\n{\n     \"label\": \"ClickActionButton\",\n     \"action\": \"ClickActionButton\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\",\n     }\n}\n```\n",
+        },
         "createbookmark": {
             Description: "## CreateBookmark action\n\nCreate a bookmark from the current selection and selected sheet.\n\n**Note:** Both `title` and `id` can be used to identify the bookmark in subsequent actions. \n",
             Examples: "### Example\n\n```json\n{\n    \"action\": \"createbookmark\",\n    \"settings\": {\n        \"title\": \"my bookmark\",\n        \"description\": \"This bookmark contains some interesting selections\"\n    }\n}\n```\n",
@@ -210,6 +214,7 @@ var (
         "bookmark.title": { "Name of the bookmark (supports the use of [variables](#session_variables))."  },  
         "canaddtocollection.groups": { "DEPRECATED"  },  
         "changesheet.id": { "GUID of the sheet to change to."  },  
+        "clickactionbutton.id": { "ID of the action-button to click."  },  
         "config.connectionSettings.allowuntrusted": { "Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."  },  
         "config.connectionSettings.appext": { "Replace `app` in the connect URL for the `openapp` action. Defaults to `app`, if omitted."  },  
         "config.connectionSettings.headers": { "Headers to use in requests."  },  
