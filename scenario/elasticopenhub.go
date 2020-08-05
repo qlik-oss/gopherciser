@@ -227,6 +227,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		if qID == "" {
 			actionState.AddErrors(errors.Errorf("failed to find qID in dataconnections for <%s>", qName))
 		} else {
+			sessionState.DataConnectionId = qID
 			sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState, sessionState.LogEntry, nil)
 		}
 

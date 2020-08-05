@@ -64,19 +64,20 @@ type (
 		ctx       context.Context
 		ctxCancel context.CancelFunc
 
-		Cookies      http.CookieJar
-		VirtualProxy string
-		Connection   IConnection
-		ArtifactMap  *ArtifactMap
-		IDMap        IDMap
-		HeaderJar    *HeaderJar
-		LoggedIn     bool
-		Timeout      time.Duration
-		User         *users.User
-		OutputsDir   string
-		CurrentApp   *ArtifactEntry
-		CurrentUser  *elasticstructs.User
-		Counters     *statistics.ExecutionCounters
+		Cookies          http.CookieJar
+		VirtualProxy     string
+		Connection       IConnection
+		ArtifactMap      *ArtifactMap
+		IDMap            IDMap
+		HeaderJar        *HeaderJar
+		LoggedIn         bool
+		Timeout          time.Duration
+		User             *users.User
+		OutputsDir       string
+		CurrentApp       *ArtifactEntry
+		CurrentUser      *elasticstructs.User
+		Counters         *statistics.ExecutionCounters
+		DataConnectionId string
 
 		rand          *rand
 		trafficLogger enigmahandlers.ITrafficLogger
