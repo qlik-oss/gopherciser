@@ -287,6 +287,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 				return errors.WithStack(err)
 			}
 			if values := toFieldValues(buttonAction.Value); len(values) != 0 {
+				// GetFieldDescription here, just to mimic Sense client
+				if _, err = doc.GetFieldDescription(ctx, buttonAction.Field); err != nil {
+					return errors.WithStack(err)
+				}
 				_, err = field.SelectValues(ctx, values, false /*toggleMode*/, buttonAction.SoftLock)
 			}
 			return errors.Wrapf(err, "could not select values in field<%s>", buttonAction.Field)
