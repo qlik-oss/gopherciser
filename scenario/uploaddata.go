@@ -37,7 +37,10 @@ func (settings UploadDataSettings) Validate() error {
 }
 
 // Execute action (Implements ActionSettings interface)
-func (settings UploadDataSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+func (settings UploadDataSettings) Execute(
+	sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string,
+	reset func(),
+) {
 	host, err := connection.GetRestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
@@ -92,6 +95,10 @@ func (settings UploadDataSettings) Execute(sessionState *session.State, actionSt
 		return
 	}
 
+	sessionState.Rest.GetAsync(
+		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
+	)
+
 	postData := session.RestRequest{
 		Method:        session.POST,
 		ContentType:   writer.FormDataContentType(),
@@ -115,11 +122,31 @@ func (settings UploadDataSettings) Execute(sessionState *session.State, actionSt
 		return // we had an error
 	}
 	if postData.ResponseStatusCode == http.StatusConflict {
-		sessionState.LogEntry.Logf(logger.WarningLevel, "cannot upload data file: filename conflict <%s>", settings.Filename)
+		sessionState.LogEntry.Logf(
+			logger.WarningLevel, "cannot upload data file: filename conflict <%s>", settings.Filename,
+		)
 		return
 	}
 	if postData.ResponseStatusCode != http.StatusCreated {
-		actionState.AddErrors(errors.New(fmt.Sprintf("failed to upload data file payload: %d <%s>", postData.ResponseStatusCode, postData.ResponseBody)))
+		actionState.AddErrors(
+			errors.New(
+				fmt.Sprintf(
+					"failed to upload data file payload: %d <%s>", postData.ResponseStatusCode, postData.ResponseBody,
+				),
+			),
+		)
 		return
+	}
+
+	sessionState.Rest.GetAsync(
+		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
+	)
+	sessionState.Rest.GetAsync(
+		fmt.Sprintf(
+			"%s/%s?connectionId=%s&top=1000", host, datafileEndpoint, sessionState.DataConnectionId,
+		), actionState, sessionState.LogEntry, nil,
+	)
+	if sessionState.Wait(actionState) {
+		return // we had an error
 	}
 }

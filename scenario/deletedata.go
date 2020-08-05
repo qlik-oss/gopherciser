@@ -31,7 +31,10 @@ func (settings DeleteDataSettings) Validate() error {
 }
 
 // Execute action (Implements ActionSettings interface)
-func (settings DeleteDataSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+func (settings DeleteDataSettings) Execute(
+	sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string,
+	reset func(),
+) {
 	host, err := connection.GetRestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
@@ -79,7 +82,11 @@ func (settings DeleteDataSettings) Execute(sessionState *session.State, actionSt
 			}
 
 			if deleteItem.ResponseStatusCode != http.StatusNoContent {
-				actionState.AddErrors(errors.Errorf("failed to delete data file: %d %s", deleteItem.ResponseStatusCode, deleteItem.ResponseBody))
+				actionState.AddErrors(
+					errors.Errorf(
+						"failed to delete data file: %d %s", deleteItem.ResponseStatusCode, deleteItem.ResponseBody,
+					),
+				)
 			} else {
 				n++
 			}
@@ -89,5 +96,17 @@ func (settings DeleteDataSettings) Execute(sessionState *session.State, actionSt
 	sessionState.LogEntry.LogInfo("NumDeletedFiles", fmt.Sprintf("%d", n))
 	if n == 0 {
 		sessionState.LogEntry.Logf(logger.WarningLevel, "no files deleted")
+	}
+
+	sessionState.Rest.GetAsync(
+		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
+	)
+	sessionState.Rest.GetAsync(
+		fmt.Sprintf(
+			"%s/%s?connectionId=%s&top=1000", host, datafileEndpoint, sessionState.DataConnectionId,
+		), actionState, sessionState.LogEntry, nil,
+	)
+	if sessionState.Wait(actionState) {
+		return // we had an error
 	}
 }
