@@ -261,6 +261,8 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
+		case appstructure.ObjectSnapshotList, appstructure.ObjectSnapshot:
+			return nil
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
@@ -421,7 +423,9 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 
 	// Should we look for measures and dimensions?
 	switch appstructure.ObjectType(enumTyp) {
-	case appstructure.ObjectSheet, appstructure.ObjectAppprops, appstructure.ObjectLoadModel:
+	case appstructure.ObjectSheet,
+		appstructure.ObjectAppprops,
+		appstructure.ObjectLoadModel:
 		// Known object which does not have measures and dimensions
 		return nil
 	}
