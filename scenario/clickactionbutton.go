@@ -135,7 +135,7 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 
 	// run button-actions
 	for _, buttonAction := range buttonActions {
-		err := buttonAction.execute(sessionState, actionState)
+		err := buttonAction.execute(sessionState, actionState, connectionSettings, label)
 		if err != nil {
 			actionState.AddErrors(errors.Wrapf(err, "buttonaction type<%s> label<%s> cid<%s> failed",
 				buttonAction.ActionType, buttonAction.ActionLabel, buttonAction.CID))
@@ -197,7 +197,9 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 }
 
 // execute one action contained by a Sense action-button
-func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State) error {
+func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State,
+	connectionSettings *connection.ConnectionSettings, label string) error {
+
 	uplink := sessionState.Connection.Sense()
 	doc := DocWrapper{uplink.CurrentApp.Doc}
 	sendReq := func(f func(context.Context) error) error {
@@ -212,16 +214,23 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		return errors.New("unknown button action")
 
 	case applyBookmark:
-		return sendReq(func(ctx context.Context) error {
-			success, err := doc.ApplyBookmark(ctx, buttonAction.Bookmark /*id*/)
-			if err != nil {
-				return errors.Wrapf(err, "error applying bookmark<%s>", buttonAction.Bookmark)
-			}
-			if !success {
-				return errors.Errorf("unsuccessful application bookmark<%s>", buttonAction.Bookmark)
-			}
-			return err
-		})
+		applyBookmarkAction := Action{
+			ActionCore{
+				Type:  ActionApplyBookmark,
+				Label: fmt.Sprintf("button-action-%s", buttonAction.ActionType),
+			},
+			&ApplyBookmarkSettings{
+				BookMarkSettings{
+					ID: buttonAction.Bookmark,
+				},
+			},
+		}
+		if isAborted, err := CheckActionError(applyBookmarkAction.Execute(sessionState, connectionSettings)); isAborted {
+			return errors.Wrap(err, "apply bookmark was aborted")
+		} else if err != nil {
+			return errors.Wrap(err, "apply bookmark failed")
+		}
+		return nil
 
 	case moveBackwardsInSelections:
 		return sendReq(doc.Back)
