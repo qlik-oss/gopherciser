@@ -196,6 +196,24 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
+func executeContainerAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
+	actionType string, settings ActionSettings) error {
+
+	action := Action{
+		ActionCore: ActionCore{
+			Type:  ActionApplyBookmark,
+			Label: fmt.Sprintf("button-action-%s", actionType),
+		},
+		Settings: settings,
+	}
+	if isAborted, err := CheckActionError(action.Execute(sessionState, connectionSettings)); isAborted {
+		return errors.Wrapf(err, "%s was aborted", ActionClearAll)
+	} else if err != nil {
+		return errors.Wrapf(err, "%s failed", ActionClearAll)
+	}
+	return nil
+}
+
 // execute one action contained by a Sense action-button
 func (buttonAction *buttonAction) execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string) error {
@@ -205,43 +223,38 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	sendReq := func(f func(context.Context) error) error {
 		return sessionState.SendRequest(actionState, f)
 	}
+	executeContainerAction := func(actionType string, settings ActionSettings) error {
+		return executeContainerAction(sessionState, connectionSettings, actionType, settings)
+	}
 
 	switch buttonAction.ActionType {
-	case emptyAction: // do nothing
+	case emptyAction:
 		return nil
 
 	case unknownAction:
 		return errors.New("unknown button action")
 
+	// container button-actions:
+
 	case applyBookmark:
-		applyBookmarkAction := Action{
-			ActionCore{
-				Type:  ActionApplyBookmark,
-				Label: fmt.Sprintf("button-action-%s", buttonAction.ActionType),
-			},
+		return executeContainerAction(ActionApplyBookmark,
 			&ApplyBookmarkSettings{
 				BookMarkSettings{
 					ID: buttonAction.Bookmark,
-				},
-			},
-		}
-		if isAborted, err := CheckActionError(applyBookmarkAction.Execute(sessionState, connectionSettings)); isAborted {
-			return errors.Wrap(err, "apply bookmark was aborted")
-		} else if err != nil {
-			return errors.Wrap(err, "apply bookmark failed")
-		}
-		return nil
+				}})
+
+	case clearAllSelections:
+		return executeContainerAction(ActionClearAll, &ClearAllSettings{})
+
+	// TODO(atluq) the following buttonactions shall become container actions
+	// when future implemetations of individual actions exist.
+	// NOT container button-actions:
 
 	case moveBackwardsInSelections:
 		return sendReq(doc.Back)
 
 	case moveForwardsInSelections:
 		return sendReq(doc.Forward)
-
-	case clearAllSelections:
-		return sendReq(func(ctx context.Context) error {
-			return doc.ClearAll(ctx, buttonAction.SoftLock /*lockedAlso*/, "" /*stateName*/)
-		})
 
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
