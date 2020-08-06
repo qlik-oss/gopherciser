@@ -1,7 +1,6 @@
 package enigmahandlers
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -13,7 +12,7 @@ var varDummy = &enigma.GenericVariable{}
 func Test_varCache_Lookup(t *testing.T) {
 	names := [...]string{"variable1", "variable2", "variable3"}
 
-	preFilledVarCache := &varCache{
+	preFilledVarCache := &VarCache{
 		varMap: map[string]*enigma.GenericVariable{
 			names[0]: varDummy,
 			names[1]: varDummy,
@@ -26,7 +25,7 @@ func Test_varCache_Lookup(t *testing.T) {
 		variableName string
 		wantVariable *enigma.GenericVariable
 		wantHit      bool
-		vc           *varCache
+		vc           *VarCache
 	}{
 		{"hit1", names[0], varDummy, true, preFilledVarCache},
 		{"hit2", names[1], varDummy, true, preFilledVarCache},
@@ -48,42 +47,6 @@ func Test_varCache_Lookup(t *testing.T) {
 			}
 			if gotHit != tt.wantHit {
 				t.Errorf("varCache.Lookup() gotHit = %v, want %v", gotHit, tt.wantHit)
-			}
-		})
-	}
-}
-
-func Test_varCache_LookupWithFallback(t *testing.T) {
-	fallBackMock := func(name string) (*enigma.GenericVariable, error) {
-		switch name {
-		case "variable1", "variable2", "variable3": // existing variables
-			return varDummy, nil
-		default:
-			return nil, fmt.Errorf(`"%s" is not the name of a variable`, name)
-		}
-	}
-	tests := []struct {
-		name         string
-		variableName string
-		want         *enigma.GenericVariable
-		wantErr      bool
-	}{
-		{"shallExist1", "variable1", varDummy, false},
-		{"shallExist2", "variable1", varDummy, false},
-		{"shallExist3", "variable3", varDummy, false},
-		{"shallFail1", "", nil, true},
-		{"shallFail2", "xyz", nil, true},
-	}
-	vc := NewVarCache()
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := vc.LookupWithFallback(tt.variableName, fallBackMock)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("varCache.LookupWithFallback() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("varCache.LookupWithFallback() = %v, want %v", got, tt.want)
 			}
 		})
 	}

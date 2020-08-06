@@ -152,31 +152,61 @@ func MarshalJSON(enum IntegerEnum) ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-// DocWrapper adds simple pre-rpc input validation for a few getters in enigma.Doc
-type DocWrapper struct {
-	*enigma.Doc
+type (
+	varReq   func(ctx context.Context, varName string) (*enigma.GenericVariable, error)
+	fieldReq func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error)
+)
+
+func (getField fieldReq) WithInputValidation() fieldReq {
+	return func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error) {
+		if fieldName == "" {
+			return nil, errors.Errorf("field name is empty string")
+		}
+		field, err := getField(ctx, fieldName, stateName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not get field<%s>", fieldName)
+		}
+		return field, err
+	}
 }
 
-// GetField adds input validation to enigma.Doc.GetField
-func (docW DocWrapper) GetField(ctx context.Context, fieldName string) (*enigma.Field, error) {
-	if fieldName == "" {
-		return nil, errors.Errorf("field name is empty string")
+func (getField fieldReq) WithCache(fc *enigmahandlers.FieldCache) fieldReq {
+	return func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error) {
+		if field, hit := fc.Lookup(fieldName); hit {
+			return field, nil
+		}
+		field, err := getField(ctx, fieldName, stateName)
+		if err != nil {
+			return field, err
+		}
+		fc.Store(fieldName, field)
+		return field, nil
 	}
-	field, err := docW.Doc.GetField(ctx, fieldName, "" /*stateName*/)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not get field<%s>", fieldName)
-	}
-	return field, err
 }
 
-// GetVariableByName adds input validation to enigma.Doc.GetVarableByName
-func (docW DocWrapper) GetVariableByName(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
-	if variableName == "" {
-		return nil, errors.Errorf("variable name is empty string")
+func (getVar varReq) WithInputValidation() varReq {
+	return func(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
+		if variableName == "" {
+			return nil, errors.Errorf("variable name is empty string")
+		}
+		variable, err := getVar(ctx, variableName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not get variable<%s>", variableName)
+		}
+		return variable, err
 	}
-	variable, err := docW.Doc.GetVariableByName(ctx, variableName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not get variable<%s>", variableName)
+}
+
+func (getVar varReq) WithCache(vc *enigmahandlers.VarCache) varReq {
+	return func(ctx context.Context, varName string) (*enigma.GenericVariable, error) {
+		if variable, hit := vc.Lookup(varName); hit {
+			return variable, nil
+		}
+		variable, err := getVar(ctx, varName)
+		if err != nil {
+			return variable, err
+		}
+		vc.Store(varName, variable)
+		return variable, nil
 	}
-	return variable, err
 }

@@ -219,7 +219,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	connectionSettings *connection.ConnectionSettings, label string) error {
 
 	uplink := sessionState.Connection.Sense()
-	doc := DocWrapper{uplink.CurrentApp.Doc}
+	doc := uplink.CurrentApp.Doc
 	sendReq := func(f func(context.Context) error) error {
 		return sessionState.SendRequest(actionState, f)
 	}
@@ -258,11 +258,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -272,11 +268,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case clearSelectionsInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -286,11 +278,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAllValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -300,11 +288,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -320,11 +304,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesMatchingSearchCriteria:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -334,11 +314,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAlternatives:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -348,11 +324,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectExcluded:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -362,11 +334,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectPossibleValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -376,11 +344,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case toggleFieldSelection:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -395,11 +359,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case lockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -414,11 +374,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case unlockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := uplink.FieldCache.LookupWithFallback(buttonAction.Field,
-				func(fieldName string) (*enigma.Field, error) {
-					return doc.GetField(ctx, fieldName)
-				},
-			)
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -428,11 +384,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case setVariableValue:
 		return sendReq(func(ctx context.Context) error {
-			variable, err := uplink.VarCache.LookupWithFallback(buttonAction.Variable,
-				func(varName string) (*enigma.GenericVariable, error) {
-					return doc.GetVariableByName(ctx, varName)
-				},
-			)
+			variable, err := varReq(doc.GetVariableByName).WithCache(&uplink.VarCache).WithInputValidation()(ctx, buttonAction.Variable)
 			if err != nil {
 				return errors.WithStack(err)
 			}

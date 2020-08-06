@@ -29,8 +29,8 @@ type (
 		Global     *enigma.Global
 		CurrentApp *senseobjects.App
 		Objects    ObjectsMap
-		FieldCache fieldCache
-		VarCache   varCache
+		FieldCache FieldCache
+		VarCache   VarCache
 		Traffic    ITrafficLogger
 
 		ctx                context.Context
@@ -40,6 +40,11 @@ type (
 		failedConnectFuncs []func()
 
 		MockMode bool
+	}
+
+	Cache struct {
+		Field FieldCache
+		Var   VarCache
 	}
 
 	// SenseConnection direct sense connection implementing IConnection interface

@@ -1,7 +1,6 @@
 package enigmahandlers
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -13,7 +12,7 @@ var fieldDummy = &enigma.Field{}
 func Test_fieldCache_Lookup(t *testing.T) {
 	names := [...]string{"field1", "field2", "field3"}
 
-	preFilledFieldCache := &fieldCache{
+	preFilledFieldCache := &FieldCache{
 		fieldMap: map[string]*enigma.Field{
 			names[0]: fieldDummy,
 			names[1]: fieldDummy,
@@ -26,7 +25,7 @@ func Test_fieldCache_Lookup(t *testing.T) {
 		fieldName string
 		wantField *enigma.Field
 		wantHit   bool
-		fc        *fieldCache
+		fc        *FieldCache
 	}{
 		{"hit1", names[0], fieldDummy, true, preFilledFieldCache},
 		{"hit2", names[1], fieldDummy, true, preFilledFieldCache},
@@ -48,42 +47,6 @@ func Test_fieldCache_Lookup(t *testing.T) {
 			}
 			if gotHit != tt.wantHit {
 				t.Errorf("fieldCache.Lookup() gotHit = %v, want %v", gotHit, tt.wantHit)
-			}
-		})
-	}
-}
-
-func Test_fieldCache_LookupWithFallback(t *testing.T) {
-	fallBackMock := func(name string) (*enigma.Field, error) {
-		switch name {
-		case "field1", "field2", "field3": // existing fields
-			return fieldDummy, nil
-		default:
-			return nil, fmt.Errorf(`"%s" is not the name of a field`, name)
-		}
-	}
-	tests := []struct {
-		name      string
-		fieldName string
-		want      *enigma.Field
-		wantErr   bool
-	}{
-		{"shallExist1", "field1", fieldDummy, false},
-		{"shallExist2", "field1", fieldDummy, false},
-		{"shallExist3", "field3", fieldDummy, false},
-		{"shallFail1", "", nil, true},
-		{"shallFail2", "xyz", nil, true},
-	}
-	fc := NewFieldCache()
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := fc.LookupWithFallback(tt.fieldName, fallBackMock)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("fieldCache.LookupWithFallback() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("fieldCache.LookupWithFallback() = %v, want %v", got, tt.want)
 			}
 		})
 	}
