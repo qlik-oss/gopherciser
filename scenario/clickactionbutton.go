@@ -259,7 +259,6 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
 			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
-			fmt.Printf("%T", doc.GetField)
 			if err != nil {
 				return errors.WithStack(err)
 			}
