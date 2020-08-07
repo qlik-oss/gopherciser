@@ -247,7 +247,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		return executeContainerAction(ActionClearAll, &ClearAllSettings{})
 
 	// TODO(atluq) the following buttonactions shall become container actions
-	// when future implemetations of individual actions exist.
+	// when implemetations of individual the actions exist.
 	// NOT container button-actions:
 
 	case moveBackwardsInSelections:
@@ -259,11 +259,12 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
 			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			fmt.Printf("%T", doc.GetField)
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.ClearAllButThis(ctx, buttonAction.SoftLock)
-			return errors.WithStack(err)
+			success, err := field.ClearAllButThis(ctx, buttonAction.SoftLock)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case clearSelectionsInField:
@@ -272,8 +273,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.Clear(ctx)
-			return err
+			success, err := field.Clear(ctx)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case selectAllValuesInField:
@@ -282,24 +283,26 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.SelectAll(ctx, buttonAction.SoftLock)
-			return errors.Wrapf(err, "could not select all values in field<%s>", buttonAction.Field)
+			success, err := field.SelectAll(ctx, buttonAction.SoftLock)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case selectValuesInField:
 		return sendReq(func(ctx context.Context) error {
+			values := toFieldValues(buttonAction.Value)
+			if len(values) == 0 {
+				return nil
+			}
 			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			if values := toFieldValues(buttonAction.Value); len(values) != 0 {
-				// GetFieldDescription here, just to mimic Sense client
-				if _, err = doc.GetFieldDescription(ctx, buttonAction.Field); err != nil {
-					return errors.WithStack(err)
-				}
-				_, err = field.SelectValues(ctx, values, false /*toggleMode*/, buttonAction.SoftLock)
+			// GetFieldDescription here, just to mimic Sense client
+			if _, err = doc.GetFieldDescription(ctx, buttonAction.Field); err != nil {
+				return errors.WithStack(err)
 			}
-			return errors.Wrapf(err, "could not select values in field<%s>", buttonAction.Field)
+			success, err := field.SelectValues(ctx, values, false /*toggleMode*/, buttonAction.SoftLock)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case selectValuesMatchingSearchCriteria:
@@ -318,8 +321,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.SelectAlternative(ctx, buttonAction.SoftLock)
-			return err
+			success, err := field.SelectAlternative(ctx, buttonAction.SoftLock)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case selectExcluded:
@@ -328,8 +331,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.SelectExcluded(ctx, buttonAction.SoftLock)
-			return err
+			success, err := field.SelectExcluded(ctx, buttonAction.SoftLock)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case selectPossibleValuesInField:
@@ -338,8 +341,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.SelectPossible(ctx, buttonAction.SoftLock)
-			return errors.Wrapf(err, "could not select possible in field<%s>", buttonAction.Field)
+			success, err := field.SelectPossible(ctx, buttonAction.SoftLock)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case toggleFieldSelection:
@@ -348,8 +351,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.ToggleSelect(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*excludedValuesMode*/)
-			return errors.Wrapf(err, "could not select possible in field<%s>", buttonAction.Field)
+			success, err := field.ToggleSelect(ctx, buttonAction.Value /*match*/, buttonAction.SoftLock, 0 /*excludedValuesMode*/)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case lockAllSelections:
@@ -363,8 +366,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.Lock(ctx)
-			return err
+			success, err := field.Lock(ctx)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case unlockAllSelections:
@@ -378,8 +381,8 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			_, err = field.Unlock(ctx)
-			return err
+			success, err := field.Unlock(ctx)
+			return errors.Wrapf(checkSuccess(success, err), `failed action<%s> in field<%s>`, buttonAction.ActionType, buttonAction.Field)
 		})
 
 	case setVariableValue:
@@ -414,53 +417,49 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 	if len(sheets) == 0 {
 		return errors.New("no sheets in app")
 	}
+	currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
+	if err != nil {
+		return errors.Wrapf(err, "could not get current sheet")
+	}
 
-	var sheetID string
+	var newCurrentSheetID string
 
 	switch navAction.Action {
 
 	case firstSheet:
-		sheetID = sheets[0]
+		newCurrentSheetID = sheets[0]
 
 	case lastSheet:
-		sheetID = sheets[len(sheets)-1]
+		newCurrentSheetID = sheets[len(sheets)-1]
 
 	case nextSheet:
-		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
-		if err != nil {
-			return errors.Wrapf(err, "could not get current sheet")
-		}
 		currentSheetIdx, ok := IndexOf(currentSheet.ID, sheets)
 		if !ok {
 			return errors.Wrapf(err, "could not index of get current sheet")
 		}
 		nextSheetIdx := (currentSheetIdx + 1) % len(sheets)
-		if nextSheetIdx != currentSheetIdx {
-			sheetID = sheets[nextSheetIdx]
-		}
+		newCurrentSheetID = sheets[nextSheetIdx]
 
 	case previousSheet:
-		currentSheet, err := GetCurrentSheet(sessionState.Connection.Sense())
-		if err != nil {
-			return errors.Wrapf(err, "could not get current sheet")
-		}
 		currentSheetIdx, ok := IndexOf(currentSheet.ID, sheets)
 		if !ok {
-			return errors.Wrapf(err, "could not get index of current sheet")
+			return errors.Wrapf(err, "could not index of get current sheet")
 		}
 		previousSheetIdx := (currentSheetIdx - 1 + len(sheets)) % len(sheets)
-		if previousSheetIdx != currentSheetIdx {
-			sheetID = sheets[previousSheetIdx]
-		}
+		newCurrentSheetID = sheets[previousSheetIdx]
 
 	case goToSheet, goToSheetByID:
 		if navAction.Sheet == "" {
 			return errors.New("empty sheet id")
 		}
-		sheetID = navAction.Sheet
+		newCurrentSheetID = navAction.Sheet
 
 	default:
-		return errors.Errorf("button navigation action '%s' is not supported", navAction.Action)
+		return errors.Errorf(`button navigation action "%s" is not supported`, navAction.Action)
+	}
+
+	if newCurrentSheetID == currentSheet.ID {
+		return nil
 	}
 
 	// Execute changeSheet Action
@@ -470,7 +469,7 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 			Label: fmt.Sprintf("button-navigation-%s", navAction.Action),
 		},
 		&ChangeSheetSettings{
-			ID: sheetID,
+			ID: newCurrentSheetID,
 		},
 	}
 	if isAborted, err := CheckActionError(changeSheetAction.Execute(sessionState, connectionSettings)); isAborted {
@@ -618,4 +617,14 @@ func (value buttonNavigationActionType) MarshalJSON() ([]byte, error) {
 
 func (value buttonNavigationActionType) String() string {
 	return String(value)
+}
+
+func checkSuccess(success bool, err error) error {
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if !success {
+		return errors.Errorf("unsuccessful operation")
+	}
+	return nil
 }
