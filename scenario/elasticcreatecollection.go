@@ -45,7 +45,7 @@ func (settings ElasticCreateCollectionSettings) Execute(sessionState *session.St
 		return
 	}
 
-	_, err = searchForTag(sessionState, actionState, host, name)
+	_, err = searchForTag(sessionState, actionState, host, name, 20)
 	if err == nil {
 		actionState.Failed = true
 		sessionState.LogEntry.Log(logger.WarningLevel, "collection already exists")

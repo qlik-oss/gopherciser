@@ -252,7 +252,7 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		streamID, err = searchForTag(sessionState, actionState, host, stream)
+		streamID, err = searchForTag(sessionState, actionState, host, stream, 20)
 		if err != nil {
 			return errors.Wrapf(err, "stream not found")
 		}
