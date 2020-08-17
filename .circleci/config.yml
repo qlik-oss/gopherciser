@@ -195,7 +195,7 @@ workflows:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - build-go-1.13
-      - build-go.1.15
+      - build-go-1.15
       - publish-github:
           requires:
             - build
