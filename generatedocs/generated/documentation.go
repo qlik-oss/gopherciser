@@ -24,8 +24,8 @@ var (
             Examples: "### Example\n\n```json\n{\n    \"action\": \"clearall\",\n    \"label\": \"Clear all selections (1)\"\n}\n```\n",
         },
         "clickactionbutton": {
-            Description: "## ClickActionButton action\n\nSimulate clicking an action-button\n\n",
-            Examples: "### Examples\n\n```json\n{\n     \"label\": \"ClickActionButton\",\n     \"action\": \"ClickActionButton\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\",\n     }\n}\n```\n",
+            Description: "## ClickActionButton action\n\nA `ClickActionButton`-action simulates clicking an _action-button_. An _action-button_ is a chart item which, when clicked, executes a series of actions. The series of actions contained by an action-button begins with any number _generic button-actions_ and ends with an optional _navigation button-action_.\n\n**Note:** Clicking an action-button may have side effects such as changing sheet and locking selections, which highly affect the outcome of following actions.\n\n### Supported button-actions\n#### Generic button-actions\n- Apply bookmark\n- Move backward in all selections\n- Move forward in all selections\n- Lock all selections\n- Clear all selections\n- Lock field\n- Unlock field\n- Select all in field\n- Select alternatives in field\n- Select excluded in field\n- Select possible in field\n- Select values matching search criteria in field\n- Clear selection in field\n- Toggle selection in field\n- Set value of variable\n\n#### Navigation button-actions\n- Change to first sheet\n- Change to last sheet\n- Change to previous sheet\n- Change sheet by name\n- Change sheet by ID",
+            Examples: "### Examples\n\n```json\n{\n     \"label\": \"ClickActionButton\",\n     \"action\": \"ClickActionButton\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\"\n     }\n}\n```\n",
         },
         "createbookmark": {
             Description: "## CreateBookmark action\n\nCreate a bookmark from the current selection and selected sheet.\n\n**Note:** Both `title` and `id` can be used to identify the bookmark in subsequent actions. \n",
