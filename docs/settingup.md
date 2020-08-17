@@ -436,9 +436,7 @@ Clear all selections in an app.
 
 ## ClickActionButton action
 
-A `ClickActionButton`-action simulates clicking an _action-button_. An _action-button_ is a chart item which, when clicked, executes a series of actions. The series of actions contained by an action-button begins with any number _generic button-actions_ and ends with an optional _navigation button-action_.
-
-**Note:** Clicking an action-button may have side effects such as changing sheet and locking selections, which highly affect the outcome of following actions.
+A `ClickActionButton`-action simulates clicking an _action-button_. An _action-button_ is a sheet item which, when clicked, executes a series of actions. The series of actions contained by an action-button begins with any number _generic button-actions_ and ends with an optional _navigation button-action_.
 
 ### Supported button-actions
 #### Generic button-actions
