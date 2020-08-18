@@ -97,6 +97,33 @@ jobs:
           paths:
             - "/go/pkg/mod"
 
+  build-go-1.15:
+    <<: *defaults
+    docker:
+      - image: circleci/golang:1.15
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Setup working directory
+          command: |
+            set -x
+            mkdir -p build
+      - restore_cache:
+          key: dependency-cache-1.15{{ checksum "go.sum" }}
+      - run:
+          name: Run Golang tests
+          command: |
+            make alltests
+      - run:
+          name: Build gopherciser for Linux, Darwin and Windows (amd64)
+          command: |
+            make build
+      - save_cache:
+          key: dependency-cache-1.15{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+
   publish-github:
     <<: *defaults
     docker:
@@ -168,6 +195,7 @@ workflows:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - build-go-1.13
+      - build-go-1.15
       - publish-github:
           requires:
             - build
