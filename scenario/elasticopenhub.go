@@ -2,12 +2,8 @@ package scenario
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/gobwas/ws"
-	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"net"
 	"net/http"
 	neturl "net/url"
 	"strings"
@@ -19,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/wsdialer"
 )
 
 type (
@@ -249,8 +246,11 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		actionState.AddErrors(err)
 		return
 	}
+	nurl.Scheme = "wss" // TODO check secure flag
+	nurl.Path = "api/v1/events"
 
-	setupEventSocketAsync(sessionState, actionState, fmt.Sprintf("wss://%s/api/v1/events", nurl.Host), sessionState.HeaderJar.GetHeader(nurl.Host))
+	var allowUntrusted = true // TODO get from config
+	setupEventSocketAsync(sessionState, actionState, nurl, sessionState.HeaderJar.GetHeader(nurl.Host), allowUntrusted)
 
 	if sessionState.Wait(actionState) {
 		return // we had an error
@@ -262,71 +262,22 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	}
 }
 
-func setupEventSocketAsync(sessionState *session.State, actionState *action.State, url string, httpHeader http.Header) {
+func setupEventSocketAsync(sessionState *session.State, actionState *action.State, url *neturl.URL, httpHeader http.Header, allowUntrusted bool) {
 	sessionState.Pending.IncPending()
 	defer sessionState.Pending.DecPending()
 
-	u, err := neturl.Parse(url)
+	dialer, err := wsdialer.New(url, httpHeader, sessionState.Cookies, sessionState.Timeout, allowUntrusted)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 
-	wsHeader := httpHeader.Clone()
-	if sessionState.Cookies != nil {
-		// cookie needs to be set using http not ws scheme
-		switch u.Scheme {
-		case "wss":
-			u.Scheme = "https"
-		case "ws":
-			u.Scheme = "http"
-		}
-		cookies := sessionState.Cookies.Cookies(u)
-		cookieStrings := make([]string, 0, len(cookies))
-		for _, cookie := range cookies {
-			if cookie.String() != "" {
-				cookieStrings = append(cookieStrings, cookie.String())
-			}
-		}
-		if len(cookieStrings) > 0 {
-			wsHeader.Add("Cookie", strings.Join(cookieStrings, "; "))
-		}
-	}
-
-	wsDialer := ws.Dialer{
-		Timeout: sessionState.Timeout,
-		Header:  ws.HandshakeHeaderHTTP(wsHeader),
-		OnHeader: func(key, value []byte) error {
-			if strings.ToLower(string(key)) == "set-cookie" {
-				// http doesn't expose cookie parser so we need to fake a http response to have it parsed
-				header := http.Header{}
-				header.Add("Set-Cookie", string(value))
-				response := http.Response{Header: header}
-				cookies := response.Cookies()
-				if sessionState.Cookies != nil {
-					sessionState.Cookies.SetCookies(u, cookies)
-				}
-			}
-			return nil
-		},
-		NetDial: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return (&net.Dialer{}).DialContext(ctx, network, addr)
-		},
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true, // TODO get flag from config
-		},
-	}
-
-	var conn net.Conn
 	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		conn, _ /* br*/, _ /*hs*/, err = wsDialer.Dial(ctx, url)
-		return errors.WithStack(err)
+		return errors.WithStack(dialer.Dial(ctx))
 	}); err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
-
-	dialer := &enigmahandlers.SenseDialer{Conn: conn} // TODO make generic
 
 	go func() {
 		for {
@@ -335,17 +286,14 @@ func setupEventSocketAsync(sessionState *session.State, actionState *action.Stat
 				return
 			default:
 				// TODO add traffic logger
-				i, message, err := dialer.ReadMessage()
+				_, message, err := dialer.ReadMessage()
 				if err != nil {
 					sessionState.CurrentActionState.AddErrors(errors.WithStack(err))
 					return
 				}
-
-				if i == 1 {
+				if len(message) == 0 {
 					continue
 				}
-
-				fmt.Printf("event<%s>\n", message)
 			}
 		}
 	}()

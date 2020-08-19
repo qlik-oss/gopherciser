@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/wsdialer"
 	"net/http"
 	"sync"
 	"time"
@@ -670,7 +671,7 @@ func (state *State) Reconnect() error {
 	}
 
 	if state.CurrentActionState != nil {
-		state.CurrentActionState.AddErrors(enigmahandlers.DisconnectError{})
+		state.CurrentActionState.AddErrors(wsdialer.DisconnectError{})
 	}
 
 	reconnectStart := time.Now()
@@ -798,7 +799,7 @@ func (state *State) GetReconnectError() error {
 // IsWebsocketDisconnected checks if error is caused by websocket disconnect
 func (state *State) IsWebsocketDisconnected(err error) bool {
 	switch helpers.TrueCause(err).(type) {
-	case enigmahandlers.DisconnectError:
+	case wsdialer.DisconnectError:
 		return true
 	default:
 		return false
