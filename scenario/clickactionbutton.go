@@ -122,7 +122,7 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	objectID := sessionState.IDMap.Get(settings.ID)
 	obj, err := sessionState.Connection.Sense().Objects.GetObjectByID(objectID)
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed getting object<%s> from object list", obj.ID))
+		actionState.AddErrors(errors.Wrapf(err, "failed getting object<%s> from object list", objectID))
 		return
 	}
 
