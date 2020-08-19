@@ -201,15 +201,15 @@ func executeContainerAction(sessionState *session.State, connectionSettings *con
 
 	action := Action{
 		ActionCore: ActionCore{
-			Type:  ActionApplyBookmark,
+			Type:  actionType,
 			Label: fmt.Sprintf("button-action-%s", actionType),
 		},
 		Settings: settings,
 	}
 	if isAborted, err := CheckActionError(action.Execute(sessionState, connectionSettings)); isAborted {
-		return errors.Wrapf(err, "%s was aborted", ActionClearAll)
+		return errors.Wrapf(err, "%s was aborted", actionType)
 	} else if err != nil {
-		return errors.Wrapf(err, "%s failed", ActionClearAll)
+		return errors.Wrapf(err, "%s failed", actionType)
 	}
 	return nil
 }
