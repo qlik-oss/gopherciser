@@ -157,19 +157,6 @@ type (
 	fieldReq func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error)
 )
 
-func (getField fieldReq) WithInputValidation() fieldReq {
-	return func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error) {
-		if fieldName == "" {
-			return nil, errors.Errorf("field name is empty string")
-		}
-		field, err := getField(ctx, fieldName, stateName)
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not get field<%s>", fieldName)
-		}
-		return field, err
-	}
-}
-
 func (getField fieldReq) WithCache(fc *enigmahandlers.FieldCache) fieldReq {
 	return func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error) {
 		if field, hit := fc.Lookup(fieldName); hit {
@@ -181,19 +168,6 @@ func (getField fieldReq) WithCache(fc *enigmahandlers.FieldCache) fieldReq {
 		}
 		fc.Store(fieldName, field)
 		return field, nil
-	}
-}
-
-func (getVar varReq) WithInputValidation() varReq {
-	return func(ctx context.Context, variableName string) (*enigma.GenericVariable, error) {
-		if variableName == "" {
-			return nil, errors.Errorf("variable name is empty string")
-		}
-		variable, err := getVar(ctx, variableName)
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not get variable<%s>", variableName)
-		}
-		return variable, err
 	}
 }
 

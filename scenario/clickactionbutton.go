@@ -258,7 +258,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case clearSelectionsInOtherFields:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -268,7 +271,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case clearSelectionsInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -278,7 +284,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAllValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -288,11 +297,14 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesInField:
 		return sendReq(func(ctx context.Context) error {
+			if buttonAction.Field == "" {
+				return nil
+			}
 			values := toFieldValues(buttonAction.Value)
 			if len(values) == 0 {
 				return nil
 			}
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -306,7 +318,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectValuesMatchingSearchCriteria:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -316,7 +331,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectAlternatives:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -326,7 +344,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectExcluded:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -336,7 +357,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case selectPossibleValuesInField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -346,7 +370,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case toggleFieldSelection:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -361,7 +388,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case lockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -376,7 +406,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case unlockSpecificField:
 		return sendReq(func(ctx context.Context) error {
-			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache).WithInputValidation()(ctx, buttonAction.Field, "")
+			if buttonAction.Field == "" {
+				return nil
+			}
+			field, err := fieldReq(doc.GetField).WithCache(&uplink.FieldCache)(ctx, buttonAction.Field, "")
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -386,7 +419,10 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	case setVariableValue:
 		return sendReq(func(ctx context.Context) error {
-			variable, err := varReq(doc.GetVariableByName).WithCache(&uplink.VarCache).WithInputValidation()(ctx, buttonAction.Variable)
+			if buttonAction.Variable == "" {
+				return nil
+			}
+			variable, err := varReq(doc.GetVariableByName).WithCache(&uplink.VarCache)(ctx, buttonAction.Variable)
 			if err != nil {
 				return errors.WithStack(err)
 			}
