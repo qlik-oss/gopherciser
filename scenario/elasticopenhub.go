@@ -1,11 +1,8 @@
 package scenario
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	neturl "net/url"
 	"strings"
 	"sync"
 
@@ -15,7 +12,6 @@ import (
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/wsdialer"
 )
 
 type (
@@ -241,16 +237,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
 	})
 
-	nurl, err := neturl.Parse(host)
-	if err != nil {
-		actionState.AddErrors(err)
-		return
-	}
-	nurl.Scheme = "wss" // TODO check secure flag
-	nurl.Path = "api/v1/events"
-
-	var allowUntrusted = true // TODO get from config
-	setupEventSocketAsync(sessionState, actionState, nurl, sessionState.HeaderJar.GetHeader(nurl.Host), allowUntrusted)
+	sessionState.SetupEventWebsocketAsync(host, "api/v1/events", actionState)
 
 	if sessionState.Wait(actionState) {
 		return // we had an error
@@ -260,43 +247,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, err)
 	}
-}
-
-func setupEventSocketAsync(sessionState *session.State, actionState *action.State, url *neturl.URL, httpHeader http.Header, allowUntrusted bool) {
-	sessionState.Pending.IncPending()
-	defer sessionState.Pending.DecPending()
-
-	dialer, err := wsdialer.New(url, httpHeader, sessionState.Cookies, sessionState.Timeout, allowUntrusted)
-	if err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		return
-	}
-
-	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		return errors.WithStack(dialer.Dial(ctx))
-	}); err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		return
-	}
-
-	go func() {
-		for {
-			select {
-			case <-sessionState.BaseContext().Done():
-				return
-			default:
-				// TODO add traffic logger
-				_, message, err := dialer.ReadMessage()
-				if err != nil {
-					sessionState.CurrentActionState.AddErrors(errors.WithStack(err))
-					return
-				}
-				if len(message) == 0 {
-					continue
-				}
-			}
-		}
-	}()
 }
 
 // get locale is semi-async, the first request is synchronous and sub-sequent request/-s async.
