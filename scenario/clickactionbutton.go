@@ -94,6 +94,8 @@ const (
 	openWebsite
 )
 
+const bookmarkNotFoundError = "bookmark not found"
+
 // IsContainerAction implements ContainerAction interface
 // and sets container action logging to original action entry
 func (settings ClickActionButtonSettings) IsContainerAction() {}
@@ -199,6 +201,9 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 func executeContainerAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
 	actionType string, settings ActionSettings) error {
 
+	if err := settings.Validate(); err != nil {
+		return errors.Wrapf(err, "%s settings not valid", actionType)
+	}
 	action := Action{
 		ActionCore: ActionCore{
 			Type:  actionType,
@@ -237,11 +242,20 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	// container button-actions:
 
 	case applyBookmark:
-		return executeContainerAction(ActionApplyBookmark,
+		err := executeContainerAction(
+			ActionApplyBookmark,
 			&ApplyBookmarkSettings{
 				BookMarkSettings{
 					ID: buttonAction.Bookmark,
-				}})
+				},
+			},
+		)
+		switch errors.Cause(err).Error() {
+		case bookmarkNotFoundError:
+			return nil
+		default:
+			return err
+		}
 
 	case clearAllSelections:
 		return executeContainerAction(ActionClearAll, &ClearAllSettings{})
