@@ -3,6 +3,7 @@ package scenario
 import (
 	"bytes"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -52,6 +53,13 @@ func (settings UploadDataSettings) Execute(
 	}
 
 	restHandler := sessionState.Rest
+
+	if sessionState.DataConnectionId == "" {
+		FetchQid(sessionState, actionState, host, true)
+		if sessionState.Wait(actionState) {
+			return // we had an error
+		}
+	}
 
 	file, err := os.Open(settings.Filename)
 	if err != nil {
@@ -149,4 +157,51 @@ func (settings UploadDataSettings) Execute(
 	if sessionState.Wait(actionState) {
 		return // we had an error
 	}
+}
+
+func FetchQid(sessionState *session.State, actionState *action.State, host string, userSpecific bool) *session.RestRequest {
+	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
+	if userSpecific {
+		endpoint = fmt.Sprintf(
+			"%s/api/v1/dc-dataconnections?owner=%s&personal=true&alldatafiles=true&allspaces=true", host,
+			sessionState.CurrentUser.ID,
+		)
+	}
+	return sessionState.Rest.GetAsyncWithCallback(
+		endpoint, actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+			var datafilesResp elasticstructs.DataFilesResp
+			var qID string
+			var qName = "DataFiles"
+			if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
+				actionState.AddErrors(errors.Wrap(err, "failed unmarshaling dataconnections data"))
+				return
+			}
+			for _, datafilesresp := range datafilesResp.Data {
+				if datafilesresp.QName == qName && datafilesresp.Space == "" {
+					qID = datafilesresp.QID
+					break
+				}
+
+			}
+
+			if qID == "" {
+				if userSpecific {
+					actionState.AddErrors(
+						errors.Errorf(
+							"failed to find qID for <%s> in dataconnections for user <%s>", qName,
+							sessionState.CurrentUser.ID,
+						),
+					)
+				} else {
+					sessionState.LogEntry.Log(logger.WarningLevel, fmt.Sprintf("failed to find qID in dataconnections for <%s>", qName))
+				}
+			} else {
+				sessionState.DataConnectionId = qID
+				sessionState.Rest.GetAsync(
+					fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState,
+					sessionState.LogEntry, nil,
+				)
+			}
+		},
+	)
 }

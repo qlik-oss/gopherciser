@@ -47,6 +47,13 @@ func (settings DeleteDataSettings) Execute(
 
 	restHandler := sessionState.Rest
 
+	if sessionState.DataConnectionId == "" {
+		FetchQid(sessionState, actionState, host, true)
+		if sessionState.Wait(actionState) {
+			return // we had an error
+		}
+	}
+
 	// Look up the database ID for the file GUID
 	getItems := session.RestRequest{
 		Method:      session.GET,
