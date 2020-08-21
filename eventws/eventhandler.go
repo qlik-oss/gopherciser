@@ -24,7 +24,7 @@ type (
 	}
 )
 
-var funcId *atomichandlers.AtomicCounter = &atomichandlers.AtomicCounter{}
+var funcId = &atomichandlers.AtomicCounter{}
 
 const BufferSize = 20
 
@@ -39,7 +39,6 @@ func NewEventHandler() *EventHandler {
 func (handler *EventHandler) event(actionState *action.State, message []byte) {
 	var event Event
 	if err := jsonit.Unmarshal(message, &event); err != nil {
-		// Todo maybe just warning?
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}

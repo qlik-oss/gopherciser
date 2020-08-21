@@ -13,5 +13,8 @@ type (
 
 // Constants for known operations
 const (
-	OperationReloadEnded = "reload.ended"
+	OperationReloadStarted     = "reload.started"
+	OperationReloadEnded       = "reload.ended"
+	OperationDataUpdated       = "data.updated"
+	OperationAttributesUpdated = "attributes.updated"
 )
