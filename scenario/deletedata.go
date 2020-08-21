@@ -48,7 +48,7 @@ func (settings DeleteDataSettings) Execute(
 	restHandler := sessionState.Rest
 
 	if sessionState.DataConnectionId == "" {
-		FetchQid(sessionState, actionState, host, true)
+		FetchDataConnectionId(sessionState, actionState, host, true)
 		if sessionState.Wait(actionState) {
 			return // we had an error
 		}

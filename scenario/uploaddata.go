@@ -55,7 +55,7 @@ func (settings UploadDataSettings) Execute(
 	restHandler := sessionState.Rest
 
 	if sessionState.DataConnectionId == "" {
-		FetchQid(sessionState, actionState, host, true)
+		FetchDataConnectionId(sessionState, actionState, host, true)
 		if sessionState.Wait(actionState) {
 			return // we had an error
 		}
@@ -159,7 +159,7 @@ func (settings UploadDataSettings) Execute(
 	}
 }
 
-func FetchQid(sessionState *session.State, actionState *action.State, host string, userSpecific bool) *session.RestRequest {
+func FetchDataConnectionId(sessionState *session.State, actionState *action.State, host string, userSpecific bool) *session.RestRequest {
 	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
 	if userSpecific {
 		endpoint = fmt.Sprintf(
