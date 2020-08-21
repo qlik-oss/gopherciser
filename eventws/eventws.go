@@ -21,26 +21,35 @@ type (
 
 	TrafficLogger interface {
 		Received([]byte)
+		Opened()
+	}
+
+	TrafficMetricsLogger interface {
+		SocketOpenMetric(url *neturl.URL, duration time.Duration)
 	}
 )
 
 var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // SetupEventSocket to listen for events, event listening will stop at listenContext done.
-func SetupEventSocket(dialContext context.Context, listenContext context.Context, timeout time.Duration, cookieJar http.CookieJar, trafficLogger TrafficLogger,
+func SetupEventSocket(dialContext context.Context, listenContext context.Context, timeout time.Duration, cookieJar http.CookieJar, trafficLogger TrafficLogger, metricsLogger TrafficMetricsLogger,
 	url *neturl.URL, httpHeader http.Header, allowUntrusted bool, requestMetrics *requestmetrics.RequestMetrics, currentActionState func() *action.State) (*EventWebsocket, error) {
 	dialer, err := wsdialer.New(url, httpHeader, cookieJar, timeout, allowUntrusted)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	// TODO possible to log dial traffic?
-	// TODO log dial trafficmetric
+	dialStart := time.Now()
 	if err := dialer.Dial(dialContext); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	if trafficLogger != nil {
+		trafficLogger.Opened()
+	}
 
-	// todo re-connect on unexpected disconnect
+	if metricsLogger != nil {
+		metricsLogger.SocketOpenMetric(url, time.Since(dialStart))
+	}
 
 	eventWs := &EventWebsocket{
 		WsDialer:     dialer,

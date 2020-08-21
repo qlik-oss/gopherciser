@@ -221,7 +221,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 				qID = datafilesresp.QID
 				break
 			}
-
 		}
 
 		if qID == "" {
@@ -230,7 +229,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 			sessionState.DataConnectionId = qID
 			sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState, sessionState.LogEntry, nil)
 		}
-
 	})
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {

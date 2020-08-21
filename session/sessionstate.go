@@ -135,6 +135,10 @@ type (
 		Msg string
 		Err error
 	}
+
+	EventMetricsLogger struct {
+		LogEntry *logger.LogEntry
+	}
 )
 
 const (
@@ -842,6 +846,8 @@ func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
 
 // SetupEventWebsocketAsync setup event websocket and listener
 func (state *State) SetupEventWebsocketAsync(host, path string, actionState *action.State) {
+	// todo re-connect on unexpected disconnect
+
 	state.eventWsLock.Lock()
 	if state.eventWs != nil {
 		if err := state.eventWs.Close(); err != nil && state.LogEntry != nil {
@@ -865,10 +871,9 @@ func (state *State) SetupEventWebsocketAsync(host, path string, actionState *act
 		}
 		nurl.Path = path
 
-		// TODO trafficmetrics log websocket dial
-
 		currentActionState := func() *action.State { return state.CurrentActionState }
-		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, nurl,
+		metricslogger := &EventMetricsLogger{LogEntry: state.LogEntry}
+		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, metricslogger, nurl,
 			state.HeaderJar.GetHeader(nurl.Host), allowUntrusted, state.RequestMetrics, currentActionState)
 
 		return errors.WithStack(err)
@@ -881,4 +886,17 @@ func (state *State) EventWebsocket() *eventws.EventWebsocket {
 	defer state.eventWsLock.Unlock()
 
 	return state.eventWs
+}
+
+func (lgr *EventMetricsLogger) SocketOpenMetric(url *neturl.URL, duration time.Duration) {
+	if lgr == nil || lgr.LogEntry == nil {
+		return
+	}
+
+	path := ""
+	if url != nil {
+		path = url.Path
+	}
+
+	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS")
 }
