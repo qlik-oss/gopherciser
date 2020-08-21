@@ -38,8 +38,8 @@ type (
 )
 
 const (
-	postReloadEndopoint = "api/v1/reloads"
-	getReloadEndopoint  = "api/v1/reloads"
+	postReloadEndpoint = "api/v1/reloads"
+	getReloadEndpoint  = "api/v1/reloads"
 )
 
 const (
@@ -105,7 +105,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	postReload := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/%s", host, postReloadEndopoint),
+		Destination: fmt.Sprintf("%s/%s", host, postReloadEndpoint),
 		Content:     []byte(fmt.Sprintf("{\"AppID\":\"%s\"}", reloadGuid)),
 	}
 
@@ -160,7 +160,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	for status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
 		select {
 		case event, ok := <-reloadEndedChan:
-			if ok && postReloadResponse.AppID == event.ResourceID && postReloadResponse.UserID == event.Origin && event.ResourceType == "app" {
+			if ok && postReloadResponse.AppID == event.ResourceID && postReloadResponse.UserID == event.Origin {
 				// event doesn't contain reload ID, we have to check status to be sure it's the correct ID
 				updateStatus()
 				if status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
@@ -202,7 +202,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 
 func checkStatus(sessionState *session.State, actionState *action.State, host, id string) (*elasticstructs.ReloadResponse, error) {
 	reqOptions := session.DefaultReqOptions()
-	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndopoint, id), actionState, sessionState.LogEntry, &reqOptions)
+	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndpoint, id), actionState, sessionState.LogEntry, &reqOptions)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
