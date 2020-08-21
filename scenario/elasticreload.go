@@ -10,6 +10,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
@@ -117,7 +118,18 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		return
 	}
 
-	var postReloadResponse elasticstructs.PostReloadResponse
+	events := sessionState.EventWebsocket()
+	reloadEndedChan := make(chan *eventws.Event, 10)
+	var eventFunc *eventws.EventFunc
+	if events == nil {
+		// TODO warning, error?
+	} else {
+		eventFunc = events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
+			reloadEndedChan <- &event
+		}, false)
+	}
+
+	var postReloadResponse elasticstructs.ReloadResponse
 	if err := jsonit.Unmarshal(postReload.ResponseBody, &postReloadResponse); err != nil {
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload POST reponse: %s", postReload.ResponseBody)))
 		return
@@ -128,28 +140,12 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	log := ""
 	reloadTime := ""
 
-	for status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
-		helpers.WaitFor(sessionState.BaseContext(), time.Duration(settings.PollInterval))
-		if sessionState.IsAbortTriggered() {
+	updateStatus := func() {
+		reloadStatus, err := checkStatus(sessionState, actionState, host, postReloadResponse.ID)
+		if err != nil {
+			actionState.AddErrors(errors.WithStack(err))
 			return
 		}
-
-		statusRequest := session.RestRequest{
-			Method:      session.GET,
-			Destination: fmt.Sprintf("%s/%s/%s", host, getReloadEndopoint, postReloadResponse.ID),
-		}
-
-		sessionState.Rest.QueueRequest(actionState, true, &statusRequest, sessionState.LogEntry)
-		if sessionState.Wait(actionState) {
-			return // we had an error
-		}
-
-		var reloadStatus elasticstructs.PostReloadResponse
-		if err := jsonit.Unmarshal(statusRequest.ResponseBody, &reloadStatus); err != nil {
-			actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload status reponse: %s", statusRequest.ResponseBody)))
-			return
-		}
-
 		prevStatus = status
 		status = reloadStatus.Status
 		if status != prevStatus {
@@ -157,6 +153,35 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		}
 		log = reloadStatus.Log
 		reloadTime = reloadStatus.Duration
+	}
+
+	pollInterval := settings.PollInterval
+
+	for status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
+		select {
+		case event, ok := <-reloadEndedChan:
+			if ok && postReloadResponse.AppID == event.ResourceID && postReloadResponse.UserID == event.Origin && event.ResourceType == "app" {
+				// event doesn't contain reload ID, we have to check status to be sure it's the correct ID
+				updateStatus()
+				if status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
+					// status  updates very slowly. and was not updated for the specific ID was not updated yet, start faster polling.
+					// if event was on a different reload ID this will poll every second until the correct one is done which is not optimal
+					// but currently nothing we can do about it.
+					if pollInterval > helpers.TimeDuration(time.Second) {
+						pollInterval = helpers.TimeDuration(time.Second)
+					}
+				}
+			}
+		case <-time.After(time.Duration(pollInterval)):
+			updateStatus()
+		case <-sessionState.BaseContext().Done():
+			return
+		}
+	}
+
+	if events != nil && eventFunc != nil {
+		events.DeRegisterFunc(eventFunc)
+		close(reloadEndedChan)
 	}
 
 	if status != statusSuccess {
@@ -173,4 +198,19 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	} else {
 		sessionState.LogEntry.LogInfo("ReloadDuration", fmt.Sprintf("%dms", duration.Milliseconds()))
 	}
+}
+
+func checkStatus(sessionState *session.State, actionState *action.State, host, id string) (*elasticstructs.ReloadResponse, error) {
+	reqOptions := session.DefaultReqOptions()
+	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndopoint, id), actionState, sessionState.LogEntry, &reqOptions)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	var reloadStatus elasticstructs.ReloadResponse
+	if err := jsonit.Unmarshal(statusRequest.ResponseBody, &reloadStatus); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload status reponse: %s", statusRequest.ResponseBody))
+	}
+
+	return &reloadStatus, nil
 }

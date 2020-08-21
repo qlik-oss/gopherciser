@@ -843,6 +843,13 @@ func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
 // SetupEventWebsocketAsync setup event websocket and listener
 func (state *State) SetupEventWebsocketAsync(host, path string, actionState *action.State) {
 	state.eventWsLock.Lock()
+	if state.eventWs != nil {
+		if err := state.eventWs.Close(); err != nil && state.LogEntry != nil {
+			state.LogEntry.Log(logger.WarningLevel, err)
+		}
+		state.eventWs = nil
+	}
+
 	state.QueueRequest(func(ctx context.Context) error {
 		defer state.eventWsLock.Unlock()
 		nurl, err := neturl.Parse(host)

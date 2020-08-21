@@ -1,6 +1,6 @@
 package elasticstructs
 
-type PostReloadResponse struct {
+type ReloadResponse struct {
 	ID           string `json:"id"`
 	AppID        string `json:"appId"`
 	TenantID     string `json:"tenantId"`

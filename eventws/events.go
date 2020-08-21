@@ -11,4 +11,7 @@ type (
 	}
 )
 
-// TODO add constants for known operations
+// Constants for known operations
+const (
+	OperationReloadEnded = "reload.ended"
+)
