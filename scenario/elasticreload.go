@@ -122,12 +122,13 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	reloadEndedChan := make(chan *eventws.Event, 10)
 	var eventFunc *eventws.EventFunc
 	if events == nil {
-		// TODO warning, error?
-	} else {
-		eventFunc = events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
-			reloadEndedChan <- &event
-		}, false)
+		actionState.AddErrors(errors.New("Could not get events websocket"))
+		return
 	}
+
+	eventFunc = events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
+		reloadEndedChan <- &event
+	}, false)
 
 	var postReloadResponse elasticstructs.ReloadResponse
 	if err := jsonit.Unmarshal(postReload.ResponseBody, &postReloadResponse); err != nil {
@@ -179,7 +180,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		}
 	}
 
-	if events != nil && eventFunc != nil {
+	if eventFunc != nil {
 		events.DeRegisterFunc(eventFunc)
 		close(reloadEndedChan)
 	}
