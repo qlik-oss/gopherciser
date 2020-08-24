@@ -845,9 +845,16 @@ func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
 }
 
 // SetupEventWebsocketAsync setup event websocket and listener
-func (state *State) SetupEventWebsocketAsync(host, path string, actionState *action.State) {
+func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl neturl.URL, allowuntrusted bool) {
 	// todo re-connect on unexpected disconnect
 
+	// change scheme if set to http or https
+	switch nurl.Scheme {
+	case "http:":
+		nurl.Scheme = "ws"
+	case "https":
+		nurl.Scheme = "wss"
+	}
 	state.eventWsLock.Lock()
 	if state.eventWs != nil {
 		if err := state.eventWs.Close(); err != nil && state.LogEntry != nil {
@@ -858,23 +865,11 @@ func (state *State) SetupEventWebsocketAsync(host, path string, actionState *act
 
 	state.QueueRequest(func(ctx context.Context) error {
 		defer state.eventWsLock.Unlock()
-		nurl, err := neturl.Parse(host)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		allowUntrusted := true // TODO check secure flag
-		if allowUntrusted {
-			nurl.Scheme = "wss"
-		} else {
-			nurl.Scheme = "ws"
-		}
-		nurl.Path = path
-
 		currentActionState := func() *action.State { return state.CurrentActionState }
 		metricslogger := &EventMetricsLogger{LogEntry: state.LogEntry}
-		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, metricslogger, nurl,
-			state.HeaderJar.GetHeader(nurl.Host), allowUntrusted, state.RequestMetrics, currentActionState)
+		var err error
+		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, metricslogger, &nurl,
+			state.HeaderJar.GetHeader(nurl.Host), allowuntrusted, state.RequestMetrics, currentActionState)
 
 		return errors.WithStack(err)
 	}, actionState, true, "")
