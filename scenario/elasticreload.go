@@ -43,11 +43,10 @@ const (
 )
 
 const (
-	statusCreated     = "CREATED"
-	statusQueued      = "QUEUED"
-	statusReloading   = "RELOADING"
-	statusSuccess     = "SUCCEEDED"
-	statusInterrupted = "INTERRUPTED"
+	statusCreated   = "CREATED"
+	statusQueued    = "QUEUED"
+	statusReloading = "RELOADING"
+	statusSuccess   = "SUCCEEDED"
 )
 
 // UnmarshalJSON unmarshals reload settings from JSON
@@ -141,6 +140,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	log := ""
 	reloadTime := ""
 
+	// functions for checking and updating status
 	updateStatus := func() {
 		reloadStatus, err := checkStatus(sessionState, actionState, host, postReloadResponse.ID)
 		if err != nil {
@@ -155,16 +155,16 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		log = reloadStatus.Log
 		reloadTime = reloadStatus.Duration
 	}
+	statusCheck := func() bool { return status == statusCreated || status == statusQueued || status == statusReloading }
 
 	pollInterval := settings.PollInterval
-
-	for status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
+	for statusCheck() {
 		select {
 		case event, ok := <-reloadEndedChan:
 			if ok && postReloadResponse.AppID == event.ResourceID && postReloadResponse.UserID == event.Origin {
 				// event doesn't contain reload ID, we have to check status to be sure it's the correct ID
 				updateStatus()
-				if status == statusCreated || status == statusQueued || status == statusReloading || status == statusInterrupted {
+				if statusCheck() {
 					// status  updates very slowly. and was not updated for the specific ID was not updated yet, start faster polling.
 					// if event was on a different reload ID this will poll every second until the correct one is done which is not optimal
 					// but currently nothing we can do about it.
