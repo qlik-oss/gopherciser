@@ -161,14 +161,18 @@ func (settings UploadDataSettings) Execute(
 
 func FetchDataConnectionId(sessionState *session.State, actionState *action.State, host string, userSpecific bool) *session.RestRequest {
 	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
+	var opts *session.ReqOptions
 	if userSpecific {
 		endpoint = fmt.Sprintf(
 			"%s/api/v1/dc-dataconnections?owner=%s&personal=true&alldatafiles=true&allspaces=true", host,
 			sessionState.CurrentUser.ID,
 		)
+	} else {
+		opts = &session.ReqOptions{FailOnError: false}
 	}
+
 	return sessionState.Rest.GetAsyncWithCallback(
-		endpoint, actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		endpoint, actionState, sessionState.LogEntry, opts, func(err error, req *session.RestRequest) {
 			var datafilesResp elasticstructs.DataFilesResp
 			var qID string
 			var qName = "DataFiles"
