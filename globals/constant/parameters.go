@@ -12,7 +12,7 @@ const (
 	// MaxBodySize Maximum byte size for logging request/response body into traffic logs.
 	MaxBodySize = 64000
 	// ReloadPollInterval Default interval between polls for reload status
-	ReloadPollInterval = helpers.TimeDuration(5 * time.Minute)
+	ReloadPollInterval = helpers.TimeDuration(1 * time.Second)
 
 	// ResourceTypeQVapp Resource type for QlikView application, used for app upload and deletion
 	ResourceTypeQVapp = "qvapp"
