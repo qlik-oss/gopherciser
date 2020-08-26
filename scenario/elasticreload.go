@@ -4,25 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/eventws"
-	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
 	// ElasticReloadCore Currently used ElasticReloadCore (as opposed to deprecated settings)
-	ElasticReloadCore struct {
-		// PollInterval time in-between polling for reload status
-		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
-		SaveLog      bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
-	}
+	ElasticReloadCore struct{}
 
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
@@ -34,6 +28,9 @@ type (
 	deprecatedElasticReloadSettings struct {
 		AppGUID string `json:"appguid"`
 		AppName string `json:"appname"`
+
+		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
+		SaveLog      bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
 	}
 )
 
@@ -60,8 +57,14 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 		if deprecated.AppName != "" {
 			hasSettings = append(hasSettings, "appname")
 		}
+		if deprecated.PollInterval > 0 {
+			hasSettings = append(hasSettings, "pollinterval")
+		}
+		if deprecated.SaveLog {
+			hasSettings = append(hasSettings, "log")
+		}
 		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used", ActionElasticReload, strings.Join(hasSettings, ","))
+			return errors.Errorf("%s settings<%s> are no longer used, remove this setting/-s from script", ActionElasticReload, strings.Join(hasSettings, ","))
 		}
 	}
 	var core ElasticReloadCore
@@ -83,10 +86,6 @@ func (settings ElasticReloadSettings) Validate() error {
 
 // Execute EfeReload action (Implements ActionSettings interface)
 func (settings ElasticReloadSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-	if time.Duration(settings.PollInterval) < time.Nanosecond {
-		settings.PollInterval = constant.ReloadPollInterval
-	}
-
 	host, err := connection.GetRestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
@@ -125,7 +124,19 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		return
 	}
 
+	reloadID := ""
+	if sessionState.LogEntry.ShouldLogDebug() {
+		eventFunc = events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
+			if reloadID == event.ReloadId {
+				sessionState.LogEntry.LogDebugf("reload started %s", event.Time)
+			}
+		}, false)
+	}
+
 	eventFunc = events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
+		if reloadID == event.ReloadId {
+			sessionState.LogEntry.LogDebugf("reload ended %s", event.Time)
+		}
 		reloadEndedChan <- &event
 	}, false)
 
@@ -134,49 +145,24 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload POST reponse: %s", postReload.ResponseBody)))
 		return
 	}
+	reloadID = postReloadResponse.ID // potential very low risk for race against debug logging, but not important, actual reload event check is safe
 
-	status := postReloadResponse.Status
-	var prevStatus string
-	log := ""
-	reloadTime := ""
+	var reloadEndedEvent *eventws.Event
 
-	// functions for checking and updating status
-	updateStatus := func() {
-		reloadStatus, err := checkStatus(sessionState, actionState, host, postReloadResponse.ID)
-		if err != nil {
-			actionState.AddErrors(errors.WithStack(err))
-			return
-		}
-		prevStatus = status
-		status = reloadStatus.Status
-		if status != prevStatus {
-			sessionState.LogEntry.LogDebugf("StatusChange: <%s> -> <%s>", prevStatus, status)
-		}
-		log = reloadStatus.Log
-		reloadTime = reloadStatus.Duration
-	}
-	statusCheck := func() bool { return status == statusCreated || status == statusQueued || status == statusReloading }
-
-	pollInterval := settings.PollInterval
-	for statusCheck() {
+forLoop:
+	for {
 		select {
-		case event, ok := <-reloadEndedChan:
-			if ok && postReloadResponse.AppID == event.ResourceID && postReloadResponse.UserID == event.Origin {
-				// event doesn't contain reload ID, we have to check status to be sure it's the correct ID
-				updateStatus()
-				if statusCheck() {
-					// status  updates very slowly. and was not updated for the specific ID was not updated yet, start faster polling.
-					// if event was on a different reload ID this will poll every second until the correct one is done which is not optimal
-					// but currently nothing we can do about it.
-					if pollInterval > helpers.TimeDuration(time.Second) {
-						pollInterval = helpers.TimeDuration(time.Second)
-					}
-				}
-			}
-		case <-time.After(time.Duration(pollInterval)):
-			updateStatus()
 		case <-sessionState.BaseContext().Done():
 			return
+		case event, ok := <-reloadEndedChan:
+			if !ok {
+				actionState.AddErrors(errors.New("reload channel closed unexpectedly"))
+				return
+			}
+			if reloadID == event.ReloadId {
+				reloadEndedEvent = event
+				break forLoop
+			}
 		}
 	}
 
@@ -185,20 +171,16 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		close(reloadEndedChan)
 	}
 
-	if status != statusSuccess {
-		actionState.AddErrors(errors.Errorf("reload finished with unexpected status <%s>", status))
-		return
+	if !reloadEndedEvent.Success {
+		actionState.AddErrors(errors.New("reload finished with success false"))
 	}
 
-	if settings.ElasticReloadCore.SaveLog {
-		sessionState.LogEntry.LogInfo("ReloadLog", log)
-	}
-
-	if duration, err := time.ParseDuration(reloadTime); err != nil || reloadTime == "" {
-		sessionState.LogEntry.LogInfo("ReloadDuration", reloadTime)
-	} else {
-		sessionState.LogEntry.LogInfo("ReloadDuration", fmt.Sprintf("%dms", duration.Milliseconds()))
-	}
+	// TODO log reload duration
+	//if duration, err := time.ParseDuration(reloadTime); err != nil || reloadTime == "" {
+	//	sessionState.LogEntry.LogInfo("ReloadDuration", reloadTime)
+	//} else {
+	//	sessionState.LogEntry.LogInfo("ReloadDuration", fmt.Sprintf("%dms", duration.Milliseconds()))
+	//}
 }
 
 func checkStatus(sessionState *session.State, actionState *action.State, host, id string) (*elasticstructs.ReloadResponse, error) {
