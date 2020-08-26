@@ -58,7 +58,7 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 			hasSettings = append(hasSettings, "log")
 		}
 		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used, remove this setting/-s from script", ActionElasticReload, strings.Join(hasSettings, ","))
+			return errors.Errorf("%s settings<%s> are no longer used, remove listed setting(s) from script", ActionElasticReload, strings.Join(hasSettings, ","))
 		}
 	}
 	var core ElasticReloadCore
