@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -11,6 +12,7 @@ import (
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -36,14 +38,6 @@ type (
 
 const (
 	postReloadEndpoint = "api/v1/reloads"
-	getReloadEndpoint  = "api/v1/reloads"
-)
-
-const (
-	statusCreated   = "CREATED"
-	statusQueued    = "QUEUED"
-	statusReloading = "RELOADING"
-	statusSuccess   = "SUCCEEDED"
 )
 
 // UnmarshalJSON unmarshals reload settings from JSON
@@ -117,83 +111,76 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	}
 
 	events := sessionState.EventWebsocket()
-	reloadEndedChan := make(chan *eventws.Event, 10)
-	var eventFunc *eventws.EventFunc
 	if events == nil {
 		actionState.AddErrors(errors.New("Could not get events websocket"))
 		return
 	}
 
-	reloadID := ""
-	if sessionState.LogEntry.ShouldLogDebug() {
-		eventFunc = events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
-			if reloadID == event.ReloadId {
-				sessionState.LogEntry.LogDebugf("reload started %s", event.Time)
-			}
-		}, false)
-	}
+	reloadEventChan := make(chan *eventws.Event, 10)
+	defer close(reloadEventChan)
 
-	eventFunc = events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
-		if reloadID == event.ReloadId {
-			sessionState.LogEntry.LogDebugf("reload ended %s", event.Time)
-		}
-		reloadEndedChan <- &event
-	}, false)
+	eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
+		reloadEventChan <- &event
+	}, true)
+	defer events.DeRegisterFunc(eventStartedFunc)
+
+	eventEndedFunc := events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
+		reloadEventChan <- &event
+	}, true)
+	defer events.DeRegisterFunc(eventEndedFunc)
 
 	var postReloadResponse elasticstructs.ReloadResponse
 	if err := jsonit.Unmarshal(postReload.ResponseBody, &postReloadResponse); err != nil {
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload POST reponse: %s", postReload.ResponseBody)))
 		return
 	}
-	reloadID = postReloadResponse.ID // potential very low risk for race against debug logging, but not important, actual reload event check is safe
 
-	var reloadEndedEvent *eventws.Event
-
+	reloadID := postReloadResponse.ID
+	reloadStarted := ""
 forLoop:
 	for {
 		select {
 		case <-sessionState.BaseContext().Done():
 			return
-		case event, ok := <-reloadEndedChan:
+		case event, ok := <-reloadEventChan:
 			if !ok {
 				actionState.AddErrors(errors.New("reload channel closed unexpectedly"))
 				return
 			}
+
 			if reloadID == event.ReloadId {
-				reloadEndedEvent = event
-				break forLoop
+				switch event.Operation {
+				case eventws.OperationReloadStarted:
+					sessionState.LogEntry.LogDebugf("reload started time<%s>", event.Time)
+					reloadStarted = event.Time
+				case eventws.OperationReloadEnded:
+					sessionState.LogEntry.LogDebugf("reload ended time<%s> success<%v>", event.Time, event.Success)
+					if !event.Success {
+						actionState.AddErrors(errors.New("reload finished with success false"))
+					}
+					logReloadDuration(reloadStarted, event.Time, sessionState.LogEntry)
+					break forLoop
+				}
 			}
 		}
 	}
 
-	if eventFunc != nil {
-		events.DeRegisterFunc(eventFunc)
-		close(reloadEndedChan)
-	}
-
-	if !reloadEndedEvent.Success {
-		actionState.AddErrors(errors.New("reload finished with success false"))
-	}
-
-	// TODO log reload duration
-	//if duration, err := time.ParseDuration(reloadTime); err != nil || reloadTime == "" {
-	//	sessionState.LogEntry.LogInfo("ReloadDuration", reloadTime)
-	//} else {
-	//	sessionState.LogEntry.LogInfo("ReloadDuration", fmt.Sprintf("%dms", duration.Milliseconds()))
-	//}
+	sessionState.Wait(actionState)
 }
 
-func checkStatus(sessionState *session.State, actionState *action.State, host, id string) (*elasticstructs.ReloadResponse, error) {
-	reqOptions := session.DefaultReqOptions()
-	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndpoint, id), actionState, sessionState.LogEntry, &reqOptions)
+func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
+	startedTS, err := time.Parse(time.RFC3339, started)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		logEntry.Logf(logger.WarningLevel, "failed to parse reload started timestamp: %s", started)
+		return
 	}
 
-	var reloadStatus elasticstructs.ReloadResponse
-	if err := jsonit.Unmarshal(statusRequest.ResponseBody, &reloadStatus); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload status reponse: %s", statusRequest.ResponseBody))
+	endedTS, err := time.Parse(time.RFC3339, ended)
+	if err != nil {
+		logEntry.Logf(logger.WarningLevel, "failed to parse reload ended timestamp: %s", ended)
+		return
 	}
 
-	return &reloadStatus, nil
+	duration := endedTS.Sub(startedTS)
+	logEntry.LogInfo("ReloadDuration", fmt.Sprintf("%.fs", duration.Seconds())) // format to no decimals since timestamp is with entire seconds only
 }

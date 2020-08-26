@@ -8,7 +8,7 @@ type (
 		ResourceType string `json:"resourceType,omitempty"`
 		Success      bool   `json:"success,omitempty"`
 		Time         string `json:"time,omitempty"`
-		SpaceId      string `json:"spaceId,omitempty""`
+		SpaceId      string `json:"spaceId,omitempty"`
 		ReloadId     string `json:"reloadId,omitempty"`
 	}
 )
