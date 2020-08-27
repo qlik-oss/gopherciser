@@ -271,26 +271,36 @@ func (handler *RestHandler) GetSyncWithCallback(url string, actionState *action.
 			callback(err, req)
 		}
 	}
-	handler.GetAsyncWithCallback(url, actionState, logEntry, options, syncCallback)
+	handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, syncCallback)
 	wg.Wait()
 	return request, reqErr
 }
 
 // GetAsync send async GET request with options, using options=nil default options are used
 func (handler *RestHandler) GetAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
-	return handler.GetAsyncWithCallback(url, actionState, logEntry, options, nil)
+	return handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
 }
 
-// GetAsync send async GET request with options and callback, with options=nil default options are used
+// GetWithHeadersAsync send async GET request with headers and options, using options=nil default options are used
+func (handler *RestHandler) GetWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.getAsyncWithCallback(url, actionState, logEntry, headers, options, callback)
+}
+
+// GetAsyncWithCallback send async GET request with options and callback, with options=nil default options are used
 func (handler *RestHandler) GetAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, callback)
+}
+
+func (handler *RestHandler) getAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	if options == nil {
 		options = &defaultReqOptions
 	}
 
 	getRequest := RestRequest{
-		Method:      GET,
-		Destination: url,
-		ContentType: options.ContentType,
+		Method:       GET,
+		Destination:  url,
+		ContentType:  options.ContentType,
+		ExtraHeaders: headers,
 	}
 
 	handler.QueueRequestWithCallback(actionState, options.FailOnError, &getRequest, logEntry, createStatusCallback(actionState, logEntry, &getRequest, options, callback))
@@ -300,11 +310,16 @@ func (handler *RestHandler) GetAsyncWithCallback(url string, actionState *action
 
 // PostAsync send async POST request with options, using options=nil default options are used
 func (handler *RestHandler) PostAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
-	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, options, nil)
+	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+}
+
+// PostWithHeaderAsync send async POST request with options and headers, using options=nil default options are used
+func (handler *RestHandler) PostWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions) *RestRequest {
+	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, headers, options, nil)
 }
 
 // PostAsync send async POST request with options and callback, using options=nil default options are used
-func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	if options == nil {
 		options = &defaultReqOptions
 	}
@@ -315,6 +330,7 @@ func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *actio
 		Content:        content,
 		Destination:    url,
 		NoVirtualProxy: options.NoVirtualProxy,
+		ExtraHeaders:   headers,
 	}
 
 	handler.QueueRequestWithCallback(actionState, options.FailOnError, &postRequest, logEntry, createStatusCallback(actionState, logEntry, &postRequest, options, callback))
