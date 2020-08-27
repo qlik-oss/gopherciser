@@ -209,28 +209,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles/quota", host), actionState, sessionState.LogEntry, nil)
 
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-		var datafilesResp elasticstructs.DataFilesResp
-		var qID string
-		var qName = "DataFiles"
-		if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed unmarshaling dataconnections data"))
-			return
-		}
-		for _, datafilesresp := range datafilesResp.Data {
-			if datafilesresp.QName == qName && datafilesresp.Space == "" {
-				qID = datafilesresp.QID
-				break
-			}
-		}
-
-		if qID == "" {
-			actionState.AddErrors(errors.Errorf("failed to find qID in dataconnections for <%s>", qName))
-		} else {
-			sessionState.DataConnectionId = qID
-			sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState, sessionState.LogEntry, nil)
-		}
-	})
+	FetchDataConnectionId(sessionState, actionState, host, false)
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
