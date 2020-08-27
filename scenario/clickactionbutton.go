@@ -196,12 +196,13 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	}
 }
 
-func executeContainerAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
+func executeSubAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
 	actionType string, settings ActionSettings) error {
 
 	if err := settings.Validate(); err != nil {
 		return errors.Wrapf(err, "%s settings not valid", actionType)
 	}
+
 	action := Action{
 		ActionCore: ActionCore{
 			Type:  actionType,
@@ -209,10 +210,21 @@ func executeContainerAction(sessionState *session.State, connectionSettings *con
 		},
 		Settings: settings,
 	}
-	if isAborted, err := CheckActionError(action.Execute(sessionState, connectionSettings)); isAborted {
-		return errors.Wrapf(err, "%s was aborted", actionType)
-	} else if err != nil {
-		return errors.Wrapf(err, "%s failed", actionType)
+	return action.Execute(sessionState, connectionSettings)
+}
+
+type sendRequestSettings func(context.Context) error
+
+func (req sendRequestSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+	if err := sessionState.SendRequest(actionState, req); err != nil {
+		actionState.AddErrors(err)
+	}
+	sessionState.Wait(actionState)
+}
+
+func (req sendRequestSettings) Validate() error {
+	if req == nil {
+		return errors.New("request function is nil")
 	}
 	return nil
 }
@@ -223,12 +235,9 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 
 	uplink := sessionState.Connection.Sense()
 	doc := uplink.CurrentApp.Doc
-	sendReq := func(f func(context.Context) error) error {
-		return sessionState.SendRequest(actionState, f)
-	}
-	executeContainerAction := func(actionType string, settings ActionSettings) error {
-		return executeContainerAction(sessionState, connectionSettings, actionType, settings)
-	}
+
+	var subActionType string
+	var subActionSettings ActionSettings
 
 	switch buttonAction.ActionType {
 	case emptyAction:
@@ -237,33 +246,26 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	case unknownAction:
 		return errors.New("unknown button action")
 
-	// container button-actions:
-
 	case applyBookmark:
-		return executeContainerAction(
-			ActionApplyBookmark,
-			&ApplyBookmarkSettings{
-				BookMarkSettings{
-					ID: buttonAction.Bookmark,
-				},
+		subActionType = ActionApplyBookmark
+		subActionSettings = &ApplyBookmarkSettings{
+			BookMarkSettings{
+				ID: buttonAction.Bookmark,
 			},
-		)
+		}
 
 	case clearAllSelections:
-		return executeContainerAction(ActionClearAll, &ClearAllSettings{})
-
-	// TODO(atluq) the following buttonactions shall become container actions
-	// when implemetations of individual the actions exist.
-	// NOT container button-actions:
+		subActionType = ActionClearAll
+		subActionSettings = &ClearAllSettings{}
 
 	case moveBackwardsInSelections:
-		return sendReq(doc.Back)
+		subActionSettings = sendRequestSettings(doc.Back)
 
 	case moveForwardsInSelections:
-		return sendReq(doc.Forward)
+		subActionSettings = sendRequestSettings(doc.Forward)
 
 	case clearSelectionsInOtherFields:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -276,7 +278,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case clearSelectionsInField:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -289,7 +291,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case selectAllValuesInField:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -302,7 +304,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case selectValuesInField:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -323,7 +325,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case selectValuesMatchingSearchCriteria:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -336,7 +338,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case selectAlternatives:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -349,7 +351,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case selectExcluded:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -362,7 +364,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case selectPossibleValuesInField:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -375,7 +377,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case toggleFieldSelection:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -388,12 +390,12 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case lockAllSelections:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			return doc.LockAll(ctx, "" /*stateName*/)
 		})
 
 	case lockSpecificField:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -406,12 +408,12 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case unlockAllSelections:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			return doc.UnlockAll(ctx, "" /*stateName*/)
 		})
 
 	case unlockSpecificField:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Field == "" {
 				return nil
 			}
@@ -424,7 +426,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		})
 
 	case setVariableValue:
-		return sendReq(func(ctx context.Context) error {
+		subActionSettings = sendRequestSettings(func(ctx context.Context) error {
 			if buttonAction.Variable == "" {
 				return nil
 			}
@@ -438,6 +440,12 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 	default:
 		return errors.New("unexpected buttonaction")
 	}
+
+	if subActionType == "" {
+		subActionType = buttonAction.ActionType.String()
+	}
+
+	return executeSubAction(sessionState, connectionSettings, subActionType, subActionSettings)
 }
 
 // execute the navigation-action contained in a Sense action-button
@@ -503,22 +511,7 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		return nil
 	}
 
-	// Execute changeSheet Action
-	changeSheetAction := Action{
-		ActionCore{
-			Type:  ActionChangeSheet,
-			Label: fmt.Sprintf("button-navigation-%s", navAction.Action),
-		},
-		&ChangeSheetSettings{
-			ID: newCurrentSheetID,
-		},
-	}
-	if isAborted, err := CheckActionError(changeSheetAction.Execute(sessionState, connectionSettings)); isAborted {
-		return errors.Wrap(err, "change sheet was aborted")
-	} else if err != nil {
-		return errors.Wrap(err, "change sheet failed")
-	}
-	return nil
+	return executeSubAction(sessionState, connectionSettings, ActionChangeSheet, &ChangeSheetSettings{ID: newCurrentSheetID})
 }
 
 func sheetIDs(sessionState *session.State, actionState *action.State) ([]string, error) {
