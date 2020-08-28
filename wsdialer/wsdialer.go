@@ -3,6 +3,7 @@ package wsdialer
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -19,12 +20,15 @@ type (
 	WsDialer struct {
 		gobwas.Dialer
 		net.Conn
+		Type string
 
 		url *neturl.URL
 	}
 
 	// DisconnectError is sent on websocket disconnect
-	DisconnectError struct{}
+	DisconnectError struct {
+		Type string
+	}
 )
 
 const (
@@ -33,10 +37,11 @@ const (
 
 // Error implements error interface
 func (err DisconnectError) Error() string {
-	return "Websocket disconnected"
+	return fmt.Sprintf("Websocket<%s> disconnected", err.Type)
 }
 
-func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, timeout time.Duration, allowUntrusted bool) (*WsDialer, error) {
+// New Create new websocket dialer, use type to define a specific type which would be reported when getting a DisconnectError
+func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, timeout time.Duration, allowUntrusted bool, wstype string) (*WsDialer, error) {
 	if timeout.Nanoseconds() < 1 {
 		timeout = DefaultTimeout
 	}
@@ -117,7 +122,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	}
 
 	if err == io.EOF {
-		err = DisconnectError{}
+		err = DisconnectError{Type: dialer.Type}
 	}
 
 	return len(data), data, err

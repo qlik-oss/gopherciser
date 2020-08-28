@@ -31,10 +31,12 @@ type (
 
 var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
+const WsType = "EventWebscoket"
+
 // SetupEventSocket to listen for events, event listening will stop at listenContext done.
 func SetupEventSocket(dialContext context.Context, listenContext context.Context, timeout time.Duration, cookieJar http.CookieJar, trafficLogger TrafficLogger, metricsLogger TrafficMetricsLogger,
 	url *neturl.URL, httpHeader http.Header, allowUntrusted bool, requestMetrics *requestmetrics.RequestMetrics, currentActionState func() *action.State) (*EventWebsocket, error) {
-	dialer, err := wsdialer.New(url, httpHeader, cookieJar, timeout, allowUntrusted)
+	dialer, err := wsdialer.New(url, httpHeader, cookieJar, timeout, allowUntrusted, WsType)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

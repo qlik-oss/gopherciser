@@ -18,6 +18,10 @@ type (
 	}
 )
 
+const (
+	SenseWsType = "SenseWebsocket"
+)
+
 func setupDialer(dialer *enigma.Dialer, timeout time.Duration) {
 	dialer.CreateSocket = func(ctx context.Context, url string, httpHeader http.Header) (enigma.Socket, error) {
 		nUrl, err := neturl.Parse(url)
@@ -25,7 +29,7 @@ func setupDialer(dialer *enigma.Dialer, timeout time.Duration) {
 			return nil, errors.WithStack(err)
 		}
 		senseDialer := SenseDialer{}
-		senseDialer.WsDialer, err = wsdialer.New(nUrl, httpHeader, dialer.Jar, timeout, dialer.TLSClientConfig.InsecureSkipVerify)
+		senseDialer.WsDialer, err = wsdialer.New(nUrl, httpHeader, dialer.Jar, timeout, dialer.TLSClientConfig.InsecureSkipVerify, SenseWsType)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

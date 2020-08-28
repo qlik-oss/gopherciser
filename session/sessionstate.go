@@ -803,14 +803,13 @@ func (state *State) GetReconnectError() error {
 	return state.reconnect.err
 }
 
-// IsWebsocketDisconnected checks if error is caused by websocket disconnect
-func (state *State) IsWebsocketDisconnected(err error) bool {
-	switch helpers.TrueCause(err).(type) {
-	case wsdialer.DisconnectError:
+// IsSenseWebsocketDisconnected checks if error is caused by websocket disconnect
+func (state *State) IsSenseWebsocketDisconnected(err error) bool {
+	disconnectErr, ok := helpers.TrueCause(err).(wsdialer.DisconnectError)
+	if ok && disconnectErr.Type == enigmahandlers.SenseWsType {
 		return true
-	default:
-		return false
 	}
+	return false
 }
 
 //CurrentSenseApp returns currently set sense app or error if none found
