@@ -343,7 +343,7 @@ func createStatusCallback(actionState *action.State, logEntry *logger.LogEntry, 
 		// check response status code
 		if err == nil && len(options.ExpectedStatusCode) > 0 {
 			if err = CheckResponseStatus(request, options.ExpectedStatusCode); err != nil {
-				WarnOrError(actionState, logEntry, options.FailOnError, errors.Wrapf(err, "Unexpected status code: %d (GET %s)", req.ResponseStatusCode, request.Destination))
+				WarnOrError(actionState, logEntry, options.FailOnError, errors.Wrapf(err, "Unexpected status code: %s (%s %s)", req.ResponseStatus, req.Method, request.Destination))
 			}
 		}
 		if callback != nil {
