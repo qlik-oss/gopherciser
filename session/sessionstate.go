@@ -678,7 +678,7 @@ func (state *State) Reconnect() error {
 	}
 
 	if state.CurrentActionState != nil {
-		state.CurrentActionState.AddErrors(wsdialer.DisconnectError{})
+		state.CurrentActionState.AddErrors(wsdialer.DisconnectError{Type: enigmahandlers.SenseWsType})
 	}
 
 	reconnectStart := time.Now()

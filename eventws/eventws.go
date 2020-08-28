@@ -31,7 +31,7 @@ type (
 
 var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
-const WsType = "EventWebscoket"
+const WsType = "EventWebsocket"
 
 // SetupEventSocket to listen for events, event listening will stop at listenContext done.
 func SetupEventSocket(dialContext context.Context, listenContext context.Context, timeout time.Duration, cookieJar http.CookieJar, trafficLogger TrafficLogger, metricsLogger TrafficMetricsLogger,

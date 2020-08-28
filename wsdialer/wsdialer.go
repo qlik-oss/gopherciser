@@ -93,7 +93,8 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 				InsecureSkipVerify: allowUntrusted,
 			},
 		},
-		url: url,
+		url:  url,
+		Type: wstype,
 	}
 
 	return &dialer, nil
@@ -123,6 +124,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 
 	if err == io.EOF {
 		err = DisconnectError{Type: dialer.Type}
+		fmt.Println("DisconnectError, type:", dialer.Type, "err:", err)
 	}
 
 	return len(data), data, err
