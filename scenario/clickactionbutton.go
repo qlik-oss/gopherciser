@@ -133,21 +133,34 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		return
 	}
 
+	label = firstNonEmpty(label, "buttonaction")
+
 	// run button-actions
 	for _, buttonAction := range buttonActions {
-		err := buttonAction.execute(sessionState, actionState, connectionSettings, label)
+		buttonActionLabel := fmt.Sprintf("%s: %s", label, firstNonEmpty(buttonAction.ActionLabel, buttonAction.ActionType.String()))
+		err := buttonAction.execute(sessionState, actionState, connectionSettings, buttonActionLabel)
 		if err != nil {
 			actionState.AddErrors(errors.Wrapf(err, "buttonaction type<%s> label<%s> cid<%s> failed",
 				buttonAction.ActionType, buttonAction.ActionLabel, buttonAction.CID))
 		}
 	}
 
-	err = navigationAction.execute(sessionState, actionState, connectionSettings, label)
+	navigationActionLabel := fmt.Sprintf("%s: %s", label, navigationAction.Action)
+	err = navigationAction.execute(sessionState, actionState, connectionSettings, navigationActionLabel)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "button-navigationaction<%s> failed", navigationAction.Action))
 	}
 
 	sessionState.Wait(actionState)
+}
+
+func firstNonEmpty(strs ...string) string {
+	for _, str := range strs {
+		if str != "" {
+			return str
+		}
+	}
+	return ""
 }
 
 // buttonAction returns button actions and navigation action for obj
@@ -197,7 +210,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 }
 
 func executeSubAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
-	actionType string, settings ActionSettings) error {
+	actionType string, label string, settings ActionSettings) error {
 
 	if err := settings.Validate(); err != nil {
 		return errors.Wrapf(err, "%s settings not valid", actionType)
@@ -206,7 +219,7 @@ func executeSubAction(sessionState *session.State, connectionSettings *connectio
 	action := Action{
 		ActionCore: ActionCore{
 			Type:  actionType,
-			Label: fmt.Sprintf("button-action-%s", actionType),
+			Label: label,
 		},
 		Settings: settings,
 	}
@@ -445,7 +458,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 		subActionType = buttonAction.ActionType.String()
 	}
 
-	return executeSubAction(sessionState, connectionSettings, subActionType, subActionSettings)
+	return executeSubAction(sessionState, connectionSettings, subActionType, label, subActionSettings)
 }
 
 // execute the navigation-action contained in a Sense action-button
@@ -511,7 +524,7 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		return nil
 	}
 
-	return executeSubAction(sessionState, connectionSettings, ActionChangeSheet, &ChangeSheetSettings{ID: newCurrentSheetID})
+	return executeSubAction(sessionState, connectionSettings, ActionChangeSheet, label, &ChangeSheetSettings{ID: newCurrentSheetID})
 }
 
 func sheetIDs(sessionState *session.State, actionState *action.State) ([]string, error) {
