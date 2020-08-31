@@ -160,7 +160,12 @@ forLoop:
 					}
 					logReloadDuration(reloadStarted, event.Time, sessionState.LogEntry)
 					break forLoop
+					// TODO if event websocket was disconnected during reload action, add check of status check after 30s
 				}
+			}
+		case <-time.After(time.Second): // check to verify we didn't have errors and should abort
+			if actionState.Failed {
+				break
 			}
 		}
 	}

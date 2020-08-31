@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"io"
 	"net"
 	"net/http"
@@ -17,10 +18,28 @@ import (
 )
 
 type (
+	ReConnectSettings struct {
+		// AutoReconnect, set to automatically try to reconnect when disconnected, will be set to false on "Close"
+		AutoReconnect bool
+		// Backoff scheme in seconds for reconnecting websocket if "AutoReconnect" set to true. Defaults to
+		Backoff []float64
+		// OnReconnectStart triggers when reconnect start (only with AutoReconnect set)
+		OnReconnectStart func()
+		// OnReconnectDone triggers when reconnect is considered successful or failed
+		// err : error during last attempt (nil of successful)
+		// attempts: amount of attempts including successful attempt tried
+		// timeSpent: total duration spent trying to re-connect
+		OnReconnectDone func(err error, attempts int, timeSpent time.Duration)
+		// GetContext context used to abort waiting during backoff and as a mother context to dial, defaults to background context
+		GetContext func() context.Context
+	}
+
 	WsDialer struct {
 		gobwas.Dialer
 		net.Conn
-		Type string
+		// Type of websocket, will be used by DisconnectError
+		Type      string
+		Reconnect ReConnectSettings
 
 		url *neturl.URL
 	}
@@ -33,6 +52,10 @@ type (
 
 const (
 	DefaultTimeout = 30 * time.Second
+)
+
+var (
+	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0}
 )
 
 // Error implements error interface
@@ -123,8 +146,42 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	}
 
 	if err == io.EOF {
-		err = DisconnectError{Type: dialer.Type}
-		fmt.Println("DisconnectError, type:", dialer.Type, "err:", err)
+		if !dialer.Reconnect.AutoReconnect {
+			err = DisconnectError{Type: dialer.Type}
+		} else {
+			if dialer.Reconnect.OnReconnectStart != nil {
+				dialer.Reconnect.OnReconnectStart()
+			}
+			attempts := 0
+			started := time.Now()
+			backoff := dialer.Reconnect.Backoff
+			if len(backoff) < 1 {
+				backoff = DefaultBackoff
+			}
+			for i, w := range backoff {
+
+				// wait for defined time before attempting re-connect
+				var motherContext context.Context
+				if dialer.Reconnect.GetContext != nil {
+					motherContext = dialer.Reconnect.GetContext()
+				} else {
+					motherContext = context.Background()
+				}
+				helpers.WaitFor(motherContext, time.Duration(w*float64(time.Second)))
+
+				// Attempt re-connect
+				attempts = i + 1
+				func() {
+					ctx, cancel := context.WithTimeout(motherContext, dialer.Timeout)
+					defer cancel()
+					err = dialer.Dial(ctx)
+				}()
+			}
+			timeSpent := time.Since(started)
+			if dialer.Reconnect.OnReconnectDone != nil {
+				dialer.Reconnect.OnReconnectDone(err, attempts, timeSpent)
+			}
+		}
 	}
 
 	return len(data), data, err
@@ -132,5 +189,12 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 
 // Close connection
 func (dialer *WsDialer) Close() error {
+	if dialer == nil {
+		return nil
+	}
+	dialer.Reconnect.AutoReconnect = false
+	if dialer.Conn == nil {
+		return nil
+	}
 	return dialer.Conn.Close()
 }

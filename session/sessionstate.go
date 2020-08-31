@@ -728,7 +728,7 @@ func (state *State) Reconnect() error {
 
 reconnectLoop:
 	for i, waitTime := range backOff {
-		<-time.After(time.Duration(waitTime * float64(time.Second)))
+		helpers.WaitFor(state.BaseContext(), time.Duration(waitTime*float64(time.Second)))
 
 		reConnectActionState := &action.State{}
 
@@ -845,7 +845,7 @@ func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
 
 // SetupEventWebsocketAsync setup event websocket and listener
 func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl neturl.URL, allowuntrusted bool) {
-	// todo re-connect on unexpected disconnect
+	// todo make make sure to close event websocket on new elastic open hub
 
 	// change scheme if set to http or https
 	switch nurl.Scheme {
@@ -869,8 +869,37 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 		var err error
 		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, metricslogger, &nurl,
 			state.HeaderJar.GetHeader(nurl.Host), allowuntrusted, state.RequestMetrics, currentActionState)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
-		return errors.WithStack(err)
+		// enable re-connect of event websocket
+		state.eventWs.Reconnect.GetContext = state.BaseContext
+		state.eventWs.Reconnect.AutoReconnect = true
+		state.eventWs.Reconnect.Backoff = state.ReconnectSettings.Backoff
+		state.eventWs.Reconnect.OnReconnectStart = func() {
+			if state == nil {
+				return
+			}
+			state.Pending.IncPending() // "Stop" current action if reaching end to minimize effect on subsequent action due to re-connect
+			if state.LogEntry != nil {
+				state.LogEntry.LogDebug("Start re-connect of event websocket")
+			}
+		}
+		state.eventWs.Reconnect.OnReconnectDone = func(err error, attempts int, timeSpent time.Duration) {
+			if state == nil {
+				return
+			}
+			defer state.Pending.DecPending()
+			if state.LogEntry != nil {
+				state.LogEntry.LogDebug("End re-connect of event websocket")
+				state.LogEntry.LogInfo("EventWsReconnect", fmt.Sprintf("success=%v;attempts=%d;TimeSpent=%d", err == nil, attempts, timeSpent))
+			}
+			if err != nil {
+				state.CurrentActionState.AddErrors(errors.Wrap(err, "error reconnecting event websocket"))
+			}
+		}
+		return nil
 	}, actionState, true, "")
 }
 
