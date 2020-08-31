@@ -121,3 +121,8 @@ func (handler *EventHandler) addEventFunc(eventFunc *EventFunc) {
 
 	eventFuncs[eventFunc.ID] = eventFunc
 }
+
+// FakeEvent fake event being received
+func (handler *EventHandler) FakeEvent(event Event) {
+	handler.triggerFunctions(event)
+}

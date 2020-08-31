@@ -1,6 +1,7 @@
 package scenario
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -38,6 +39,17 @@ type (
 
 const (
 	postReloadEndpoint = "api/v1/reloads"
+	getReloadEndopoint = "api/v1/reloads"
+
+	// Delay time between re-connect of event websocket and checking status page if reload is still not done
+	StatusCheckDelay = 30 * time.Second
+)
+
+const (
+	statusCreated   = "CREATED"
+	statusQueued    = "QUEUED"
+	statusReloading = "RELOADING"
+	statusSuccess   = "SUCCEEDED"
 )
 
 // UnmarshalJSON unmarshals reload settings from JSON
@@ -129,6 +141,19 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	}, true)
 	defer events.DeRegisterFunc(eventEndedFunc)
 
+	// Re-use event structure to "listen" on websocket re-connecting
+	checkStatusChan := make(chan struct{})
+	statusContext, cancelStatusCheck := context.WithCancel(sessionState.BaseContext())
+	wsReconnectFunc := events.RegisterFunc(session.EventWsReconnectEnded, func(event eventws.Event) {
+		// If event websocket was re-connected during reload, wait "StatusCheckDelay" then check status page if reload event still hasn't triggered to make sure reload is still ongoing
+		helpers.WaitFor(statusContext, StatusCheckDelay)
+		if !helpers.IsContextTriggered(statusContext) {
+			checkStatusChan <- struct{}{}
+		}
+	}, false)
+	defer events.DeRegisterFunc(wsReconnectFunc)
+	defer close(checkStatusChan)
+
 	var postReloadResponse elasticstructs.ReloadResponse
 	if err := jsonit.Unmarshal(postReload.ResponseBody, &postReloadResponse); err != nil {
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload POST reponse: %s", postReload.ResponseBody)))
@@ -167,8 +192,25 @@ forLoop:
 			if actionState.Failed {
 				break
 			}
+		case <-checkStatusChan:
+			host, err := connection.GetRestUrl()
+			if err != nil {
+				actionState.AddErrors(err)
+				return
+			}
+			// We had a re-connect of event websocket and need to check if reload is still ongoing
+			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
+			if err != nil {
+				actionState.AddErrors(err)
+				return
+			}
+			if !ongoing {
+				sessionState.LogEntry.Log(logger.WarningLevel, "reload finished while event websocket was down")
+				break forLoop
+			}
 		}
 	}
+	cancelStatusCheck() // make sure not to try to write on channel after close
 
 	sessionState.Wait(actionState)
 }
@@ -188,4 +230,25 @@ func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
 
 	duration := endedTS.Sub(startedTS)
 	logEntry.LogInfo("ReloadDuration", fmt.Sprintf("%.fs", duration.Seconds())) // format to no decimals since timestamp is with entire seconds only
+}
+
+func checkStatusOngoing(sessionState *session.State, actionState *action.State, host, id string) (bool, error) {
+	reqOptions := session.DefaultReqOptions()
+	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndopoint, id), actionState, sessionState.LogEntry, &reqOptions)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	var reloadResponse elasticstructs.ReloadResponse
+	if err := jsonit.Unmarshal(statusRequest.ResponseBody, &reloadResponse); err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload status reponse: %s", statusRequest.ResponseBody))
+	}
+
+	if reloadResponse.Status == statusCreated || reloadResponse.Status == statusQueued || reloadResponse.Status == statusReloading {
+		return true, nil
+	}
+	if reloadResponse.Status == statusSuccess {
+		return false, nil
+	}
+	return false, errors.Errorf("unknown status<%s>", reloadResponse.Status)
 }

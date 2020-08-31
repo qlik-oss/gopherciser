@@ -146,6 +146,12 @@ const (
 	DefaultTimeout = 300 * time.Second
 )
 
+// Fake "events" for event websocket
+const (
+	EventWsReconnectStarted = "eventws.reconnect.started"
+	EventWsReconnectEnded   = "eventws.reconnect.ended"
+)
+
 var (
 	defaultReconnectBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0}
 )
@@ -885,6 +891,9 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 			if state.LogEntry != nil {
 				state.LogEntry.LogDebug("Start re-connect of event websocket")
 			}
+			state.eventWs.FakeEvent(eventws.Event{
+				Operation: EventWsReconnectStarted,
+			})
 		}
 		state.eventWs.Reconnect.OnReconnectDone = func(err error, attempts int, timeSpent time.Duration) {
 			if state == nil {
@@ -898,6 +907,10 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 			if err != nil {
 				state.CurrentActionState.AddErrors(errors.Wrap(err, "error reconnecting event websocket"))
 			}
+			state.eventWs.FakeEvent(eventws.Event{
+				Operation: EventWsReconnectEnded,
+				Success:   err == nil,
+			})
 		}
 		return nil
 	}, actionState, true, "")
