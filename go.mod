@@ -11,7 +11,7 @@ require (
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.0.3
 	github.com/golang/mock v1.4.3 // indirect
-	github.com/google/uuid v1.1.1
+	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/json-iterator/go v1.1.10
 	github.com/kr/text v0.2.0 // indirect
