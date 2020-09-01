@@ -51,6 +51,10 @@ var (
             Description: "## DisconnectApp action\n\nDisconnect from an already connected app.\n",
             Examples: "### Example\n\n```json\n{\n    \"label\": \"Disconnect from server\",\n    \"action\" : \"disconnectapp\"\n}\n```\n",
         },
+        "disconnectelastic": {
+            Description: "## DisconnectElastic action\n\nDisconnect from an elastic environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes \"elastic\" environments with Sense for Windows or uses custom actions towards other type of environments it should be used directly after the last action towards the elastic environment.\n\nSince the action also disconnect any open sense websocket, it does not to be preceeded with a `disconnectapp` action.\n",
+            Examples: "### Example\n\n```json\n{\n    \"label\": \"Disconnect from elastic environment\",\n    \"action\" : \"disconnectelastic\"\n}\n```\n",
+        },
         "duplicatesheet": {
             Description: "## DuplicateSheet action\n\nDuplicate a sheet, including all objects.\n",
             Examples: "### Example\n\n```json\n{\n    \"action\": \"duplicatesheet\",\n    \"label\": \"Duplicate sheet1\",\n    \"settings\":{\n        \"id\" : \"mBshXB\",\n        \"save\": true,\n        \"changesheet\": true\n    }\n}\n```\n",
@@ -417,7 +421,7 @@ var (
             {
                 Name: "qseokActions",
                 Title: "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticshareapp","elasticuploadapp","uploaddata" },
+                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","disconnectelastic" },
                 DocEntry: common.DocEntry{
                     Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
                     Examples: "",

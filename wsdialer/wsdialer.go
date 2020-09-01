@@ -10,6 +10,7 @@ import (
 	"net/http"
 	neturl "net/url"
 	"strings"
+	"sync"
 	"time"
 
 	gobwas "github.com/gobwas/ws"
@@ -41,7 +42,9 @@ type (
 		Type      string
 		Reconnect ReConnectSettings
 
-		url *neturl.URL
+		url       *neturl.URL
+		closed    chan struct{}
+		closeLock sync.Mutex
 	}
 
 	// DisconnectError is sent on websocket disconnect
@@ -56,7 +59,13 @@ const (
 
 var (
 	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0}
+
+	closedChan = make(chan struct{}) // reusable closed channel
 )
+
+func init() {
+	close(closedChan)
+}
 
 // Error implements error interface
 func (err DisconnectError) Error() string {
@@ -116,8 +125,9 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 				InsecureSkipVerify: allowUntrusted,
 			},
 		},
-		url:  url,
-		Type: wstype,
+		url:    url,
+		Type:   wstype,
+		closed: make(chan struct{}),
 	}
 
 	return &dialer, nil
@@ -149,6 +159,24 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 		if !dialer.Reconnect.AutoReconnect {
 			err = DisconnectError{Type: dialer.Type}
 		} else {
+			var motherContext context.Context
+			if dialer.Reconnect.GetContext != nil {
+				motherContext = dialer.Reconnect.GetContext()
+			} else {
+				motherContext = context.Background()
+			}
+
+			isClosed := func() bool {
+				if helpers.IsContextTriggered(motherContext) {
+					return true
+				}
+				return dialer.IsClosed()
+			}
+
+			if isClosed() {
+				return len(data), data, DisconnectError{Type: dialer.Type}
+			}
+
 			if dialer.Reconnect.OnReconnectStart != nil {
 				dialer.Reconnect.OnReconnectStart()
 			}
@@ -159,15 +187,18 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 				backoff = DefaultBackoff
 			}
 			for i, w := range backoff {
-
 				// wait for defined time before attempting re-connect
-				var motherContext context.Context
-				if dialer.Reconnect.GetContext != nil {
-					motherContext = dialer.Reconnect.GetContext()
-				} else {
-					motherContext = context.Background()
-				}
 				helpers.WaitFor(motherContext, time.Duration(w*float64(time.Second)))
+				if isClosed() {
+					return len(data), data, DisconnectError{Type: dialer.Type}
+				}
+
+				if helpers.IsContextTriggered(motherContext) {
+					return len(data), data, DisconnectError{Type: dialer.Type}
+				}
+				if dialer.IsClosed() {
+					return len(data), data, DisconnectError{Type: dialer.Type}
+				}
 
 				// Attempt re-connect
 				attempts = i + 1
@@ -192,9 +223,31 @@ func (dialer *WsDialer) Close() error {
 	if dialer == nil {
 		return nil
 	}
+	dialer.closeLock.Lock()
+	defer dialer.closeLock.Unlock()
+	if dialer.closed != nil {
+		defer close(dialer.closed)
+		dialer.closed = nil
+	}
+
 	dialer.Reconnect.AutoReconnect = false
 	if dialer.Conn == nil {
 		return nil
 	}
 	return dialer.Conn.Close()
+}
+
+// Closed returns chan which will be closed when Close() is triggered
+func (dialer *WsDialer) Closed() <-chan struct{} {
+	if dialer == nil || dialer.closed == nil {
+		return closedChan
+	}
+	return dialer.closed
+}
+
+// IsClosed check if Close() has been triggered
+func (dialer *WsDialer) IsClosed() bool {
+	dialer.closeLock.Lock()
+	defer dialer.closeLock.Unlock()
+	return dialer.closed == nil
 }

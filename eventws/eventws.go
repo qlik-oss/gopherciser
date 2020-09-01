@@ -9,6 +9,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/wsdialer"
 )
@@ -63,11 +64,15 @@ func SetupEventSocket(dialContext context.Context, listenContext context.Context
 			select {
 			case <-listenContext.Done():
 				return
+			case <-eventWs.Closed():
+				return
 			default:
 				_, message, err := dialer.ReadMessage()
 				actionState := currentActionState()
 				if err != nil && actionState != nil {
-					actionState.AddErrors(errors.WithStack(err))
+					if !helpers.IsContextTriggered(listenContext) && !dialer.IsClosed() {
+						actionState.AddErrors(errors.WithStack(err))
+					}
 					return
 				}
 				receivedTS := time.Now()
