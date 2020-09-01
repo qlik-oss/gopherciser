@@ -2,10 +2,7 @@ package scenario
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -109,47 +106,6 @@ func IndexOf(match string, stringSlice []string) (int, bool) {
 		}
 	}
 	return -1, false
-}
-
-// TODO move enum related code to its own package
-type (
-	MutableEnum interface {
-		Enum
-		Set(int)
-	}
-	IntegerEnum interface {
-		Enum
-		Int() int
-	}
-)
-
-func String(enum IntegerEnum) string {
-	s, err := enum.GetEnumMap().String(enum.Int())
-	if err != nil {
-		return strconv.Itoa(enum.Int())
-	}
-	return s
-}
-
-func UnmarshalJSON(enum MutableEnum, jsonBytes []byte) error {
-	var enumStr string
-	if err := json.Unmarshal(jsonBytes, &enumStr); err != nil {
-		return errors.WithStack(err)
-	}
-	integerRepresentation, ok := enum.GetEnumMap().AsInt()[strings.ToLower(enumStr)]
-	if !ok {
-		return errors.Errorf(`"%s" is not defined in enum<%T>`, enumStr, enum)
-	}
-	enum.Set(integerRepresentation)
-	return nil
-}
-
-func MarshalJSON(enum IntegerEnum) ([]byte, error) {
-	str, err := enum.GetEnumMap().String(enum.Int())
-	if err != nil {
-		return nil, errors.Errorf("%d is not in enum<%T>", enum.Int(), enum)
-	}
-	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
 type (

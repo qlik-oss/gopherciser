@@ -575,8 +575,8 @@ func toFieldValues(fields string) []*enigma.FieldValue {
 	return values
 }
 
-// Enum, MutableEnum, IntegerEnum, fmt.Stringer, json.Marshaler and
-// json.Unmarshaler implementations for buttonActionType
+// Enum, fmt.Stringer, json.Marshaler and json.Unmarshaler implementations for
+// buttonActionType
 
 var buttonActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"":                     int(emptyAction),
@@ -605,28 +605,33 @@ func (buttonActionType) GetEnumMap() *enummap.EnumMap {
 	return buttonActionTypeEnumMap
 }
 
-func (value buttonActionType) Int() int {
-	return int(value)
-}
-
-func (value *buttonActionType) Set(i int) {
-	*value = buttonActionType(i)
-}
-
 func (value *buttonActionType) UnmarshalJSON(jsonBytes []byte) error {
-	return UnmarshalJSON(value, jsonBytes)
+	i, err := value.GetEnumMap().UnMarshal(jsonBytes)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal buttonActionType")
+	}
+	*value = buttonActionType(i)
+	return nil
 }
 
 func (value buttonActionType) MarshalJSON() ([]byte, error) {
-	return MarshalJSON(value)
+	str, err := value.GetEnumMap().String(int(value))
+	if err != nil {
+		return nil, errors.Errorf("Unknown buttonActionType<%d>", value)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
 func (value buttonActionType) String() string {
-	return String(value)
+	sType, err := value.GetEnumMap().String(int(value))
+	if err != nil {
+		return strconv.Itoa(int(value))
+	}
+	return sType
 }
 
-// Enum, MutableEnum, IntegerEnum, fmt.Stringer, json.Marshaler and
-// json.Unmarshaler implementations for buttonNavigationActionType
+// Enum, fmt.Stringer, json.Marshaler and json.Unmarshaler implementations for
+// buttonNavigationActionType
 
 var buttonNavActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"":                 int(emptyAction),
@@ -646,24 +651,29 @@ func (buttonNavigationActionType) GetEnumMap() *enummap.EnumMap {
 	return buttonNavActionTypeEnumMap
 }
 
-func (value buttonNavigationActionType) Int() int {
-	return int(value)
-}
-
-func (value *buttonNavigationActionType) Set(i int) {
-	*value = buttonNavigationActionType(i)
-}
-
 func (value *buttonNavigationActionType) UnmarshalJSON(jsonBytes []byte) error {
-	return UnmarshalJSON(value, jsonBytes)
+	i, err := value.GetEnumMap().UnMarshal(jsonBytes)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal buttonNavigationActionType")
+	}
+	*value = buttonNavigationActionType(i)
+	return nil
 }
 
 func (value buttonNavigationActionType) MarshalJSON() ([]byte, error) {
-	return MarshalJSON(value)
+	str, err := value.GetEnumMap().String(int(value))
+	if err != nil {
+		return nil, errors.Errorf("Unknown buttonNavigationActionType<%d>", value)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
 func (value buttonNavigationActionType) String() string {
-	return String(value)
+	sType, err := value.GetEnumMap().String(int(value))
+	if err != nil {
+		return strconv.Itoa(int(value))
+	}
+	return sType
 }
 
 func checkSuccess(success bool, err error) error {
