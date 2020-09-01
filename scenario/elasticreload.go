@@ -39,7 +39,7 @@ type (
 
 const (
 	postReloadEndpoint = "api/v1/reloads"
-	getReloadEndopoint = "api/v1/reloads"
+	getReloadEndpoint  = "api/v1/reloads"
 
 	// Delay time between re-connect of event websocket and checking status page if reload is still not done
 	StatusCheckDelay = 30 * time.Second
@@ -144,6 +144,8 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 	// Re-use event structure to "listen" on websocket re-connecting
 	checkStatusChan := make(chan struct{})
 	statusContext, cancelStatusCheck := context.WithCancel(sessionState.BaseContext())
+	defer cancelStatusCheck()
+
 	wsReconnectFunc := events.RegisterFunc(session.EventWsReconnectEnded, func(event eventws.Event) {
 		// If event websocket was re-connected during reload, wait "StatusCheckDelay" then check status page if reload event still hasn't triggered to make sure reload is still ongoing
 		helpers.WaitFor(statusContext, StatusCheckDelay)
@@ -234,7 +236,7 @@ func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
 
 func checkStatusOngoing(sessionState *session.State, actionState *action.State, host, id string) (bool, error) {
 	reqOptions := session.DefaultReqOptions()
-	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndopoint, id), actionState, sessionState.LogEntry, &reqOptions)
+	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndpoint, id), actionState, sessionState.LogEntry, &reqOptions)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}

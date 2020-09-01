@@ -851,8 +851,6 @@ func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
 
 // SetupEventWebsocketAsync setup event websocket and listener
 func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl neturl.URL, allowuntrusted bool) {
-	// todo make make sure to close event websocket on new elastic open hub
-
 	// change scheme if set to http or https
 	switch nurl.Scheme {
 	case "http:":
