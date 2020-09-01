@@ -44,13 +44,17 @@ func (handler *EventHandler) event(actionState *action.State, message []byte) {
 	}
 
 	// update event buffer
+	handler.addToBuffer(event)
+
+	handler.triggerFunctions(event)
+}
+
+func (handler *EventHandler) addToBuffer(event Event) {
 	if len(handler.buffer) > BufferSize-1 {
 		handler.buffer = append(handler.buffer[1:], event)
 	} else {
 		handler.buffer = append(handler.buffer, event)
 	}
-
-	handler.triggerFunctions(event)
 }
 
 func (handler *EventHandler) triggerFunctions(event Event) {
@@ -78,7 +82,7 @@ func (handler *EventHandler) RegisterFunc(operation string, f func(event Event),
 		// replay buffered events
 		for _, event := range handler.buffer {
 			if operation == event.Operation {
-				f(event)
+				go f(event)
 			}
 		}
 	}
@@ -124,5 +128,6 @@ func (handler *EventHandler) addEventFunc(eventFunc *EventFunc) {
 
 // FakeEvent fake event being received
 func (handler *EventHandler) FakeEvent(event Event) {
+	handler.addToBuffer(event)
 	handler.triggerFunctions(event)
 }
