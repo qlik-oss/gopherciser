@@ -2044,9 +2044,9 @@ Upload a data file to the Data manager.
 
 ## DisconnectElastic action
 
-Disconnect from an elastic environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with Sense for Windows or uses custom actions towards other type of environments it should be used directly after the last action towards the elastic environment.
+Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards other type of environments, it should be used directly after the last action towards the elastic environment.
 
-Since the action also disconnect any open sense websocket, it does not to be preceeded with a `disconnectapp` action.
+Since the action also disconnects any open sense websocket, it is not to be preceeded with a `disconnectapp` action.
 
 
 ### Example
