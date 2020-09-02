@@ -92,6 +92,11 @@ func (settings ElasticReloadSettings) Validate() error {
 
 // Execute EfeReload action (Implements ActionSettings interface)
 func (settings ElasticReloadSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+	settings.execute(sessionState, actionState, connection)
+	sessionState.Wait(actionState)
+}
+
+func (settings ElasticReloadSettings) execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings) {
 	host, err := connection.GetRestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
@@ -128,7 +133,7 @@ func (settings ElasticReloadSettings) Execute(sessionState *session.State, actio
 		return
 	}
 
-	reloadEventChan := make(chan *eventws.Event, 10)
+	reloadEventChan := make(chan *eventws.Event, 50)
 	defer close(reloadEventChan)
 
 	eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
@@ -172,7 +177,7 @@ forLoop:
 		case event, ok := <-reloadEventChan:
 			if !ok {
 				actionState.AddErrors(errors.New("reload channel closed unexpectedly"))
-				return
+				break forLoop
 			}
 
 			if reloadID == event.ReloadId {
@@ -187,24 +192,23 @@ forLoop:
 					}
 					logReloadDuration(reloadStarted, event.Time, sessionState.LogEntry)
 					break forLoop
-					// TODO if event websocket was disconnected during reload action, add check of status check after 30s
 				}
 			}
 		case <-time.After(time.Second): // check to verify we didn't have errors and should abort
 			if actionState.Failed {
-				break
+				break forLoop
 			}
 		case <-checkStatusChan:
 			host, err := connection.GetRestUrl()
 			if err != nil {
 				actionState.AddErrors(err)
-				return
+				break forLoop
 			}
 			// We had a re-connect of event websocket and need to check if reload is still ongoing
 			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
 			if err != nil {
 				actionState.AddErrors(err)
-				return
+				break forLoop
 			}
 			if !ongoing {
 				sessionState.LogEntry.Log(logger.WarningLevel, "reload finished while event websocket was down")
@@ -213,8 +217,6 @@ forLoop:
 		}
 	}
 	cancelStatusCheck() // make sure not to try to write on channel after close
-
-	sessionState.Wait(actionState)
 }
 
 func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
