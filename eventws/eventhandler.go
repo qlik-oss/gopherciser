@@ -12,8 +12,9 @@ type (
 	// EventHandler handles events received on event websocket
 	EventHandler struct {
 		onOperation     map[string]map[uint64]*EventFunc
-		buffer          []Event
 		onOperationLock sync.Mutex
+		buffer          []Event
+		bufferLock      sync.RWMutex
 	}
 
 	EventFunc struct {
@@ -50,6 +51,8 @@ func (handler *EventHandler) event(actionState *action.State, message []byte) {
 }
 
 func (handler *EventHandler) addToBuffer(event Event) {
+	handler.bufferLock.Lock()
+	defer handler.bufferLock.Unlock()
 	if len(handler.buffer) > BufferSize-1 {
 		handler.buffer = append(handler.buffer[1:], event)
 	} else {
@@ -68,7 +71,7 @@ func (handler *EventHandler) triggerFunctions(event Event) {
 }
 
 // RegisterFunc to be executed on event triggering
-// replay: triggers the latest events from buffer upon creation (Not yet implemented)
+// replay: triggers the latest events from buffer upon creation
 func (handler *EventHandler) RegisterFunc(operation string, f func(event Event), replay bool) *EventFunc {
 	eventFunc := &EventFunc{
 		ID:        funcId.Inc(),
@@ -80,14 +83,21 @@ func (handler *EventHandler) RegisterFunc(operation string, f func(event Event),
 
 	if replay {
 		// replay buffered events
-		for _, event := range handler.buffer {
-			if operation == event.Operation {
-				go f(event)
-			}
-		}
+		handler.replayEvents(operation, f)
 	}
 
 	return eventFunc
+}
+
+func (handler *EventHandler) replayEvents(operation string, f func(event Event)) {
+	handler.bufferLock.RLock()
+	defer handler.bufferLock.RUnlock()
+
+	for _, event := range handler.buffer {
+		if operation == event.Operation {
+			go f(event)
+		}
+	}
 }
 
 // DeRegisterFunc from execution on event triggering

@@ -43,9 +43,9 @@ func (settings DisconnectElastic) Execute(sessionState *session.State, actionSta
 // AppStructureAction Implements AppStructureAction interface. It returns if this action should be included
 // when doing an "get app structure" from script, IsAppAction tells the scenario
 // to insert a "getappstructure" action after that action using data from
-// sessionState.CurrentApp. A list of Sub action to be evaluated can also be included
+// sessionState.CurrentApp. A list of sub actions to be evaluated can also be included.
 // AppStructureAction returns if this action should be included when getting app structure
-// and any additional sub actions which should also be included
+// and any additional sub actions which should also be included.
 func (settings *DisconnectElastic) AppStructureAction() (*AppStructureInfo, []Action) {
 	return &AppStructureInfo{
 		IsAppAction: false,
