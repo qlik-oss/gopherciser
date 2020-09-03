@@ -133,7 +133,8 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		return
 	}
 
-	reloadEventChan := make(chan *eventws.Event, 50)
+	// Create channels and register events
+	reloadEventChan := make(chan *eventws.Event)
 	eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
 		reloadEventChan <- &event
 	}, true)
@@ -151,12 +152,22 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		}
 	}, false)
 
-	defer emptyAndCloseEventChan(reloadEventChan)
-	defer emptyAndCloseEventChan(checkStatusChan)
-	defer events.DeRegisterFunc(eventStartedFunc)
-	defer events.DeRegisterFunc(eventEndedFunc)
-	defer cancelStatusCheck()
-	defer events.DeRegisterFunc(wsReconnectFunc)
+	// De-register events and "cleanup"
+	defer func() {
+		var panicErr error
+		func() {
+			defer helpers.RecoverWithError(&panicErr)
+			events.DeRegisterFunc(wsReconnectFunc)
+			cancelStatusCheck()
+			events.DeRegisterFunc(eventEndedFunc)
+			events.DeRegisterFunc(eventStartedFunc)
+			emptyAndCloseEventChan(checkStatusChan)
+			emptyAndCloseEventChan(reloadEventChan)
+		}()
+		if panicErr != nil {
+			actionState.AddErrors(panicErr)
+		}
+	}()
 
 	var postReloadResponse elasticstructs.ReloadResponse
 	if err := jsonit.Unmarshal(postReload.ResponseBody, &postReloadResponse); err != nil {
