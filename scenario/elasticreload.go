@@ -145,16 +145,22 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 	}
 
 	// Create channels and register events
-	reloadEventChan := make(chan *eventws.Event)
-	eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
-		reloadEventChan <- &event
-	}, true)
-	eventEndedFunc := events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
-		reloadEventChan <- &event
-	}, true)
-	// Re-use event structure to "listen" on websocket re-connecting
 	checkStatusChan := make(chan *eventws.Event)
 	statusContext, cancelStatusCheck := context.WithCancel(sessionState.BaseContext())
+	reloadEventChan := make(chan *eventws.Event)
+	eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
+		defer helpers.RecoverWithError(nil)
+		if !helpers.IsContextTriggered(statusContext) {
+			reloadEventChan <- &event
+		}
+	}, true)
+	eventEndedFunc := events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
+		defer helpers.RecoverWithError(nil)
+		if !helpers.IsContextTriggered(statusContext) {
+			reloadEventChan <- &event
+		}
+	}, true)
+	// Re-use event structure to "listen" on websocket re-connecting
 	wsReconnectFunc := events.RegisterFunc(session.EventWsReconnectEnded, func(event eventws.Event) {
 		// If event websocket was re-connected during reload, wait "StatusCheckDelay" then check status page if reload event still hasn't triggered to make sure reload is still ongoing
 		helpers.WaitFor(statusContext, StatusCheckDelay)
