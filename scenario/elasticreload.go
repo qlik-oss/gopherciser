@@ -134,32 +134,29 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 	}
 
 	reloadEventChan := make(chan *eventws.Event, 50)
-	defer close(reloadEventChan)
-
 	eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
 		reloadEventChan <- &event
 	}, true)
-	defer events.DeRegisterFunc(eventStartedFunc)
-
 	eventEndedFunc := events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
 		reloadEventChan <- &event
 	}, true)
-	defer events.DeRegisterFunc(eventEndedFunc)
-
 	// Re-use event structure to "listen" on websocket re-connecting
-	checkStatusChan := make(chan struct{})
+	checkStatusChan := make(chan *eventws.Event)
 	statusContext, cancelStatusCheck := context.WithCancel(sessionState.BaseContext())
-	defer cancelStatusCheck()
-
 	wsReconnectFunc := events.RegisterFunc(session.EventWsReconnectEnded, func(event eventws.Event) {
 		// If event websocket was re-connected during reload, wait "StatusCheckDelay" then check status page if reload event still hasn't triggered to make sure reload is still ongoing
 		helpers.WaitFor(statusContext, StatusCheckDelay)
 		if !helpers.IsContextTriggered(statusContext) {
-			checkStatusChan <- struct{}{}
+			checkStatusChan <- &event
 		}
 	}, false)
+
+	defer emptyAndCloseEventChan(reloadEventChan)
+	defer emptyAndCloseEventChan(checkStatusChan)
+	defer events.DeRegisterFunc(eventStartedFunc)
+	defer events.DeRegisterFunc(eventEndedFunc)
+	defer cancelStatusCheck()
 	defer events.DeRegisterFunc(wsReconnectFunc)
-	defer close(checkStatusChan)
 
 	var postReloadResponse elasticstructs.ReloadResponse
 	if err := jsonit.Unmarshal(postReload.ResponseBody, &postReloadResponse); err != nil {
@@ -217,6 +214,20 @@ forLoop:
 		}
 	}
 	cancelStatusCheck() // make sure not to try to write on channel after close
+}
+
+func emptyAndCloseEventChan(c chan *eventws.Event) {
+	for {
+		select {
+		case _, open := <-c:
+			if !open {
+				return
+			}
+		default:
+			close(c)
+			return
+		}
+	}
 }
 
 func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
