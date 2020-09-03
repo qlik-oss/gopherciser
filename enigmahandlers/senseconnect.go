@@ -29,6 +29,8 @@ type (
 		Global     *enigma.Global
 		CurrentApp *senseobjects.App
 		Objects    ObjectsMap
+		FieldCache FieldCache
+		VarCache   VarCache
 		Traffic    ITrafficLogger
 
 		ctx                context.Context
@@ -38,6 +40,11 @@ type (
 		failedConnectFuncs []func()
 
 		MockMode bool
+	}
+
+	Cache struct {
+		Field FieldCache
+		Var   VarCache
 	}
 
 	// SenseConnection direct sense connection implementing IConnection interface
@@ -75,6 +82,8 @@ func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *req
 		trafficMetrics: metrics,
 		logEntry:       logentry,
 		Traffic:        trafficLogger,
+		FieldCache:     NewFieldCache(),
+		VarCache:       NewVarCache(),
 	}
 }
 

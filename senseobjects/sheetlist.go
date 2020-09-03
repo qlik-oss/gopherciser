@@ -3,6 +3,7 @@ package senseobjects
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -34,8 +35,9 @@ type (
 			Name string `json:"name,omitempty"`
 			Type string `json:"type,omitempty"`
 		} `json:"cells,omitempty"`
-		Title       string `json:"title,omitempty"`
-		Description string `json:"description,omitempty"`
+		Title       string  `json:"title,omitempty"`
+		Description string  `json:"description,omitempty"`
+		Rank        float64 `json:"rank,omitempty"`
 	}
 
 	// SheetListPropertiesData properties of sheetlist
@@ -82,6 +84,18 @@ func (sheetList *SheetList) UpdateLayout(ctx context.Context) error {
 	err = jsonit.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal sheetlist layout")
+	}
+
+	// sort sheets after rank (same order as shown in app)
+	if layout.AppObjectList != nil || layout.AppObjectList.Items != nil {
+		sheetItems := layout.AppObjectList.Items
+		sort.Slice(sheetItems, func(i, j int) bool {
+			item1, item2 := sheetItems[i], sheetItems[j]
+			if item1 == nil || item2 == nil || item1.Data == nil || item2.Data == nil {
+				return false
+			}
+			return sheetItems[i].Data.Rank < sheetItems[j].Data.Rank
+		})
 	}
 
 	sheetList.setLayout(&layout)
@@ -148,8 +162,9 @@ func CreateSheetListObject(ctx context.Context, doc *enigma.Doc) (*SheetList, er
 			Data: json.RawMessage(`{
 				"title": "/qMetaDef/title",
 				"description": "/qMetaDef/description",
-				"cells": "/cells"
-			}`),
+				"cells": "/cells",
+				"rank": "/rank"
+      }`),
 		},
 	}
 
