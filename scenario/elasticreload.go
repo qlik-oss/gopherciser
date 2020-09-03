@@ -19,7 +19,12 @@ import (
 
 type (
 	// ElasticReloadCore Currently used ElasticReloadCore (as opposed to deprecated settings)
-	ElasticReloadCore struct{}
+	ElasticReloadCore struct {
+		// PollInterval time in-between polling for reload status
+		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
+		// PollingOff turns polling for status off except after event websocket reconnect
+		PollingOff bool `json:"pollingoff" displayname:"Polling off" doc-key:"elasticreload.pollingoff"`
+	}
 
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
@@ -50,6 +55,11 @@ const (
 	statusQueued    = "QUEUED"
 	statusReloading = "RELOADING"
 	statusSuccess   = "SUCCEEDED"
+	statusFailed    = "FAILED"
+)
+
+var (
+	DefaultPollInterval = helpers.TimeDuration(5 * time.Minute)
 )
 
 // UnmarshalJSON unmarshals reload settings from JSON
@@ -63,9 +73,6 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 		if deprecated.AppName != "" {
 			hasSettings = append(hasSettings, "appname")
 		}
-		if deprecated.PollInterval > 0 {
-			hasSettings = append(hasSettings, "pollinterval")
-		}
 		if deprecated.SaveLog {
 			hasSettings = append(hasSettings, "log")
 		}
@@ -77,6 +84,9 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
 	}
+	if core.PollInterval < helpers.TimeDuration(time.Millisecond) {
+		core.PollInterval = DefaultPollInterval
+	}
 	var appSelection session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
@@ -87,6 +97,7 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 
 // Validate EfeReload action (Implements ActionSettings interface)
 func (settings ElasticReloadSettings) Validate() error {
+	// TODO When validate has warnings: add warning about short poll interval
 	return nil
 }
 
@@ -202,16 +213,24 @@ forLoop:
 					break forLoop
 				}
 			}
-		case <-time.After(time.Second): // check to verify we didn't have errors and should abort
+		case <-time.After(time.Duration(settings.PollInterval)):
 			if actionState.Failed {
 				break forLoop
 			}
-		case <-checkStatusChan:
-			host, err := connection.GetRestUrl()
+			if settings.PollingOff {
+				continue
+			}
+			// We had a re-connect of event websocket and need to check if reload is still ongoing
+			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
 			if err != nil {
 				actionState.AddErrors(err)
 				break forLoop
 			}
+			if !ongoing {
+				sessionState.LogEntry.Log(logger.WarningLevel, "reload finished, but no reload.ended event received")
+				break forLoop
+			}
+		case <-checkStatusChan:
 			// We had a re-connect of event websocket and need to check if reload is still ongoing
 			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
 			if err != nil {
@@ -270,11 +289,14 @@ func checkStatusOngoing(sessionState *session.State, actionState *action.State, 
 		return false, errors.Wrap(err, fmt.Sprintf("failed unmarshaling reload status reponse: %s", statusRequest.ResponseBody))
 	}
 
-	if reloadResponse.Status == statusCreated || reloadResponse.Status == statusQueued || reloadResponse.Status == statusReloading {
+	switch reloadResponse.Status {
+	case statusCreated, statusQueued, statusReloading:
 		return true, nil
-	}
-	if reloadResponse.Status == statusSuccess {
+	case statusSuccess:
 		return false, nil
+	case statusFailed:
+		return false, errors.Errorf("reload failed")
+	default:
+		return false, errors.Errorf("unknown status<%s>", reloadResponse.Status)
 	}
-	return false, errors.Errorf("unknown status<%s>", reloadResponse.Status)
 }

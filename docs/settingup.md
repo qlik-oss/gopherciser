@@ -1939,6 +1939,8 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 * `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
 * `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
 * `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
+* `pollinterval`: Reload status polling interval (seconds). Defaults to 5 minutes, if omitted.
+* `pollingoff`: Turn polling off and rely only on events. Warning: Turning this on might cause action to wait until test ends.
 
 ### Example
 
