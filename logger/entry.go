@@ -2,11 +2,11 @@ package logger
 
 import (
 	"fmt"
-	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
