@@ -151,6 +151,7 @@ const (
 	ActionUnsubscribeObjects      = "unsubscribeobjects"
 	ActionListBoxSelect           = "listboxselect"
 	ActionDisconnectElastic       = "disconnectelastic"
+	ActionClickActionButton       = "clickactionbutton"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -272,6 +273,7 @@ func ResetDefaultActions() {
 		ActionUnsubscribeObjects:      UnsubscribeObjects{},
 		ActionListBoxSelect:           ListBoxSelectSettings{},
 		ActionDisconnectElastic:       DisconnectElastic{},
+		ActionClickActionButton:       ClickActionButtonSettings{},
 	}
 }
 

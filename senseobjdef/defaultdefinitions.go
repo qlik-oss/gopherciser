@@ -558,6 +558,22 @@ var (
 		},
 	}
 
+	DefaultActionButton = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -591,5 +607,6 @@ var (
 		"sn-org-chart":          &DefaultSNOrgChart,
 		"sheet":                 &DefaultSheet,
 		"odag-toolbar-navpoint": &DefaultOdagToolbarNavpoint,
+		"action-button":         &DefaultActionButton,
 	}
 )

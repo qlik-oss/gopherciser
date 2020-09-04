@@ -1,9 +1,11 @@
 package scenario
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -94,4 +96,47 @@ func Contains(list []string, match func(s string) bool) bool {
 		}
 	}
 	return false
+}
+
+// IndexOf returns index of first match in stringSlice or else -1
+func IndexOf(match string, stringSlice []string) (int, bool) {
+	for i, str := range stringSlice {
+		if str == match {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+type (
+	varReq   func(ctx context.Context, varName string) (*enigma.GenericVariable, error)
+	fieldReq func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error)
+)
+
+func (getField fieldReq) WithCache(fc *enigmahandlers.FieldCache) fieldReq {
+	return func(ctx context.Context, fieldName string, stateName string) (*enigma.Field, error) {
+		if field, hit := fc.Lookup(fieldName); hit {
+			return field, nil
+		}
+		field, err := getField(ctx, fieldName, stateName)
+		if err != nil {
+			return field, err
+		}
+		fc.Store(fieldName, field)
+		return field, nil
+	}
+}
+
+func (getVar varReq) WithCache(vc *enigmahandlers.VarCache) varReq {
+	return func(ctx context.Context, varName string) (*enigma.GenericVariable, error) {
+		if variable, hit := vc.Lookup(varName); hit {
+			return variable, nil
+		}
+		variable, err := getVar(ctx, varName)
+		if err != nil {
+			return variable, err
+		}
+		vc.Store(varName, variable)
+		return variable, nil
+	}
 }

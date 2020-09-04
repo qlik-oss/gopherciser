@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
