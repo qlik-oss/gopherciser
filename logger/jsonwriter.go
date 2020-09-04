@@ -99,7 +99,7 @@ func setEphemeralFields(ev *zerolog.Event, e *ephemeralEntry, level LogLevel) {
 
 func setMessageFields(ev *zerolog.Event, m *message) {
 	ev.Str(FieldLevel, m.Level.String())
-	ev.Int64(FieldTick, m.Tick)
+	ev.Uint64(FieldTick, m.Tick)
 	ev.Str(FieldTime, m.Time.Format(time.RFC3339Nano))
 	ev.Str(FieldTimestamp, m.Time.UTC().Format(time.RFC3339Nano))
 	ev.Msg(m.Message)

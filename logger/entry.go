@@ -2,12 +2,12 @@ package logger
 
 import (
 	"fmt"
+	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/qlik-oss/gopherciser/helpers"
-	"github.com/qlik-oss/gopherciser/precisiontime"
 )
 
 type (
@@ -53,6 +53,8 @@ type (
 		mu           sync.Mutex
 	}
 )
+
+var tickCounter = atomichandlers.AtomicCounter{}
 
 // NewLogEntry new instance of LogEntry
 func NewLogEntry(log *Log) *LogEntry {
@@ -220,14 +222,11 @@ func (entry *LogEntry) log(level LogLevel, msg string, eph *ephemeralEntry) {
 	entry.mu.Lock()
 	defer entry.mu.Unlock()
 
-	//Always try to add tick to logentry
-	tick, _ := precisiontime.Tick()
-
 	m := message{
 		Level:   level,
 		Time:    time.Now(),
 		Message: msg,
-		Tick:    tick,
+		Tick:    tickCounter.Inc(),
 	}
 
 	var s SessionEntry

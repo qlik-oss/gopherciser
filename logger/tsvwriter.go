@@ -94,7 +94,7 @@ func (writer *TSVWriter) WriteMessage(msg *LogChanMsg) error {
 		case FieldAppGUID:
 			buf.WriteString(replacer.Replace(msg.AppGUID))
 		case FieldTick:
-			buf.WriteString(strconv.FormatInt(msg.Tick, 10))
+			buf.WriteString(strconv.FormatUint(msg.Tick, 10))
 		case FieldAction:
 			buf.WriteString(replacer.Replace(msg.Action))
 		case FieldResponseTime:
