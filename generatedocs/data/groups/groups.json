@@ -62,7 +62,8 @@
             "elasticreload",
             "elasticshareapp",
             "elasticuploadapp",
-            "uploaddata"
+            "uploaddata",
+            "disconnectelastic"
         ]
     }
 ]

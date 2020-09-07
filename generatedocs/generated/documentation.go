@@ -55,6 +55,10 @@ var (
             Description: "## DisconnectApp action\n\nDisconnect from an already connected app.\n",
             Examples: "### Example\n\n```json\n{\n    \"label\": \"Disconnect from server\",\n    \"action\" : \"disconnectapp\"\n}\n```\n",
         },
+        "disconnectelastic": {
+            Description: "## DisconnectElastic action\n\nDisconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes \"elastic\" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
+            Examples: "### Example\n\n```json\n{\n    \"label\": \"Disconnect from elastic environment\",\n    \"action\" : \"disconnectelastic\"\n}\n```\n",
+        },
         "duplicatesheet": {
             Description: "## DuplicateSheet action\n\nDuplicate a sheet, including all objects.\n",
             Examples: "### Example\n\n```json\n{\n    \"action\": \"duplicatesheet\",\n    \"label\": \"Duplicate sheet1\",\n    \"settings\":{\n        \"id\" : \"mBshXB\",\n        \"save\": true,\n        \"changesheet\": true\n    }\n}\n```\n",
@@ -310,8 +314,9 @@ var (
         "elastichubsearch.querysource": { "","`string`: The query is provided as a string specified by `query`.","`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."  },  
         "elastichubsearch.searchfor": { "","`collections`: Search for collections only.","`apps`: Search for apps only.","`both`: Search for both collections and apps."  },  
         "elasticpublishapp.cleartags": { "Publish the app without its original tags."  },  
-        "elasticreload.log": { "Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large."  },  
-        "elasticreload.pollinterval": { "Reload status polling interval (seconds). Defaults to 5 seconds, if omitted."  },  
+        "elasticreload.log": { "DEPRECATED"  },  
+        "elasticreload.pollingoff": { "Turn polling off and rely only on events. Warning: Turning this on might cause action to wait until test ends."  },  
+        "elasticreload.pollinterval": { "Reload status polling interval (seconds). Defaults to 5 minutes, if omitted."  },  
         "elasticshareapp.appguid": { "GUID of the app to share."  },  
         "elasticshareapp.groups": { "List of groups that should be given access to the app."  },  
         "elasticshareapp.title": { "Name of the app to share (supports the use of [session variables](#session_variables)). If `appguid` and `title` refer to different apps, `appguid` takes precedence."  },  
@@ -422,7 +427,7 @@ var (
             {
                 Name: "qseokActions",
                 Title: "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticshareapp","elasticuploadapp","uploaddata" },
+                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","disconnectelastic" },
                 DocEntry: common.DocEntry{
                     Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
                     Examples: "",

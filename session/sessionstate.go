@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	neturl "net/url"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/randomizer"
@@ -22,6 +24,7 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
+	"github.com/qlik-oss/gopherciser/wsdialer"
 )
 
 type (
@@ -61,9 +64,6 @@ type (
 
 	// State for user
 	State struct {
-		ctx       context.Context
-		ctxCancel context.CancelFunc
-
 		Cookies          http.CookieJar
 		VirtualProxy     string
 		Connection       IConnection
@@ -78,10 +78,6 @@ type (
 		CurrentUser      *elasticstructs.User
 		Counters         *statistics.ExecutionCounters
 		DataConnectionId string
-
-		rand          *rand
-		trafficLogger enigmahandlers.ITrafficLogger
-
 		// CurrentActionState will contain the state of the latest action to be started
 		CurrentActionState *action.State
 		LogEntry           *logger.LogEntry
@@ -91,13 +87,21 @@ type (
 		RequestMetrics     *requestmetrics.RequestMetrics
 		ReconnectSettings  ReconnectSettings
 
+		rand          *rand
+		trafficLogger enigmahandlers.ITrafficLogger
+		reconnect     ReconnectInfo
+
+		ctx       context.Context
+		ctxCancel context.CancelFunc
+
 		events  map[int]*Event // todo support multiple events per handle?
 		eventMu sync.Mutex
 
 		objects     map[string]ObjectHandlerInstance
 		objectsLock sync.Mutex
 
-		reconnect ReconnectInfo
+		eventWs     *eventws.EventWebsocket
+		eventWsLock sync.Mutex
 	}
 
 	// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
@@ -131,11 +135,21 @@ type (
 		Msg string
 		Err error
 	}
+
+	EventMetricsLogger struct {
+		LogEntry *logger.LogEntry
+	}
 )
 
 const (
 	// DefaultTimeout per request timeout
 	DefaultTimeout = 300 * time.Second
+)
+
+// Fake "events" for event websocket
+const (
+	EventWsReconnectStarted = "eventws.reconnect.started"
+	EventWsReconnectEnded   = "eventws.reconnect.ended"
 )
 
 var (
@@ -172,8 +186,6 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
-		ctx:          sessionCtx,
-		ctxCancel:    cancel,
 		Timeout:      timeout,
 		ArtifactMap:  NewAppMap(),
 		OutputsDir:   outputsDir,
@@ -185,9 +197,11 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		// in pendingHandler and could possibly be lowered, this would however require re-evaluation.
 		Pending:        NewPendingHandler(32),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
-		events:         make(map[int]*Event),
 		Counters:       counters,
 
+		ctx:       sessionCtx,
+		ctxCancel: cancel,
+		events:    make(map[int]*Event),
 		reconnect: ReconnectInfo{
 			reconnectFunc:       nil,
 			pendingReconnection: NewPendingHandler(32),
@@ -670,7 +684,7 @@ func (state *State) Reconnect() error {
 	}
 
 	if state.CurrentActionState != nil {
-		state.CurrentActionState.AddErrors(enigmahandlers.DisconnectError{})
+		state.CurrentActionState.AddErrors(wsdialer.DisconnectError{Type: enigmahandlers.SenseWsType})
 	}
 
 	reconnectStart := time.Now()
@@ -720,7 +734,7 @@ func (state *State) Reconnect() error {
 
 reconnectLoop:
 	for i, waitTime := range backOff {
-		<-time.After(time.Duration(waitTime * float64(time.Second)))
+		helpers.WaitFor(state.BaseContext(), time.Duration(waitTime*float64(time.Second)))
 
 		reConnectActionState := &action.State{}
 
@@ -795,14 +809,13 @@ func (state *State) GetReconnectError() error {
 	return state.reconnect.err
 }
 
-// IsWebsocketDisconnected checks if error is caused by websocket disconnect
-func (state *State) IsWebsocketDisconnected(err error) bool {
-	switch helpers.TrueCause(err).(type) {
-	case enigmahandlers.DisconnectError:
+// IsSenseWebsocketDisconnected checks if error is caused by websocket disconnect
+func (state *State) IsSenseWebsocketDisconnected(err error) bool {
+	disconnectErr, ok := helpers.TrueCause(err).(wsdialer.DisconnectError)
+	if ok && disconnectErr.Type == enigmahandlers.SenseWsType {
 		return true
-	default:
-		return false
 	}
+	return false
 }
 
 //CurrentSenseApp returns currently set sense app or error if none found
@@ -834,4 +847,90 @@ func (state *State) CurrentSenseUplink() (*enigmahandlers.SenseUplink, error) {
 	}
 
 	return state.Connection.Sense(), nil
+}
+
+// SetupEventWebsocketAsync setup event websocket and listener
+func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl neturl.URL, allowuntrusted bool) {
+	// change scheme if set to http or https
+	switch nurl.Scheme {
+	case "http:":
+		nurl.Scheme = "ws"
+	case "https":
+		nurl.Scheme = "wss"
+	}
+	state.eventWsLock.Lock()
+	if state.eventWs != nil {
+		if err := state.eventWs.Close(); err != nil && state.LogEntry != nil {
+			state.LogEntry.Log(logger.WarningLevel, err)
+		}
+		state.eventWs = nil
+	}
+
+	state.QueueRequest(func(ctx context.Context) error {
+		defer state.eventWsLock.Unlock()
+		currentActionState := func() *action.State { return state.CurrentActionState }
+		metricslogger := &EventMetricsLogger{LogEntry: state.LogEntry}
+		var err error
+		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, metricslogger, &nurl,
+			state.HeaderJar.GetHeader(nurl.Host), allowuntrusted, state.RequestMetrics, currentActionState)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// enable re-connect of event websocket
+		state.eventWs.Reconnect.GetContext = state.BaseContext
+		state.eventWs.Reconnect.AutoReconnect = true
+		state.eventWs.Reconnect.Backoff = state.ReconnectSettings.Backoff
+		state.eventWs.Reconnect.OnReconnectStart = func() {
+			if state == nil {
+				return
+			}
+			state.Pending.IncPending() // "Stop" current action if reaching end to minimize effect on subsequent action due to re-connect
+			if state.LogEntry != nil {
+				state.LogEntry.LogDebug("Start re-connect of event websocket")
+			}
+			state.eventWs.FakeEvent(eventws.Event{
+				Operation: EventWsReconnectStarted,
+			})
+		}
+		state.eventWs.Reconnect.OnReconnectDone = func(err error, attempts int, timeSpent time.Duration) {
+			if state == nil {
+				return
+			}
+			defer state.Pending.DecPending()
+			if state.LogEntry != nil {
+				state.LogEntry.LogDebug("End re-connect of event websocket")
+				state.LogEntry.LogInfo("EventWsReconnect", fmt.Sprintf("success=%v;attempts=%d;TimeSpent=%d", err == nil, attempts, timeSpent))
+			}
+			if err != nil {
+				state.CurrentActionState.AddErrors(errors.Wrap(err, "error reconnecting event websocket"))
+			}
+			state.eventWs.FakeEvent(eventws.Event{
+				Operation: EventWsReconnectEnded,
+				Success:   err == nil,
+			})
+		}
+		return nil
+	}, actionState, true, "")
+}
+
+// EventWebsocket returns current established event websocket or nil
+func (state *State) EventWebsocket() *eventws.EventWebsocket {
+	state.eventWsLock.Lock()
+	defer state.eventWsLock.Unlock()
+
+	return state.eventWs
+}
+
+func (lgr *EventMetricsLogger) SocketOpenMetric(url *neturl.URL, duration time.Duration) {
+	if lgr == nil || lgr.LogEntry == nil {
+		return
+	}
+
+	path := ""
+	if url != nil {
+		path = url.Path
+	}
+
+	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS")
 }

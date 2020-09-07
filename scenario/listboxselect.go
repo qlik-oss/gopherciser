@@ -176,7 +176,7 @@ func (settings ListBoxSelectSettings) doSelect(sessionState *session.State, acti
 	if settings.Wrap {
 		endSelections := func(ctx context.Context) error {
 			err := genericObj.EndSelections(ctx, settings.Accept)
-			return errors.Wrapf(err, "Failed to end selsection in object<%s>", genericObj.GenericId)
+			return errors.Wrapf(err, "Failed to end selection in object<%s>", genericObj.GenericId)
 		}
 		err = sessionState.SendRequest(actionState, endSelections)
 		if err != nil {

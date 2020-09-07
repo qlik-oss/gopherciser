@@ -150,6 +150,7 @@ const (
 	ActionSubscribeObjects        = "subscribeobjects"
 	ActionUnsubscribeObjects      = "unsubscribeobjects"
 	ActionListBoxSelect           = "listboxselect"
+	ActionDisconnectElastic       = "disconnectelastic"
 	ActionClickActionButton       = "clickactionbutton"
 )
 
@@ -271,6 +272,7 @@ func ResetDefaultActions() {
 		ActionSubscribeObjects:        SubscribeObjectsSettings{},
 		ActionUnsubscribeObjects:      UnsubscribeObjects{},
 		ActionListBoxSelect:           ListBoxSelectSettings{},
+		ActionDisconnectElastic:       DisconnectElastic{},
 		ActionClickActionButton:       ClickActionButtonSettings{},
 	}
 }
@@ -397,7 +399,7 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 
 	if actionState.Failed {
 		err := actionState.Errors()
-		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsWebsocketDisconnected(err) {
+		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsSenseWebsocketDisconnected(err) {
 			sessionState.AwaitReconnect()
 			if sessionState.IsAbortTriggered() {
 				if err = sessionState.GetReconnectError(); err != nil {

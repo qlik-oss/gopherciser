@@ -1986,8 +1986,8 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 * `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
 * `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
 * `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `pollinterval`: Reload status polling interval (seconds). Defaults to 5 seconds, if omitted.
-* `log`: Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large.
+* `pollinterval`: Reload status polling interval (seconds). Defaults to 5 minutes, if omitted.
+* `pollingoff`: Turn polling off and rely only on events. Warning: Turning this on might cause action to wait until test ends.
 
 ### Example
 
@@ -2085,6 +2085,25 @@ Upload a data file to the Data manager.
      "settings": {
          "filename": "/home/root/data.csv"
      }
+}
+```
+
+</details><details>
+<summary>disconnectelastic</summary>
+
+## DisconnectElastic action
+
+Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
+
+Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
+
+
+### Example
+
+```json
+{
+    "label": "Disconnect from elastic environment",
+    "action" : "disconnectelastic"
 }
 ```
 

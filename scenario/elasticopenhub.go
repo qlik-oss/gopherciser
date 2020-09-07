@@ -3,6 +3,7 @@ package scenario
 import (
 	"encoding/json"
 	"fmt"
+	neturl "net/url"
 	"strings"
 	"sync"
 
@@ -213,6 +214,20 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
 	})
+
+	eventwsUrl, err := neturl.Parse(host)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	if connection.Security {
+		eventwsUrl.Scheme = "wss"
+	} else {
+		eventwsUrl.Scheme = "ws"
+	}
+	eventwsUrl.Path = "api/v1/events"
+	sessionState.SetupEventWebsocketAsync(actionState, *eventwsUrl, connection.Allowuntrusted)
 
 	if sessionState.Wait(actionState) {
 		return // we had an error

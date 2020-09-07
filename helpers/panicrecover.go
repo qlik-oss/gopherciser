@@ -11,7 +11,7 @@ func RecoverWithError(panicErr *error) {
 		var err error
 
 		if err, ok = r.(error); !ok {
-			err = errors.Errorf("PANIC: %v", r)
+			err = errors.Errorf("PANIC: %+v", r)
 		}
 		if panicErr != nil {
 			*panicErr = err
