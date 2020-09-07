@@ -20,7 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.7.1
 	github.com/qlik-oss/enigma-go v1.1.3-0.20200629052521-574b1c3aa72a
 	github.com/rs/zerolog v1.19.0
-	github.com/shiena/ansicolor v0.0.0-20200830101100-9405ca8e49f3
+	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
