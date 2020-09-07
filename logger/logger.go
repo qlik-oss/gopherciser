@@ -35,7 +35,7 @@ type (
 
 	//Message container
 	message struct {
-		Tick    int64
+		Tick    uint64
 		Time    time.Time
 		Level   LogLevel
 		Message string
