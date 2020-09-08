@@ -3,13 +3,14 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/session"
-	"strings"
 )
 
 type (
@@ -232,7 +233,7 @@ func (openApp OpenAppSettings) AppStructureAction() (*AppStructureInfo, []Action
 	}, nil
 }
 
-func (connectWs connectWsSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+func (connectWs connectWsSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	appGUID, err := connectWs.ConnectFunc()
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "Failed connecting to sense server"))

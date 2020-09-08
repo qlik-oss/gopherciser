@@ -872,7 +872,7 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 		metricslogger := &EventMetricsLogger{LogEntry: state.LogEntry}
 		var err error
 		state.eventWs, err = eventws.SetupEventSocket(ctx, state.BaseContext(), state.Timeout, state.Cookies, state.trafficLogger, metricslogger, &nurl,
-			state.HeaderJar.GetHeader(nurl.Host), allowuntrusted, state.RequestMetrics, currentActionState)
+			state.HeaderJar.GetHeader(nurl.Hostname()), allowuntrusted, state.RequestMetrics, currentActionState)
 		if err != nil {
 			return errors.WithStack(err)
 		}
