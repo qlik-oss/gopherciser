@@ -77,8 +77,13 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 	if timeout.Nanoseconds() < 1 {
 		timeout = DefaultTimeout
 	}
+	var wsHeader http.Header
+	if httpHeader == nil {
+		wsHeader = make(http.Header)
+	} else {
+		wsHeader = httpHeader.Clone()
+	}
 
-	wsHeader := httpHeader.Clone()
 	// cookie needs to be set using http not ws scheme
 	cookieUrl := *url
 	if cookieJar != nil {
