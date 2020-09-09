@@ -35,9 +35,9 @@ type (
 			Name string `json:"name,omitempty"`
 			Type string `json:"type,omitempty"`
 		} `json:"cells,omitempty"`
-		Title       string  `json:"title,omitempty"`
-		Description string  `json:"description,omitempty"`
-		Rank        float64 `json:"rank,omitempty"`
+		Title       string      `json:"title,omitempty"`
+		Description string      `json:"description,omitempty"`
+		Rank        interface{} `json:"rank,omitempty"`
 	}
 
 	// SheetListPropertiesData properties of sheetlist
@@ -94,7 +94,15 @@ func (sheetList *SheetList) UpdateLayout(ctx context.Context) error {
 			if item1 == nil || item2 == nil || item1.Data == nil || item2.Data == nil {
 				return false
 			}
-			return sheetItems[i].Data.Rank < sheetItems[j].Data.Rank
+			iRank, ok := sheetItems[i].Data.Rank.(float64)
+			if !ok {
+				iRank = 0
+			}
+			jRank, ok := sheetItems[j].Data.Rank.(float64)
+			if !ok {
+				jRank = 0
+			}
+			return iRank < jRank
 		})
 	}
 
