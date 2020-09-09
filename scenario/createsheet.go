@@ -17,7 +17,6 @@ type (
 		ID          string `json:"id" displayname:"Sheet ID" doc-key:"createsheet.id"`
 		Title       string `json:"title" displayname:"Sheet title" doc-key:"createsheet.title"`
 		Description string `json:"description" displayname:"Sheet description" doc-key:"createsheet.description"`
-		// todo add option to change sheet to this sheet after creation, should probably be default
 	}
 )
 
@@ -46,12 +45,12 @@ func (settings CreateSheetSettings) Execute(sessionState *session.State,
 	}
 
 	metaDef := creation.StubMetaDef(settings.Title, settings.Description)
-	metaDef["rank"] = 0.0 //TODO (?) Support rank
 
 	props := map[string]interface{}{
 		"qMetaDef": metaDef,
 		"qInfo":    creation.StubNxInfo("sheet"),
 		"cells":    []interface{}{},
+		"rank":     0.0,
 	}
 
 	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
