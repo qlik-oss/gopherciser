@@ -99,6 +99,10 @@ type (
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
 
+	AppStructureStoryObject struct {
+		AppObjectDef
+	}
+
 	// AppStructureField list of fields in the app
 	AppStructureField struct {
 		enigma.NxFieldDescription
@@ -113,6 +117,8 @@ type (
 		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
 		// Fields list of all fields in the app
 		Fields map[string]AppStructureField `json:"fields"`
+		// StoryObjects
+		StoryObjects map[string]AppStructureStoryObject `json:"storyobjects"`
 	}
 
 	// AppStructurePopulatedObjects is the type returned by an action when prompted for selectable objects
@@ -140,22 +146,38 @@ const (
 	ObjectSheet
 	ObjectLoadModel
 	ObjectAppprops
+
+	// Objects connected to snapshots and stories
 	ObjectSnapshot
 	ObjectSnapshotList
+	ObjectEmbeddedSnapshot
+	ObjectSlide
+	ObjectSlideItem
+	ObjectImage
+	ObjectStory
+	ObjectText
+	ObjectShape
 )
 
 var (
 	ObjectTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-		"dimension":    int(ObjectTypeDimension),
-		"measure":      int(ObjectTypeMeasure),
-		"bookmark":     int(ObjectTypeBookmark),
-		"masterobject": int(ObjectTypeMasterObject),
-		"auto-chart":   int(ObjectTypeAutoChart),
-		"sheet":        int(ObjectSheet),
-		"loadmodel":    int(ObjectLoadModel),
-		"appprops":     int(ObjectAppprops),
-		"snapshot":     int(ObjectSnapshot),
-		"snapshotlist": int(ObjectSnapshotList),
+		"dimension":        int(ObjectTypeDimension),
+		"measure":          int(ObjectTypeMeasure),
+		"bookmark":         int(ObjectTypeBookmark),
+		"masterobject":     int(ObjectTypeMasterObject),
+		"auto-chart":       int(ObjectTypeAutoChart),
+		"sheet":            int(ObjectSheet),
+		"loadmodel":        int(ObjectLoadModel),
+		"appprops":         int(ObjectAppprops),
+		"snapshot":         int(ObjectSnapshot),
+		"snapshotlist":     int(ObjectSnapshotList),
+		"embeddedsnapshot": int(ObjectEmbeddedSnapshot),
+		"slide":            int(ObjectSlide),
+		"slideitem":        int(ObjectSlideItem),
+		"image":            int(ObjectImage),
+		"story":            int(ObjectStory),
+		"text":             int(ObjectText),
+		"shape":            int(ObjectShape),
 	})
 )
 

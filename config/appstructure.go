@@ -138,6 +138,9 @@ func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileNa
 func evaluateActionList(actions []scenario.Action, includeRaw bool, summary SummaryType) []scenario.Action {
 	appStructureScenario := make([]scenario.Action, 0, len(actions))
 	for _, act := range actions {
+		if act.Disabled {
+			continue
+		}
 		info, subActions := act.AppStructureAction()
 		if info != nil {
 			if info.Include {
@@ -261,8 +264,12 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case appstructure.ObjectSnapshotList, appstructure.ObjectSnapshot:
-			return nil
+		case appstructure.ObjectEmbeddedSnapshot, appstructure.ObjectSnapshot:
+			// TODO these objects can be gotten with GetObject, handle differently
+			fallthrough
+		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectImage, appstructure.ObjectText,
+			appstructure.ObjectShape, appstructure.ObjectSlideItem, appstructure.ObjectSnapshotList:
+			return errors.WithStack(structure.handleStories(ctx, app, id, typ, includeRaw))
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
@@ -301,6 +308,17 @@ func (structure *GeneratedAppStructure) AddBookmark(bookmark appstructure.AppStr
 		structure.Bookmarks = make(map[string]appstructure.AppStructureBookmark)
 	}
 	structure.Bookmarks[bookmark.ID] = bookmark
+}
+
+// AddStoryObject to structure
+func (structure *GeneratedAppStructure) AddStoryObject(object appstructure.AppStructureStoryObject) {
+	structure.structureLock.Lock()
+	defer structure.structureLock.Unlock()
+
+	if structure.StoryObjects == nil {
+		structure.StoryObjects = make(map[string]appstructure.AppStructureStoryObject)
+	}
+	structure.StoryObjects[object.Id] = object
 }
 
 func (structure *GeneratedAppStructure) warn(warning string) {
@@ -627,6 +645,28 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 			Defs:            dimension.FieldDefs,
 			Labels:          dimension.FieldLabels,
 		},
+	}
+
+	return nil
+}
+
+func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *senseobjects.App, id, typ string, includeRaw bool) error {
+	storyObject := appstructure.AppStructureStoryObject{
+		AppObjectDef: appstructure.AppObjectDef{
+			Id:   id,
+			Type: typ,
+		},
+	}
+	defer structure.AddStoryObject(storyObject) // Add what we have on point of return
+
+	obj, err := app.Doc.GetObject(ctx, id)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if obj.Handle == 0 {
+		structure.warn(fmt.Sprintf("id<%s> type<%s> returned object with nil handle", id, typ))
+		return nil
 	}
 
 	return nil
