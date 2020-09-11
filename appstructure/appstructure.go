@@ -112,6 +112,10 @@ type (
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 		// Visualization visualization of object, if exists
 		Visualization string `json:"visualization,omitempty"`
+		// SnapshotID of linked object snapshot object
+		SnapshotID string `json:"snapshotid,omitempty"`
+		// RawSnapShotProperties of extended snapshot object
+		RawSnapShotProperties json.RawMessage `json:"rawSnapshotProperties,omitempty"`
 	}
 
 	// AppStructureField list of fields in the app

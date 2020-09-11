@@ -688,6 +688,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 	defer func() {
 		if !includeRaw {
 			storyObject.RawProperties = nil
+			storyObject.RawSnapShotProperties = nil
 		}
 	}()
 
@@ -700,7 +701,24 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get object children error<%s>", id, typ, err))
 		return
 	}
-	storyObject.RawProperties = nil
+
+	if storyObject.Visualization == "snapshot" {
+		snapShotObj, err := obj.GetSnapshotObject(ctx)
+		if err != nil {
+			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get connected snapshot object", id, typ))
+			return
+		}
+		storyObject.SnapshotID = snapShotObj.GenericId
+		storyObject.RawSnapShotProperties, err = snapShotObj.GetPropertiesRaw(ctx)
+		if err != nil {
+			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get snapshot properties", snapShotObj.GenericId, snapShotObj.GenericType))
+			return
+		}
+
+		// Lookup and set Visualization
+		rawVisualization, _ := visualizationPath.Lookup(storyObject.RawSnapShotProperties)
+		_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
+	}
 }
 
 func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
@@ -792,7 +810,7 @@ func (structure *GeneratedAppStructure) addField(field *enigma.NxFieldDescriptio
 	}
 }
 
-func (structure *GeneratedAppStructure) getObject(ctx context.Context,  app *senseobjects.App, id, typ string) (*enigma.GenericObject, error)  {
+func (structure *GeneratedAppStructure) getObject(ctx context.Context, app *senseobjects.App, id, typ string) (*enigma.GenericObject, error) {
 	obj, err := app.Doc.GetObject(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "id<%s> type<%s> failed to return object", id, typ)
@@ -837,4 +855,3 @@ func (report *AppStructureReport) AddWarning(warning string) {
 
 	report.warnings = append(report.warnings, warning)
 }
-
