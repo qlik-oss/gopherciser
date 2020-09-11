@@ -51,18 +51,23 @@ type (
 		Labels []string `json:"labels,omitempty"`
 	}
 
+	// AppStructureObjectChildren substructure adding children
+	AppStructureObjectChildren struct{
+		// Children to the sense object
+		Children map[string]string `json:"children,omitempty"`
+	}
+
 	// AppStructureObject sense object structure
 	AppStructureObject struct {
 		AppObjectDef
 		MetaDef
+		AppStructureObjectChildren
 		// RawBaseProperties of Sense object
 		RawBaseProperties json.RawMessage `json:"rawBaseProperties,omitempty"`
 		// RawExtendedProperties of extended Sense object
 		RawExtendedProperties json.RawMessage `json:"rawExtendedProperties,omitempty"`
 		// RawGeneratedProperties inner generated properties of auto-chart
 		RawGeneratedProperties json.RawMessage `json:"rawGeneratedProperties,omitempty"`
-		// Children to the sense object
-		Children map[string]string `json:"children,omitempty"`
 		// Selectable true if select can be done in object
 		Selectable bool `json:"selectable"`
 		// Dimensions meta information of dimensions defined in object
@@ -99,8 +104,14 @@ type (
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
 
+	// AppStructureStoryObject list of objects used in stories
 	AppStructureStoryObject struct {
 		AppObjectDef
+		AppStructureObjectChildren
+		// RawProperties of Sense object
+		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
+		// Visualization visualization of object, if exists
+		Visualization string `json:"visualization,omitempty"`
 	}
 
 	// AppStructureField list of fields in the app

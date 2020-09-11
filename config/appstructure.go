@@ -269,7 +269,8 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 			fallthrough
 		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectImage, appstructure.ObjectText,
 			appstructure.ObjectShape, appstructure.ObjectSlideItem, appstructure.ObjectSnapshotList:
-			return errors.WithStack(structure.handleStories(ctx, app, id, typ, includeRaw))
+			structure.handleStories(ctx, app, id, typ, includeRaw)
+			return nil
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
@@ -355,11 +356,11 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 
 		obj.RawGeneratedProperties = extractGeneratedProperties(obj.RawExtendedProperties)
 
-		if err := handleChildren(ctx, extendedObject, obj); err != nil {
+		if err := handleChildren(ctx, extendedObject, &obj.AppStructureObjectChildren); err != nil {
 			return errors.WithStack(err)
 		}
 	} else {
-		if err := handleChildren(ctx, genObj, obj); err != nil {
+		if err := handleChildren(ctx, genObj, &obj.AppStructureObjectChildren); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -380,7 +381,7 @@ func (structure *GeneratedAppStructure) handleAutoChart(ctx context.Context, app
 
 	obj.RawGeneratedProperties = extractGeneratedProperties(obj.RawBaseProperties)
 
-	if err := handleChildren(ctx, genObj, obj); err != nil {
+	if err := handleChildren(ctx, genObj, &obj.AppStructureObjectChildren); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -393,7 +394,7 @@ func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
 	return properties
 }
 
-func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *appstructure.AppStructureObject) error {
+func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *appstructure.AppStructureObjectChildren) error {
 	childInfos, err := genObj.GetChildInfos(ctx)
 	if err != nil {
 		return errors.WithStack(err)
@@ -650,26 +651,50 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	return nil
 }
 
-func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *senseobjects.App, id, typ string, includeRaw bool) error {
+func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *senseobjects.App, id, typ string, includeRaw bool) {
 	storyObject := appstructure.AppStructureStoryObject{
 		AppObjectDef: appstructure.AppObjectDef{
 			Id:   id,
 			Type: typ,
 		},
 	}
-	defer structure.AddStoryObject(storyObject) // Add what we have on point of return
+
+	// Add what we have on point of return, since we only warn for these types of objects
+	defer func() {
+		structure.AddStoryObject(storyObject)
+	}()
 
 	obj, err := app.Doc.GetObject(ctx, id)
 	if err != nil {
-		return errors.WithStack(err)
+		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to return object error<%s>", id, typ, err))
+		return
 	}
 
 	if obj.Handle == 0 {
 		structure.warn(fmt.Sprintf("id<%s> type<%s> returned object with nil handle", id, typ))
-		return nil
+		return
 	}
 
-	return nil
+	storyObject.RawProperties, err = obj.GetPropertiesRaw(ctx)
+	if err != nil {
+		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to return properties error<%s>", id, typ, err))
+		return
+	}
+	defer func() {
+		if !includeRaw {
+			storyObject.RawProperties = nil
+		}
+	}()
+
+	// Lookup and set Visualization
+	visualizationPath := senseobjdef.NewDataPath("/visualization")
+	rawVisualization, _ := visualizationPath.Lookup(storyObject.RawProperties)
+	_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
+
+	if err := handleChildren(ctx, obj, &storyObject.AppStructureObjectChildren); err != nil {
+		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get object children error<%s>", id, typ, err))
+		return
+	}
 }
 
 func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {

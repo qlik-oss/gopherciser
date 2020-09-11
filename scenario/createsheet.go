@@ -2,10 +2,10 @@ package scenario
 
 import (
 	"context"
-	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/creation"
 	"github.com/qlik-oss/gopherciser/session"
@@ -99,17 +99,17 @@ func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructu
 		Objects: make([]appstructure.AppStructureObject, 0),
 	}
 	newObjs.Objects = append(newObjs.Objects, appstructure.AppStructureObject{
-		AppObjectDef:           appstructure.AppObjectDef{Id: settings.ID, Type: "sheet"},
-		MetaDef:                appstructure.MetaDef{Title: settings.Title},
-		RawBaseProperties:      nil,
-		RawExtendedProperties:  nil,
-		RawGeneratedProperties: nil,
-		Children:               nil,
-		Selectable:             false,
-		Dimensions:             nil,
-		Measures:               nil,
-		ExtendsId:              "",
-		Visualization:          "",
+		AppObjectDef:               appstructure.AppObjectDef{Id: settings.ID, Type: "sheet"},
+		MetaDef:                    appstructure.MetaDef{Title: settings.Title},
+		RawBaseProperties:          nil,
+		RawExtendedProperties:      nil,
+		RawGeneratedProperties:     nil,
+		AppStructureObjectChildren: appstructure.AppStructureObjectChildren{Children: nil},
+		Selectable:                 false,
+		Dimensions:                 nil,
+		Measures:                   nil,
+		ExtendsId:                  "",
+		Visualization:              "",
 	})
 	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, false
 }
