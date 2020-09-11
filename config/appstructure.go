@@ -702,7 +702,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 		return
 	}
 
-	if storyObject.Visualization == "snapshot" {
+	if storyObject.Visualization == appstructure.ObjectTypeEnumMap.StringDefault(int(appstructure.ObjectSnapshot), "snapshot") {
 		snapShotObj, err := obj.GetSnapshotObject(ctx)
 		if err != nil {
 			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get connected snapshot object", id, typ))
