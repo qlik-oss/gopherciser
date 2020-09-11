@@ -52,7 +52,7 @@ type (
 	}
 
 	// AppStructureObjectChildren substructure adding children
-	AppStructureObjectChildren struct{
+	AppStructureObjectChildren struct {
 		// Children to the sense object
 		Children map[string]string `json:"children,omitempty"`
 	}
@@ -159,18 +159,16 @@ const (
 	ObjectAppprops
 
 	// Objects connected to snapshots and stories
-	ObjectSnapshot
 	ObjectSnapshotList
+	ObjectSnapshot
 	ObjectEmbeddedSnapshot
+	ObjectStory
 	ObjectSlide
 	ObjectSlideItem
-	ObjectImage
-	ObjectStory
-	ObjectText
-	ObjectShape
 )
 
 var (
+	// ObjectTypeEnumMap enum of known object types which needs special handling
 	ObjectTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 		"dimension":        int(ObjectTypeDimension),
 		"measure":          int(ObjectTypeMeasure),
@@ -180,15 +178,12 @@ var (
 		"sheet":            int(ObjectSheet),
 		"loadmodel":        int(ObjectLoadModel),
 		"appprops":         int(ObjectAppprops),
-		"snapshot":         int(ObjectSnapshot),
 		"snapshotlist":     int(ObjectSnapshotList),
+		"snapshot":         int(ObjectSnapshot),
 		"embeddedsnapshot": int(ObjectEmbeddedSnapshot),
+		"story":            int(ObjectStory),
 		"slide":            int(ObjectSlide),
 		"slideitem":        int(ObjectSlideItem),
-		"image":            int(ObjectImage),
-		"story":            int(ObjectStory),
-		"text":             int(ObjectText),
-		"shape":            int(ObjectShape),
 	})
 )
 

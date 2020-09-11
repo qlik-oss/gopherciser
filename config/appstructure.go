@@ -264,16 +264,15 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case appstructure.ObjectEmbeddedSnapshot, appstructure.ObjectSnapshot:
-			// TODO these objects can be gotten with GetObject, handle differently
-			fallthrough
-		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectImage, appstructure.ObjectText,
-			appstructure.ObjectShape, appstructure.ObjectSlideItem, appstructure.ObjectSnapshotList:
+		case appstructure.ObjectEmbeddedSnapshot, appstructure.ObjectSnapshotList, appstructure.ObjectSnapshot:
+			structure.handleSnapshots(id, typ)
+			return nil
+		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectSlideItem:
 			structure.handleStories(ctx, app, id, typ, includeRaw)
 			return nil
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
-				return errors.WithStack(err)
+				return errors.Wrapf(err, "id<%s> type<%s>", id, typ)
 			}
 		}
 
@@ -330,7 +329,7 @@ func (structure *GeneratedAppStructure) warn(warning string) {
 }
 
 func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
-	genObj, err := app.Doc.GetObject(ctx, id)
+	genObj, err := structure.getObject(ctx, app, id, typ)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -345,7 +344,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
 
 	if obj.ExtendsId != "" {
-		extendedObject, err := app.Doc.GetObject(ctx, obj.ExtendsId)
+		extendedObject, err := structure.getObject(ctx, app, obj.ExtendsId, obj.Type)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -369,7 +368,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 }
 
 func (structure *GeneratedAppStructure) handleAutoChart(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
-	genObj, err := app.Doc.GetObject(ctx, id)
+	genObj, err := structure.getObject(ctx, app, id, "auto-chart")
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -651,6 +650,17 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	return nil
 }
 
+func (structure *GeneratedAppStructure) handleSnapshots(id, typ string) {
+	storyObject := appstructure.AppStructureStoryObject{
+		AppObjectDef: appstructure.AppObjectDef{
+			Id:   id,
+			Type: typ,
+		},
+	}
+
+	structure.AddStoryObject(storyObject)
+}
+
 func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *senseobjects.App, id, typ string, includeRaw bool) {
 	storyObject := appstructure.AppStructureStoryObject{
 		AppObjectDef: appstructure.AppObjectDef{
@@ -664,14 +674,9 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 		structure.AddStoryObject(storyObject)
 	}()
 
-	obj, err := app.Doc.GetObject(ctx, id)
+	obj, err := structure.getObject(ctx, app, id, typ)
 	if err != nil {
-		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to return object error<%s>", id, typ, err))
-		return
-	}
-
-	if obj.Handle == 0 {
-		structure.warn(fmt.Sprintf("id<%s> type<%s> returned object with nil handle", id, typ))
+		structure.warn(err.Error())
 		return
 	}
 
@@ -695,6 +700,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get object children error<%s>", id, typ, err))
 		return
 	}
+	storyObject.RawProperties = nil
 }
 
 func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
@@ -786,6 +792,18 @@ func (structure *GeneratedAppStructure) addField(field *enigma.NxFieldDescriptio
 	}
 }
 
+func (structure *GeneratedAppStructure) getObject(ctx context.Context,  app *senseobjects.App, id, typ string) (*enigma.GenericObject, error)  {
+	obj, err := app.Doc.GetObject(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "id<%s> type<%s> failed to return object", id, typ)
+	}
+
+	if obj.Handle == 0 {
+		return obj, errors.Wrapf(err, "id<%s> type<%s> returned object with nil handle", id, typ)
+	}
+	return obj, nil
+}
+
 func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
 	if obj.MetaDef.Title != "" {
 		return // We already have a title
@@ -819,3 +837,4 @@ func (report *AppStructureReport) AddWarning(warning string) {
 
 	report.warnings = append(report.warnings, warning)
 }
+
