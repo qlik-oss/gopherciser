@@ -51,18 +51,23 @@ type (
 		Labels []string `json:"labels,omitempty"`
 	}
 
+	// AppStructureObjectChildren substructure adding children
+	AppStructureObjectChildren struct {
+		// Map of children to the sense object
+		Map map[string]string `json:"children,omitempty"`
+	}
+
 	// AppStructureObject sense object structure
 	AppStructureObject struct {
 		AppObjectDef
 		MetaDef
+		AppStructureObjectChildren
 		// RawBaseProperties of Sense object
 		RawBaseProperties json.RawMessage `json:"rawBaseProperties,omitempty"`
 		// RawExtendedProperties of extended Sense object
 		RawExtendedProperties json.RawMessage `json:"rawExtendedProperties,omitempty"`
 		// RawGeneratedProperties inner generated properties of auto-chart
 		RawGeneratedProperties json.RawMessage `json:"rawGeneratedProperties,omitempty"`
-		// Children to the sense object
-		Children map[string]string `json:"children,omitempty"`
 		// Selectable true if select can be done in object
 		Selectable bool `json:"selectable"`
 		// Dimensions meta information of dimensions defined in object
@@ -99,6 +104,20 @@ type (
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
 
+	// AppStructureStoryObject list of objects used in stories
+	AppStructureStoryObject struct {
+		AppObjectDef
+		AppStructureObjectChildren
+		// RawProperties of Sense object
+		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
+		// Visualization visualization of object, if exists
+		Visualization string `json:"visualization,omitempty"`
+		// SnapshotID of linked object snapshot object
+		SnapshotID string `json:"snapshotid,omitempty"`
+		// RawSnapShotProperties of extended snapshot object
+		RawSnapShotProperties json.RawMessage `json:"rawSnapshotProperties,omitempty"`
+	}
+
 	// AppStructureField list of fields in the app
 	AppStructureField struct {
 		enigma.NxFieldDescription
@@ -113,6 +132,8 @@ type (
 		Bookmarks map[string]AppStructureBookmark `json:"bookmarks"`
 		// Fields list of all fields in the app
 		Fields map[string]AppStructureField `json:"fields"`
+		// StoryObjects
+		StoryObjects map[string]AppStructureStoryObject `json:"storyobjects"`
 	}
 
 	// AppStructurePopulatedObjects is the type returned by an action when prompted for selectable objects
@@ -140,22 +161,33 @@ const (
 	ObjectSheet
 	ObjectLoadModel
 	ObjectAppprops
-	ObjectSnapshot
+
+	// Objects connected to snapshots and stories
 	ObjectSnapshotList
+	ObjectSnapshot
+	ObjectEmbeddedSnapshot
+	ObjectStory
+	ObjectSlide
+	ObjectSlideItem
 )
 
 var (
+	// ObjectTypeEnumMap enum of known object types which needs special handling
 	ObjectTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-		"dimension":    int(ObjectTypeDimension),
-		"measure":      int(ObjectTypeMeasure),
-		"bookmark":     int(ObjectTypeBookmark),
-		"masterobject": int(ObjectTypeMasterObject),
-		"auto-chart":   int(ObjectTypeAutoChart),
-		"sheet":        int(ObjectSheet),
-		"loadmodel":    int(ObjectLoadModel),
-		"appprops":     int(ObjectAppprops),
-		"snapshot":     int(ObjectSnapshot),
-		"snapshotlist": int(ObjectSnapshotList),
+		"dimension":        int(ObjectTypeDimension),
+		"measure":          int(ObjectTypeMeasure),
+		"bookmark":         int(ObjectTypeBookmark),
+		"masterobject":     int(ObjectTypeMasterObject),
+		"auto-chart":       int(ObjectTypeAutoChart),
+		"sheet":            int(ObjectSheet),
+		"loadmodel":        int(ObjectLoadModel),
+		"appprops":         int(ObjectAppprops),
+		"snapshotlist":     int(ObjectSnapshotList),
+		"snapshot":         int(ObjectSnapshot),
+		"embeddedsnapshot": int(ObjectEmbeddedSnapshot),
+		"story":            int(ObjectStory),
+		"slide":            int(ObjectSlide),
+		"slideitem":        int(ObjectSlideItem),
 	})
 )
 
@@ -185,7 +217,7 @@ func (structure *AppStructure) addSelectableChildren(obj AppStructureObject) []A
 		selectables = append(selectables, obj)
 	}
 
-	for id := range obj.Children {
+	for id := range obj.Map {
 		child, ok := structure.Objects[id]
 		if !ok {
 			continue

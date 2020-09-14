@@ -138,6 +138,9 @@ func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileNa
 func evaluateActionList(actions []scenario.Action, includeRaw bool, summary SummaryType) []scenario.Action {
 	appStructureScenario := make([]scenario.Action, 0, len(actions))
 	for _, act := range actions {
+		if act.Disabled {
+			continue
+		}
 		info, subActions := act.AppStructureAction()
 		if info != nil {
 			if info.Include {
@@ -261,11 +264,15 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 			if err := structure.handleAutoChart(ctx, app, id, &obj); err != nil {
 				return errors.WithStack(err)
 			}
-		case appstructure.ObjectSnapshotList, appstructure.ObjectSnapshot:
+		case appstructure.ObjectEmbeddedSnapshot, appstructure.ObjectSnapshotList, appstructure.ObjectSnapshot:
+			structure.handleSnapshots(id, typ)
+			return nil
+		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectSlideItem:
+			structure.handleStories(ctx, app, id, typ, includeRaw)
 			return nil
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
-				return errors.WithStack(err)
+				return errors.Wrapf(err, "id<%s> type<%s>", id, typ)
 			}
 		}
 
@@ -303,6 +310,17 @@ func (structure *GeneratedAppStructure) AddBookmark(bookmark appstructure.AppStr
 	structure.Bookmarks[bookmark.ID] = bookmark
 }
 
+// AddStoryObject to structure
+func (structure *GeneratedAppStructure) AddStoryObject(object appstructure.AppStructureStoryObject) {
+	structure.structureLock.Lock()
+	defer structure.structureLock.Unlock()
+
+	if structure.StoryObjects == nil {
+		structure.StoryObjects = make(map[string]appstructure.AppStructureStoryObject)
+	}
+	structure.StoryObjects[object.Id] = object
+}
+
 func (structure *GeneratedAppStructure) warn(warning string) {
 	structure.report.AddWarning(warning)
 	if structure.logEntry != nil {
@@ -311,7 +329,7 @@ func (structure *GeneratedAppStructure) warn(warning string) {
 }
 
 func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
-	genObj, err := app.Doc.GetObject(ctx, id)
+	genObj, err := structure.getObject(ctx, app, id, typ)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -326,7 +344,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
 
 	if obj.ExtendsId != "" {
-		extendedObject, err := app.Doc.GetObject(ctx, obj.ExtendsId)
+		extendedObject, err := structure.getObject(ctx, app, obj.ExtendsId, obj.Type)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -337,11 +355,11 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 
 		obj.RawGeneratedProperties = extractGeneratedProperties(obj.RawExtendedProperties)
 
-		if err := handleChildren(ctx, extendedObject, obj); err != nil {
+		if err := handleChildren(ctx, extendedObject, &obj.AppStructureObjectChildren); err != nil {
 			return errors.WithStack(err)
 		}
 	} else {
-		if err := handleChildren(ctx, genObj, obj); err != nil {
+		if err := handleChildren(ctx, genObj, &obj.AppStructureObjectChildren); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -350,7 +368,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 }
 
 func (structure *GeneratedAppStructure) handleAutoChart(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
-	genObj, err := app.Doc.GetObject(ctx, id)
+	genObj, err := structure.getObject(ctx, app, id, "auto-chart")
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -362,7 +380,7 @@ func (structure *GeneratedAppStructure) handleAutoChart(ctx context.Context, app
 
 	obj.RawGeneratedProperties = extractGeneratedProperties(obj.RawBaseProperties)
 
-	if err := handleChildren(ctx, genObj, obj); err != nil {
+	if err := handleChildren(ctx, genObj, &obj.AppStructureObjectChildren); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -375,7 +393,7 @@ func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
 	return properties
 }
 
-func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *appstructure.AppStructureObject) error {
+func handleChildren(ctx context.Context, genObj *enigma.GenericObject, children *appstructure.AppStructureObjectChildren) error {
 	childInfos, err := genObj.GetChildInfos(ctx)
 	if err != nil {
 		return errors.WithStack(err)
@@ -385,10 +403,10 @@ func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *apps
 		if child == nil {
 			continue
 		}
-		if obj.Children == nil {
-			obj.Children = make(map[string]string)
+		if children.Map == nil {
+			children.Map = make(map[string]string)
 		}
-		obj.Children[child.Id] = child.Type
+		children.Map[child.Id] = child.Type
 	}
 
 	return nil
@@ -632,6 +650,77 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	return nil
 }
 
+func (structure *GeneratedAppStructure) handleSnapshots(id, typ string) {
+	storyObject := appstructure.AppStructureStoryObject{
+		AppObjectDef: appstructure.AppObjectDef{
+			Id:   id,
+			Type: typ,
+		},
+	}
+
+	structure.AddStoryObject(storyObject)
+}
+
+func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *senseobjects.App, id, typ string, includeRaw bool) {
+	storyObject := appstructure.AppStructureStoryObject{
+		AppObjectDef: appstructure.AppObjectDef{
+			Id:   id,
+			Type: typ,
+		},
+	}
+
+	// Add what we have on point of return, since we only warn for these types of objects
+	defer func() {
+		structure.AddStoryObject(storyObject)
+	}()
+
+	obj, err := structure.getObject(ctx, app, id, typ)
+	if err != nil {
+		structure.warn(err.Error())
+		return
+	}
+
+	storyObject.RawProperties, err = obj.GetPropertiesRaw(ctx)
+	if err != nil {
+		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to return properties error<%s>", id, typ, err))
+		return
+	}
+	defer func() {
+		if !includeRaw {
+			storyObject.RawProperties = nil
+			storyObject.RawSnapShotProperties = nil
+		}
+	}()
+
+	// Lookup and set Visualization
+	visualizationPath := senseobjdef.NewDataPath("/visualization")
+	rawVisualization, _ := visualizationPath.Lookup(storyObject.RawProperties)
+	_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
+
+	if err := handleChildren(ctx, obj, &storyObject.AppStructureObjectChildren); err != nil {
+		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get object children error<%s>", id, typ, err))
+		return
+	}
+
+	if storyObject.Visualization == appstructure.ObjectTypeEnumMap.StringDefault(int(appstructure.ObjectSnapshot), "snapshot") {
+		snapShotObj, err := obj.GetSnapshotObject(ctx)
+		if err != nil {
+			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get connected snapshot object", id, typ))
+			return
+		}
+		storyObject.SnapshotID = snapShotObj.GenericId
+		storyObject.RawSnapShotProperties, err = snapShotObj.GetPropertiesRaw(ctx)
+		if err != nil {
+			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get snapshot properties", snapShotObj.GenericId, snapShotObj.GenericType))
+			return
+		}
+
+		// Lookup and set Visualization
+		rawVisualization, _ := visualizationPath.Lookup(storyObject.RawSnapShotProperties)
+		_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
+	}
+}
+
 func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
 	bookmark, err := app.Doc.GetBookmark(ctx, id)
 	if err != nil {
@@ -719,6 +808,18 @@ func (structure *GeneratedAppStructure) addField(field *enigma.NxFieldDescriptio
 	structure.Fields[field.Name] = appstructure.AppStructureField{
 		NxFieldDescription: *field,
 	}
+}
+
+func (structure *GeneratedAppStructure) getObject(ctx context.Context, app *senseobjects.App, id, typ string) (*enigma.GenericObject, error) {
+	obj, err := app.Doc.GetObject(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "id<%s> type<%s> failed to return object", id, typ)
+	}
+
+	if obj.Handle == 0 {
+		return obj, errors.Wrapf(err, "id<%s> type<%s> returned object with nil handle", id, typ)
+	}
+	return obj, nil
 }
 
 func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
