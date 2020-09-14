@@ -104,7 +104,7 @@ func (settings CreateSheetSettings) AffectsAppObjectsAction(structure appstructu
 		RawBaseProperties:          nil,
 		RawExtendedProperties:      nil,
 		RawGeneratedProperties:     nil,
-		AppStructureObjectChildren: appstructure.AppStructureObjectChildren{Children: nil},
+		AppStructureObjectChildren: appstructure.AppStructureObjectChildren{Map: nil},
 		Selectable:                 false,
 		Dimensions:                 nil,
 		Measures:                   nil,

@@ -53,8 +53,8 @@ type (
 
 	// AppStructureObjectChildren substructure adding children
 	AppStructureObjectChildren struct {
-		// Children to the sense object
-		Children map[string]string `json:"children,omitempty"`
+		// Map of children to the sense object
+		Map map[string]string `json:"children,omitempty"`
 	}
 
 	// AppStructureObject sense object structure
@@ -217,7 +217,7 @@ func (structure *AppStructure) addSelectableChildren(obj AppStructureObject) []A
 		selectables = append(selectables, obj)
 	}
 
-	for id := range obj.Children {
+	for id := range obj.Map {
 		child, ok := structure.Objects[id]
 		if !ok {
 			continue

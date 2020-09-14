@@ -393,7 +393,7 @@ func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
 	return properties
 }
 
-func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *appstructure.AppStructureObjectChildren) error {
+func handleChildren(ctx context.Context, genObj *enigma.GenericObject, children *appstructure.AppStructureObjectChildren) error {
 	childInfos, err := genObj.GetChildInfos(ctx)
 	if err != nil {
 		return errors.WithStack(err)
@@ -403,10 +403,10 @@ func handleChildren(ctx context.Context, genObj *enigma.GenericObject, obj *apps
 		if child == nil {
 			continue
 		}
-		if obj.Children == nil {
-			obj.Children = make(map[string]string)
+		if children.Map == nil {
+			children.Map = make(map[string]string)
 		}
-		obj.Children[child.Id] = child.Type
+		children.Map[child.Id] = child.Type
 	}
 
 	return nil
