@@ -119,10 +119,6 @@ var (
             Description: "## ElasticReload action\n\nReload an app by simulating selecting **Reload** in the app context menu in the hub.\n",
             Examples: "### Example\n\n```json\n{\n    \"label\": \"Reload MyApp\",\n    \"action\": \"elasticreload\",\n    \"settings\": {\n        \"appmode\": \"name\",\n        \"app\": \"MyApp\"\n    }\n}\n```\n",
         },
-        "elasticshareapp": {
-            Description: "## ElasticShareApp action\n\nShare an app with one or more groups.\n",
-            Examples: "### Example\n\n```json\n{\n    \"action\" : \"ElasticShareApp\",\n    \"label\": \"Share coolapp with Everyone group\",\n    \"settings\": {\n        \"title\": \"coolapp\",\n        \"groups\": [\"Everyone\"]\n    }\n}\n```\n",
-        },
         "elasticuploadapp": {
             Description: "## ElasticUploadApp action\n\nUpload an app to a QSEoK deployment.\n",
             Examples: "### Example\n\n```json\n{\n     \"action\": \"ElasticUploadApp\",\n     \"label\": \"Upload myapp.qvf\",\n     \"settings\": {\n         \"title\": \"coolapp\",\n         \"filename\": \"/home/root/myapp.qvf\",\n         \"stream\": \"Everyone\",\n         \"spaceid\": \"2342798aaefcb23\",\n     }\n}\n```\n",
@@ -317,9 +313,6 @@ var (
         "elasticreload.log": { "DEPRECATED"  },  
         "elasticreload.pollingoff": { "Turn polling off and rely only on events. Warning: Turning this on might cause action to wait until test ends."  },  
         "elasticreload.pollinterval": { "Reload status polling interval (seconds). Defaults to 5 minutes, if omitted."  },  
-        "elasticshareapp.appguid": { "GUID of the app to share."  },  
-        "elasticshareapp.groups": { "List of groups that should be given access to the app."  },  
-        "elasticshareapp.title": { "Name of the app to share (supports the use of [session variables](#session_variables)). If `appguid` and `title` refer to different apps, `appguid` takes precedence."  },  
         "elasticuploadapp.chunksize": { "(optional) Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero."  },  
         "elasticuploadapp.filename": { "Local file to send as payload."  },  
         "elasticuploadapp.mode": { "Upload mode. Defaults to `tus`, if omitted.","`tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.","`legacy`: Upload the file using a single POST payload (legacy file upload mode)."  },  
@@ -427,7 +420,7 @@ var (
             {
                 Name: "qseokActions",
                 Title: "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticshareapp","elasticuploadapp","uploaddata","disconnectelastic" },
+                Actions: []string{ "deletedata","elasticcreateapp","elasticcreatecollection","elasticdeleteapp","elasticdeletecollection","elasticdeleteodag","elasticduplicateapp","elasticexplore","elasticexportapp","elasticgenerateodag","elastichubsearch","elasticmoveapp","elasticopenhub","elasticpublishapp","elasticreload","elasticuploadapp","uploaddata","disconnectelastic" },
                 DocEntry: common.DocEntry{
                     Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
                     Examples: "",
