@@ -113,7 +113,6 @@ const (
 	ActionElasticHubSearch        = "elastichubsearch"
 	ActionElasticDeleteApp        = "elasticdeleteapp"
 	ActionElasticCreateApp        = "elasticcreateapp"
-	ActionElasticShareApp         = "elasticshareapp"
 	ActionElasticExportApp        = "elasticexportapp"
 	ActionElasticGenerateOdag     = "elasticgenerateodag"
 	ActionElasticDeleteOdag       = "elasticdeleteodag"
@@ -235,7 +234,6 @@ func ResetDefaultActions() {
 		ActionElasticHubSearch:        ElasticHubSearchSettings{},
 		ActionElasticDeleteApp:        ElasticDeleteAppSettings{},
 		ActionElasticCreateApp:        ElasticCreateAppSettings{},
-		ActionElasticShareApp:         ElasticShareAppSettings{},
 		ActionElasticExportApp:        ElasticExportAppSettings{},
 		ActionElasticGenerateOdag:     ElasticGenerateOdagSettings{},
 		ActionElasticDeleteOdag:       ElasticDeleteOdagSettings{},

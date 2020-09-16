@@ -2003,32 +2003,6 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 ```
 
 </details><details>
-<summary>elasticshareapp</summary>
-
-## ElasticShareApp action
-
-Share an app with one or more groups.
-
-### Settings
-
-* `title`: Name of the app to share (supports the use of [session variables](#session_variables)). If `appguid` and `title` refer to different apps, `appguid` takes precedence.
-* `appguid`: GUID of the app to share.
-* `groups`: List of groups that should be given access to the app.
-
-### Example
-
-```json
-{
-    "action" : "ElasticShareApp",
-    "label": "Share coolapp with Everyone group",
-    "settings": {
-        "title": "coolapp",
-        "groups": ["Everyone"]
-    }
-}
-```
-
-</details><details>
 <summary>elasticuploadapp</summary>
 
 ## ElasticUploadApp action

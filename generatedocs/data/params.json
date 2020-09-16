@@ -388,15 +388,6 @@
     "elasticreload.log": [
         "DEPRECATED"
     ],
-    "elasticshareapp.appguid": [
-        "GUID of the app to share."
-    ],
-    "elasticshareapp.title": [
-        "Name of the app to share (supports the use of [session variables](#session_variables)). If `appguid` and `title` refer to different apps, `appguid` takes precedence."
-    ],
-    "elasticshareapp.groups": [
-        "List of groups that should be given access to the app."
-    ],
     "elasticuploadapp.chunksize": [
         "(optional) Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero."
     ],
