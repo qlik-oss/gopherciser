@@ -154,9 +154,9 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 			reloadEventChan <- &event
 		}
 	}, true)
-	eventEndedFunc := events.RegisterFunc(eventws.OperationReloadEnded, func(event eventws.Event) {
+	eventEndedFunc := events.RegisterFunc(eventws.OperationResult, func(event eventws.Event) {
 		defer helpers.RecoverWithError(nil)
-		if !helpers.IsContextTriggered(statusContext) {
+		if !helpers.IsContextTriggered(statusContext) && event.ResourceType == eventws.ResourceTypeReload {
 			reloadEventChan <- &event
 		}
 	}, true)
@@ -210,7 +210,7 @@ forLoop:
 				case eventws.OperationReloadStarted:
 					sessionState.LogEntry.LogDebugf("reload started time<%s>", event.Time)
 					reloadStarted = event.Time
-				case eventws.OperationReloadEnded:
+				case eventws.OperationResult:
 					sessionState.LogEntry.LogDebugf("reload ended time<%s> success<%v>", event.Time, event.Success)
 					if !event.Success {
 						actionState.AddErrors(errors.New("reload finished with success false"))

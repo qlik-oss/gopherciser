@@ -19,4 +19,11 @@ const (
 	OperationReloadEnded       = "reload.ended"
 	OperationDataUpdated       = "data.updated"
 	OperationAttributesUpdated = "attributes.updated"
+	OperationResult            = "result"
+)
+
+// Constants for known ResourceType
+const (
+	ResourceTypeApp    = "app"
+	ResourceTypeReload = "reload"
 )
