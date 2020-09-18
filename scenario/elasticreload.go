@@ -205,6 +205,22 @@ forLoop:
 				break forLoop
 			}
 
+			// reloadiID is in data map instead of event.ReloadID if event is of type reload.result
+			if len(event.Data) < 1 {
+				actionState.AddErrors(errors.New("reload result event contains no data"))
+				break forLoop
+			}
+			reloadIDEntry, ok := event.Data["reloadId"]
+			if !ok {
+				actionState.AddErrors(errors.New("reload result event contains no reload ID"))
+				break forLoop
+			}
+			reloadID, ok := reloadIDEntry.(string)
+			if !ok {
+				actionState.AddErrors(errors.Errorf("reload result event contains reload id of unexpected type<%T> value<%v>", reloadIDEntry, reloadIDEntry))
+				break forLoop
+			}
+
 			if reloadID == event.ReloadId {
 				switch event.Operation {
 				case eventws.OperationReloadStarted:
