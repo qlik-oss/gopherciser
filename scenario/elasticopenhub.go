@@ -203,7 +203,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.PostAsync(fmt.Sprintf("%s/api/v1/policies/evaluation", host), actionState, sessionState.LogEntry, postData, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qlik-groups?tenantId=%s&limit=0&fields=displayName", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/api-keys/configs/%s", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users?tenantId=%s&limit=0&fields=name,picture,email,status&status=active,disabled", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users?tenantId=%s&limit=2000&fields=name,picture,email,status&status=active,disabled", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24&resourceType=sharingservicetask", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, nil)
