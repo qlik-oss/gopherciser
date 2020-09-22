@@ -19,12 +19,7 @@ import (
 
 type (
 	// ElasticReloadCore Currently used ElasticReloadCore (as opposed to deprecated settings)
-	ElasticReloadCore struct {
-		// PollInterval time in-between polling for reload status
-		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
-		// PollingOff turns polling for status off except after event websocket reconnect
-		PollingOff bool `json:"pollingoff" displayname:"Polling off" doc-key:"elasticreload.pollingoff"`
-	}
+	ElasticReloadCore struct{}
 
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
@@ -34,11 +29,12 @@ type (
 
 	// Older settings no longer used, if exist in JSON, an error will be thrown
 	deprecatedElasticReloadSettings struct {
-		AppGUID string `json:"appguid"`
-		AppName string `json:"appname"`
+		AppGUID *string `json:"appguid"`
+		AppName *string `json:"appname"`
 
-		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
-		SaveLog      bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
+		PollInterval *helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
+		SaveLog      *bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
+		PollingOff   *bool                 `json:"pollingoff" displayname:"Polling off" doc-key:"elasticreload.pollingoff"`
 	}
 )
 
@@ -58,23 +54,25 @@ const (
 	statusFailed    = "FAILED"
 )
 
-var (
-	DefaultPollInterval = helpers.TimeDuration(5 * time.Minute)
-)
-
 // UnmarshalJSON unmarshals reload settings from JSON
 func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 	var deprecated deprecatedElasticReloadSettings
 	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
 		hasSettings := make([]string, 0, 2)
-		if deprecated.AppGUID != "" {
+		if deprecated.AppGUID != nil {
 			hasSettings = append(hasSettings, "appguid")
 		}
-		if deprecated.AppName != "" {
+		if deprecated.AppName != nil {
 			hasSettings = append(hasSettings, "appname")
 		}
-		if deprecated.SaveLog {
+		if deprecated.SaveLog != nil {
 			hasSettings = append(hasSettings, "log")
+		}
+		if deprecated.PollInterval != nil {
+			hasSettings = append(hasSettings, "pollinterval")
+		}
+		if deprecated.PollingOff != nil {
+			hasSettings = append(hasSettings, "pollingoff")
 		}
 		if len(hasSettings) > 0 {
 			return errors.Errorf("%s settings<%s> are no longer used, remove listed setting(s) from script", ActionElasticReload, strings.Join(hasSettings, ","))
@@ -83,9 +81,6 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 	var core ElasticReloadCore
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
-	}
-	if core.PollInterval < helpers.TimeDuration(time.Millisecond) {
-		core.PollInterval = DefaultPollInterval
 	}
 	var appSelection session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
@@ -241,23 +236,6 @@ forLoop:
 					//logReloadDuration(reloadStarted, event.Time, sessionState.LogEntry)
 					break forLoop
 				}
-			}
-		case <-time.After(time.Duration(settings.PollInterval)):
-			if actionState.Failed {
-				break forLoop
-			}
-			if settings.PollingOff {
-				continue
-			}
-			// We had a re-connect of event websocket and need to check if reload is still ongoing
-			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
-			if err != nil {
-				actionState.AddErrors(err)
-				break forLoop
-			}
-			if !ongoing {
-				sessionState.LogEntry.Log(logger.WarningLevel, "reload finished, but no reload.ended event received")
-				break forLoop
 			}
 		case <-checkStatusChan:
 			// We had a re-connect of event websocket and need to check if reload is still ongoing
