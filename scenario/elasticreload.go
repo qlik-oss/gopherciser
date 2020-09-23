@@ -25,16 +25,6 @@ type (
 		session.AppSelection
 		ElasticReloadCore
 	}
-
-	// Older settings no longer used, if exist in JSON, an error will be thrown
-	deprecatedElasticReloadSettings struct {
-		AppGUID *string `json:"appguid"`
-		AppName *string `json:"appname"`
-
-		PollInterval *helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
-		SaveLog      *bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
-		PollingOff   *bool                 `json:"pollingoff" displayname:"Polling off" doc-key:"elasticreload.pollingoff"`
-	}
 )
 
 const (
