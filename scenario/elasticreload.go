@@ -17,13 +17,9 @@ import (
 )
 
 type (
-	// ElasticReloadCore Currently used ElasticReloadCore (as opposed to deprecated settings)
-	ElasticReloadCore struct{}
-
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
 		session.AppSelection
-		ElasticReloadCore
 	}
 )
 
@@ -55,15 +51,11 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 		return errors.Errorf("%s %s, please remove from script", ActionElasticReload, err.Error())
 	}
 
-	var core ElasticReloadCore
-	if err := jsonit.Unmarshal(arg, &core); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
-	}
 	var appSelection session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
 	}
-	*settings = ElasticReloadSettings{appSelection, core}
+	*settings = ElasticReloadSettings{appSelection}
 	return nil
 }
 
