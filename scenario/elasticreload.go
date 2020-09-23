@@ -143,13 +143,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 	checkStatusChan := make(chan *eventws.Event)
 	statusContext, cancelStatusCheck := context.WithCancel(sessionState.BaseContext())
 	reloadEventChan := make(chan *eventws.Event)
-	// Temporarily disable started event as reloadID is missing
-	//eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
-	//	defer helpers.RecoverWithError(nil)
-	//	if !helpers.IsContextTriggered(statusContext) {
-	//		reloadEventChan <- &event
-	//	}
-	//}, true)
 	eventEndedFunc := events.RegisterFunc(eventws.OperationResult, func(event eventws.Event) {
 		defer helpers.RecoverWithError(nil)
 		if !helpers.IsContextTriggered(statusContext) && event.ResourceType == eventws.ResourceTypeReload {
@@ -165,7 +158,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		}
 	}, false)
 
-	// De-register events and "cleanup"
 	defer func() {
 		var panicErr error
 		func() {
@@ -173,7 +165,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 			events.DeRegisterFunc(wsReconnectFunc)
 			cancelStatusCheck()
 			events.DeRegisterFunc(eventEndedFunc)
-			//events.DeRegisterFunc(eventStartedFunc)
 			emptyAndCloseEventChan(checkStatusChan)
 			emptyAndCloseEventChan(reloadEventChan)
 		}()
@@ -189,7 +180,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 	}
 
 	reloadID := postReloadResponse.ID
-	//reloadStarted := ""
 forLoop:
 	for {
 		select {
@@ -225,15 +215,11 @@ forLoop:
 
 			if reloadID == eventReloadID {
 				switch event.Operation {
-				//case eventws.OperationReloadStarted:
-				//	sessionState.LogEntry.LogDebugf("reload started time<%s>", event.Time)
-				//	reloadStarted = event.Time
 				case eventws.OperationResult:
 					sessionState.LogEntry.LogDebugf("reload ended time<%s> success<%v>", event.Time, event.Success)
 					if !event.Success {
 						actionState.AddErrors(errors.New("reload finished with success false"))
 					}
-					//logReloadDuration(reloadStarted, event.Time, sessionState.LogEntry)
 					break forLoop
 				}
 			}
@@ -266,23 +252,6 @@ func emptyAndCloseEventChan(c chan *eventws.Event) {
 		}
 	}
 }
-
-//func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
-//	startedTS, err := time.Parse(time.RFC3339, started)
-//	if err != nil {
-//		logEntry.Logf(logger.WarningLevel, "failed to parse reload started timestamp: %s", started)
-//		return
-//	}
-//
-//	endedTS, err := time.Parse(time.RFC3339, ended)
-//	if err != nil {
-//		logEntry.Logf(logger.WarningLevel, "failed to parse reload ended timestamp: %s", ended)
-//		return
-//	}
-//
-//	duration := endedTS.Sub(startedTS)
-//	logEntry.LogInfo("ReloadDuration", fmt.Sprintf("%.fs", duration.Seconds())) // format to no decimals since timestamp is with entire seconds only
-//}
 
 func checkStatusOngoing(sessionState *session.State, actionState *action.State, host, id string) (bool, error) {
 	reqOptions := session.DefaultReqOptions()
