@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -56,28 +55,16 @@ const (
 
 // UnmarshalJSON unmarshals reload settings from JSON
 func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedElasticReloadSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 2)
-		if deprecated.AppGUID != nil {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.AppName != nil {
-			hasSettings = append(hasSettings, "appname")
-		}
-		if deprecated.SaveLog != nil {
-			hasSettings = append(hasSettings, "log")
-		}
-		if deprecated.PollInterval != nil {
-			hasSettings = append(hasSettings, "pollinterval")
-		}
-		if deprecated.PollingOff != nil {
-			hasSettings = append(hasSettings, "pollingoff")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used, remove listed setting(s) from script", ActionElasticReload, strings.Join(hasSettings, ","))
-		}
+	if err := HasDeprecatedFields(arg, []string{
+		"/appguid",
+		"/appname",
+		"/pollinterval",
+		"/log",
+		"/pollingoff",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionElasticReload, err.Error())
 	}
+
 	var core ElasticReloadCore
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
@@ -92,7 +79,6 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 
 // Validate EfeReload action (Implements ActionSettings interface)
 func (settings ElasticReloadSettings) Validate() error {
-	// TODO When validate has warnings: add warning about short poll interval
 	return nil
 }
 
