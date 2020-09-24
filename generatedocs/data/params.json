@@ -380,10 +380,10 @@
         "(optional) File from which to read a query (in case of `fromfile` as source)."
     ],
     "elasticreload.pollingoff": [
-        "Turn polling off and rely only on events. Warning: Turning this on might cause action to wait until test ends."
+        "DEPRECATED"
     ],
     "elasticreload.pollinterval": [
-        "Reload status polling interval (seconds). Defaults to 5 minutes, if omitted."
+        "DEPRECATED"
     ],
     "elasticreload.log": [
         "DEPRECATED"

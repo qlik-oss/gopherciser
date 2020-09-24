@@ -3,6 +3,9 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -139,4 +142,19 @@ func (getVar varReq) WithCache(vc *enigmahandlers.VarCache) varReq {
 		vc.Store(varName, variable)
 		return variable, nil
 	}
+}
+
+// HasDeprecatedFields check json if keys exist at provided paths, if any exist report error
+func HasDeprecatedFields(rawJson []byte, deprecatedPaths []string) error {
+	hasPaths := make([]string, 0, len(deprecatedPaths))
+	for _, path := range deprecatedPaths {
+		dp := senseobjdef.DataPath(path)
+		if _, err := dp.Lookup(rawJson); err == nil {
+			hasPaths = append(hasPaths, path)
+		}
+	}
+	if len(hasPaths) > 0 {
+		return errors.Errorf("has deprecated fields: %s", strings.Join(hasPaths, ","))
+	}
+	return nil
 }
