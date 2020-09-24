@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,27 +17,9 @@ import (
 )
 
 type (
-	// ElasticReloadCore Currently used ElasticReloadCore (as opposed to deprecated settings)
-	ElasticReloadCore struct {
-		// PollInterval time in-between polling for reload status
-		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
-		// PollingOff turns polling for status off except after event websocket reconnect
-		PollingOff bool `json:"pollingoff" displayname:"Polling off" doc-key:"elasticreload.pollingoff"`
-	}
-
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
 		session.AppSelection
-		ElasticReloadCore
-	}
-
-	// Older settings no longer used, if exist in JSON, an error will be thrown
-	deprecatedElasticReloadSettings struct {
-		AppGUID string `json:"appguid"`
-		AppName string `json:"appname"`
-
-		PollInterval helpers.TimeDuration `json:"pollinterval" displayname:"Poll interval" doc-key:"elasticreload.pollinterval"`
-		SaveLog      bool                 `json:"log" displayname:"Save log" doc-key:"elasticreload.log"`
 	}
 )
 
@@ -58,46 +39,28 @@ const (
 	statusFailed    = "FAILED"
 )
 
-var (
-	DefaultPollInterval = helpers.TimeDuration(5 * time.Minute)
-)
-
 // UnmarshalJSON unmarshals reload settings from JSON
 func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedElasticReloadSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 2)
-		if deprecated.AppGUID != "" {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.AppName != "" {
-			hasSettings = append(hasSettings, "appname")
-		}
-		if deprecated.SaveLog {
-			hasSettings = append(hasSettings, "log")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used, remove listed setting(s) from script", ActionElasticReload, strings.Join(hasSettings, ","))
-		}
+	if err := HasDeprecatedFields(arg, []string{
+		"/appguid",
+		"/appname",
+		"/pollinterval",
+		"/log",
+		"/pollingoff",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionElasticReload, err.Error())
 	}
-	var core ElasticReloadCore
-	if err := jsonit.Unmarshal(arg, &core); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
-	}
-	if core.PollInterval < helpers.TimeDuration(time.Millisecond) {
-		core.PollInterval = DefaultPollInterval
-	}
+
 	var appSelection session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
 	}
-	*settings = ElasticReloadSettings{appSelection, core}
+	*settings = ElasticReloadSettings{appSelection}
 	return nil
 }
 
 // Validate EfeReload action (Implements ActionSettings interface)
 func (settings ElasticReloadSettings) Validate() error {
-	// TODO When validate has warnings: add warning about short poll interval
 	return nil
 }
 
@@ -148,13 +111,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 	checkStatusChan := make(chan *eventws.Event)
 	statusContext, cancelStatusCheck := context.WithCancel(sessionState.BaseContext())
 	reloadEventChan := make(chan *eventws.Event)
-	// Temporarily disable started event as reloadID is missing
-	//eventStartedFunc := events.RegisterFunc(eventws.OperationReloadStarted, func(event eventws.Event) {
-	//	defer helpers.RecoverWithError(nil)
-	//	if !helpers.IsContextTriggered(statusContext) {
-	//		reloadEventChan <- &event
-	//	}
-	//}, true)
 	eventEndedFunc := events.RegisterFunc(eventws.OperationResult, func(event eventws.Event) {
 		defer helpers.RecoverWithError(nil)
 		if !helpers.IsContextTriggered(statusContext) && event.ResourceType == eventws.ResourceTypeReload {
@@ -170,7 +126,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		}
 	}, false)
 
-	// De-register events and "cleanup"
 	defer func() {
 		var panicErr error
 		func() {
@@ -178,7 +133,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 			events.DeRegisterFunc(wsReconnectFunc)
 			cancelStatusCheck()
 			events.DeRegisterFunc(eventEndedFunc)
-			//events.DeRegisterFunc(eventStartedFunc)
 			emptyAndCloseEventChan(checkStatusChan)
 			emptyAndCloseEventChan(reloadEventChan)
 		}()
@@ -194,7 +148,6 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 	}
 
 	reloadID := postReloadResponse.ID
-	//reloadStarted := ""
 forLoop:
 	for {
 		select {
@@ -230,34 +183,13 @@ forLoop:
 
 			if reloadID == eventReloadID {
 				switch event.Operation {
-				//case eventws.OperationReloadStarted:
-				//	sessionState.LogEntry.LogDebugf("reload started time<%s>", event.Time)
-				//	reloadStarted = event.Time
 				case eventws.OperationResult:
 					sessionState.LogEntry.LogDebugf("reload ended time<%s> success<%v>", event.Time, event.Success)
 					if !event.Success {
 						actionState.AddErrors(errors.New("reload finished with success false"))
 					}
-					//logReloadDuration(reloadStarted, event.Time, sessionState.LogEntry)
 					break forLoop
 				}
-			}
-		case <-time.After(time.Duration(settings.PollInterval)):
-			if actionState.Failed {
-				break forLoop
-			}
-			if settings.PollingOff {
-				continue
-			}
-			// We had a re-connect of event websocket and need to check if reload is still ongoing
-			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
-			if err != nil {
-				actionState.AddErrors(err)
-				break forLoop
-			}
-			if !ongoing {
-				sessionState.LogEntry.Log(logger.WarningLevel, "reload finished, but no reload.ended event received")
-				break forLoop
 			}
 		case <-checkStatusChan:
 			// We had a re-connect of event websocket and need to check if reload is still ongoing
@@ -288,23 +220,6 @@ func emptyAndCloseEventChan(c chan *eventws.Event) {
 		}
 	}
 }
-
-//func logReloadDuration(started, ended string, logEntry *logger.LogEntry) {
-//	startedTS, err := time.Parse(time.RFC3339, started)
-//	if err != nil {
-//		logEntry.Logf(logger.WarningLevel, "failed to parse reload started timestamp: %s", started)
-//		return
-//	}
-//
-//	endedTS, err := time.Parse(time.RFC3339, ended)
-//	if err != nil {
-//		logEntry.Logf(logger.WarningLevel, "failed to parse reload ended timestamp: %s", ended)
-//		return
-//	}
-//
-//	duration := endedTS.Sub(startedTS)
-//	logEntry.LogInfo("ReloadDuration", fmt.Sprintf("%.fs", duration.Seconds())) // format to no decimals since timestamp is with entire seconds only
-//}
 
 func checkStatusOngoing(sessionState *session.State, actionState *action.State, host, id string) (bool, error) {
 	reqOptions := session.DefaultReqOptions()

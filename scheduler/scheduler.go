@@ -51,6 +51,8 @@ type (
 		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings"`
 
 		connectionSettings *connection.ConnectionSettings
+
+		continueOnErrors bool
 	}
 
 	schedulerTmp struct {
@@ -160,6 +162,15 @@ func (sched *Scheduler) Validate() error {
 	return sched.TimeBuf.Validate()
 }
 
+// SetContinueOnErrors toggles whether to continue on action errors
+func (sched *Scheduler) SetContinueOnErrors(enabled bool) error {
+	if sched == nil {
+		return errors.New("scheduler is nil")
+	}
+	sched.continueOnErrors = enabled
+	return nil
+}
+
 func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
 	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) error {
 
@@ -235,7 +246,9 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 				logEntry.Action = nil
 				logEntry.LogError(errors.Wrap(errTimeBuf, "time buffer in-between sequences failed"))
 			}
-			return errors.WithStack(err)
+			if !sched.continueOnErrors {
+				return errors.WithStack(err)
+			}
 		}
 	}
 	return nil
