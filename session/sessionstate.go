@@ -902,7 +902,7 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 				state.LogEntry.LogDebug("End re-connect of event websocket")
 				state.LogEntry.LogInfo("EventWsReconnect", fmt.Sprintf("success=%v;attempts=%d;TimeSpent=%d", err == nil, attempts, timeSpent))
 			}
-			if err != nil {
+			if err != nil && !state.IsAbortTriggered() && state.CurrentActionState != nil {
 				state.CurrentActionState.AddErrors(errors.Wrap(err, "error reconnecting event websocket"))
 			}
 			state.eventWs.FakeEvent(eventws.Event{
