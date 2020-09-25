@@ -27,6 +27,11 @@ type (
 		Type string `json:"type"`
 	}
 
+	SheetObjectMeta struct {
+		Published bool `json:"published"`
+		Approved  bool `json:"approved"`
+	}
+
 	AppStructureMeasureMeta struct {
 		// Meta information, only included for library items
 		Meta *MetaDef `json:"meta,omitempty"`
@@ -61,6 +66,7 @@ type (
 	AppStructureObject struct {
 		AppObjectDef
 		MetaDef
+		*SheetObjectMeta
 		AppStructureObjectChildren
 		// RawBaseProperties of Sense object
 		RawBaseProperties json.RawMessage `json:"rawBaseProperties,omitempty"`

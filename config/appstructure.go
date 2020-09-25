@@ -822,6 +822,30 @@ func (structure *GeneratedAppStructure) getObject(ctx context.Context, app *sens
 	return obj, nil
 }
 
+func (structure *GeneratedAppStructure) addSheetMeta(layout *senseobjects.SheetListLayout) error {
+	objectSheet, err := appstructure.ObjectTypeEnumMap.String(int(appstructure.ObjectSheet))
+	if err != nil {
+		return err
+	}
+	for key, object := range structure.Objects {
+		if object.Type == objectSheet {
+			for _, item := range layout.AppObjectList.Items {
+				if item.Info.Id == object.Id {
+					object.SheetObjectMeta = &appstructure.SheetObjectMeta{
+						Published: item.Meta.Published,
+						Approved:  item.Meta.Approved,
+					}
+					structure.Objects[key] = object
+				}
+			}
+			if object.SheetObjectMeta == nil {
+				return errors.Errorf("sheet not in sheetlist: <%s>", object.Id)
+			}
+		}
+	}
+	return nil
+}
+
 func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
 	if obj.MetaDef.Title != "" {
 		return // We already have a title

@@ -33,6 +33,7 @@ type (
 	SheetMeta struct {
 		enigma.NxMeta
 		Published bool `json:"published,omitempty"`
+		Approved  bool `json:"approved,omitempty"`
 	}
 
 	// SheetData data for a sheet
