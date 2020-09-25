@@ -27,6 +27,13 @@ type (
 	SheetNxContainerEntry struct {
 		enigma.NxContainerEntry
 		Data *SheetData `json:"qData,omitempty"`
+		Meta SheetMeta  `json:"qMeta,omitempty"`
+	}
+
+	SheetMeta struct {
+		enigma.NxMeta
+		Published bool `json:"published,omitempty"`
+		Approved  bool `json:"approved,omitempty"`
 	}
 
 	// SheetData data for a sheet
