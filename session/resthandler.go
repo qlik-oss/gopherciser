@@ -597,7 +597,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 
 	resp, err := transport.Transport.RoundTrip(req)
 	if err != nil || resp == nil {
-		logErrors(errors.Wrap(err, "failed to perform HTTP request"))
+		logErrors(errors.Wrapf(err, "failed to perform HTTP request<%s>", req.URL))
 		return resp, err
 	}
 
