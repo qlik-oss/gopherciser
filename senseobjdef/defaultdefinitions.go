@@ -133,7 +133,7 @@ var (
 			{
 				[]*Constraint{
 					&Constraint{
-						Path:     "/dimensionAxis/continuousAuto",
+						Path:     "/preferContinuousAxis",
 						Value:    "=true",
 						Required: false,
 					},
