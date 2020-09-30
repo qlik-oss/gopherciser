@@ -3,6 +3,7 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 	"sync"
 
@@ -140,7 +141,12 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 	case string:
 		return constraint.operator.evalString(value.(string), constraint.value)
 	default:
-		return false, errors.Errorf("value type<%T> not supported", value)
+		switch reflect.TypeOf(value).Kind() {
+		case reflect.Slice:
+			return constraint.operator.evalArray(value, constraint.value)
+		default:
+			return false, errors.Errorf("value type<%T> not supported", value)
+		}
 	}
 }
 
@@ -192,5 +198,31 @@ func (operator constraintOperator) evalString(val string, constraint string) (bo
 			str = strconv.Itoa(int(operator))
 		}
 		return false, errors.Errorf("operator<%s> not supported for string constraint evaluation", str)
+	}
+}
+
+func (operator constraintOperator) evalArray(val interface{}, constraint string) (bool, error) {
+	v := reflect.ValueOf(val)
+	n := v.Len()
+
+	switch operator {
+	case containsOperator:
+		for i := 0; i < n; i++ {
+			e := v.Index(i).Interface()
+			str, ok := e.(string)
+			if !ok {
+				return false, errors.Errorf("failed to cast slice element to string")
+			}
+			if str == constraint {
+				return true, nil
+			}
+		}
+		return false, nil
+	default:
+		str, _ := constraintOperatorEnum.String(int(operator))
+		if str == "" {
+			str = strconv.Itoa(int(operator))
+		}
+		return false, errors.Errorf("operator<%s> not supported for array constraint evaluation", str)
 	}
 }
