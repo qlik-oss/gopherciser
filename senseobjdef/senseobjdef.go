@@ -40,7 +40,7 @@ type (
 	// Data Get data definitions
 	Data struct {
 		// Constraint constraint defining if to send requests
-		Constraint *Constraint `json:"constraint,omitempty"`
+		Constraint []*Constraint `json:"constraint,omitempty"`
 		// Requests List of data requests to send
 		Requests []GetDataRequests `json:"requests,omitempty"`
 	}
@@ -360,20 +360,25 @@ func (def *ObjectDef) Validate() error {
 // Evaluate which constraint section applies
 func (def *ObjectDef) Evaluate(data json.RawMessage) ([]GetDataRequests, error) {
 	for _, v := range def.Data {
-		if v.Constraint == nil {
-			return v.Requests, nil //No constraint means evaluates to true, i.e. default request type.
+		meetsConstraints := true
+		for _, c := range v.Constraint {
+
+			result, err := c.Evaluate(data)
+			if err != nil {
+				return nil, errors.Wrap(err, "Failed to evaluate get data function")
+			}
+			if !result {
+				meetsConstraints = false
+				break
+			}
 		}
 
-		result, err := v.Constraint.Evaluate(data)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to evaluate get data function")
-		}
-		if result {
+		if meetsConstraints {
 			return v.Requests, nil
 		}
 	}
 
-	return nil, errors.Errorf("No contraint section applies")
+	return nil, errors.Errorf("No constraint section applies")
 }
 
 //MaxHeight max data to get

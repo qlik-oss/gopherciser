@@ -39,11 +39,11 @@ var (
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
 			{
-				&Constraint{
+				[]*Constraint{&Constraint{
 					Path:     "/qHyperCube/qSize/qcy",
 					Value:    ">1000",
 					Required: true,
-				},
+				}},
 				[]GetDataRequests{
 					{
 						Type: DataTypeHyperCubeBinnedData,
@@ -131,11 +131,11 @@ var (
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
 			{
-				&Constraint{
+				[]*Constraint{&Constraint{
 					Path:     "/dimensionAxis/continuousAuto",
 					Value:    "=true",
 					Required: false,
-				},
+				}},
 				[]GetDataRequests{
 					{
 						Type: DataTypeHyperCubeContinuousData,
