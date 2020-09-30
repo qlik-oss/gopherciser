@@ -159,8 +159,13 @@ func (instance *AutoChartInstance) SetObjectDefData(objDefData []senseobjdef.Dat
 		data.Requests = requests
 
 		if data.Constraints != nil {
-			for _, c := range data.Constraints {
-				c.Path = senseobjdef.DataPath(fmt.Sprint(GeneratedPropertiesPath, c.Path))
+			for i, c := range data.Constraints {
+				// de-reference pointer and update path in constraint
+				data.Constraints[i] = &senseobjdef.Constraint{
+					Path:     senseobjdef.DataPath(fmt.Sprint(GeneratedPropertiesPath, c.Path)),
+					Value:    c.Value,
+					Required: c.Required,
+				}
 			}
 		}
 		instance.ObjectDef.Data = append(instance.ObjectDef.Data, data)
