@@ -211,11 +211,11 @@ func fileExists(name string) bool {
 }
 
 func constraintString(data senseobjdef.Data, buf *helpers.Buffer) string {
-	if data.Constraint == nil {
-		buf.WriteString("|   Constraint: Default\n")
+	if data.Constraints == nil {
+		buf.WriteString("|   Constraints: Default\n")
 	} else {
-		for _, c := range data.Constraint {
-			buf.WriteString("|   Constraint: ")
+		for _, c := range data.Constraints {
+			buf.WriteString("|   Constraints: ")
 			buf.WriteString("[")
 			buf.WriteString(string(c.Path))
 			buf.WriteString("] ")

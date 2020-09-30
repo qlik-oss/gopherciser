@@ -28,7 +28,7 @@ func TestConstraintValue(t *testing.T) {
 	}`
 
 	type testData struct {
-		contraint      *Constraint
+		constraint     *Constraint
 		expectedResult bool
 		expectedErr    error
 	}
@@ -218,14 +218,14 @@ func TestConstraintValue(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 
-			result, err := test.contraint.Evaluate(json.RawMessage(jsonData))
+			result, err := test.constraint.Evaluate(json.RawMessage(jsonData))
 			if errors.Cause(err) != test.expectedErr {
 				t.Error(err)
 			}
 
 			if result != test.expectedResult {
 				t.Errorf("result<%v> not expected<%v> constraint<%s>",
-					result, test.expectedResult, string(test.contraint.Value))
+					result, test.expectedResult, string(test.constraint.Value))
 			}
 		})
 	}

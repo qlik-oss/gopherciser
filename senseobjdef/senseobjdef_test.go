@@ -17,7 +17,7 @@ var (
 			},
 			Data: []Data{
 				{
-					Constraint: nil,
+					Constraints: nil,
 					Requests: []GetDataRequests{
 						{
 							Type:   DataTypeListObject,
@@ -39,7 +39,7 @@ var (
 			},
 			Data: []Data{
 				{
-					Constraint: []*Constraint{&Constraint{
+					Constraints: []*Constraint{&Constraint{
 						Path:  "/qHyperCube/qSize/qcy",
 						Value: ">1000",
 					}},
@@ -52,7 +52,7 @@ var (
 					},
 				},
 				{
-					Constraint: nil,
+					Constraints: nil,
 					Requests: []GetDataRequests{
 						{
 							Type:   DataTypeHyperCubeData,
@@ -76,7 +76,7 @@ func TestConstraints(t *testing.T) {
 	def := &ObjectDef{
 		Data: []Data{
 			{
-				Constraint: []*Constraint{&Constraint{
+				Constraints: []*Constraint{&Constraint{
 					Path:  DataPath("/qHyperCube/qSize/qcy"),
 					Value: ConstraintValue(">1000"),
 				}},
@@ -86,7 +86,7 @@ func TestConstraints(t *testing.T) {
 					},
 				},
 			}, {
-				Constraint: nil,
+				Constraints: nil,
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeData,
@@ -169,7 +169,7 @@ func TestConfig(t *testing.T) {
 			},
 			"data": [
 				{
-					"constraint": [{
+					"constraints": [{
 						"path": "/qHyperCube/qSize/qcy",
 						"value": ">1000"
 					}],
@@ -212,7 +212,7 @@ func TestConfig(t *testing.T) {
 	objDefs := string(jString)
 	t.Log("marshaled json:", objDefs)
 
-	expectedJSON := `{"customscatterplot":{"datadef":{"type":"hypercube","path":"/qHyperCube"},"data":[{"constraint":[{"path":"/qHyperCube/qSize/qcy","value":"\u003e1000"}],"requests":[{"type":"hypercubebinneddata","path":"/qHyperCubeDef","height":10000}]},{"requests":[{"type":"hypercubedata","path":"/qHyperCubeDef","height":1000}]}],"select":{"type":"hypercubevalues","path":"/qHyperCubeDef"}},"listbox":{"datadef":{"type":"listobject","path":"/qListObject"},"data":[{"requests":[{"type":"listobjectdata","path":"/qListObjectDef","height":10000}]}],"select":{"type":"listobjectvalues","path":"/qListObjectDef"}}}`
+	expectedJSON := `{"customscatterplot":{"datadef":{"type":"hypercube","path":"/qHyperCube"},"data":[{"constraints":[{"path":"/qHyperCube/qSize/qcy","value":"\u003e1000"}],"requests":[{"type":"hypercubebinneddata","path":"/qHyperCubeDef","height":10000}]},{"requests":[{"type":"hypercubedata","path":"/qHyperCubeDef","height":1000}]}],"select":{"type":"hypercubevalues","path":"/qHyperCubeDef"}},"listbox":{"datadef":{"type":"listobject","path":"/qListObject"},"data":[{"requests":[{"type":"listobjectdata","path":"/qListObjectDef","height":10000}]}],"select":{"type":"listobjectvalues","path":"/qListObjectDef"}}}`
 	if objDefs != expectedJSON {
 		t.Log("expected json:", expectedJSON)
 		t.Error("unexpected marshaled json")
@@ -282,8 +282,8 @@ func TestDefault(t *testing.T) {
 			t.Errorf("incorrect amount of data constraints for treemap<%d> expected<%d>", dataConstraintsCount, expectedDataConstraintsCount)
 		} else {
 			dataConstraint := treemap.Data[0]
-			if dataConstraint.Constraint != nil {
-				t.Error("tree map contains unexpected data request constraint:", dataConstraint.Constraint)
+			if dataConstraint.Constraints != nil {
+				t.Error("tree map contains unexpected data request constraint:", dataConstraint.Constraints)
 			}
 
 			dataRequestsCount := len(dataConstraint.Requests)
@@ -371,8 +371,8 @@ func validateData(object string, data []Data, test []Data) error {
 	}
 
 	for i, v := range data {
-		for j, c := range v.Constraint {
-			if err := validateConstraint(object, c, test[i].Constraint[j]); err != nil {
+		for j, c := range v.Constraints {
+			if err := validateConstraint(object, c, test[i].Constraints[j]); err != nil {
 				return err
 			}
 		}
@@ -390,16 +390,16 @@ func validateConstraint(object string, constraint *Constraint, test *Constraint)
 		if constraint == test {
 			return nil
 		}
-		return fmt.Errorf("object<%s> contraint<%+v> not expected<%+v>", object, constraint, test)
+		return fmt.Errorf("object<%s> constraint<%+v> not expected<%+v>", object, constraint, test)
 	}
 
 	if string(constraint.Path) != string(test.Path) {
-		return fmt.Errorf("object<%s> contraint path<%s> not expected<%s>",
+		return fmt.Errorf("object<%s> constraint path<%s> not expected<%s>",
 			object, string(constraint.Path), string(test.Path))
 	}
 
 	if string(constraint.Value) != string(test.Value) {
-		return fmt.Errorf("object<%s> contraint value<%s> not expected<%s>",
+		return fmt.Errorf("object<%s> constraint value<%s> not expected<%s>",
 			object, string(constraint.Value), string(test.Value))
 	}
 

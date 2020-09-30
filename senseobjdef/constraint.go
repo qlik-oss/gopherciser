@@ -165,12 +165,12 @@ func (operator constraintOperator) evalFloat64(val float64, constraint float64) 
 	}
 }
 
-func (operator constraintOperator) evalBool(val bool, contraint bool) (bool, error) {
+func (operator constraintOperator) evalBool(val bool, constraint bool) (bool, error) {
 	switch operator {
 	case equalOperator:
-		return val == contraint, nil
+		return val == constraint, nil
 	case notOperator:
-		return val != contraint, nil
+		return val != constraint, nil
 	default:
 		str, _ := constraintOperatorEnum.String(int(operator))
 		if str == "" {

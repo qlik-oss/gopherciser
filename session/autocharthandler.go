@@ -158,8 +158,8 @@ func (instance *AutoChartInstance) SetObjectDefData(objDefData []senseobjdef.Dat
 		}
 		data.Requests = requests
 
-		if data.Constraint != nil {
-			for _, c := range data.Constraint {
+		if data.Constraints != nil {
+			for _, c := range data.Constraints {
 				c.Path = senseobjdef.DataPath(fmt.Sprint(GeneratedPropertiesPath, c.Path))
 			}
 		}

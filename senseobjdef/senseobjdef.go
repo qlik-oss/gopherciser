@@ -39,8 +39,8 @@ type (
 
 	// Data Get data definitions
 	Data struct {
-		// Constraint constraint defining if to send requests
-		Constraint []*Constraint `json:"constraint,omitempty"`
+		// Constraints constraint defining if to send requests
+		Constraints []*Constraint `json:"constraints,omitempty"`
 		// Requests List of data requests to send
 		Requests []GetDataRequests `json:"requests,omitempty"`
 	}
@@ -361,7 +361,7 @@ func (def *ObjectDef) Validate() error {
 func (def *ObjectDef) Evaluate(data json.RawMessage) ([]GetDataRequests, error) {
 	for _, v := range def.Data {
 		meetsConstraints := true
-		for _, c := range v.Constraint {
+		for _, c := range v.Constraints {
 
 			result, err := c.Evaluate(data)
 			if err != nil {
