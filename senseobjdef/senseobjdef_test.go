@@ -39,10 +39,10 @@ var (
 			},
 			Data: []Data{
 				{
-					Constraint: &Constraint{
+					Constraint: []*Constraint{&Constraint{
 						Path:  "/qHyperCube/qSize/qcy",
 						Value: ">1000",
-					},
+					}},
 					Requests: []GetDataRequests{
 						{
 							Type:   DataTypeHyperCubeBinnedData,
@@ -76,10 +76,10 @@ func TestConstraints(t *testing.T) {
 	def := &ObjectDef{
 		Data: []Data{
 			{
-				Constraint: &Constraint{
+				Constraint: []*Constraint{&Constraint{
 					Path:  DataPath("/qHyperCube/qSize/qcy"),
 					Value: ConstraintValue(">1000"),
-				},
+				}},
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeBinnedData,
@@ -169,10 +169,10 @@ func TestConfig(t *testing.T) {
 			},
 			"data": [
 				{
-					"constraint": {
+					"constraint": [{
 						"path": "/qHyperCube/qSize/qcy",
 						"value": ">1000"
-					},
+					}],
 					"requests": [
 						{
 							"type": "HyperCubeBinnedData",
@@ -212,7 +212,7 @@ func TestConfig(t *testing.T) {
 	objDefs := string(jString)
 	t.Log("marshaled json:", objDefs)
 
-	expectedJSON := `{"customscatterplot":{"datadef":{"type":"hypercube","path":"/qHyperCube"},"data":[{"constraint":{"path":"/qHyperCube/qSize/qcy","value":"\u003e1000"},"requests":[{"type":"hypercubebinneddata","path":"/qHyperCubeDef","height":10000}]},{"requests":[{"type":"hypercubedata","path":"/qHyperCubeDef","height":1000}]}],"select":{"type":"hypercubevalues","path":"/qHyperCubeDef"}},"listbox":{"datadef":{"type":"listobject","path":"/qListObject"},"data":[{"requests":[{"type":"listobjectdata","path":"/qListObjectDef","height":10000}]}],"select":{"type":"listobjectvalues","path":"/qListObjectDef"}}}`
+	expectedJSON := `{"customscatterplot":{"datadef":{"type":"hypercube","path":"/qHyperCube"},"data":[{"constraint":[{"path":"/qHyperCube/qSize/qcy","value":"\u003e1000"}],"requests":[{"type":"hypercubebinneddata","path":"/qHyperCubeDef","height":10000}]},{"requests":[{"type":"hypercubedata","path":"/qHyperCubeDef","height":1000}]}],"select":{"type":"hypercubevalues","path":"/qHyperCubeDef"}},"listbox":{"datadef":{"type":"listobject","path":"/qListObject"},"data":[{"requests":[{"type":"listobjectdata","path":"/qListObjectDef","height":10000}]}],"select":{"type":"listobjectvalues","path":"/qListObjectDef"}}}`
 	if objDefs != expectedJSON {
 		t.Log("expected json:", expectedJSON)
 		t.Error("unexpected marshaled json")
@@ -371,8 +371,10 @@ func validateData(object string, data []Data, test []Data) error {
 	}
 
 	for i, v := range data {
-		if err := validateConstraint(object, v.Constraint, test[i].Constraint); err != nil {
-			return err
+		for j, c := range v.Constraint {
+			if err := validateConstraint(object, c, test[i].Constraint[j]); err != nil {
+				return err
+			}
 		}
 
 		if err := validateRequests(object, v.Requests, test[i].Requests); err != nil {

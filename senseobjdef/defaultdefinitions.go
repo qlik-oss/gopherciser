@@ -139,7 +139,7 @@ var (
 					},
 					&Constraint{
 						Path:     "/qHyperCube/qDimensionInfo/qTags",
-						Value:    "contains:$numeric",
+						Value:    "~$numeric",
 						Required: false,
 					},
 				},
