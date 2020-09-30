@@ -131,11 +131,18 @@ var (
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
 			{
-				[]*Constraint{&Constraint{
-					Path:     "/dimensionAxis/continuousAuto",
-					Value:    "=true",
-					Required: false,
-				}},
+				[]*Constraint{
+					&Constraint{
+						Path:     "/dimensionAxis/continuousAuto",
+						Value:    "=true",
+						Required: false,
+					},
+					&Constraint{
+						Path:     "/qHyperCube/qDimensionInfo/qTags",
+						Value:    "contains:$numeric",
+						Required: false,
+					},
+				},
 				[]GetDataRequests{
 					{
 						Type: DataTypeHyperCubeContinuousData,

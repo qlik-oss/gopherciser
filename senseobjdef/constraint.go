@@ -44,14 +44,16 @@ const (
 	largerThanOperator
 	equalOperator
 	notOperator
+	containsOperator
 )
 
 var (
 	constraintOperatorEnum = enummap.NewEnumMapOrPanic(map[string]int{
-		"<": int(lessThanOperator),
-		">": int(largerThanOperator),
-		"=": int(equalOperator),
-		"!": int(notOperator),
+		"<":         int(lessThanOperator),
+		">":         int(largerThanOperator),
+		"=":         int(equalOperator),
+		"!":         int(notOperator),
+		"contains:": int(containsOperator),
 	})
 )
 

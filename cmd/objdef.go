@@ -95,8 +95,8 @@ Use to export default values or examples or to validate custom definitions or ov
 		Use:     "validate",
 		Aliases: []string{"val", "v"},
 		Short:   "Validate object definitions in file.",
-		Long: `Validate object definitions from provided JSON file. Will print how many definitions where found,
-it's recommended to use to -v verbose flag and verify all parameters where interpreted correctly'`,
+		Long: `Validate object definitions from provided JSON file. Will print how many definitions were found,
+it's recommended to use to -v verbose flag and verify all parameters were interpreted correctly'`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if objDefFilePath == "" {
 				if err := cmd.Help(); err != nil {
@@ -214,14 +214,16 @@ func constraintString(data senseobjdef.Data, buf *helpers.Buffer) string {
 	if data.Constraint == nil {
 		buf.WriteString("|   Constraint: Default\n")
 	} else {
-		buf.WriteString("|   Constraint: ")
-		buf.WriteString("[")
-		buf.WriteString(string(data.Constraint.Path))
-		buf.WriteString("] ")
-		buf.WriteString(string(data.Constraint.Value))
-		buf.WriteString(" Required: ")
-		buf.WriteString(strconv.FormatBool(data.Constraint.Required))
-		buf.WriteString("\n")
+		for _, c := range data.Constraint {
+			buf.WriteString("|   Constraint: ")
+			buf.WriteString("[")
+			buf.WriteString(string(c.Path))
+			buf.WriteString("] ")
+			buf.WriteString(string(c.Value))
+			buf.WriteString(" Required: ")
+			buf.WriteString(strconv.FormatBool(c.Required))
+			buf.WriteString("\n")
+		}
 	}
 
 	buf.WriteString("|     ")
