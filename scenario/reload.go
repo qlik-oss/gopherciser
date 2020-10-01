@@ -35,7 +35,7 @@ const (
 	Ignore
 )
 
-func (value ReloadModeEnum) GetEnumMap() *enummap.EnumMap{
+func (value ReloadModeEnum) GetEnumMap() *enummap.EnumMap {
 	enumMap, _ := enummap.NewEnumMap(map[string]int{
 		"default": int(DefaultReloadMode),
 		"abend":   int(Abend),
@@ -101,6 +101,9 @@ func (settings ReloadSettings) Execute(sessionState *session.State,
 				// Get the progress using the request id we reserved for the reload
 				var progress *enigma.ProgressData
 				getProgress := func(ctx context.Context) error {
+					if sessionState.Connection.Sense() == nil {
+						return errors.New("no sense connection")
+					}
 					var err error
 					progress, err = sessionState.Connection.Sense().Global.GetProgress(ctx, reservedRequestID)
 					return err
