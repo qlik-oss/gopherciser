@@ -73,11 +73,16 @@ func (settings ReloadSettings) Validate() error {
 func (settings ReloadSettings) Execute(sessionState *session.State,
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
-	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
+	if sessionState.Connection == nil {
+		actionState.AddErrors(errors.New("Not connected to a Sense environment (no connection)"))
 		return
 	}
+
 	connection := sessionState.Connection.Sense()
+	if connection == nil {
+		actionState.AddErrors(errors.New("Not connected to a Sense environment (no uplink)"))
+		return
+	}
 
 	app := connection.CurrentApp
 	if app == nil {
@@ -101,11 +106,12 @@ func (settings ReloadSettings) Execute(sessionState *session.State,
 				// Get the progress using the request id we reserved for the reload
 				var progress *enigma.ProgressData
 				getProgress := func(ctx context.Context) error {
-					if sessionState.Connection.Sense() == nil {
+					uplink := sessionState.Connection.Sense()
+					if uplink == nil {
 						return errors.New("no sense connection")
 					}
 					var err error
-					progress, err = sessionState.Connection.Sense().Global.GetProgress(ctx, reservedRequestID)
+					progress, err = uplink.Global.GetProgress(ctx, reservedRequestID)
 					return err
 				}
 				if err := sessionState.SendRequest(actionState, getProgress); err != nil {
