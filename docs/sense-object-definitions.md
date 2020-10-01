@@ -209,7 +209,7 @@ A list of data requests to send for an object, with the possibility to send diff
 
 * `constraints`: A list of constraints for sending the defined set of data requests. An empty or omitted constraint is always considered to be  true.
     * `path`: Path to the value to evaluate in the object structure.
-    * `value`: Value constraint definition. The first character must be `<`, `>`, `=`, `!` or `~` followed by a number, string or the words `true` / `false`. The `~` operator is only applicable to string arrays and is defined as `contains`.
+    * `value`: Value constraint definition. The first character must be `<`, `>`, `=`, `!` or `~` followed by a number, string or the words `true` / `false`. The `~` operator is only applicable to arrays and is defined as `contains`.
     * `required`: Require the constraint to be evaluated and return an error if the evaluation fails (for example, if the path in the object structure is not traversable). Defaults to `false`.
 * `requests`: List of data requests to send if the constraint is successfully evaluated. A request is defined as:
     * `type`: Data request type

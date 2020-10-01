@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/qlik-oss/gopherciser/helpers"
-	"reflect"
 	"strconv"
 	"sync"
 
@@ -141,13 +140,10 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 		return constraint.operator.evalBool(value.(bool), boolValue)
 	case string:
 		return constraint.operator.evalString(value.(string), constraint.value)
+	case []interface{}:
+		return constraint.operator.evalArray(value.([]interface{}), constraint.value)
 	default:
-		switch reflect.TypeOf(value).Kind() {
-		case reflect.Slice:
-			return constraint.operator.evalArray(value, constraint.value)
-		default:
-			return false, errors.Errorf("value type<%T> not supported", value)
-		}
+		return false, errors.Errorf("value type<%T> not supported", value)
 	}
 }
 
@@ -202,20 +198,35 @@ func (operator constraintOperator) evalString(val string, constraint string) (bo
 	}
 }
 
-func (operator constraintOperator) evalArray(val interface{}, constraint string) (bool, error) {
-	v := reflect.ValueOf(val)
-	n := v.Len()
+func (operator constraintOperator) evalArray(val []interface{}, constraint string) (bool, error) {
+	boolValue, errParseBool := strconv.ParseBool(constraint)
+	floatValue, errParseFloat := strconv.ParseFloat(constraint, 64)
 
 	switch operator {
 	case containsOperator:
-		for i := 0; i < n; i++ {
-			e := v.Index(i).Interface()
-			str, ok := e.(string)
-			if !ok {
-				return false, errors.Errorf("failed to cast slice element to string")
-			}
-			if str == constraint {
-				return true, nil
+		for _, v := range val {
+			switch v.(type) {
+			case float64:
+				if errParseFloat != nil {
+					return false, errors.Wrapf(errParseFloat, "error parsing constraint value as float64")
+				}
+				if v.(float64) > floatValue-0.0000000000001 && v.(float64) < floatValue+0.0000000000001 {
+					return true, nil
+				}
+			case bool:
+				if errParseBool != nil {
+					return false, errors.Wrapf(errParseBool, "error parsing constraint value as bool")
+				}
+				if v.(bool) == boolValue {
+					return true, nil
+				}
+				return operator.evalBool(v.(bool), boolValue)
+			case string:
+				if v.(string) == constraint {
+					return true, nil
+				}
+			default:
+				return false, errors.Errorf("array element value type<%T> not supported", v)
 			}
 		}
 		return false, nil
