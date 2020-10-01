@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go/format"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -28,6 +29,7 @@ const (
 	ExitCodeFailedParseTemplate
 	ExitCodeFailedExecuteTemplate
 	ExitCodeFailedCreateExtra
+	ExitCodeNotValidGo
 )
 
 type (
@@ -48,19 +50,35 @@ var (
 		"params": SortedParamsKeys,
 		"join":   strings.Join,
 	}
-	dataRoot, output string
+	dataRootParam, output string
 	// Todo: Better way to do this? Using "search and replace" doesn't seem very robust.
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
 func main() {
 	handleFlags()
-	compile()
+	generatedDocs := compile(dataRootParam, fmt.Sprintf("%s/documentation.template", dataRootParam))
+	if err := ioutil.WriteFile(output, generatedDocs, 0644); err != nil {
+		_, _ = os.Stderr.WriteString(err.Error())
+		os.Exit(ExitCodeFailedWriteResult)
+	}
+	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRootParam, output)
+}
+
+func compile(dataRoot, templatePath string) []byte {
+	data := loadData(dataRoot)
+	docs := generateDocs(templatePath, data)
+	formattedDocs, err := format.Source(docs)
+	if err != nil {
+		_, _ = os.Stderr.WriteString("generated code is not valid golang:\n" + err.Error())
+		os.Exit(ExitCodeNotValidGo)
+	}
+	return formattedDocs
 }
 
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&dataRoot, "data", "generatedocs/data", "path to data folder")
+	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "path to data folder")
 	flag.StringVar(&output, "output", "generatedocs/generated/documentation.go", "path to generated code file")
 
 	flag.Parse()
@@ -71,8 +89,27 @@ func handleFlags() {
 	}
 }
 
-func compile() {
-	var data Data
+func generateDocs(templateFile string, data *Data) []byte {
+	// Create template for generating documentation.go
+	docTemplateFile, err := common.ReadFile(templateFile)
+	if err != nil {
+		common.Exit(err, ExitCodeFailedReadTemplate)
+	}
+	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(string(docTemplateFile))
+	if err != nil {
+		common.Exit(err, ExitCodeFailedParseTemplate)
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err := documentationTemplate.Execute(buf, data); err != nil {
+		common.Exit(err, ExitCodeFailedExecuteTemplate)
+	}
+
+	return buf.Bytes()
+}
+
+func loadData(dataRoot string) *Data {
+	data := &Data{}
 
 	// Get parameters
 	data.ParamMap = make(map[string][]string)
@@ -89,7 +126,7 @@ func compile() {
 	data.Groups = make([]common.GroupsEntry, 0, len(groups))
 	for _, group := range groups {
 		var err error
-		group.DocEntry, err = CreateGroupsDocEntry(group.Name)
+		group.DocEntry, err = CreateGroupsDocEntry(dataRoot, group.Name)
 		if err != nil {
 			common.Exit(err, ExitCodeFailedHandleGroups)
 		}
@@ -100,7 +137,7 @@ func compile() {
 	data.Actions = common.ActionStrings()
 	data.ActionMap = make(map[string]common.DocEntry, len(data.Actions))
 	for _, action := range data.Actions {
-		actionDocEntry, err := CreateActionDocEntry(action)
+		actionDocEntry, err := CreateActionDocEntry(dataRoot, action)
 		if err != nil {
 			common.Exit(err, ExitCodeFailedHandleAction)
 		}
@@ -120,7 +157,7 @@ func compile() {
 
 	data.ConfigMap = make(map[string]common.DocEntry, len(data.ConfigFields))
 	for _, field := range data.ConfigFields {
-		configDocEntry, err := CreateConfigDocEntry(field)
+		configDocEntry, err := CreateConfigDocEntry(dataRoot, field)
 		if err != nil {
 			common.Exit(err, ExitCodeFailedHandleConfig)
 		}
@@ -128,31 +165,12 @@ func compile() {
 	}
 
 	// Walk "extra" folder and add things outside normal structure
-	if err := CreateExtraDocEntries(&data); err != nil {
+	if err := CreateExtraDocEntries(dataRoot, data); err != nil {
 		common.Exit(err, ExitCodeFailedCreateExtra)
 	}
 
-	// Create template for generating documentation.go
-	docTemplateFile, err := common.ReadFile(fmt.Sprintf("%s/documentation.template", dataRoot))
-	if err != nil {
-		common.Exit(err, ExitCodeFailedReadTemplate)
-	}
-	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(string(docTemplateFile))
-	if err != nil {
-		common.Exit(err, ExitCodeFailedParseTemplate)
-	}
+	return data
 
-	buf := bytes.NewBuffer(nil)
-	if err := documentationTemplate.Execute(buf, data); err != nil {
-		common.Exit(err, ExitCodeFailedExecuteTemplate)
-	}
-
-	if err := ioutil.WriteFile(output, buf.Bytes(), 0644); err != nil {
-		_, _ = os.Stderr.WriteString(err.Error())
-		os.Exit(ExitCodeFailedWriteResult)
-	}
-
-	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRoot, output)
 }
 
 // ReadAndUnmarshal file to object
@@ -170,22 +188,22 @@ func ReadAndUnmarshal(filename string, output interface{}) error {
 }
 
 // CreateActionDocEntry create DocEntry from actions sub directory
-func CreateActionDocEntry(action string) (common.DocEntry, error) {
-	return CreateDocEntry([]string{"actions", action})
+func CreateActionDocEntry(dataRoot, action string) (common.DocEntry, error) {
+	return CreateDocEntry(dataRoot, []string{"actions", action})
 }
 
 // CreateConfigDocEntry create DocEntry from config sub directory
-func CreateConfigDocEntry(field string) (common.DocEntry, error) {
-	return CreateDocEntry([]string{"config", field})
+func CreateConfigDocEntry(dataRoot string, field string) (common.DocEntry, error) {
+	return CreateDocEntry(dataRoot, []string{"config", field})
 }
 
 // CreateGroupsDocEntry create DocEntry from groups sub directory
-func CreateGroupsDocEntry(group string) (common.DocEntry, error) {
-	return CreateDocEntry([]string{"groups", group})
+func CreateGroupsDocEntry(dataRoot string, group string) (common.DocEntry, error) {
+	return CreateDocEntry(dataRoot, []string{"groups", group})
 }
 
 // CreateExtraDocEntries create DocEntries for sub folders to "extra" folder
-func CreateExtraDocEntries(data *Data) error {
+func CreateExtraDocEntries(dataRoot string, data *Data) error {
 	dataDir, err := os.Open(fmt.Sprintf("%s/extra", dataRoot))
 	if err != nil {
 		return err
@@ -205,7 +223,7 @@ func CreateExtraDocEntries(data *Data) error {
 			continue
 		}
 		data.Extra = append(data.Extra, fi.Name())
-		data.ExtraMap[fi.Name()], err = CreateDocEntry([]string{"extra", fi.Name()})
+		data.ExtraMap[fi.Name()], err = CreateDocEntry(dataRoot, []string{"extra", fi.Name()})
 		if err != nil {
 			return err
 		}
@@ -215,16 +233,16 @@ func CreateExtraDocEntries(data *Data) error {
 }
 
 // CreateDocEntry create DocEntry using files in sub folder
-func CreateDocEntry(subFolders []string) (common.DocEntry, error) {
+func CreateDocEntry(dataRoot string, subFolders []string) (common.DocEntry, error) {
 	var docEntry common.DocEntry
 	var err error
 
-	docEntry.Description, err = GetMarkDownFile(subFolders, "description.md")
+	docEntry.Description, err = GetMarkDownFile(dataRoot, subFolders, "description.md")
 	if err != nil {
 		return docEntry, err
 	}
 
-	docEntry.Examples, err = GetMarkDownFile(subFolders, "examples.md")
+	docEntry.Examples, err = GetMarkDownFile(dataRoot, subFolders, "examples.md")
 	if err != nil {
 		return docEntry, err
 	}
@@ -233,7 +251,7 @@ func CreateDocEntry(subFolders []string) (common.DocEntry, error) {
 }
 
 // GetMarkDownFile read markdown file into memory and do necessary escaping
-func GetMarkDownFile(subFolders []string, file string) (string, error) {
+func GetMarkDownFile(dataRoot string, subFolders []string, file string) (string, error) {
 	subPath := strings.Join(subFolders, "/")
 	filepath := fmt.Sprintf("%s/%s/%s", dataRoot, subPath, file)
 
