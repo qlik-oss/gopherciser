@@ -339,7 +339,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	}
 
 	// Lookup and set ExtendsID
-	extendsIdPath := senseobjdef.NewDataPath("/qExtendsId")
+	extendsIdPath := helpers.NewDataPath("/qExtendsId")
 	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawBaseProperties)
 	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
 
@@ -388,7 +388,7 @@ func (structure *GeneratedAppStructure) handleAutoChart(ctx context.Context, app
 }
 
 func extractGeneratedProperties(properties json.RawMessage) json.RawMessage {
-	generatedPropertiesPath := senseobjdef.NewDataPath("/qUndoExclude/generated")
+	generatedPropertiesPath := helpers.NewDataPath("/qUndoExclude/generated")
 	properties, _ = generatedPropertiesPath.Lookup(properties)
 	return properties
 }
@@ -424,7 +424,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	}
 
 	// Lookup and set Visualization
-	visualizationPath := senseobjdef.NewDataPath("/visualization")
+	visualizationPath := helpers.NewDataPath("/visualization")
 	rawVisualization, _ := visualizationPath.Lookup(properties)
 	_ = jsonit.Unmarshal(rawVisualization, &obj.Visualization)
 
@@ -433,7 +433,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 		vis = typ
 	}
 
-	metaDef := senseobjdef.NewDataPath("/qMetaDef")
+	metaDef := helpers.NewDataPath("/qMetaDef")
 	rawMetaDef, _ := metaDef.Lookup(properties)
 	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
 
@@ -463,15 +463,15 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	obj.Selectable = def.Select != nil
 
 	// Paths dimensions and measures in hypercube
-	dimensions := senseobjdef.NewDataPath(fmt.Sprintf("%sDef/qDimensions", def.DataDef.Path))
-	measures := senseobjdef.NewDataPath(fmt.Sprintf("%sDef/qMeasures", def.DataDef.Path))
+	dimensions := helpers.NewDataPath(fmt.Sprintf("%sDef/qDimensions", def.DataDef.Path))
+	measures := helpers.NewDataPath(fmt.Sprintf("%sDef/qMeasures", def.DataDef.Path))
 
 	// Figure out list object path
 	listObjectPath := fmt.Sprintf("%sDef", def.DataDef.Path)
 	if !strings.HasSuffix(listObjectPath, "/qListObjectDef") {
 		listObjectPath = fmt.Sprintf("%s/qListObjectDef", def.DataDef.Path)
 	}
-	listObjects := senseobjdef.NewDataPath(listObjectPath)
+	listObjects := helpers.NewDataPath(listObjectPath)
 
 	// Try to set dimensions and measures, null if not exist or not parsable (error)
 	rawDimensions, _ := dimensions.Lookup(properties)
@@ -571,7 +571,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 
 	// Save measure information to structure
 	var measure enigma.NxInlineMeasureDef
-	measurePath := senseobjdef.NewDataPath("/qMeasure")
+	measurePath := helpers.NewDataPath("/qMeasure")
 	rawMeasure, err := measurePath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("measure<%s> definition not found", id))
@@ -583,7 +583,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 
 	// Save meta information to structure
 	var meta appstructure.MetaDef
-	metaPath := senseobjdef.NewDataPath("/qMetaDef")
+	metaPath := helpers.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("measure<%s> has not meta information", id))
@@ -616,7 +616,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 
 	// Save dimension information to structure
 	var dimension enigma.NxInlineDimensionDef
-	dimensionPath := senseobjdef.NewDataPath("/qDim")
+	dimensionPath := helpers.NewDataPath("/qDim")
 	rawDimension, err := dimensionPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("dimension<%s> defintion not found", id))
@@ -628,7 +628,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 
 	// Add dimension meta information to structure
 	var meta appstructure.MetaDef
-	metaPath := senseobjdef.NewDataPath("/qMetaDef")
+	metaPath := helpers.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("dimension<%s> has not meta information", id))
@@ -693,7 +693,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 	}()
 
 	// Lookup and set Visualization
-	visualizationPath := senseobjdef.NewDataPath("/visualization")
+	visualizationPath := helpers.NewDataPath("/visualization")
 	rawVisualization, _ := visualizationPath.Lookup(storyObject.RawProperties)
 	_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
 
@@ -739,7 +739,7 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 
 	// Get bookmark meta information
 	var meta appstructure.MetaDef // meta shares title and description from this struct
-	metaPath := senseobjdef.NewDataPath("/qMetaDef")
+	metaPath := helpers.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(properties)
 	if err != nil {
 		structure.warn(fmt.Sprintf("bookmark<%s> has no meta information", id))
@@ -755,7 +755,7 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 		structureBookmark.RawProperties = properties
 	}
 
-	idPath := senseobjdef.NewDataPath("/qInfo/qId")
+	idPath := helpers.NewDataPath("/qInfo/qId")
 	rawId, err := idPath.Lookup(properties)
 	if err != nil {
 		return errors.Wrap(err, "failed to get ID of bookmark")
@@ -861,7 +861,7 @@ func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessa
 }
 
 func stringFromDataPath(path string, data json.RawMessage) string {
-	dataPath := senseobjdef.NewDataPath(path)
+	dataPath := helpers.NewDataPath(path)
 	rawData, _ := dataPath.Lookup(data)
 	var str string
 	_ = jsonit.Unmarshal(rawData, &str)

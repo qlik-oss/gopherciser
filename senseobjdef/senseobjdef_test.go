@@ -3,6 +3,7 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"io/ioutil"
 	"testing"
 )
@@ -13,10 +14,10 @@ var (
 		"listbox": {
 			DataDef: DataDef{
 				Type: DataDefListObject,
-				Path: DataPath("/qListObject"),
+				Path: helpers.DataPath("/qListObject"),
 			},
 			Data: []Data{
-				{
+				{DataCore{
 					Constraints: nil,
 					Requests: []GetDataRequests{
 						{
@@ -25,7 +26,7 @@ var (
 							Height: 10000,
 						},
 					},
-				},
+				}},
 			},
 			Select: &Select{
 				Type: SelectTypeListObjectValues,
@@ -35,10 +36,10 @@ var (
 		"customscatterplot": {
 			DataDef: DataDef{
 				Type: DataDefHyperCube,
-				Path: DataPath("/qHyperCube"),
+				Path: helpers.DataPath("/qHyperCube"),
 			},
 			Data: []Data{
-				{
+				{DataCore{
 					Constraints: []*Constraint{&Constraint{
 						Path:  "/qHyperCube/qSize/qcy",
 						Value: ">1000",
@@ -50,8 +51,8 @@ var (
 							Height: 10000,
 						},
 					},
-				},
-				{
+				}},
+				{DataCore{
 					Constraints: nil,
 					Requests: []GetDataRequests{
 						{
@@ -60,7 +61,7 @@ var (
 							Height: 1000,
 						},
 					},
-				},
+				}},
 			},
 			Select: &Select{
 				Type: SelectTypeHypercubeValues,
@@ -75,24 +76,26 @@ func TestConstraints(t *testing.T) {
 
 	def := &ObjectDef{
 		Data: []Data{
-			{
-				Constraints: []*Constraint{&Constraint{
-					Path:  DataPath("/qHyperCube/qSize/qcy"),
-					Value: ConstraintValue(">1000"),
-				}},
+			{DataCore{
+				Constraints: []*Constraint{
+					&Constraint{
+						Path:  helpers.DataPath("/qHyperCube/qSize/qcy"),
+						Value: ConstraintValue(">1000"),
+					},
+				},
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeBinnedData,
 					},
 				},
-			}, {
+			}}, {DataCore{
 				Constraints: nil,
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeData,
 					},
 				},
-			},
+			}},
 		},
 	}
 
@@ -216,6 +219,73 @@ func TestConfig(t *testing.T) {
 	if objDefs != expectedJSON {
 		t.Log("expected json:", expectedJSON)
 		t.Error("unexpected marshaled json")
+	}
+}
+
+func TestDeprecatedConfig(t *testing.T) {
+	t.Parallel()
+
+	raw := `{
+		"listbox": {
+			"datadef": {
+				"type": "listobject",
+				"path": "/qListObject"
+			},
+			"data": [
+				{
+					"requests": [
+						{
+							"type": "ListObjectData",
+							"path": "/qListObjectDef",
+							"height": 10000
+						}
+					]
+				}
+			],
+			"select": {
+				"type": "ListObjectValues",
+				"path": "/qListObjectDef"
+			}
+		},
+		"customscatterplot": {
+			"datadef": {
+				"type": "hypercube",
+				"path": "/qHyperCube"
+			},
+			"data": [
+				{
+					"constraint": {
+						"path": "/qHyperCube/qSize/qcy",
+						"value": ">1000"
+					},
+					"requests": [
+						{
+							"type": "HyperCubeBinnedData",
+							"path": "/qHyperCubeDef",
+							"height": 10000
+						}
+					]
+				},
+				{
+					"requests": [
+						{
+							"type": "HyperCubeData",
+							"path": "/qHyperCubeDef",
+							"height": 1000
+						}
+					]
+				}
+			],
+			"select": {
+				"type": "HyperCubeValues",
+				"path": "/qHyperCubeDef"
+			}
+		}	
+	}`
+
+	var defs ObjectDefs
+	if err := jsonit.Unmarshal([]byte(raw), &defs); err == nil {
+		t.Fatal("expected unmarshal error on deprecated field")
 	}
 }
 

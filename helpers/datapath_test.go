@@ -1,4 +1,4 @@
-package senseobjdef
+package helpers
 
 import (
 	"encoding/json"

@@ -3,6 +3,7 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"io/ioutil"
 	"os"
 
@@ -24,7 +25,7 @@ type (
 		// Type of data
 		Type DataDefType `json:"type"`
 		// Path to data carrier
-		Path DataPath `json:"path,omitempty"`
+		Path helpers.DataPath `json:"path,omitempty"`
 	}
 
 	// GetDataRequests data requests to send
@@ -38,11 +39,15 @@ type (
 	}
 
 	// Data Get data definitions
-	Data struct {
+	DataCore struct {
 		// Constraints constraint defining if to send requests
 		Constraints []*Constraint `json:"constraints,omitempty"`
 		// Requests List of data requests to send
 		Requests []GetDataRequests `json:"requests,omitempty"`
+	}
+
+	Data struct {
+		DataCore
 	}
 
 	// Select definitions for selecting in object
@@ -252,6 +257,22 @@ func (d DataDefType) MarshalJSON() ([]byte, error) {
 // String representation of DataDefType
 func (d DataDefType) String() string {
 	return dataDefTypeEnum.StringDefault(int(d), "unknown")
+}
+
+// UnmarshalJSON unmarshal Data
+func (d *Data) UnmarshalJSON(arg []byte) error {
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/constraint",
+	}); err != nil {
+		return errors.New("Deprecated field 'constraint' - please replace with 'constraints' array'")
+	}
+	dc := DataCore{}
+	err := json.Unmarshal(arg, &dc)
+	if err != nil {
+		return err
+	}
+	*d = Data{dc}
+	return nil
 }
 
 // OverrideFromFile read config from file (using default config)

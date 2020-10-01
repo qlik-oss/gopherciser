@@ -3,6 +3,7 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"reflect"
 	"strconv"
 	"sync"
@@ -23,7 +24,7 @@ type (
 	// Constraint defining if to send get data requests
 	Constraint struct {
 		// Path to value to evaluate
-		Path DataPath `json:"path"`
+		Path helpers.DataPath `json:"path"`
 		// Value constraint definition, first character must be <,>,= or !
 		// followed by number or the words true/false
 		Value ConstraintValue `json:"value"`
@@ -111,7 +112,7 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 			string(constraint.Value), string(constraint.Path))
 
 		switch errors.Cause(err).(type) {
-		case NoDataFound:
+		case helpers.NoDataFound:
 			if !constraint.Required {
 				err = nil
 			}

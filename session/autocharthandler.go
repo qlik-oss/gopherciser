@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -60,7 +61,7 @@ func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionSt
 
 	// get generated layout
 	var generatedLayout json.RawMessage
-	generatedLayoutPath := senseobjdef.NewDataPath(GeneratedPropertiesPath) // Path same as for properties
+	generatedLayoutPath := helpers.NewDataPath(GeneratedPropertiesPath) // Path same as for properties
 	rawGeneratedLayout, errDataPath := generatedLayoutPath.Lookup(rawLayout)
 	if errDataPath != nil {
 		actionState.AddErrors(errors.Wrapf(errDataPath, "Failed to get generated layout for autochart<%s>", autochartGen.GenericId))
@@ -107,7 +108,7 @@ func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionSt
 	instance.ObjectDef = &senseobjdef.ObjectDef{
 		DataDef: senseobjdef.DataDef{
 			Type: objectDef.DataDef.Type,
-			Path: senseobjdef.DataPath(fmt.Sprintf("%s%s", GeneratedPropertiesPath, objectDef.DataDef.Path)),
+			Path: helpers.DataPath(fmt.Sprintf("%s%s", GeneratedPropertiesPath, objectDef.DataDef.Path)),
 		},
 	}
 
@@ -162,7 +163,7 @@ func (instance *AutoChartInstance) SetObjectDefData(objDefData []senseobjdef.Dat
 			for i, c := range data.Constraints {
 				// de-reference pointer and update path in constraint
 				data.Constraints[i] = &senseobjdef.Constraint{
-					Path:     senseobjdef.DataPath(fmt.Sprint(GeneratedPropertiesPath, c.Path)),
+					Path:     helpers.DataPath(fmt.Sprint(GeneratedPropertiesPath, c.Path)),
 					Value:    c.Value,
 					Required: c.Required,
 				}
@@ -220,7 +221,7 @@ func getRawLayoutAndGeneratedProperties(sessionState *State, actionState *action
 		}
 
 		// Get generated properties
-		generatedPropPath := senseobjdef.NewDataPath(GeneratedPropertiesPath)
+		generatedPropPath := helpers.NewDataPath(GeneratedPropertiesPath)
 		rawGeneratedProp, errDataPath := generatedPropPath.Lookup(rawAutoChartProperties)
 		if errDataPath != nil {
 			return errors.Wrapf(errDataPath, "Failed to get generated properties for autochart<%s>", autochartGen.GenericId)
