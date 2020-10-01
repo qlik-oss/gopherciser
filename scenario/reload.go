@@ -106,6 +106,9 @@ func (settings ReloadSettings) Execute(sessionState *session.State,
 				// Get the progress using the request id we reserved for the reload
 				var progress *enigma.ProgressData
 				getProgress := func(ctx context.Context) error {
+					if sessionState.Connection == nil {
+						return errors.New("Not connected to a Sense environment (no connection)")
+					}
 					uplink := sessionState.Connection.Sense()
 					if uplink == nil {
 						return errors.New("no sense connection")
