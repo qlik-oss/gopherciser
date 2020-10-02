@@ -223,7 +223,7 @@ func emptyAndCloseEventChan(c chan *eventws.Event) {
 
 func checkStatusOngoing(sessionState *session.State, actionState *action.State, host, id string) (bool, error) {
 	reqOptions := session.DefaultReqOptions()
-	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndpoint, id), actionState, sessionState.LogEntry, &reqOptions)
+	statusRequest, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, getReloadEndpoint, id), actionState, sessionState.LogEntry, reqOptions)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}

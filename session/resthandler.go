@@ -184,6 +184,7 @@ func (handler *RestHandler) DecPending(request *RestRequest) {
 func DefaultClient(connectionSettings ConnectionSettings, state *State) (*http.Client, error) {
 	// todo client values are currently from http.DefaultClient, should choose better values depending on
 	// configured timeout etc
+
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error { return nil },
 		Transport: &Transport{
@@ -192,8 +193,8 @@ func DefaultClient(connectionSettings ConnectionSettings, state *State) (*http.C
 				DialContext: (&net.Dialer{
 					Timeout:   30 * time.Second,
 					KeepAlive: 30 * time.Second,
-					DualStack: true,
 				}).DialContext,
+				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
 				IdleConnTimeout:       90 * time.Second,
 				TLSHandshakeTimeout:   10 * time.Second,
@@ -221,13 +222,14 @@ func DefaultClient(connectionSettings ConnectionSettings, state *State) (*http.C
 }
 
 // DefaultReqOptions sets expected status code to 200 and fails on error
-func DefaultReqOptions() ReqOptions {
+func DefaultReqOptions() *ReqOptions {
 	options := ReqOptions{
 		ExpectedStatusCode: make([]int, len(defaultReqOptions.ExpectedStatusCode)),
 		FailOnError:        defaultReqOptions.FailOnError,
+		ContentType:        defaultReqOptions.ContentType,
 	}
 	copy(options.ExpectedStatusCode, defaultReqOptions.ExpectedStatusCode)
-	return options
+	return &options
 }
 
 // SetClient set HTTP client for this RestHandler

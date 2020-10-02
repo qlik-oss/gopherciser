@@ -112,7 +112,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	// some systems has v0, just warn on identity-providers error
 	optionsNoError := session.DefaultReqOptions()
 	optionsNoError.FailOnError = false
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/identity-providers/me/meta", host), actionState, sessionState.LogEntry, &optionsNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/identity-providers/me/meta", host), actionState, sessionState.LogEntry, optionsNoError)
 
 	if sessionState.Wait(actionState) {
 		return // we had an error
@@ -205,9 +205,11 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/api-keys/configs/%s", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users?tenantId=%s&limit=100&fields=name,picture,email,status&status=active,disabled", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24&resourceType=sharingservicetask", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles/quota", host), actionState, sessionState.LogEntry, nil)
+
+	// These requests differ on some configurations, set to warn only if not existing.
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, optionsNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, optionsNoError)
 
 	FetchDataConnectionId(sessionState, actionState, host, false)
 
