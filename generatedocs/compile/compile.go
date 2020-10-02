@@ -108,6 +108,51 @@ func generateDocs(templateFile string, data *Data) []byte {
 	return buf.Bytes()
 }
 
+func overloadGroups(baseGroups *[]common.GroupsEntry, newGroups []common.GroupsEntry) {
+	baseGroupMap := make(map[string]*common.GroupsEntry, len(*baseGroups)+len(newGroups))
+	for _, group := range *baseGroups {
+		baseGroupMap[group.Name] = &group
+	}
+
+	for _, newGroup := range newGroups {
+		if group, exist := baseGroupMap[newGroup.Name]; exist {
+			// TODO more than actions that need to be merged?
+			group.Actions = append(group.Actions, newGroup.Actions...)
+		} else {
+			*baseGroups = append(*baseGroups, newGroup)
+		}
+	}
+}
+
+func overloadDocMap(baseMap, newMap map[string]common.DocEntry) {
+	for k, v := range newMap {
+		baseMap[k] = v
+	}
+}
+
+// overload assumes data, newData and their members are initialized
+func (baseData *Data) overload(newData *Data) {
+	// overload parameters
+	for docKey, paramInfo := range newData.ParamMap {
+		baseData.ParamMap[docKey] = paramInfo
+	}
+
+	// overload groups
+	overloadGroups(&baseData.Groups, newData.Groups)
+
+	// overload actions
+	baseData.Actions = append(baseData.Actions, newData.Actions...)
+	overloadDocMap(baseData.ActionMap, newData.ActionMap)
+
+	// overload config
+	baseData.ConfigFields = append(baseData.ConfigFields, newData.ConfigFields...)
+	overloadDocMap(baseData.ConfigMap, newData.ConfigMap)
+
+	// overload extra
+	baseData.Extra = append(baseData.Extra, newData.Extra...)
+	overloadDocMap(baseData.ExtraMap, newData.ExtraMap)
+}
+
 func loadData(dataRoot string) *Data {
 	data := &Data{}
 
