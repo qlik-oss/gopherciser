@@ -63,21 +63,21 @@ func TestOverload(t *testing.T) {
 				},
 				Actions: []string{"action1"},
 				ActionMap: map[string]common.DocEntry{
-					"action1": common.DocEntry{
+					"action1": {
 						Description: "",
 						Examples:    "",
 					},
 				},
 				ConfigFields: []string{"configField1"},
 				ConfigMap: map[string]common.DocEntry{
-					"configField1": common.DocEntry{
+					"configField1": {
 						Description: "",
 						Examples:    "",
 					},
 				},
 				Extra: []string{"extra1"},
 				ExtraMap: map[string]common.DocEntry{
-					"extra1": common.DocEntry{
+					"extra1": {
 						Description: "",
 						Examples:    "",
 					},
@@ -97,15 +97,15 @@ func TestOverload(t *testing.T) {
 				},
 				Actions: []string{"action2"},
 				ActionMap: map[string]common.DocEntry{
-					"action2": common.DocEntry{},
+					"action2": {},
 				},
 				ConfigFields: []string{"configField2"},
 				ConfigMap: map[string]common.DocEntry{
-					"configField2": common.DocEntry{},
+					"configField2": {},
 				},
 				Extra: []string{"extra2"},
 				ExtraMap: map[string]common.DocEntry{
-					"extra2": common.DocEntry{},
+					"extra2": {},
 				},
 			},
 			expected: &Data{
@@ -129,18 +129,112 @@ func TestOverload(t *testing.T) {
 				},
 				Actions: []string{"action1", "action2"},
 				ActionMap: map[string]common.DocEntry{
-					"action1": common.DocEntry{},
-					"action2": common.DocEntry{},
+					"action1": {},
+					"action2": {},
 				},
 				ConfigFields: []string{"configField1", "configField2"},
 				ConfigMap: map[string]common.DocEntry{
-					"configField1": common.DocEntry{},
-					"configField2": common.DocEntry{},
+					"configField1": {},
+					"configField2": {},
 				},
 				Extra: []string{"extra1", "extra2"},
 				ExtraMap: map[string]common.DocEntry{
-					"extra1": common.DocEntry{},
-					"extra2": common.DocEntry{},
+					"extra1": {},
+					"extra2": {},
+				},
+			},
+		},
+		{
+			name: "complex overload",
+			base: &Data{
+				ParamMap: map[string][]string{
+					"param1": {""},
+				},
+				Groups: []common.GroupsEntry{
+					{
+						Name:    "group1",
+						Title:   "Group 1",
+						Actions: []string{"action1"},
+						DocEntry: common.DocEntry{
+							Description: "",
+							Examples:    "",
+						},
+					},
+				},
+				Actions: []string{"action1"},
+				ActionMap: map[string]common.DocEntry{
+					"action1": {
+						Description: "",
+						Examples:    "",
+					},
+				},
+				ConfigFields: []string{"configField1"},
+				ConfigMap: map[string]common.DocEntry{
+					"configField1": {
+						Description: "",
+						Examples:    "",
+					},
+				},
+				Extra: []string{"extra1"},
+				ExtraMap: map[string]common.DocEntry{
+					"extra1": {
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			new: &Data{
+				ParamMap: map[string][]string{
+					"param2": {""},
+				},
+				Groups: []common.GroupsEntry{
+					{
+						Name:     "group1",
+						Title:    "Group 1",
+						Actions:  []string{"action2"},
+						DocEntry: common.DocEntry{},
+					},
+				},
+				Actions: []string{"action2"},
+				ActionMap: map[string]common.DocEntry{
+					"action2": {},
+				},
+				ConfigFields: []string{"configField2"},
+				ConfigMap: map[string]common.DocEntry{
+					"configField2": {},
+				},
+				Extra: []string{"extra2"},
+				ExtraMap: map[string]common.DocEntry{
+					"extra2": {},
+				},
+			},
+			expected: &Data{
+				ParamMap: map[string][]string{
+					"param1": {""},
+					"param2": {""},
+				},
+				Groups: []common.GroupsEntry{
+					{
+						Name:     "group1",
+						Title:    "Group 1",
+						Actions:  []string{"action1", "action2"},
+						DocEntry: common.DocEntry{},
+					},
+				},
+				Actions: []string{"action1", "action2"},
+				ActionMap: map[string]common.DocEntry{
+					"action1": {},
+					"action2": {},
+				},
+				ConfigFields: []string{"configField1", "configField2"},
+				ConfigMap: map[string]common.DocEntry{
+					"configField1": {},
+					"configField2": {},
+				},
+				Extra: []string{"extra1", "extra2"},
+				ExtraMap: map[string]common.DocEntry{
+					"extra1": {},
+					"extra2": {},
 				},
 			},
 		},
@@ -154,6 +248,161 @@ func TestOverload(t *testing.T) {
 		})
 
 	}
+}
+
+func TestOverloadGroups(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		base     []common.GroupsEntry
+		new      []common.GroupsEntry
+		expected []common.GroupsEntry
+	}{
+		{
+			name: "actions with common group",
+			base: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action1"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			new: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			expected: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action1", "action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+		},
+		{
+			name: "actions with separate groups",
+			base: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action1"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			new: []common.GroupsEntry{
+				{
+					Name:    "group2",
+					Title:   "Group 2",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			expected: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action1"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+				{
+					Name:    "group2",
+					Title:   "Group 2",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+		},
+		{
+			name: "mixed case",
+			base: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action1"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			new: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action4"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+				{
+					Name:    "group2",
+					Title:   "Group 2",
+					Actions: []string{"action2", "action3"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			expected: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action1", "action4"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+				{
+					Name:    "group2",
+					Title:   "Group 2",
+					Actions: []string{"action2", "action3"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mergedGroups := mergeGroups(tc.base, tc.new)
+			if !reflect.DeepEqual(mergedGroups, tc.expected) {
+				t.Log(objDiff(mergedGroups, tc.expected))
+				t.Fatalf("group overload gave unexpected result")
+			}
+		})
+
+	}
+
 }
 
 func objDiff(obj1, obj2 interface{}) string {

@@ -108,20 +108,45 @@ func generateDocs(templateFile string, data *Data) []byte {
 	return buf.Bytes()
 }
 
-func overloadGroups(baseGroups *[]common.GroupsEntry, newGroups []common.GroupsEntry) {
-	baseGroupMap := make(map[string]*common.GroupsEntry, len(*baseGroups)+len(newGroups))
-	for _, group := range *baseGroups {
-		baseGroupMap[group.Name] = &group
+func mergeGroups(baseGroups []common.GroupsEntry, newGroups []common.GroupsEntry) []common.GroupsEntry {
+	// init new group lookup table
+	newGroupMap := make(map[string]common.GroupsEntry, len(newGroups))
+	for _, g := range newGroups {
+		newGroupMap[g.Name] = g
 	}
 
-	for _, newGroup := range newGroups {
-		if group, exist := baseGroupMap[newGroup.Name]; exist {
-			// TODO more than actions that need to be merged?
-			group.Actions = append(group.Actions, newGroup.Actions...)
-		} else {
-			*baseGroups = append(*baseGroups, newGroup)
+	// init return value
+	mergedGroups := make([]common.GroupsEntry, 0, len(baseGroups)+len(newGroups))
+
+	// merge groups existing in base
+	for _, baseGroup := range baseGroups {
+		if newGroup, existInBase := newGroupMap[baseGroup.Name]; existInBase {
+			// mark new group as merged by deleting it from lookup table
+			delete(newGroupMap, baseGroup.Name)
+
+			// override string fields
+			if baseGroup.Description != "" {
+				baseGroup.Description = newGroup.Description
+			}
+			if baseGroup.Examples != "" {
+				baseGroup.Examples = newGroup.Examples
+			}
+			if baseGroup.Title == "" {
+				baseGroup.Title = newGroup.Title
+			}
+
+			//append actions
+			baseGroup.Actions = append(baseGroup.Actions, newGroup.Actions...)
 		}
+		mergedGroups = append(mergedGroups, baseGroup)
 	}
+
+	// append unmerged groups
+	for _, g := range newGroupMap {
+		mergedGroups = append(mergedGroups, g)
+	}
+
+	return mergedGroups
 }
 
 func overloadDocMap(baseMap, newMap map[string]common.DocEntry) {
@@ -138,7 +163,7 @@ func (baseData *Data) overload(newData *Data) {
 	}
 
 	// overload groups
-	overloadGroups(&baseData.Groups, newData.Groups)
+	baseData.Groups = mergeGroups(baseData.Groups, newData.Groups)
 
 	// overload actions
 	baseData.Actions = append(baseData.Actions, newData.Actions...)
