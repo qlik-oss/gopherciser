@@ -1,0 +1,113 @@
+package session
+
+import (
+	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
+	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
+)
+
+type (
+	ContainerHandler struct{}
+
+	ContainerChildReference struct {
+		RefID string
+		ObjID string
+	}
+
+	ContainerHandlerInstance struct {
+		ID       string
+		ActiveID string
+		Children []ContainerChildReference
+	}
+
+	ContainerChild struct {
+		RefID    string `json:"refId"`
+		Label    string `json:"label"`
+		IsMaster bool   `json:"isMaster"`
+	}
+
+	ContainerChildItemData struct {
+		Title            string `json:"title"`
+		Visualization    string `json:"visualization"`
+		ContainerChildId string `json:"containerChildId"`
+		ExtendsId        string `json:"qExtendsId"`
+		ShowCondition    string `json:"showCondition"`
+	}
+
+	ContainerChildItem struct {
+		Info enigma.NxInfo          `json:"qInfo"`
+		Meta interface{}            `json:"qMeta"`
+		Data ContainerChildItemData `json:"qData"`
+	}
+
+	ContainerChildList struct {
+		Items []ContainerChildItem `json:"qItems"`
+	}
+
+	ContainerLayout struct {
+		Children  []ContainerChild   `json:"children"`
+		ChildList ContainerChildList `json:"qChildList"`
+	}
+)
+
+// Instance implements ObjectHandler  interface
+func (handler *ContainerHandler) Instance(id string) ObjectHandlerInstance {
+	return &ContainerHandlerInstance{ID: id}
+}
+
+// SetObjectAndEvents implements ObjectHandlerInstance interface
+func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+	rawLayout, err := sessionState.SendRequestRaw(actionState, genObj.GetLayoutRaw)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+	var layout ContainerLayout
+	if err := jsonit.Unmarshal(rawLayout, &layout); err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	// Create map with reference and the object id
+	refMap := make(map[string]string, len(layout.ChildList.Items))
+	for _, item := range layout.ChildList.Items {
+		ref := item.Data.ContainerChildId
+		if ref == "" {
+			ref = item.Data.ExtendsId
+		}
+		if ref == "" {
+			actionState.AddErrors(errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
+			continue
+		}
+		refMap[ref] = item.Info.Id
+	}
+
+	// Return resolving any child got an error
+	if actionState.Failed {
+		return
+	}
+
+	// Create child array with same order as .Children, this is the order of the tabs
+	handler.Children = make([]ContainerChildReference, 0, len(layout.Children))
+	for _, child := range layout.Children {
+		handler.Children = append(handler.Children, ContainerChildReference{RefID: child.RefID, ObjID: refMap[child.RefID]})
+	}
+
+	// First tab according to "Children" is the default active tab
+	if len(handler.Children) > 0 {
+		handler.ActiveID = handler.Children[0].ObjID
+	}
+}
+
+// GetObjectDefinition implements ObjectHandlerInstance interface
+func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
+	// First tab according to "Children" is the default active tab
+	if len(handler.Children) > 0 {
+		handler.ActiveID = handler.Children[0].ObjID
+	}
+
+	// return object defintiion of active object ?
+	return "", 0, 0, nil
+}

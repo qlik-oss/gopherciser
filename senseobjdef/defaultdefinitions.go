@@ -581,6 +581,22 @@ var (
 		Select: nil,
 	}
 
+	DefaultContainer = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -615,5 +631,6 @@ var (
 		"sheet":                 &DefaultSheet,
 		"odag-toolbar-navpoint": &DefaultOdagToolbarNavpoint,
 		"action-button":         &DefaultActionButton,
+		"container":             &DefaultContainer,
 	}
 )

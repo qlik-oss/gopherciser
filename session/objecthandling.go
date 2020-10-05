@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"math"
 	"sync"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/globals/constant"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 )
@@ -40,6 +40,9 @@ var (
 func init() {
 	// Register default object handlers
 	if err := GlobalObjectHandler.RegisterHandler("auto-chart", &AutoChartHandler{}, false); err != nil {
+		panic(err)
+	}
+	if err := GlobalObjectHandler.RegisterHandler("container", &ContainerHandler{}, false); err != nil {
 		panic(err)
 	}
 }
