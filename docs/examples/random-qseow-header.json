@@ -4,7 +4,7 @@
 		"logs": {
 			"traffic": true,
 			"debug": false,
-			"filename": "logs/random-qsefw-header.tsv"
+			"filename": "logs/random-qseow-header.tsv"
 		}
 	},
 	"scheduler": {

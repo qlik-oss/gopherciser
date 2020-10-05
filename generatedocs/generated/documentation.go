@@ -404,7 +404,7 @@ var (
                 Title: "Common actions",
                 Actions: []string{ "applybookmark","changesheet","clearall","clickactionbutton","createbookmark","createsheet","deletebookmark","deletesheet","disconnectapp","duplicatesheet","iterated","listboxselect","openapp","productversion","publishbookmark","publishsheet","randomaction","reload","select","setscript","sheetchanger","staticselect","subscribeobjects","thinktime","unpublishbookmark","unpublishsheet","unsubscribeobjects" },
                 DocEntry: common.DocEntry{
-                    Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEfW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
+                    Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
                     Examples: "",
                 },
             },
