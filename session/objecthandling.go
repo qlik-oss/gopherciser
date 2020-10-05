@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"math"
 	"sync"
 
@@ -186,11 +187,11 @@ func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj 
 }
 
 func SetChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
-	childDataPath := senseobjdef.NewDataPath("qChildList")
+	childDataPath := helpers.NewDataPath("qChildList")
 
 	rawChildren, err := childDataPath.Lookup(rawLayout)
 	switch errors.Cause(err).(type) {
-	case senseobjdef.NoDataFound:
+	case helpers.NoDataFound:
 		return nil //object has no children
 	case nil:
 		//object has children
@@ -208,11 +209,11 @@ func SetChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 }
 
 func SetChildren(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
-	childDataPath := senseobjdef.NewDataPath("children")
+	childDataPath := helpers.NewDataPath("children")
 
 	rawChildren, err := childDataPath.Lookup(rawLayout)
 	switch errors.Cause(err).(type) {
-	case senseobjdef.NoDataFound:
+	case helpers.NoDataFound:
 		return nil //object has no children
 	case nil:
 		//object has children
@@ -229,7 +230,7 @@ func SetChildren(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	return nil
 }
 
-func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path senseobjdef.DataPath) error {
+func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path helpers.DataPath) error {
 	rawListObject, err := path.Lookup(rawLayout)
 	if err != nil {
 		return errors.Wrap(err, "error getting listObject")
@@ -244,7 +245,7 @@ func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path s
 	return nil
 }
 
-func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path senseobjdef.DataPath) error {
+func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path helpers.DataPath) error {
 	rawHyperCube, err := path.Lookup(rawLayout)
 	if err != nil {
 		return errors.Wrap(err, "error getting hypercube")

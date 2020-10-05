@@ -2,6 +2,7 @@ package senseobjdef
 
 import (
 	"encoding/json"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"strconv"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestConstraintValue(t *testing.T) {
 	}`
 
 	type testData struct {
-		contraint      *Constraint
+		constraint     *Constraint
 		expectedResult bool
 		expectedErr    error
 	}
@@ -37,177 +38,177 @@ func TestConstraintValue(t *testing.T) {
 		//float64 tests
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("=100"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("=50"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("<500"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("<100"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("<50"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue(">50"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue(">500"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue(">100"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("!50"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("!100"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[0]/toEval"),
+				Path:  helpers.DataPath("/some/data/[0]/toEval"),
 				Value: ConstraintValue("*100"),
 			}, false, MalformedConstraintValueError("*100"),
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[1]/toEval"),
+				Path:  helpers.DataPath("/some/data/[1]/toEval"),
 				Value: ConstraintValue("=4.6"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[1]/toEval"),
+				Path:  helpers.DataPath("/some/data/[1]/toEval"),
 				Value: ConstraintValue("!4.6"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[1]/toEval"),
+				Path:  helpers.DataPath("/some/data/[1]/toEval"),
 				Value: ConstraintValue("<5"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[1]/toEval"),
+				Path:  helpers.DataPath("/some/data/[1]/toEval"),
 				Value: ConstraintValue(">4"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[2]/toEval"),
+				Path:  helpers.DataPath("/some/data/[2]/toEval"),
 				Value: ConstraintValue("=-23.154"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[2]/toEval"),
+				Path:  helpers.DataPath("/some/data/[2]/toEval"),
 				Value: ConstraintValue("<-23.153"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[2]/toEval"),
+				Path:  helpers.DataPath("/some/data/[2]/toEval"),
 				Value: ConstraintValue(">3.154"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[2]/toEval"),
+				Path:  helpers.DataPath("/some/data/[2]/toEval"),
 				Value: ConstraintValue("!-23.154"),
 			}, false, nil,
 		},
 		//bool tests
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[3]/toEval"),
+				Path:  helpers.DataPath("/some/data/[3]/toEval"),
 				Value: ConstraintValue("=true"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[3]/toEval"),
+				Path:  helpers.DataPath("/some/data/[3]/toEval"),
 				Value: ConstraintValue("=1"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[3]/toEval"),
+				Path:  helpers.DataPath("/some/data/[3]/toEval"),
 				Value: ConstraintValue("=false"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[3]/toEval"),
+				Path:  helpers.DataPath("/some/data/[3]/toEval"),
 				Value: ConstraintValue("!false"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[3]/toEval"),
+				Path:  helpers.DataPath("/some/data/[3]/toEval"),
 				Value: ConstraintValue("!0"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[3]/toEval"),
+				Path:  helpers.DataPath("/some/data/[3]/toEval"),
 				Value: ConstraintValue("!true"),
 			}, false, nil,
 		},
 		//string tests
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[4]/toEval"),
+				Path:  helpers.DataPath("/some/data/[4]/toEval"),
 				Value: ConstraintValue("=sometext"),
 			}, true, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[4]/toEval"),
+				Path:  helpers.DataPath("/some/data/[4]/toEval"),
 				Value: ConstraintValue("=notmytext"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[4]/toEval"),
+				Path:  helpers.DataPath("/some/data/[4]/toEval"),
 				Value: ConstraintValue("!sometext"),
 			}, false, nil,
 		},
 		{
 			&Constraint{
-				Path:  DataPath("/some/data/[4]/toEval"),
+				Path:  helpers.DataPath("/some/data/[4]/toEval"),
 				Value: ConstraintValue("!mytext"),
 			}, true, nil,
 		},
@@ -218,14 +219,14 @@ func TestConstraintValue(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 
-			result, err := test.contraint.Evaluate(json.RawMessage(jsonData))
+			result, err := test.constraint.Evaluate(json.RawMessage(jsonData))
 			if errors.Cause(err) != test.expectedErr {
 				t.Error(err)
 			}
 
 			if result != test.expectedResult {
 				t.Errorf("result<%v> not expected<%v> constraint<%s>",
-					result, test.expectedResult, string(test.contraint.Value))
+					result, test.expectedResult, string(test.constraint.Value))
 			}
 		})
 	}

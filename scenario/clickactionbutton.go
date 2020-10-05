@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"strconv"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -179,7 +179,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 		}
 
 		// parse button actions
-		actionsRaw, err := senseobjdef.NewDataPath("actions").Lookup(propsRaw)
+		actionsRaw, err := helpers.NewDataPath("actions").Lookup(propsRaw)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, `no "actions"-property exist for object<%s>`, obj.ID)
 		}
@@ -191,7 +191,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 		}
 
 		// parse navigation action associated with button
-		navigationRaw, err := senseobjdef.NewDataPath("navigation").Lookup(propsRaw)
+		navigationRaw, err := helpers.NewDataPath("navigation").Lookup(propsRaw)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, `no "navigation"-property exist for object<%s>`, obj.ID)
 		}

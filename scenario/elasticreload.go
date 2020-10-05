@@ -41,7 +41,7 @@ const (
 
 // UnmarshalJSON unmarshals reload settings from JSON
 func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
-	if err := HasDeprecatedFields(arg, []string{
+	if err := helpers.HasDeprecatedFields(arg, []string{
 		"/appguid",
 		"/appname",
 		"/pollinterval",

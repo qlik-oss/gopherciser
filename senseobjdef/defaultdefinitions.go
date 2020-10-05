@@ -5,11 +5,11 @@ var (
 	DefaultListboxDef = ObjectDef{
 		DataDef{DataDefListObject, "/qListObject"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{DataTypeListObject, "/qListObjectDef", DefaultDataHeight},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeListObjectValues, "/qListObjectDef"},
 	}
@@ -25,11 +25,11 @@ var (
 	DefaultBarchart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{DataTypeHyperCubeReducedData, "/qHyperCubeDef", DefaultDataHeight},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -38,20 +38,20 @@ var (
 	DefaultScatterplot = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
-				&Constraint{
+			{DataCore{
+				[]*Constraint{&Constraint{
 					Path:     "/qHyperCube/qSize/qcy",
 					Value:    ">1000",
 					Required: true,
-				},
+				}},
 				[]GetDataRequests{
 					{
 						Type: DataTypeHyperCubeBinnedData,
 						Path: "/qHyperCubeDef",
 					},
 				},
-			},
-			{
+			}},
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						DataTypeHyperCubeData,
@@ -59,7 +59,7 @@ var (
 						1000,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -68,13 +68,13 @@ var (
 	DefaultMap = ObjectDef{
 		DataDef{DataDefHyperCube, "/qUndoExclude/gaLayers/[0]/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qUndoExclude/gaLayers/0/qHyperCubeDef"},
 	}
@@ -83,13 +83,13 @@ var (
 	DefaultCombochart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -98,7 +98,7 @@ var (
 	DefaultTable = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						DataTypeHyperCubeDataColumns,
@@ -106,7 +106,7 @@ var (
 						40,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeColumnValues, "/qHyperCubeDef"},
 	}
@@ -115,13 +115,13 @@ var (
 	DefaultPivotTable = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -130,11 +130,18 @@ var (
 	DefaultLinechart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
-				&Constraint{
-					Path:     "/dimensionAxis/continuousAuto",
-					Value:    "=true",
-					Required: false,
+			{DataCore{
+				[]*Constraint{
+					&Constraint{
+						Path:     "/preferContinuousAxis",
+						Value:    "=true",
+						Required: false,
+					},
+					&Constraint{
+						Path:     "/qHyperCube/qDimensionInfo/[0]/qTags",
+						Value:    "~$numeric",
+						Required: false,
+					},
 				},
 				[]GetDataRequests{
 					{
@@ -142,14 +149,14 @@ var (
 						Path: "/qHyperCubeDef",
 					},
 				},
-			}, {
+			}}, {DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeReducedData,
 						Path: "/qHyperCubeDef",
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -158,13 +165,13 @@ var (
 	DefaultPiechart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -173,13 +180,13 @@ var (
 	DefaultTreemap = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -188,13 +195,13 @@ var (
 	DefaultMekkoChart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qHyperCubeDef"},
 	}
@@ -203,13 +210,13 @@ var (
 	DefaultTextImage = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 	}
@@ -218,13 +225,13 @@ var (
 	DefaultKpi = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 	}
@@ -233,13 +240,13 @@ var (
 	DefaultGauge = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 	}
@@ -248,7 +255,7 @@ var (
 	DefaultBoxplot = ObjectDef{
 		DataDef{DataDefHyperCube, "/qUndoExclude/box/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeData,
@@ -259,7 +266,7 @@ var (
 						Path: "/qUndoExclude/outliers/qHyperCubeDef",
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qUndoExclude/box/qHyperCubeDef"},
 	}
@@ -268,14 +275,14 @@ var (
 	DefaultDistributionplot = ObjectDef{
 		DataDef{DataDefHyperCube, "/qUndoExclude/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeStackData,
 						Path: "/qUndoExclude/qHyperCubeDef",
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qUndoExclude/qHyperCubeDef"},
 	}
@@ -284,14 +291,14 @@ var (
 	DefaultHistogram = ObjectDef{
 		DataDef{DataDefHyperCube, "/qUndoExclude/box/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeHyperCubeData,
 						Path: "/qUndoExclude/box/qHyperCubeDef",
 					},
 				},
-			},
+			}},
 		},
 		&Select{SelectTypeHypercubeValues, "/qUndoExclude/box/qHyperCubeDef"},
 	}
@@ -300,13 +307,13 @@ var (
 	DefaultWaterfallChart = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 	}
@@ -315,13 +322,13 @@ var (
 	DefaultQlikFunnelChartExt = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -333,13 +340,13 @@ var (
 	DefaultQlikSankeyChartExt = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -351,13 +358,13 @@ var (
 	DefaultQlikWordCloud = ObjectDef{
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -371,13 +378,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -391,13 +398,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 	}
@@ -408,13 +415,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -428,13 +435,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -448,13 +455,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 	}
@@ -465,13 +472,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -485,13 +492,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		nil,
 		// heatmap sends two selects, one SelectHyperCubeValues each for dimension 0 and 1 for each selection made.
@@ -508,13 +515,13 @@ var (
 			Path: "/qHyperCube",
 		},
 		Data: []Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		Select: &Select{
 			Type: SelectTypeHypercubeValues,
@@ -527,13 +534,13 @@ var (
 			Type: DataDefNoData,
 		},
 		Data: []Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		Select: nil,
 	}
@@ -544,13 +551,13 @@ var (
 			Path: "/qHyperCubeDef",
 		},
 		[]Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		&Select{
 			Type: SelectTypeHypercubeValues,
@@ -563,13 +570,13 @@ var (
 			Type: DataDefNoData,
 		},
 		Data: []Data{
-			{
+			{DataCore{
 				Requests: []GetDataRequests{
 					{
 						Type: DataTypeLayout,
 					},
 				},
-			},
+			}},
 		},
 		Select: nil,
 	}

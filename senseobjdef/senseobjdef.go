@@ -3,6 +3,7 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"io/ioutil"
 	"os"
 
@@ -24,7 +25,7 @@ type (
 		// Type of data
 		Type DataDefType `json:"type"`
 		// Path to data carrier
-		Path DataPath `json:"path,omitempty"`
+		Path helpers.DataPath `json:"path,omitempty"`
 	}
 
 	// GetDataRequests data requests to send
@@ -38,11 +39,15 @@ type (
 	}
 
 	// Data Get data definitions
-	Data struct {
-		// Constraint constraint defining if to send requests
-		Constraint *Constraint `json:"constraint,omitempty"`
+	DataCore struct {
+		// Constraints constraint defining if to send requests
+		Constraints []*Constraint `json:"constraints,omitempty"`
 		// Requests List of data requests to send
 		Requests []GetDataRequests `json:"requests,omitempty"`
+	}
+
+	Data struct {
+		DataCore
 	}
 
 	// Select definitions for selecting in object
@@ -254,6 +259,22 @@ func (d DataDefType) String() string {
 	return dataDefTypeEnum.StringDefault(int(d), "unknown")
 }
 
+// UnmarshalJSON unmarshal Data
+func (d *Data) UnmarshalJSON(arg []byte) error {
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/constraint",
+	}); err != nil {
+		return errors.New("Deprecated field 'constraint' - please replace with 'constraints' array'")
+	}
+	dc := DataCore{}
+	err := json.Unmarshal(arg, &dc)
+	if err != nil {
+		return err
+	}
+	*d = Data{dc}
+	return nil
+}
+
 // OverrideFromFile read config from file (using default config)
 func OverrideFromFile(cfgFile string) (ObjectDefs, error) {
 	err := od.OverrideFromFile(cfgFile)
@@ -360,20 +381,25 @@ func (def *ObjectDef) Validate() error {
 // Evaluate which constraint section applies
 func (def *ObjectDef) Evaluate(data json.RawMessage) ([]GetDataRequests, error) {
 	for _, v := range def.Data {
-		if v.Constraint == nil {
-			return v.Requests, nil //No constraint means evaluates to true, i.e. default request type.
+		meetsConstraints := true
+		for _, c := range v.Constraints {
+
+			result, err := c.Evaluate(data)
+			if err != nil {
+				return nil, errors.Wrap(err, "Failed to evaluate get data function")
+			}
+			if !result {
+				meetsConstraints = false
+				break
+			}
 		}
 
-		result, err := v.Constraint.Evaluate(data)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to evaluate get data function")
-		}
-		if result {
+		if meetsConstraints {
 			return v.Requests, nil
 		}
 	}
 
-	return nil, errors.Errorf("No contraint section applies")
+	return nil, errors.Errorf("No constraint section applies")
 }
 
 //MaxHeight max data to get
