@@ -95,7 +95,7 @@ func compile(templatePath string, dataRoots ...string) []byte {
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
 	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "a comma separated list of paths to data folders")
-	flag.StringVar(&templateFile, "template", "generatedocs/data", "path to template file")
+	flag.StringVar(&templateFile, "template", "generatedocs/data/documentation.template", "path to template file")
 	flag.StringVar(&output, "output", "generatedocs/generated/documentation.go", "path to generated code file")
 
 	flag.Parse()

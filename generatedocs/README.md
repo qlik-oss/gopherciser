@@ -39,7 +39,8 @@ go run ./generatedocs/compile/compile.go
 #### Optional flags
 
 * `--output string`: Filepath to the generated file. Defaults to `generatedocs/generated/documentation.go`.
-* `--data`: Filepath to the data to read. Defaults to `generatedocs/data`.  
+* `--data`: Comma separated filepaths to the data to read. Filepaths Defaults to `generatedocs/data`.
+* `--template`: Filepath to go template used to generate go-code from data. Defaults to `generatedocs/data/documentation.template`.
 
 ### Generating markdown files
 
@@ -71,8 +72,10 @@ data
         -> groups.json
     -> documentation.template
     -> params.json
-    -> settingup.md.template 
+    -> settingup.md.template
 ```
+
+Data can be overloaded by passing a comma separated list to the `--data` flag, e.g. `--data=path/to/data1,path/to/data2`. The overload precedence goes from low to high within the list, meaning `data1` will be overloaded by `data2`.
 
 ### Documentation structure for actions, groups and config sections
 
