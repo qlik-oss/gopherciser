@@ -13,10 +13,10 @@ import (
 
 func TestCompile(t *testing.T) {
 	templateFile := "../data/documentation.template"
-	dataRoot := "testdata/base/data"
+	dataRoots := []string{"testdata/base/data"}
 	expectedOutput := "testdata/base/expected-output/documentation.go"
 
-	generatedDocs := compile(dataRoot, templateFile)
+	generatedDocs := compile(templateFile, dataRoots...)
 	expectedDocs, err := ioutil.ReadFile(expectedOutput)
 	if err != nil {
 		t.Fatal(err)

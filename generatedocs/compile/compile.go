@@ -57,7 +57,7 @@ var (
 
 func main() {
 	handleFlags()
-	generatedDocs := compile(dataRootParam, fmt.Sprintf("%s/documentation.template", dataRootParam))
+	generatedDocs := compile(fmt.Sprintf("%s/documentation.template", dataRootParam), dataRootParam)
 	if err := ioutil.WriteFile(output, generatedDocs, 0644); err != nil {
 		_, _ = os.Stderr.WriteString(err.Error())
 		os.Exit(ExitCodeFailedWriteResult)
@@ -65,9 +65,17 @@ func main() {
 	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRootParam, output)
 }
 
-func compile(dataRoot, templatePath string) []byte {
-	data := loadData(dataRoot)
-	docs := generateDocs(templatePath, data)
+func compile(templatePath string, dataRoots ...string) []byte {
+	data := loadData(dataRoots[0])
+	for _, dataRoot := range dataRoots[1:] {
+		data.overload(loadData(dataRoot))
+
+	}
+	tmplBytes, err := common.ReadFile(templatePath)
+	if err != nil {
+		common.Exit(err, ExitCodeFailedReadTemplate)
+	}
+	docs := generateDocs(tmplBytes, data)
 	formattedDocs, err := format.Source(docs)
 	if err != nil {
 		_, _ = os.Stderr.WriteString("generated code is not valid golang:\n" + err.Error())
@@ -89,13 +97,9 @@ func handleFlags() {
 	}
 }
 
-func generateDocs(templateFile string, data *Data) []byte {
+func generateDocs(tmpl []byte, data *Data) []byte {
 	// Create template for generating documentation.go
-	docTemplateFile, err := common.ReadFile(templateFile)
-	if err != nil {
-		common.Exit(err, ExitCodeFailedReadTemplate)
-	}
-	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(string(docTemplateFile))
+	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(string(tmpl))
 	if err != nil {
 		common.Exit(err, ExitCodeFailedParseTemplate)
 	}
