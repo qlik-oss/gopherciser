@@ -29,7 +29,8 @@ const (
 	ExitCodeFailedParseTemplate
 	ExitCodeFailedExecuteTemplate
 	ExitCodeFailedCreateExtra
-	ExitCodeNotValidGo
+	ExitCodeFailedSyntaxError
+	ExitCodeFailedNoDataRoot
 )
 
 type (
@@ -50,14 +51,17 @@ var (
 		"params": SortedParamsKeys,
 		"join":   strings.Join,
 	}
-	dataRootParam, output string
+	dataRootParam string
+	dataRoots     []string
+	output        string
+	templateFile  string
 	// Todo: Better way to do this? Using "search and replace" doesn't seem very robust.
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
 func main() {
 	handleFlags()
-	generatedDocs := compile(fmt.Sprintf("%s/documentation.template", dataRootParam), dataRootParam)
+	generatedDocs := compile(templateFile, dataRoots...)
 	if err := ioutil.WriteFile(output, generatedDocs, 0644); err != nil {
 		_, _ = os.Stderr.WriteString(err.Error())
 		os.Exit(ExitCodeFailedWriteResult)
@@ -66,6 +70,10 @@ func main() {
 }
 
 func compile(templatePath string, dataRoots ...string) []byte {
+	if len(dataRoots) == 0 {
+		fmt.Fprint(os.Stderr, "no data roots passed")
+		os.Exit(ExitCodeFailedNoDataRoot)
+	}
 	data := loadData(dataRoots[0])
 	for _, dataRoot := range dataRoots[1:] {
 		data.overload(loadData(dataRoot))
@@ -78,15 +86,16 @@ func compile(templatePath string, dataRoots ...string) []byte {
 	docs := generateDocs(tmplBytes, data)
 	formattedDocs, err := format.Source(docs)
 	if err != nil {
-		_, _ = os.Stderr.WriteString("generated code is not valid golang:\n" + err.Error())
-		os.Exit(ExitCodeNotValidGo)
+		fmt.Fprintf(os.Stderr, "generated code has syntax error(s):\n%v\n", err)
+		os.Exit(ExitCodeFailedSyntaxError)
 	}
 	return formattedDocs
 }
 
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "path to data folder")
+	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "a comma separated list of paths to data folders")
+	flag.StringVar(&templateFile, "template", "generatedocs/data", "path to template file")
 	flag.StringVar(&output, "output", "generatedocs/generated/documentation.go", "path to generated code file")
 
 	flag.Parse()
@@ -95,6 +104,8 @@ func handleFlags() {
 		flag.PrintDefaults()
 		os.Exit(ExitCodeOk)
 	}
+
+	dataRoots = strings.Split(dataRootParam, ",")
 }
 
 func generateDocs(tmpl []byte, data *Data) []byte {

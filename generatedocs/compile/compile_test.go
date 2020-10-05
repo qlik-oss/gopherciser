@@ -38,6 +38,58 @@ func TestCompile(t *testing.T) {
 }
 
 func TestOverload(t *testing.T) {
+
+	emptyData := func() *Data {
+		return &Data{
+			ParamMap:     map[string][]string{},
+			Groups:       []common.GroupsEntry{},
+			Actions:      []string{},
+			ActionMap:    map[string]common.DocEntry{},
+			ConfigFields: []string{},
+			ConfigMap:    map[string]common.DocEntry{},
+			Extra:        []string{},
+			ExtraMap:     map[string]common.DocEntry{},
+		}
+	}
+
+	exampleData := func() *Data {
+		return &Data{
+			ParamMap: map[string][]string{
+				"param1": {""},
+				"param2": {""},
+			},
+			Groups: []common.GroupsEntry{
+				{
+					Name:     "group1",
+					Title:    "Group 1",
+					Actions:  []string{"action1"},
+					DocEntry: common.DocEntry{},
+				},
+				{
+					Name:     "group2",
+					Title:    "Group 2",
+					Actions:  []string{"action2"},
+					DocEntry: common.DocEntry{},
+				},
+			},
+			Actions: []string{"action1", "action2"},
+			ActionMap: map[string]common.DocEntry{
+				"action1": {},
+				"action2": {},
+			},
+			ConfigFields: []string{"configField1", "configField2"},
+			ConfigMap: map[string]common.DocEntry{
+				"configField1": {},
+				"configField2": {},
+			},
+			Extra: []string{"extra1", "extra2"},
+			ExtraMap: map[string]common.DocEntry{
+				"extra1": {},
+				"extra2": {},
+			},
+		}
+	}
+
 	for _, tc := range []struct {
 		name     string
 		base     *Data
@@ -238,6 +290,24 @@ func TestOverload(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "empty base",
+			base:     emptyData(),
+			new:      exampleData(),
+			expected: exampleData(),
+		},
+		{
+			name:     "empty new",
+			base:     exampleData(),
+			new:      emptyData(),
+			expected: exampleData(),
+		},
+		{
+			name:     "both empty",
+			base:     emptyData(),
+			new:      emptyData(),
+			expected: emptyData(),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.base.overload(tc.new)
@@ -391,6 +461,64 @@ func TestOverloadGroups(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "empty base",
+			base: []common.GroupsEntry{},
+			new: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			expected: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+		},
+		{
+			name: "empty new",
+			base: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+			new: []common.GroupsEntry{},
+			expected: []common.GroupsEntry{
+				{
+					Name:    "group1",
+					Title:   "Group 1",
+					Actions: []string{"action2"},
+					DocEntry: common.DocEntry{
+						Description: "",
+						Examples:    "",
+					},
+				},
+			},
+		},
+		{
+			name:     "both empty",
+			base:     []common.GroupsEntry{},
+			new:      []common.GroupsEntry{},
+			expected: []common.GroupsEntry{},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
