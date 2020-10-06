@@ -120,13 +120,10 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 
 // GetObjectDefinition implements ObjectHandlerInstance interface
 func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
-	// First tab according to "Children" is the default active tab
-	//if len(handler.Children) > 0 {
-	//	handler.ActiveID = handler.Children[0].ObjID
-	//}
-
-	// return object defintiion of active object ?
-	return "", 0, 0, nil
+	if objectType != "container" {
+		return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.New("ContainerHandlerInstance only handles objects of type container")
+	}
+	return (&DefaultHandlerInstance{}).GetObjectDefinition("container")
 }
 
 // SwitchActiveID unsubscribes from the current activeid and subscribes to the new one

@@ -585,15 +585,7 @@ var (
 		DataDef: DataDef{
 			Type: DataDefNoData,
 		},
-		Data: []Data{
-			{DataCore{
-				Requests: []GetDataRequests{
-					{
-						Type: DataTypeLayout,
-					},
-				},
-			}},
-		},
+		Data:   nil,
 		Select: nil,
 	}
 
