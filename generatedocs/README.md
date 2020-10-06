@@ -40,7 +40,7 @@ go run ./generatedocs/compile/compile.go
 
 * `--output string`: Filepath to the generated file. Defaults to `generatedocs/generated/documentation.go`.
 * `--data`: Comma separated filepaths to the data to read. Filepaths Defaults to `generatedocs/data`.
-* `--template`: Filepath to go template used to generate go-code from data. Defaults to `generatedocs/data/documentation.template`.
+* `--template`: Filepath to go template used to generate go-code from data. Defaults to `generatedocs/compile/templates/documentation.template`.
 
 ### Generating markdown files
 
@@ -52,7 +52,7 @@ go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
 
 #### Optional flags
 
-* `--template`:  Defaults to `generatedocs/data/settingup.md.template`.
+* `--template`:  Defaults to `generatedocs/generate/templates/settingup.md.templatee`.
 * `--output`: Defaults to `generatedocs/generated/settingup.md`.
 
 ## How: Updating/adding data
