@@ -12,7 +12,7 @@ import (
 )
 
 func TestCompile(t *testing.T) {
-	templateFile := "../data/documentation.template"
+	templateFile := "templates/documentation.template"
 	dataRoots := []string{"testdata/base/data"}
 	expectedOutput := "testdata/base/expected-output/documentation.go"
 
