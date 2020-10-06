@@ -45,6 +45,7 @@ func (settings UnsubscribeObjects) Execute(sessionState *session.State, actionSt
 				actionState.AddErrors(errors.WithStack(err))
 				return
 			}
+			sessionState.DeRegisterEvent(obj.Handle)
 		}
 	}
 	sessionState.Wait(actionState)
