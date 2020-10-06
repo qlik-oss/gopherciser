@@ -1,30 +1,92 @@
 package scenario
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
-	// DummySettings swithces active object in container
+	ContainerTabMode int
+	// ContainerTabSettings switches active object in container
 	ContainerTabSettings struct {
-		ID       string `json:"id"`
-		ActiveID string `json:"activeid"`
-		// TODO support random tab
-		// TODO support index based tab switching
+		Mode     ContainerTabMode `json:"mode"`
+		ID       string           `json:"id"`
+		ActiveID string           `json:"activeid,omitempty"`
+		Index    int              `json:"index,omitempty"`
 	}
 )
+
+// ContainerTabMode enum
+const (
+	ContainerTabModeID ContainerTabMode = iota
+	ContainerTabModeRandom
+	ContainerTabModeIndex
+)
+
+var (
+	containerTabMode = enummap.NewEnumMapOrPanic(map[string]int{
+		"id":     int(ContainerTabModeID),
+		"random": int(ContainerTabModeRandom),
+		"index":  int(ContainerTabModeIndex),
+	})
+)
+
+func (mode ContainerTabMode) GetEnumMap() *enummap.EnumMap {
+	return containerTabMode
+}
+
+// UnmarshalJSON unmarshal container tab mode
+func (mode *ContainerTabMode) UnmarshalJSON(arg []byte) error {
+	i, err := containerTabMode.UnMarshal(arg)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal ContainerTabMode")
+	}
+
+	*mode = ContainerTabMode(i)
+	return nil
+}
+
+// MarshalJSON marshal container tab mode
+func (mode ContainerTabMode) MarshalJSON() ([]byte, error) {
+	str, err := containerTabMode.String(int(mode))
+	if err != nil {
+		return nil, errors.Errorf("Unknown ContainerTabMode<%d>", mode)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
+// String representation of ContainerTabMode
+func (mode ContainerTabMode) String() string {
+	cMode, err := containerTabMode.String(int(mode))
+	if err != nil {
+		return strconv.Itoa(int(mode))
+	}
+	return cMode
+}
 
 // Validate ContainerTabSettings action (Implements ActionSettings interface)
 func (settings ContainerTabSettings) Validate() error {
 	if settings.ID == "" {
 		return errors.New("no container id defined")
 	}
-	if settings.ActiveID == "" {
-		return errors.New("no container activeid to set")
+
+	switch settings.Mode {
+	case ContainerTabModeID:
+		if settings.ActiveID == "" {
+			return errors.Errorf("no container activeid set for container tab mode<%s>", settings.Mode)
+		}
+	case ContainerTabModeRandom:
+	case ContainerTabModeIndex:
+	default:
+		return errors.Errorf("unknown container tab mode<%v>", settings.Mode)
 	}
+
 	return nil
 }
 
@@ -44,7 +106,18 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		return
 	}
 
-	if err := containerInstance.SwitchActiveID(sessionState, actionState, settings.ActiveID); err != nil {
+	activeID := ""
+	switch settings.Mode {
+	case ContainerTabModeID:
+		activeID = settings.ActiveID
+	case ContainerTabModeRandom:
+		idx := sessionState.Randomizer().Rand(len(containerInstance.Children))
+		activeID = containerInstance.Children[idx].ObjID
+	case ContainerTabModeIndex:
+		// TODO support index based tab switching
+	}
+
+	if err := containerInstance.SwitchActiveID(sessionState, actionState, activeID); err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
