@@ -146,7 +146,7 @@ func mergeGroups(baseGroups []common.GroupsEntry, newGroups []common.GroupsEntry
 			if baseGroup.Examples != "" {
 				baseGroup.Examples = newGroup.Examples
 			}
-			if baseGroup.Title == "" {
+			if baseGroup.Title != "" {
 				baseGroup.Title = newGroup.Title
 			}
 

@@ -104,13 +104,10 @@ func TestOverload(t *testing.T) {
 				},
 				Groups: []common.GroupsEntry{
 					{
-						Name:    "group1",
-						Title:   "Group 1",
-						Actions: []string{"action1"},
-						DocEntry: common.DocEntry{
-							Description: "",
-							Examples:    "",
-						},
+						Name:     "group1",
+						Title:    "Group 1",
+						Actions:  []string{"action1"},
+						DocEntry: common.DocEntry{},
 					},
 				},
 				Actions: []string{"action1"},
@@ -208,16 +205,16 @@ func TestOverload(t *testing.T) {
 						Title:   "Group 1",
 						Actions: []string{"action1"},
 						DocEntry: common.DocEntry{
-							Description: "",
-							Examples:    "",
+							Description: "init",
+							Examples:    "init",
 						},
 					},
 				},
 				Actions: []string{"action1"},
 				ActionMap: map[string]common.DocEntry{
 					"action1": {
-						Description: "",
-						Examples:    "",
+						Description: "init",
+						Examples:    "init",
 					},
 				},
 				ConfigFields: []string{"configField1"},
@@ -241,14 +238,21 @@ func TestOverload(t *testing.T) {
 				},
 				Groups: []common.GroupsEntry{
 					{
-						Name:     "group1",
-						Title:    "Group 1",
-						Actions:  []string{"action2"},
-						DocEntry: common.DocEntry{},
+						Name:    "group1",
+						Title:   "Group 1 updated",
+						Actions: []string{"action2"},
+						DocEntry: common.DocEntry{
+							Description: "updated",
+							Examples:    "updated",
+						},
 					},
 				},
 				Actions: []string{"action2"},
 				ActionMap: map[string]common.DocEntry{
+					"action1": {
+						Description: "updated",
+						Examples:    "updated",
+					},
 					"action2": {},
 				},
 				ConfigFields: []string{"configField2"},
@@ -267,15 +271,21 @@ func TestOverload(t *testing.T) {
 				},
 				Groups: []common.GroupsEntry{
 					{
-						Name:     "group1",
-						Title:    "Group 1",
-						Actions:  []string{"action1", "action2"},
-						DocEntry: common.DocEntry{},
+						Name:    "group1",
+						Title:   "Group 1 updated",
+						Actions: []string{"action1", "action2"},
+						DocEntry: common.DocEntry{
+							Description: "updated",
+							Examples:    "updated",
+						},
 					},
 				},
 				Actions: []string{"action1", "action2"},
 				ActionMap: map[string]common.DocEntry{
-					"action1": {},
+					"action1": {
+						Description: "updated",
+						Examples:    "updated",
+					},
 					"action2": {},
 				},
 				ConfigFields: []string{"configField1", "configField2"},
