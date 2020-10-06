@@ -128,3 +128,25 @@ func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) 
 	// return object defintiion of active object ?
 	return "", 0, 0, nil
 }
+
+// SwitchActiveID unsubscribes from the current activeid and subscribes to the new one
+func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, activeID string) error {
+	found := false
+	for _, child := range handler.Children {
+		if child.ObjID == activeID {
+			found = true
+		}
+	}
+
+	if !found {
+		return errors.Errorf("could not find object<%s> as a child to container<%s>", activeID, handler.ID)
+	}
+
+	if handler.ActiveID != activeID {
+		if handler.ActiveID == "" {
+			// TODO unsubscribe to current object
+		}
+		// TODO subscribe to new object
+	}
+	return nil
+}
