@@ -167,7 +167,10 @@ func mergeGroups(baseGroups []common.GroupsEntry, newGroups []common.GroupsEntry
 	return mergedGroups
 }
 
-func overloadDocMap(baseMap, newMap map[string]common.DocEntry) {
+func overloadDocMap(baseMap, newMap map[string]common.DocEntry, baseNames *[]string, newNames []string) {
+	if baseNames != nil {
+		*baseNames = append(*baseNames, newNames...)
+	}
 	for k, v := range newMap {
 		baseMap[k] = v
 	}
@@ -184,16 +187,13 @@ func (baseData *Data) overload(newData *Data) {
 	baseData.Groups = mergeGroups(baseData.Groups, newData.Groups)
 
 	// overload actions
-	baseData.Actions = append(baseData.Actions, newData.Actions...)
-	overloadDocMap(baseData.ActionMap, newData.ActionMap)
+	overloadDocMap(baseData.ActionMap, newData.ActionMap, &baseData.Actions, newData.Actions)
 
 	// overload config
-	baseData.ConfigFields = append(baseData.ConfigFields, newData.ConfigFields...)
-	overloadDocMap(baseData.ConfigMap, newData.ConfigMap)
+	overloadDocMap(baseData.ConfigMap, newData.ConfigMap, &baseData.ConfigFields, newData.ConfigFields)
 
 	// overload extra
-	baseData.Extra = append(baseData.Extra, newData.Extra...)
-	overloadDocMap(baseData.ExtraMap, newData.ExtraMap)
+	overloadDocMap(baseData.ExtraMap, newData.ExtraMap, &baseData.Extra, newData.Extra)
 }
 
 func loadData(dataRoot string) *Data {
