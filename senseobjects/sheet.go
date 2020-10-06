@@ -2,6 +2,7 @@ package senseobjects
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 )
@@ -51,7 +52,7 @@ type (
 			ID           string      `json:"id"`
 			Approved     bool        `json:"approved"`
 			Published    bool        `json:"published"`
-			Owner        interface{} `json:"owner"` // string in QSEoK but struct in QSEfW
+			Owner        interface{} `json:"owner"` // string in QSEoK but struct in QSEoW
 			OwnerID      string      `json:"ownerId"`
 			CreatedDate  string      `json:"createdDate"`
 			ModifiedDate string      `json:"modifiedDate"`

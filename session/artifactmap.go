@@ -183,7 +183,7 @@ func (am *ArtifactMap) EmptyApps() {
 	am.AppList = nil
 }
 
-// FillAppsUsingDocListEntries should be used to fillAppMap app map in QSEfW
+// FillAppsUsingDocListEntries should be used to fillAppMap app map in QSEoW
 func (am *ArtifactMap) FillAppsUsingDocListEntries(docListEntries []*enigma.DocListEntry) error {
 	am.mu.Lock()
 	defer am.mu.Unlock()
@@ -192,7 +192,7 @@ func (am *ArtifactMap) FillAppsUsingDocListEntries(docListEntries []*enigma.DocL
 		id := docListEntry.DocId
 		name := docListEntry.DocName
 		am.appTitleToID.Store(name, id)
-		am.AppList = append(am.AppList, &ArtifactEntry{name, id, "" /* QSEfW does not have item ID */})
+		am.AppList = append(am.AppList, &ArtifactEntry{name, id, "" /* QSEoW does not have item ID */})
 	}
 	sort.Sort(am.AppList)
 	return nil

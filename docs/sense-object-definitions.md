@@ -205,11 +205,11 @@ An object definition consists of the following sections:
 
 ### Data
 
-A list of data requests to send for an object, with the possibility to send different requests depending on different  constraints. The list of constraints is evaluated top-down, where the first constraint fulfilled is used. "Nil" requests are always considered to be true (that is, if the list of constraints starts with an entry without a constraint, the subsequent constraints are not used). It is therefore important to start the list with the constraint to be evaluated first. In the above `scatterplot` example, the constraint "qcy > 1000" is evaluated before performing the default operation.
+A list of data requests to send for an object, with the possibility to send different requests depending on different constraints. The list of constraints is evaluated top-down, where the first constraint fulfilled is used. "Nil" requests are always considered to be true (that is, if the list of constraints starts with an entry without a constraint, the subsequent constraints are not used). It is therefore important to start the list with the constraint to be evaluated first. In the above `scatterplot` example, the constraint "qcy > 1000" is evaluated before performing the default operation.
 
-* `constraint`: Constraint for sending the defined set of data requests. An empty or omitted constraint is always considered to be  true.
+* `constraints`: A list of constraints for sending the defined set of data requests. An empty or omitted constraint is always considered to be  true.
     * `path`: Path to the value to evaluate in the object structure.
-    * `value`: Value constraint definition. The first character must be `<`, `>`, `=` or `!` followed by a number or the words `true` / `false`. 
+    * `value`: Value constraint definition. The first character must be `<`, `>`, `=`, `!` or `~` followed by a number, string or the words `true` / `false`. The `~` operator is only applicable to arrays and is defined as `contains`.
     * `required`: Require the constraint to be evaluated and return an error if the evaluation fails (for example, if the path in the object structure is not traversable). Defaults to `false`.
 * `requests`: List of data requests to send if the constraint is successfully evaluated. A request is defined as:
     * `type`: Data request type
@@ -267,11 +267,13 @@ An object that sends different data requests depending on the size of the data:
     },
     "data": [
       {
-        "constraint": {
-          "path": "/qHyperCube/qSize/qcy",
-          "value": ">1000",
-          "required": true
-        },
+        "constraints": [
+          {
+            "path": "/qHyperCube/qSize/qcy",
+            "value": ">1000",
+            "required": true
+          }
+        ],
         "requests": [
           {
             "type": "hypercubebinneddata",

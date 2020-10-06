@@ -3,6 +3,7 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"strconv"
 	"sync"
 
@@ -22,7 +23,7 @@ type (
 	// Constraint defining if to send get data requests
 	Constraint struct {
 		// Path to value to evaluate
-		Path DataPath `json:"path"`
+		Path helpers.DataPath `json:"path"`
 		// Value constraint definition, first character must be <,>,= or !
 		// followed by number or the words true/false
 		Value ConstraintValue `json:"value"`
@@ -44,6 +45,7 @@ const (
 	largerThanOperator
 	equalOperator
 	notOperator
+	containsOperator
 )
 
 var (
@@ -52,6 +54,7 @@ var (
 		">": int(largerThanOperator),
 		"=": int(equalOperator),
 		"!": int(notOperator),
+		"~": int(containsOperator),
 	})
 )
 
@@ -108,7 +111,7 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 			string(constraint.Value), string(constraint.Path))
 
 		switch errors.Cause(err).(type) {
-		case NoDataFound:
+		case helpers.NoDataFound:
 			if !constraint.Required {
 				err = nil
 			}
@@ -137,6 +140,8 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 		return constraint.operator.evalBool(value.(bool), boolValue)
 	case string:
 		return constraint.operator.evalString(value.(string), constraint.value)
+	case []interface{}:
+		return constraint.operator.evalArray(value.([]interface{}), constraint.value)
 	default:
 		return false, errors.Errorf("value type<%T> not supported", value)
 	}
@@ -163,12 +168,12 @@ func (operator constraintOperator) evalFloat64(val float64, constraint float64) 
 	}
 }
 
-func (operator constraintOperator) evalBool(val bool, contraint bool) (bool, error) {
+func (operator constraintOperator) evalBool(val bool, constraint bool) (bool, error) {
 	switch operator {
 	case equalOperator:
-		return val == contraint, nil
+		return val == constraint, nil
 	case notOperator:
-		return val != contraint, nil
+		return val != constraint, nil
 	default:
 		str, _ := constraintOperatorEnum.String(int(operator))
 		if str == "" {
@@ -190,5 +195,46 @@ func (operator constraintOperator) evalString(val string, constraint string) (bo
 			str = strconv.Itoa(int(operator))
 		}
 		return false, errors.Errorf("operator<%s> not supported for string constraint evaluation", str)
+	}
+}
+
+func (operator constraintOperator) evalArray(val []interface{}, constraint string) (bool, error) {
+	boolValue, errParseBool := strconv.ParseBool(constraint)
+	floatValue, errParseFloat := strconv.ParseFloat(constraint, 64)
+
+	switch operator {
+	case containsOperator:
+		for _, v := range val {
+			switch v.(type) {
+			case float64:
+				if errParseFloat != nil {
+					return false, errors.Wrapf(errParseFloat, "error parsing constraint value as float64")
+				}
+				if v.(float64) > floatValue-0.0000000000001 && v.(float64) < floatValue+0.0000000000001 {
+					return true, nil
+				}
+			case bool:
+				if errParseBool != nil {
+					return false, errors.Wrapf(errParseBool, "error parsing constraint value as bool")
+				}
+				if v.(bool) == boolValue {
+					return true, nil
+				}
+				return operator.evalBool(v.(bool), boolValue)
+			case string:
+				if v.(string) == constraint {
+					return true, nil
+				}
+			default:
+				return false, errors.Errorf("array element value type<%T> not supported", v)
+			}
+		}
+		return false, nil
+	default:
+		str, _ := constraintOperatorEnum.String(int(operator))
+		if str == "" {
+			str = strconv.Itoa(int(operator))
+		}
+		return false, errors.Errorf("operator<%s> not supported for array constraint evaluation", str)
 	}
 }
