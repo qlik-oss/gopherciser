@@ -83,6 +83,9 @@ func (settings ContainerTabSettings) Validate() error {
 		}
 	case ContainerTabModeRandom:
 	case ContainerTabModeIndex:
+		if settings.Index < 0 {
+			return errors.Errorf("index<%d> not valid", settings.Index)
+		}
 	default:
 		return errors.Errorf("unknown container tab mode<%v>", settings.Mode)
 	}
@@ -114,7 +117,12 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		idx := sessionState.Randomizer().Rand(len(containerInstance.Children))
 		activeID = containerInstance.Children[idx].ObjID
 	case ContainerTabModeIndex:
-		// TODO support index based tab switching
+		childCount := len(containerInstance.Children)
+		if !(settings.Index < childCount) {
+			actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but container has only %d tabs", settings.Index, childCount))
+			return
+		}
+		activeID = containerInstance.Children[settings.Index].ObjID
 	}
 
 	if err := containerInstance.SwitchActiveID(sessionState, actionState, activeID); err != nil {
