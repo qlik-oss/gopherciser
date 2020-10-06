@@ -157,8 +157,11 @@ func mergeGroups(baseGroups []common.GroupsEntry, newGroups []common.GroupsEntry
 	}
 
 	// append unmerged groups
-	for _, g := range newGroupMap {
-		mergedGroups = append(mergedGroups, g)
+	// slice newGroups is iterated to preserve order
+	for _, g := range newGroups {
+		if _, ok := newGroupMap[g.Name]; ok {
+			mergedGroups = append(mergedGroups, g)
+		}
 	}
 
 	return mergedGroups
