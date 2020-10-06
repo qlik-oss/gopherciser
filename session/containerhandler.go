@@ -1,6 +1,9 @@
 package session
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -59,11 +62,16 @@ func (handler *ContainerHandler) Instance(id string) ObjectHandlerInstance {
 
 // SetObjectAndEvents implements ObjectHandlerInstance interface
 func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		return GetObjectProperties(sessionState, actionState, obj)
+	}, actionState, true, "")
+
 	rawLayout, err := sessionState.SendRequestRaw(actionState, genObj.GetLayoutRaw)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
 	}
+
 	var layout ContainerLayout
 	if err := jsonit.Unmarshal(rawLayout, &layout); err != nil {
 		actionState.AddErrors(err)
@@ -95,9 +103,18 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		handler.Children = append(handler.Children, ContainerChildReference{RefID: child.RefID, ObjID: refMap[child.RefID]})
 	}
 
+	// Get layout on object changed
+	event := func(ctx context.Context, as *action.State) error {
+		_, err := genObj.GetLayoutRaw(ctx)
+		return errors.Wrap(err, fmt.Sprintf("failed to get layout for container object<%s>", genObj.GenericId))
+	}
+	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+
 	// First tab according to "Children" is the default active tab
 	if len(handler.Children) > 0 {
 		handler.ActiveID = handler.Children[0].ObjID
+		// Subscribe to active object
+		GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
 	}
 }
 
