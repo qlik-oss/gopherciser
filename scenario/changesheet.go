@@ -39,7 +39,7 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 		actionState.AddErrors(errors.New("not connected to app"))
 	}
 
-	ClearObjectSubscriptions(sessionState)
+	sessionState.ClearObjectSubscriptions()
 
 	// Get or create current selection object
 	sessionState.QueueRequest(func(ctx context.Context) error {

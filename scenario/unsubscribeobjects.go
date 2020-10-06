@@ -32,20 +32,11 @@ func (settings UnsubscribeObjects) Validate() error {
 // Execute implements ActionSettings interface
 func (settings UnsubscribeObjects) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	if settings.Clear {
-		ClearObjectSubscriptions(sessionState)
+		sessionState.ClearObjectSubscriptions()
 	} else {
-		upLink := sessionState.Connection.Sense()
-		for _, id := range settings.IDs {
-			obj, err := upLink.Objects.GetObjectByID(id)
-			if err != nil {
-				actionState.AddErrors(errors.WithStack(err))
-				return
-			}
-			if err := upLink.Objects.ClearObject(obj.Handle); err != nil {
-				actionState.AddErrors(errors.WithStack(err))
-				return
-			}
-			sessionState.DeRegisterEvent(obj.Handle)
+		if err := sessionState.ClearSubscribedObjects(settings.IDs); err != nil {
+			actionState.AddErrors(err)
+			return
 		}
 	}
 	sessionState.Wait(actionState)

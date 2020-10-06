@@ -121,16 +121,16 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 // GetObjectDefinition implements ObjectHandlerInstance interface
 func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
 	// First tab according to "Children" is the default active tab
-	if len(handler.Children) > 0 {
-		handler.ActiveID = handler.Children[0].ObjID
-	}
+	//if len(handler.Children) > 0 {
+	//	handler.ActiveID = handler.Children[0].ObjID
+	//}
 
 	// return object defintiion of active object ?
 	return "", 0, 0, nil
 }
 
 // SwitchActiveID unsubscribes from the current activeid and subscribes to the new one
-func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, activeID string) error {
+func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, actionState *action.State, activeID string) error {
 	found := false
 	for _, child := range handler.Children {
 		if child.ObjID == activeID {
@@ -143,10 +143,13 @@ func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, act
 	}
 
 	if handler.ActiveID != activeID {
-		if handler.ActiveID == "" {
-			// TODO unsubscribe to current object
+		if handler.ActiveID != "" {
+			if err := sessionState.ClearSubscribedObjects([]string{handler.ActiveID}); err != nil {
+				return errors.WithStack(err)
+			}
 		}
-		// TODO subscribe to new object
+		handler.ActiveID = activeID
+		GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
 	}
 	return nil
 }
