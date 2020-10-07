@@ -1,4 +1,4 @@
-package main
+package doccompiler
 
 // Template used to generate in memory documentation golang package
 const Template = `package generated
@@ -9,7 +9,7 @@ const Template = `package generated
 	Generate with go run ./generatedocs/compile/main.go or by running go generate in gopherciser root project.
 */
 
-import "github.com/qlik-oss/gopherciser/generatedocs/common"
+import "github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 {{with $data := .}}
 var (
     {{/* Loop over action slice instead of map in order to keep order consistent */}}

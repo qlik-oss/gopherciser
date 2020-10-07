@@ -1,9 +1,8 @@
-package main
+package doccompiler
 
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"go/format"
 	"io/ioutil"
@@ -16,12 +15,14 @@ import (
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
+var UseFolderStructure = false
+
 // ExitCodes
 const (
 	ExitCodeOk int = iota
 	ExitCodeFailedReadParams
 	ExitCodeFailedHandleAction
-	// ExitCodeFailedConfigFields
+	ExitCodeFailedConfigFields
 	ExitCodeFailedHandleConfig
 	ExitCodeFailedWriteResult
 	ExitCodeFailedReadGroups
@@ -52,25 +53,12 @@ var (
 		"params": SortedParamsKeys,
 		"join":   strings.Join,
 	}
-	dataRootParam string
-	dataRoots     []string
-	output        string
 	// templateFile  string
 	// Todo: Better way to do this? Using "search and replace" doesn't seem very robust.
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
-func main() {
-	handleFlags()
-	generatedDocs := compile(dataRoots...)
-	if err := ioutil.WriteFile(output, generatedDocs, 0644); err != nil {
-		_, _ = os.Stderr.WriteString(err.Error())
-		os.Exit(ExitCodeFailedWriteResult)
-	}
-	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRootParam, output)
-}
-
-func compile(dataRoots ...string) []byte {
+func Compile(dataRoots ...string) []byte {
 	data := loadData(dataRoots[0])
 	for _, dataRoot := range dataRoots[1:] {
 		data.overload(loadData(dataRoot))
@@ -78,26 +66,10 @@ func compile(dataRoots ...string) []byte {
 	docs := generateDocs(data)
 	formattedDocs, err := format.Source(docs)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "generated code has syntax error(s):\n%v\n", err)
+		fmt.Fprintf(os.Stderr, "generated code has syntax error(s):\n  %v\n", err)
 		os.Exit(ExitCodeFailedSyntaxError)
 	}
 	return formattedDocs
-}
-
-func handleFlags() {
-	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "a comma separated list of paths to data folders")
-	// flag.StringVar(&templateFile, "template", "generatedocs/compile/templates/documentation.template", "path to template file")
-	flag.StringVar(&output, "output", "generatedocs/generated/documentation.go", "path to generated code file")
-
-	flag.Parse()
-
-	if *flagHelp {
-		flag.PrintDefaults()
-		os.Exit(ExitCodeOk)
-	}
-
-	dataRoots = strings.Split(dataRootParam, ",")
 }
 
 func generateDocs(data *Data) []byte {
@@ -229,8 +201,12 @@ func loadData(dataRoot string) *Data {
 	}
 
 	// Get all actions
-	// data.Actions = common.ActionStrings()
-	data.Actions = subdirs(dataRoot + "/actions")
+	if UseFolderStructure {
+		data.Actions = subdirs(dataRoot + "/actions")
+	} else {
+		data.Actions = common.ActionStrings()
+	}
+	sort.Strings(data.Actions)
 	data.ActionMap = make(map[string]common.DocEntry, len(data.Actions))
 	for _, action := range data.Actions {
 		actionDocEntry, err := CreateActionDocEntry(dataRoot, action)
@@ -241,19 +217,23 @@ func loadData(dataRoot string) *Data {
 		data.ActionMap[action] = actionDocEntry
 	}
 
-	// Get all config fields
-	// fields, err := common.FieldsString()
-	// if err != nil {
-	// 	common.Exit(err, ExitCodeFailedConfigFields)
-	// }
-	// data.ConfigFields = fields
-
-	data.ConfigFields = subdirs(dataRoot + "/config")
-	// Add documentation wrapping entire document as "main" entry into config map
-	// data.ConfigFields = append(data.ConfigFields, "main")
+	if UseFolderStructure {
+		data.ConfigFields = subdirs(dataRoot + "/config")
+	} else {
+		var err error
+		// Get all config fields
+		data.ConfigFields, err = common.FieldsString()
+		if err != nil {
+			common.Exit(err, ExitCodeFailedConfigFields)
+		}
+		// Add documentation wrapping entire document as "main" entry into config map
+		data.ConfigFields = append(data.ConfigFields, "main")
+	}
+	sort.Strings(data.ConfigFields)
 
 	data.ConfigMap = make(map[string]common.DocEntry, len(data.ConfigFields))
 	for _, field := range data.ConfigFields {
+		println(field)
 		configDocEntry, err := CreateConfigDocEntry(dataRoot, field)
 		if err != nil {
 			common.Exit(err, ExitCodeFailedHandleConfig)

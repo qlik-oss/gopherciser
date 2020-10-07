@@ -1,4 +1,4 @@
-package main
+package doccompiler
 
 import (
 	"encoding/json"
@@ -13,11 +13,10 @@ import (
 )
 
 func TestCompile(t *testing.T) {
-	templateFile := "templates/documentation.template"
 	dataRoots := []string{"testdata/base/data"}
 	expectedOutput := "testdata/base/expected-output/documentation.go"
 
-	generatedDocs := compile(templateFile, dataRoots...)
+	generatedDocs := Compile(dataRoots...)
 	expectedDocs, err := ioutil.ReadFile(expectedOutput)
 	if err != nil {
 		t.Fatal(err)

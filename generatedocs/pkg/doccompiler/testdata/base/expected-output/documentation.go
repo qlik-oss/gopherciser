@@ -6,7 +6,7 @@ package generated
 	Generate with go run ./generatedocs/compile/main.go or by running go generate in gopherciser root project.
 */
 
-import "github.com/qlik-oss/gopherciser/generatedocs/common"
+import "github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 
 var (
 	Actions = map[string]common.DocEntry{
