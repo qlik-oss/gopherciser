@@ -479,6 +479,60 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 ```
 
 </details><details>
+<summary>containertab</summary>
+
+## Containertab action
+
+A `Containertab` action simulates switching the active object in a `container` object.
+
+### Settings
+
+* `mode`: Mode for container tab switching, one of: `id`, `random` or `index`.
+    * `id`: Switch to tab with object defined by `activeid`.
+    * `random`: Switch to a random tab within the container.
+    * `index`: Switch to tab with zero based index defined but `index`.
+* `id`: ID of the container object.
+* `activeid`: ID of the object to set as active, used with mode `id`.
+* `index`: Zero based index of tab to switch to, used with mode `index`.
+
+### Examples
+
+```json
+{
+  "label": "Switch to object qwerty in container object XYZ",
+  "action": "containertab",
+  "settings": {
+    "id": "xyz",
+    "mode": "id",
+    "activeid" : "qwerty"
+  }
+}
+```
+
+```json
+{
+  "label": "Switch to random object in container object XYZ",
+  "action": "containertab",
+  "settings": {
+    "id": "xyz",
+    "mode": "random"
+  }
+}
+```
+
+```json
+{
+  "label": "Switch to object in first tab in container object XYZ",
+  "action": "containertab",
+  "settings": {
+    "id": "xyz",
+    "mode": "index",
+    "index": "0"
+  }
+}
+```
+
+</details><details>
 <summary>createbookmark</summary>
 
 ## CreateBookmark action

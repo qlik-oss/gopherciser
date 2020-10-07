@@ -15,10 +15,10 @@ type (
 	ContainerTabMode int
 	// ContainerTabSettings switches active object in container
 	ContainerTabSettings struct {
-		Mode     ContainerTabMode `json:"mode"`
-		ID       string           `json:"id"`
-		ActiveID string           `json:"activeid,omitempty"`
-		Index    int              `json:"index,omitempty"`
+		Mode     ContainerTabMode `json:"mode" displayname:"Mode" doc-key:"containertab.mode"`
+		ID       string           `json:"id" displayname:"ID" appstructure:"active:!sheet" doc-key:"containertab.id"`
+		ActiveID string           `json:"activeid,omitempty" displayname:"Active ID" doc-key:"containertab.activeid"`
+		Index    int              `json:"index,omitempty" displayname:"Index" doc-key:"containertab.index"`
 	}
 )
 
