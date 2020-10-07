@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/format"
 	"io/ioutil"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -20,7 +21,7 @@ const (
 	ExitCodeOk int = iota
 	ExitCodeFailedReadParams
 	ExitCodeFailedHandleAction
-	ExitCodeFailedConfigFields
+	// ExitCodeFailedConfigFields
 	ExitCodeFailedHandleConfig
 	ExitCodeFailedWriteResult
 	ExitCodeFailedReadGroups
@@ -140,13 +141,13 @@ func mergeGroups(baseGroups []common.GroupsEntry, newGroups []common.GroupsEntry
 			delete(newGroupMap, baseGroup.Name)
 
 			// override string fields
-			if baseGroup.Description != "" {
+			if newGroup.Description != "" {
 				baseGroup.Description = newGroup.Description
 			}
-			if baseGroup.Examples != "" {
+			if newGroup.Examples != "" {
 				baseGroup.Examples = newGroup.Examples
 			}
-			if baseGroup.Title != "" {
+			if newGroup.Title != "" {
 				baseGroup.Title = newGroup.Title
 			}
 
@@ -196,6 +197,21 @@ func (baseData *Data) overload(newData *Data) {
 	overloadDocMap(baseData.ExtraMap, newData.ExtraMap, &baseData.Extra, newData.Extra)
 }
 
+func subdirs(path string) []string {
+	dirs := []string{}
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			dirs = append(dirs, f.Name())
+		}
+	}
+	return dirs
+}
+
 func loadData(dataRoot string) *Data {
 	data := &Data{}
 
@@ -222,7 +238,8 @@ func loadData(dataRoot string) *Data {
 	}
 
 	// Get all actions
-	data.Actions = common.ActionStrings()
+	// data.Actions = common.ActionStrings()
+	data.Actions = subdirs(dataRoot + "/actions")
 	data.ActionMap = make(map[string]common.DocEntry, len(data.Actions))
 	for _, action := range data.Actions {
 		actionDocEntry, err := CreateActionDocEntry(dataRoot, action)
@@ -234,14 +251,15 @@ func loadData(dataRoot string) *Data {
 	}
 
 	// Get all config fields
-	fields, err := common.FieldsString()
-	if err != nil {
-		common.Exit(err, ExitCodeFailedConfigFields)
-	}
-	data.ConfigFields = fields
+	// fields, err := common.FieldsString()
+	// if err != nil {
+	// 	common.Exit(err, ExitCodeFailedConfigFields)
+	// }
+	// data.ConfigFields = fields
 
+	data.ConfigFields = subdirs(dataRoot + "/config")
 	// Add documentation wrapping entire document as "main" entry into config map
-	data.ConfigFields = append(data.ConfigFields, "main")
+	// data.ConfigFields = append(data.ConfigFields, "main")
 
 	data.ConfigMap = make(map[string]common.DocEntry, len(data.ConfigFields))
 	for _, field := range data.ConfigFields {

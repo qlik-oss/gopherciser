@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"go/format"
 	"io/ioutil"
 	"reflect"
@@ -34,6 +35,7 @@ func TestCompile(t *testing.T) {
 
 	if !reflect.DeepEqual(generatedDocs, expectedDocs) {
 		t.Error("generated docs were not correct")
+		fmt.Println(diff.LineDiff(string(expectedDocs), string(generatedDocs)))
 	}
 }
 

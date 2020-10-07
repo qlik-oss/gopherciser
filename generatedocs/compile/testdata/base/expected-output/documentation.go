@@ -379,6 +379,10 @@ var (
 			Description: "## Login settings section\n\nThis section of the JSON file contains information on the login settings.\n",
 			Examples:    "### Examples\n\n#### Prefix login request type\n\n```json\n\"loginSettings\": {\n   \"type\": \"prefix\",\n   \"settings\": {\n       \"directory\": \"anydir\",\n       \"prefix\": \"Nunit\"\n   }\n}\n```\n\n#### Userlist login request type\n\n```json\n  \"loginSettings\": {\n    \"type\": \"userlist\",\n    \"settings\": {\n      \"userList\": [\n        {\n          \"username\": \"sim1@myhost.example\",\n          \"directory\": \"anydir1\",\n          \"password\": \"MyPassword1\"\n        },\n        {\n          \"username\": \"sim2@myhost.example\"\n        }\n      ],\n      \"directory\": \"anydir2\",\n      \"password\": \"MyPassword2\"\n    }\n  }\n```\n",
 		},
+		"main": {
+			Description: "# Setting up load scenarios\n\nA load scenario is defined in a JSON file with a number of sections.\n",
+			Examples:    "\n## Example\n\n* [Load scenario example](./examples/configuration_example.json)\n",
+		},
 		"scenario": {
 			Description: "## Scenario section\n\nThis section of the JSON file contains the actions that are performed in the load scenario.\n\n### Structure of an action entry\n\nAll actions follow the same basic structure: \n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"actioname\",\n    \"label\": \"custom label for analysis purposes\",\n    \"disabled\": false,\n    \"settings\": {\n        \n    }\n}\n```\n",
@@ -390,10 +394,6 @@ var (
 		"settings": {
 			Description: "## Settings section\n\nThis section of the JSON file contains timeout and logging settings for the load scenario.\n",
 			Examples: "### Examples\n\n```json\n\"settings\": {\n	\"timeout\": 300,\n	\"logs\": {\n		\"traffic\": false,\n		\"debug\": false,\n		\"filename\": \"logs/{{.ConfigFile}}-{{timestamp}}.log\"\n	}\n}\n```\n\n```json\n\"settings\": {\n	\"timeout\": 300,\n	\"logs\": {\n		\"filename\": \"logs/scenario.log\"\n	},\n	\"outputs\" : {\n	    \"dir\" : \"./outputs\"\n	}\n}\n```\n",
-		},
-		"main": {
-			Description: "# Setting up load scenarios\n\nA load scenario is defined in a JSON file with a number of sections.\n",
-			Examples:    "\n## Example\n\n* [Load scenario example](./examples/configuration_example.json)\n",
 		},
 	}
 
