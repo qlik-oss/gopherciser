@@ -1,0 +1,55 @@
+package main
+
+// Template used to generate in memory documentation golang package
+const Template = `package generated
+
+/*
+	This file has been generated, do not edit the file directly.
+
+	Generate with go run ./generatedocs/compile/main.go or by running go generate in gopherciser root project.
+*/
+
+import "github.com/qlik-oss/gopherciser/generatedocs/common"
+{{with $data := .}}
+var (
+    {{/* Loop over action slice instead of map in order to keep order consistent */}}
+    Actions = map[string]common.DocEntry{ {{range $action := $data.Actions}}{{with $actionEntry := index $data.ActionMap $action}}
+        "{{$action}}": {
+            Description: "{{$actionEntry.Description}}",
+            Examples: "{{$actionEntry.Examples}}",
+        },{{end}}{{end}}
+    }
+
+    Params = map[string][]string{ {{range $param := params $data.ParamMap}}
+        "{{.}}": { "{{join (index $data.ParamMap $param) "\",\""}}"  },  {{end}}
+    }
+    {{/* Loop over config fields slice instead of map in order to keep order consistent */}}
+    Config = map[string]common.DocEntry{ {{range $field := $data.ConfigFields}}{{with $configEntry := index $data.ConfigMap $field}}
+        "{{$field}}" : {
+            Description: "{{$configEntry.Description}}",
+            Examples: "{{$configEntry.Examples}}",
+        },{{end}}{{end}}
+    }
+
+    Groups = []common.GroupsEntry{ {{range $group := $data.Groups}}
+            {
+                Name: "{{$group.Name}}",
+                Title: "{{$group.Title}}",
+                Actions: []string{ "{{join $group.Actions "\",\""}}" },
+                DocEntry: common.DocEntry{
+                    Description: "{{$group.Description}}",
+                    Examples: "{{$group.Examples}}",
+                },
+            },{{end}}
+    }
+
+    Extra = map[string]common.DocEntry{ {{range $extra := $data.Extra}}{{with $extraEntry := index $data.ExtraMap $extra}}
+        "{{$extra}}": {
+            Description: "{{$extraEntry.Description}}",
+            Examples: "{{$extraEntry.Examples}}",
+        },{{end}}{{end}}
+    }
+){{end}}
+
+
+`

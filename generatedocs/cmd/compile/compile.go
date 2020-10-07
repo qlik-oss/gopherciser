@@ -55,14 +55,14 @@ var (
 	dataRootParam string
 	dataRoots     []string
 	output        string
-	templateFile  string
+	// templateFile  string
 	// Todo: Better way to do this? Using "search and replace" doesn't seem very robust.
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
 func main() {
 	handleFlags()
-	generatedDocs := compile(templateFile, dataRoots...)
+	generatedDocs := compile(dataRoots...)
 	if err := ioutil.WriteFile(output, generatedDocs, 0644); err != nil {
 		_, _ = os.Stderr.WriteString(err.Error())
 		os.Exit(ExitCodeFailedWriteResult)
@@ -70,21 +70,12 @@ func main() {
 	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRootParam, output)
 }
 
-func compile(templatePath string, dataRoots ...string) []byte {
-	if len(dataRoots) == 0 {
-		fmt.Fprint(os.Stderr, "no data roots passed")
-		os.Exit(ExitCodeFailedNoDataRoot)
-	}
+func compile(dataRoots ...string) []byte {
 	data := loadData(dataRoots[0])
 	for _, dataRoot := range dataRoots[1:] {
 		data.overload(loadData(dataRoot))
-
 	}
-	tmplBytes, err := common.ReadFile(templatePath)
-	if err != nil {
-		common.Exit(err, ExitCodeFailedReadTemplate)
-	}
-	docs := generateDocs(tmplBytes, data)
+	docs := generateDocs(data)
 	formattedDocs, err := format.Source(docs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "generated code has syntax error(s):\n%v\n", err)
@@ -96,7 +87,7 @@ func compile(templatePath string, dataRoots ...string) []byte {
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
 	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "a comma separated list of paths to data folders")
-	flag.StringVar(&templateFile, "template", "generatedocs/compile/templates/documentation.template", "path to template file")
+	// flag.StringVar(&templateFile, "template", "generatedocs/compile/templates/documentation.template", "path to template file")
 	flag.StringVar(&output, "output", "generatedocs/generated/documentation.go", "path to generated code file")
 
 	flag.Parse()
@@ -109,9 +100,9 @@ func handleFlags() {
 	dataRoots = strings.Split(dataRootParam, ",")
 }
 
-func generateDocs(tmpl []byte, data *Data) []byte {
+func generateDocs(data *Data) []byte {
 	// Create template for generating documentation.go
-	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(string(tmpl))
+	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(Template)
 	if err != nil {
 		common.Exit(err, ExitCodeFailedParseTemplate)
 	}
