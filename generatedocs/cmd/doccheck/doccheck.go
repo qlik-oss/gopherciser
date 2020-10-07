@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/qlik-oss/gopherciser/generatedocs/common"
 	"github.com/qlik-oss/gopherciser/generatedocs/generated"
+	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
 func main() {

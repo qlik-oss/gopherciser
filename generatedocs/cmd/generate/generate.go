@@ -12,8 +12,8 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/gopherciser/generatedocs/common"
 	"github.com/qlik-oss/gopherciser/generatedocs/generated"
+	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
 type (

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
-	"github.com/qlik-oss/gopherciser/generatedocs/common"
+	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
 func TestCompile(t *testing.T) {

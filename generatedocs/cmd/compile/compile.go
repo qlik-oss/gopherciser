@@ -13,7 +13,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/qlik-oss/gopherciser/generatedocs/common"
+	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
 // ExitCodes
