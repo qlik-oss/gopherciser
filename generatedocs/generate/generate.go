@@ -65,7 +65,7 @@ func main() {
 
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&templatePath, "template", "generatedocs/generate/templates/settingup.md.templatee", "path to template of output file")
+	flag.StringVar(&templatePath, "template", "generatedocs/generate/templates/settingup.md.template", "path to template of output file")
 	flag.StringVar(&output, "output", "generatedocs/generated/settingup.md", "path to output file")
 
 	flag.Parse()

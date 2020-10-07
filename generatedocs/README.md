@@ -52,7 +52,7 @@ go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
 
 #### Optional flags
 
-* `--template`:  Defaults to `generatedocs/generate/templates/settingup.md.templatee`.
+* `--template`:  Defaults to `generatedocs/generate/templates/settingup.md.template`.
 * `--output`: Defaults to `generatedocs/generated/settingup.md`.
 
 ## How: Updating/adding data
