@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	doccompiler "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler"
 )
@@ -17,26 +16,25 @@ const (
 )
 
 var (
-	dataRootParam string
-	dataRoots     []string
-	output        string
-	// templateFile  string
+	dataRoot string
+	output   string
 )
 
 func main() {
 	handleFlags()
-	generatedDocs := doccompiler.Compile(dataRoots...)
+	data := doccompiler.NewData()
+	data.PopulateFromDataDir(dataRoot)
+	generatedDocs := data.Compile()
 	if err := ioutil.WriteFile(output, generatedDocs, 0644); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(ExitCodeFailedWriteResult)
 	}
-	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRootParam, output)
+	fmt.Printf("Compiled data<%s> to output<%s>\n", dataRoot, output)
 }
 
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&dataRootParam, "data", "generatedocs/data", "a comma separated list of paths to data folders")
-	// flag.StringVar(&templateFile, "template", "generatedocs/compile/templates/documentation.template", "path to template file")
+	flag.StringVar(&dataRoot, "data", "generatedocs/data", "paths to data folder")
 	flag.StringVar(&output, "output", "generatedocs/generated/documentation.go", "path to generated code file")
 
 	flag.Parse()
@@ -45,6 +43,4 @@ func handleFlags() {
 		flag.PrintDefaults()
 		os.Exit(ExitCodeOk)
 	}
-
-	dataRoots = strings.Split(dataRootParam, ",")
 }

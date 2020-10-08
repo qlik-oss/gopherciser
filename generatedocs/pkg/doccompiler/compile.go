@@ -214,11 +214,6 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-func exit(exitCode int, format string, a ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, a...)
-	os.Exit(exitCode)
-}
-
 func subdirs(path string) []string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil && !os.IsNotExist(err) {
@@ -234,13 +229,13 @@ func subdirs(path string) []string {
 	return dirs
 }
 
-func groupNames(groups []common.GroupsEntry) []string {
-	names := make([]string, 0, len(groups))
-	for _, group := range groups {
-		names = append(names, group.Name)
-	}
-	return names
-}
+// func groupNames(groups []common.GroupsEntry) []string {
+// 	names := make([]string, 0, len(groups))
+// 	for _, group := range groups {
+// 		names = append(names, group.Name)
+// 	}
+// 	return names
+// }
 
 func populateDocMap(dataRoot, subDir string, docMap map[string]common.DocEntry, entryNames *[]string) {
 	*entryNames = subdirs(fmt.Sprintf("%s/%s", dataRoot, subDir))
