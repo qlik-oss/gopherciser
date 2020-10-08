@@ -36,17 +36,6 @@ const (
 	ExitCodeFailedListDir
 )
 
-const (
-	ConfigDir         = "config"
-	ActionsDir        = "actions"
-	GroupsDir         = "groups"
-	ExtraDir          = "extra"
-	GroupsJSONFile    = GroupsDir + "/groups.json"
-	ParamsJSONFile    = "params.json"
-	DescriptionMDFile = "description.md"
-	ExamplesMDFile    = "examples.md"
-)
-
 type (
 	Data struct {
 		ParamMap     map[string][]string
@@ -71,7 +60,6 @@ var (
 )
 
 func (data *Data) sort() {
-
 	sort.Slice(data.Groups, func(i, j int) bool {
 		return data.Groups[i].Name < data.Groups[j].Name
 	})
@@ -89,6 +77,14 @@ func (data *Data) Compile() []byte {
 		os.Exit(ExitCodeFailedSyntaxError)
 	}
 	return formattedDocs
+}
+
+func (data *Data) CompileToFile(fileName string) {
+	docs := data.Compile()
+	if err := ioutil.WriteFile(fileName, docs, 0644); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	fmt.Printf("Compiled to %s\n", fileName)
 }
 
 func NewData() *Data {
