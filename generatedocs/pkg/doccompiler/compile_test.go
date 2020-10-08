@@ -10,34 +10,60 @@ import (
 
 	"github.com/andreyvit/diff"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
+	generated "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output"
 )
 
 func TestCompile(t *testing.T) {
 	dataRoot := "testdata/base/data"
 	expectedOutput := "testdata/base/expected-output/documentation.go"
 
-	data := NewData()
-	data.PopulateFromDataDir(dataRoot)
-	generatedDocs := data.Compile()
-	expectedDocs, err := ioutil.ReadFile(expectedOutput)
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range []struct {
+		name string
+		data func() *Data
+	}{
+		{
+			name: "from directory",
+			data: func() *Data {
+				data := NewData()
+				data.PopulateFromDataDir(dataRoot)
+				return data
+			},
+		},
+		{
+			name: "from generated",
+			data: func() *Data {
+				data := NewData()
+				data.PopulateFromGenerated(generated.Actions, generated.Config, generated.Extra, generated.Params, generated.Groups)
+				return data
+			},
+		},
+	} {
+
+		t.Run(tc.name, func(t *testing.T) {
+			generatedDocs := tc.data().Compile()
+			expectedDocs, err := ioutil.ReadFile(expectedOutput)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// maybe check format
+			formattedDocs, err := format.Source(generatedDocs)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !reflect.DeepEqual(generatedDocs, formattedDocs) {
+				t.Error("generated docs do not follow gofmt")
+			}
+
+			if !reflect.DeepEqual(generatedDocs, expectedDocs) {
+				t.Error("generated docs were not correct")
+				fmt.Println(diff.LineDiff(string(expectedDocs), string(generatedDocs)))
+			}
+
+		})
 	}
 
-	// maybe check format
-	formattedDocs, err := format.Source(generatedDocs)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if !reflect.DeepEqual(generatedDocs, formattedDocs) {
-		t.Error("generated docs do not follow gofmt")
-	}
-
-	if !reflect.DeepEqual(generatedDocs, expectedDocs) {
-		t.Error("generated docs were not correct")
-		fmt.Println(diff.LineDiff(string(expectedDocs), string(generatedDocs)))
-	}
 }
 
 func TestOverload(t *testing.T) {

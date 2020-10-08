@@ -93,7 +93,31 @@ func NewData() *Data {
 	}
 }
 
+func prepareDocEntry(docEntry common.DocEntry) common.DocEntry {
+	return common.DocEntry{
+		Description: prepareString.Replace(docEntry.Description),
+		Examples:    prepareString.Replace(docEntry.Examples),
+	}
+
+}
+
+func prepareDocEntries(docEntries map[string]common.DocEntry) {
+	for entryName, docEntry := range docEntries {
+		docEntries[entryName] = prepareDocEntry(docEntry)
+	}
+}
+
+func prepareGroupDocEntries(groups []common.GroupsEntry) {
+	for idx, group := range groups {
+		groups[idx].DocEntry = prepareDocEntry(group.DocEntry)
+	}
+}
+
 func (data *Data) PopulateFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
+	prepareDocEntries(actions)
+	prepareDocEntries(config)
+	prepareDocEntries(extra)
+	prepareGroupDocEntries(groups)
 	data.overload(
 		&Data{
 			ParamMap:     params,
