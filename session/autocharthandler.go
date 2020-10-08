@@ -148,27 +148,31 @@ func (instance *AutoChartInstance) SetObjectDefData(objDefData []senseobjdef.Dat
 	}
 
 	instance.ObjectDef.Data = make([]senseobjdef.Data, 0, len(objDefData))
-	for _, data := range objDefData {
-		// update paths in data requests
-		requests := make([]senseobjdef.GetDataRequests, 0, len(data.Requests))
-		for _, req := range data.Requests {
-			if req.Path != "" {
-				req.Path = fmt.Sprint(GeneratedPropertiesPath, req.Path)
+	for _, defaultData := range objDefData {
+		// make a copy of default data, de-reference pointers and update to new path
+		data := senseobjdef.Data{}
+		for i, constraint := range defaultData.Constraints {
+			if i == 0 {
+				data.Constraints = make([]*senseobjdef.Constraint, 0, len(defaultData.Constraints))
 			}
-			requests = append(requests, req)
+			data.Constraints = append(data.Constraints, &senseobjdef.Constraint{
+				Path:     helpers.DataPath(fmt.Sprint(GeneratedPropertiesPath, constraint.Path)),
+				Value:    constraint.Value,
+				Required: constraint.Required,
+			})
 		}
-		data.Requests = requests
 
-		if data.Constraints != nil {
-			for i, c := range data.Constraints {
-				// de-reference pointer and update path in constraint
-				data.Constraints[i] = &senseobjdef.Constraint{
-					Path:     helpers.DataPath(fmt.Sprint(GeneratedPropertiesPath, c.Path)),
-					Value:    c.Value,
-					Required: c.Required,
-				}
+		for i, request := range defaultData.Requests {
+			if i == 0 {
+				data.Requests = make([]senseobjdef.GetDataRequests, 0, len(defaultData.Requests))
 			}
+			data.Requests = append(data.Requests, senseobjdef.GetDataRequests{
+				Type:   request.Type,
+				Path:   fmt.Sprint(GeneratedPropertiesPath, request.Path),
+				Height: request.Height,
+			})
 		}
+
 		instance.ObjectDef.Data = append(instance.ObjectDef.Data, data)
 	}
 }

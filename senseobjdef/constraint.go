@@ -3,12 +3,12 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"strconv"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
