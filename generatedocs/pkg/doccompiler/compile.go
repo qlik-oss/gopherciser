@@ -70,7 +70,18 @@ var (
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
+func (data *Data) sort() {
+
+	sort.Slice(data.Groups, func(i, j int) bool {
+		return data.Groups[i].Name < data.Groups[j].Name
+	})
+	sort.Strings(data.Actions)
+	sort.Strings(data.ConfigFields)
+	sort.Strings(data.Extra)
+}
+
 func (data *Data) Compile() []byte {
+	data.sort()
 	docs := generateDocs(data)
 	formattedDocs, err := format.Source(docs)
 	if err != nil {
@@ -238,7 +249,7 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-func subdirs(path string) []string {
+func subDirs(path string) []string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil && !os.IsNotExist(err) {
 		common.Exit(err, ExitCodeFailedListDir)
@@ -262,7 +273,7 @@ func subdirs(path string) []string {
 // }
 
 func populateDocMap(dataRoot, subDir string, docMap map[string]common.DocEntry, entryNames *[]string) {
-	*entryNames = subdirs(fmt.Sprintf("%s/%s", dataRoot, subDir))
+	*entryNames = subDirs(fmt.Sprintf("%s/%s", dataRoot, subDir))
 	for _, entryName := range *entryNames {
 		docEntry, err := CreateDocEntry(dataRoot, subDir, entryName)
 		if err != nil {
