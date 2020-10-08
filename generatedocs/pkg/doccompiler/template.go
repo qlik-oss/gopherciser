@@ -1,7 +1,28 @@
 package doccompiler
 
-// Template used to generate in memory documentation golang package
-const Template = `package generated
+import (
+	"sort"
+	"strings"
+	"text/template"
+)
+
+var FuncMap = template.FuncMap{
+	"params": SortedParamsKeys,
+	"join":   strings.Join,
+}
+
+// SortedParamsKeys returns map keys as a sorted slice
+func SortedParamsKeys(paramsMap map[string][]string) []string {
+	params := make([]string, 0, len(paramsMap))
+	for param := range paramsMap {
+		params = append(params, param)
+	}
+	sort.Strings(params)
+	return params
+}
+
+// TemplateStr used to generate in memory documentation golang package
+const TemplateStr = `package generated
 
 /*
 	This file has been generated, do not edit the file directly.

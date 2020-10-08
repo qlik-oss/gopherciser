@@ -33,6 +33,18 @@ const (
 	ExitCodeFailedCreateExtra
 	ExitCodeFailedSyntaxError
 	ExitCodeFailedNoDataRoot
+	ExitCodeFailedListDir
+)
+
+const (
+	ConfigDir         = "config"
+	ActionsDir        = "actions"
+	GroupsDir         = "groups"
+	ExtraDir          = "extra"
+	GroupsJSONFile    = GroupsDir + "/groups.json"
+	ParamsJSONFile    = "params.json"
+	DescriptionMDFile = "description.md"
+	ExamplesMDFile    = "examples.md"
 )
 
 type (
@@ -58,11 +70,7 @@ var (
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
-func Compile(dataRoots ...string) []byte {
-	data := loadData(dataRoots[0])
-	for _, dataRoot := range dataRoots[1:] {
-		data.overload(loadData(dataRoot))
-	}
+func (data *Data) Compile() []byte {
 	docs := generateDocs(data)
 	formattedDocs, err := format.Source(docs)
 	if err != nil {
@@ -72,9 +80,51 @@ func Compile(dataRoots ...string) []byte {
 	return formattedDocs
 }
 
+func NewData() *Data {
+	return &Data{
+		ParamMap:     map[string][]string{},
+		Groups:       []common.GroupsEntry{},
+		Actions:      []string{},
+		ActionMap:    map[string]common.DocEntry{},
+		ConfigFields: []string{},
+		ConfigMap:    map[string]common.DocEntry{},
+		Extra:        []string{},
+		ExtraMap:     map[string]common.DocEntry{},
+	}
+}
+
+func (data *Data) PopulateFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
+	data.overload(
+		&Data{
+			ParamMap:     params,
+			Groups:       groups,
+			Actions:      keys(actions),
+			ActionMap:    actions,
+			ConfigFields: keys(config),
+			ConfigMap:    config,
+			Extra:        keys(extra),
+			ExtraMap:     extra,
+		},
+	)
+
+}
+
+func (data *Data) PopulateFromDataDir(dataRoot string) {
+	data.overload(loadData(dataRoot))
+}
+
+func keys(m map[string]common.DocEntry) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func generateDocs(data *Data) []byte {
 	// Create template for generating documentation.go
-	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(Template)
+	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(TemplateStr)
 	if err != nil {
 		common.Exit(err, ExitCodeFailedParseTemplate)
 	}
@@ -160,13 +210,22 @@ func (baseData *Data) overload(newData *Data) {
 	overloadDocMap(baseData.ExtraMap, newData.ExtraMap, &baseData.Extra, newData.Extra)
 }
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
+func exit(exitCode int, format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	os.Exit(exitCode)
+}
+
 func subdirs(path string) []string {
-	dirs := []string{}
 	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
+	if err != nil && !os.IsNotExist(err) {
+		common.Exit(err, ExitCodeFailedListDir)
 	}
 
+	dirs := []string{}
 	for _, f := range files {
 		if f.IsDir() {
 			dirs = append(dirs, f.Name())
@@ -175,11 +234,29 @@ func subdirs(path string) []string {
 	return dirs
 }
 
+func groupNames(groups []common.GroupsEntry) []string {
+	names := make([]string, 0, len(groups))
+	for _, group := range groups {
+		names = append(names, group.Name)
+	}
+	return names
+}
+
+func populateDocMap(dataRoot, subDir string, docMap map[string]common.DocEntry, entryNames *[]string) {
+	*entryNames = subdirs(fmt.Sprintf("%s/%s", dataRoot, subDir))
+	for _, entryName := range *entryNames {
+		docEntry, err := CreateDocEntry(dataRoot, subDir, entryName)
+		if err != nil {
+			common.Exit(err, ExitCodeFailedHandleAction)
+		}
+		docMap[entryName] = docEntry
+	}
+}
+
 func loadData(dataRoot string) *Data {
-	data := &Data{}
+	data := NewData()
 
 	// Get parameters
-	data.ParamMap = make(map[string][]string)
 	if err := ReadAndUnmarshal(fmt.Sprintf("%s/params.json", dataRoot), &data.ParamMap); err != nil {
 		common.Exit(err, ExitCodeFailedReadParams)
 	}
@@ -190,61 +267,32 @@ func loadData(dataRoot string) *Data {
 		common.Exit(err, ExitCodeFailedReadGroups)
 	}
 
-	data.Groups = make([]common.GroupsEntry, 0, len(groups))
 	for _, group := range groups {
 		var err error
-		group.DocEntry, err = CreateGroupsDocEntry(dataRoot, group.Name)
+		group.DocEntry, err = CreateDocEntry(dataRoot, "groups", group.Name)
 		if err != nil {
 			common.Exit(err, ExitCodeFailedHandleGroups)
 		}
 		data.Groups = append(data.Groups, group)
 	}
 
-	// Get all actions
-	if UseFolderStructure {
-		data.Actions = subdirs(dataRoot + "/actions")
-	} else {
-		data.Actions = common.ActionStrings()
-	}
-	sort.Strings(data.Actions)
-	data.ActionMap = make(map[string]common.DocEntry, len(data.Actions))
-	for _, action := range data.Actions {
-		actionDocEntry, err := CreateActionDocEntry(dataRoot, action)
-		if err != nil {
-			common.Exit(err, ExitCodeFailedHandleAction)
-		}
+	populateDocMap(dataRoot, "actions", data.ActionMap, &data.Actions)
+	populateDocMap(dataRoot, "config", data.ConfigMap, &data.ConfigFields)
+	populateDocMap(dataRoot, "extra", data.ExtraMap, &data.Extra)
 
-		data.ActionMap[action] = actionDocEntry
-	}
-
-	if UseFolderStructure {
-		data.ConfigFields = subdirs(dataRoot + "/config")
-	} else {
-		var err error
-		// Get all config fields
-		data.ConfigFields, err = common.FieldsString()
-		if err != nil {
-			common.Exit(err, ExitCodeFailedConfigFields)
-		}
-		// Add documentation wrapping entire document as "main" entry into config map
-		data.ConfigFields = append(data.ConfigFields, "main")
-	}
-	sort.Strings(data.ConfigFields)
-
-	data.ConfigMap = make(map[string]common.DocEntry, len(data.ConfigFields))
-	for _, field := range data.ConfigFields {
-		println(field)
-		configDocEntry, err := CreateConfigDocEntry(dataRoot, field)
-		if err != nil {
-			common.Exit(err, ExitCodeFailedHandleConfig)
-		}
-		data.ConfigMap[field] = configDocEntry
-	}
-
-	// Walk "extra" folder and add things outside normal structure
-	if err := CreateExtraDocEntries(dataRoot, data); err != nil {
-		common.Exit(err, ExitCodeFailedCreateExtra)
-	}
+	// if UseFolderStructure {
+	// 	data.ConfigFields = subdirs(dataRoot + "/config")
+	// } else {
+	// 	var err error
+	// 	// Get all config fields
+	// 	data.ConfigFields, err = common.FieldsString()
+	// 	if err != nil {
+	// 		common.Exit(err, ExitCodeFailedConfigFields)
+	// 	}
+	// 	// Add documentation wrapping entire document as "main" entry into config map
+	// 	data.ConfigFields = append(data.ConfigFields, "main")
+	// }
+	// sort.Strings(data.ConfigFields)
 
 	return data
 
@@ -264,53 +312,8 @@ func ReadAndUnmarshal(filename string, output interface{}) error {
 	return nil
 }
 
-// CreateActionDocEntry create DocEntry from actions sub directory
-func CreateActionDocEntry(dataRoot, action string) (common.DocEntry, error) {
-	return CreateDocEntry(dataRoot, []string{"actions", action})
-}
-
-// CreateConfigDocEntry create DocEntry from config sub directory
-func CreateConfigDocEntry(dataRoot string, field string) (common.DocEntry, error) {
-	return CreateDocEntry(dataRoot, []string{"config", field})
-}
-
-// CreateGroupsDocEntry create DocEntry from groups sub directory
-func CreateGroupsDocEntry(dataRoot string, group string) (common.DocEntry, error) {
-	return CreateDocEntry(dataRoot, []string{"groups", group})
-}
-
-// CreateExtraDocEntries create DocEntries for sub folders to "extra" folder
-func CreateExtraDocEntries(dataRoot string, data *Data) error {
-	dataDir, err := os.Open(fmt.Sprintf("%s/extra", dataRoot))
-	if err != nil {
-		return err
-	}
-
-	// Read all the files in the dataRoot/extra directory
-	fileInfos, err := dataDir.Readdir(-1)
-	_ = dataDir.Close()
-	if err != nil {
-		return err
-	}
-
-	data.ExtraMap = make(map[string]common.DocEntry)
-
-	for _, fi := range fileInfos {
-		if !fi.IsDir() {
-			continue
-		}
-		data.Extra = append(data.Extra, fi.Name())
-		data.ExtraMap[fi.Name()], err = CreateDocEntry(dataRoot, []string{"extra", fi.Name()})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // CreateDocEntry create DocEntry using files in sub folder
-func CreateDocEntry(dataRoot string, subFolders []string) (common.DocEntry, error) {
+func CreateDocEntry(dataRoot string, subFolders ...string) (common.DocEntry, error) {
 	var docEntry common.DocEntry
 	var err error
 
@@ -335,7 +338,7 @@ func GetMarkDownFile(dataRoot string, subFolders []string, file string) (string,
 	if exist, err := FileExists(filepath); err != nil {
 		return "", err
 	} else if !exist {
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: %s does not have a %s file\n", subPath, file))
+		// _, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: %s does not have a %s file\n", subPath, file))
 		return "", nil
 	}
 
@@ -353,14 +356,4 @@ func FileExists(filename string) (bool, error) {
 		return false, nil
 	}
 	return true, err
-}
-
-// SortedParamsKeys returns map keys as a sorted slice
-func SortedParamsKeys(paramsMap map[string][]string) []string {
-	params := make([]string, 0, len(paramsMap))
-	for param := range paramsMap {
-		params = append(params, param)
-	}
-	sort.Strings(params)
-	return params
 }
