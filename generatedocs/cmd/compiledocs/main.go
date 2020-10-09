@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	data := doccompiler.NewData()
-	data.PopulateFromDataDir(flags.DataRoot())
-	data.CompileToFile(flags.OutputFile())
+	compiler := doccompiler.New()
+	compiler.AddDataFromDir(flags.DataRoot())
+	compiler.CompileToFile(flags.OutputFile())
 }

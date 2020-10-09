@@ -14,33 +14,33 @@ import (
 )
 
 func TestCompile(t *testing.T) {
-	dataRoot := "testdata/base/data"
+	docDataRoot := "testdata/base/data"
 	expectedOutput := "testdata/base/expected-output/documentation.go"
 
 	for _, tc := range []struct {
-		name string
-		data func() *Data
+		name     string
+		compiler func() DocCompiler
 	}{
 		{
 			name: "from directory",
-			data: func() *Data {
-				data := NewData()
-				data.PopulateFromDataDir(dataRoot)
-				return data
+			compiler: func() DocCompiler {
+				compiler := New()
+				compiler.AddDataFromDir(docDataRoot)
+				return compiler
 			},
 		},
 		{
 			name: "from generated",
-			data: func() *Data {
-				data := NewData()
-				data.PopulateFromGenerated(generated.Actions, generated.Config, generated.Extra, generated.Params, generated.Groups)
-				return data
+			compiler: func() DocCompiler {
+				docData := New()
+				docData.AddDataFromGenerated(generated.Actions, generated.Config, generated.Extra, generated.Params, generated.Groups)
+				return docData
 			},
 		},
 	} {
 
 		t.Run(tc.name, func(t *testing.T) {
-			generatedDocs := tc.data().Compile()
+			generatedDocs := tc.compiler().Compile()
 			expectedDocs, err := ioutil.ReadFile(expectedOutput)
 			if err != nil {
 				t.Fatal(err)
@@ -68,21 +68,8 @@ func TestCompile(t *testing.T) {
 
 func TestOverload(t *testing.T) {
 
-	emptyData := func() *Data {
-		return &Data{
-			ParamMap:     map[string][]string{},
-			Groups:       []common.GroupsEntry{},
-			Actions:      []string{},
-			ActionMap:    map[string]common.DocEntry{},
-			ConfigFields: []string{},
-			ConfigMap:    map[string]common.DocEntry{},
-			Extra:        []string{},
-			ExtraMap:     map[string]common.DocEntry{},
-		}
-	}
-
-	exampleData := func() *Data {
-		return &Data{
+	exampleData := func() *docData {
+		return &docData{
 			ParamMap: map[string][]string{
 				"param1": {""},
 				"param2": {""},
@@ -121,13 +108,13 @@ func TestOverload(t *testing.T) {
 
 	for _, tc := range []struct {
 		name     string
-		base     *Data
-		new      *Data
-		expected *Data
+		base     *docData
+		new      *docData
+		expected *docData
 	}{
 		{
 			name: "simple overload",
-			base: &Data{
+			base: &docData{
 				ParamMap: map[string][]string{
 					"param1": {""},
 				},
@@ -161,7 +148,7 @@ func TestOverload(t *testing.T) {
 					},
 				},
 			},
-			new: &Data{
+			new: &docData{
 				ParamMap: map[string][]string{
 					"param2": {""},
 				},
@@ -186,7 +173,7 @@ func TestOverload(t *testing.T) {
 					"extra2": {},
 				},
 			},
-			expected: &Data{
+			expected: &docData{
 				ParamMap: map[string][]string{
 					"param1": {""},
 					"param2": {""},
@@ -224,7 +211,7 @@ func TestOverload(t *testing.T) {
 		},
 		{
 			name: "complex overload",
-			base: &Data{
+			base: &docData{
 				ParamMap: map[string][]string{
 					"param1": {""},
 				},
@@ -261,7 +248,7 @@ func TestOverload(t *testing.T) {
 					},
 				},
 			},
-			new: &Data{
+			new: &docData{
 				ParamMap: map[string][]string{
 					"param2": {""},
 				},
@@ -293,7 +280,7 @@ func TestOverload(t *testing.T) {
 					"extra2": {},
 				},
 			},
-			expected: &Data{
+			expected: &docData{
 				ParamMap: map[string][]string{
 					"param1": {""},
 					"param2": {""},
@@ -331,21 +318,21 @@ func TestOverload(t *testing.T) {
 		},
 		{
 			name:     "empty base",
-			base:     emptyData(),
+			base:     newData(),
 			new:      exampleData(),
 			expected: exampleData(),
 		},
 		{
 			name:     "empty new",
 			base:     exampleData(),
-			new:      emptyData(),
+			new:      newData(),
 			expected: exampleData(),
 		},
 		{
 			name:     "both empty",
-			base:     emptyData(),
-			new:      emptyData(),
-			expected: emptyData(),
+			base:     newData(),
+			new:      newData(),
+			expected: newData(),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

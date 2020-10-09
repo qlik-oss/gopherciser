@@ -37,7 +37,7 @@ const (
 )
 
 type (
-	Data struct {
+	docData struct {
 		ParamMap     map[string][]string
 		Groups       []common.GroupsEntry
 		Actions      []string
@@ -46,6 +46,17 @@ type (
 		ConfigMap    map[string]common.DocEntry
 		Extra        []string
 		ExtraMap     map[string]common.DocEntry
+	}
+
+	DocCompiler interface {
+		// Compile documentation to golang represented as bytes
+		Compile() []byte
+		// CompileToFile compiles the data to file
+		CompileToFile(file string)
+		// Add documentation data from directory
+		AddDataFromDir(dir string)
+		// Add documentation data from variables in generated code
+		AddDataFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry)
 	}
 )
 
@@ -59,16 +70,11 @@ var (
 	prepareString = strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\"", "\\\"")
 )
 
-func (data *Data) sort() {
-	sort.Slice(data.Groups, func(i, j int) bool {
-		return data.Groups[i].Name < data.Groups[j].Name
-	})
-	sort.Strings(data.Actions)
-	sort.Strings(data.ConfigFields)
-	sort.Strings(data.Extra)
+func New() DocCompiler {
+	return newData()
 }
 
-func (data *Data) Compile() []byte {
+func (data *docData) Compile() []byte {
 	data.sort()
 	docs := generateDocs(data)
 	formattedDocs, err := format.Source(docs)
@@ -79,7 +85,7 @@ func (data *Data) Compile() []byte {
 	return formattedDocs
 }
 
-func (data *Data) CompileToFile(fileName string) {
+func (data *docData) CompileToFile(fileName string) {
 	docs := data.Compile()
 	if err := ioutil.WriteFile(fileName, docs, 0644); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
@@ -87,8 +93,32 @@ func (data *Data) CompileToFile(fileName string) {
 	fmt.Printf("Compiled to %s\n", fileName)
 }
 
-func NewData() *Data {
-	return &Data{
+func (data *docData) AddDataFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
+	prepareDocEntries(actions)
+	prepareDocEntries(config)
+	prepareDocEntries(extra)
+	prepareGroupDocEntries(groups)
+	data.overload(
+		&docData{
+			ParamMap:     params,
+			Groups:       groups,
+			Actions:      keys(actions),
+			ActionMap:    actions,
+			ConfigFields: keys(config),
+			ConfigMap:    config,
+			Extra:        keys(extra),
+			ExtraMap:     extra,
+		},
+	)
+
+}
+
+func (data *docData) AddDataFromDir(dataRoot string) {
+	data.overload(loadData(dataRoot))
+}
+
+func newData() *docData {
+	return &docData{
 		ParamMap:     map[string][]string{},
 		Groups:       []common.GroupsEntry{},
 		Actions:      []string{},
@@ -98,6 +128,15 @@ func NewData() *Data {
 		Extra:        []string{},
 		ExtraMap:     map[string]common.DocEntry{},
 	}
+}
+
+func (data *docData) sort() {
+	sort.Slice(data.Groups, func(i, j int) bool {
+		return data.Groups[i].Name < data.Groups[j].Name
+	})
+	sort.Strings(data.Actions)
+	sort.Strings(data.ConfigFields)
+	sort.Strings(data.Extra)
 }
 
 func prepareDocEntry(docEntry common.DocEntry) common.DocEntry {
@@ -120,30 +159,6 @@ func prepareGroupDocEntries(groups []common.GroupsEntry) {
 	}
 }
 
-func (data *Data) PopulateFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
-	prepareDocEntries(actions)
-	prepareDocEntries(config)
-	prepareDocEntries(extra)
-	prepareGroupDocEntries(groups)
-	data.overload(
-		&Data{
-			ParamMap:     params,
-			Groups:       groups,
-			Actions:      keys(actions),
-			ActionMap:    actions,
-			ConfigFields: keys(config),
-			ConfigMap:    config,
-			Extra:        keys(extra),
-			ExtraMap:     extra,
-		},
-	)
-
-}
-
-func (data *Data) PopulateFromDataDir(dataRoot string) {
-	data.overload(loadData(dataRoot))
-}
-
 func keys(m map[string]common.DocEntry) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -153,7 +168,7 @@ func keys(m map[string]common.DocEntry) []string {
 	return keys
 }
 
-func generateDocs(data *Data) []byte {
+func generateDocs(data *docData) []byte {
 	// Create template for generating documentation.go
 	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(TemplateStr)
 	if err != nil {
@@ -222,7 +237,7 @@ func overloadDocMap(baseMap, newMap map[string]common.DocEntry, baseNames *[]str
 }
 
 // overload assumes data, newData and their members are initialized
-func (baseData *Data) overload(newData *Data) {
+func (baseData *docData) overload(newData *docData) {
 	// overload parameters
 	for docKey, paramInfo := range newData.ParamMap {
 		baseData.ParamMap[docKey] = paramInfo
@@ -279,8 +294,8 @@ func populateDocMap(dataRoot, subDir string, docMap map[string]common.DocEntry, 
 	}
 }
 
-func loadData(dataRoot string) *Data {
-	data := NewData()
+func loadData(dataRoot string) *docData {
+	data := newData()
 
 	// Get parameters
 	if err := ReadAndUnmarshal(fmt.Sprintf("%s/params.json", dataRoot), &data.ParamMap); err != nil {

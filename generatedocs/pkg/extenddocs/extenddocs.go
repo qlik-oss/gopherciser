@@ -7,8 +7,8 @@ import (
 )
 
 func ExtendOSSDocs(dataRoot string, output string) {
-	data := doccompiler.NewData()
-	data.PopulateFromGenerated(generated.Actions, generated.Config, generated.Extra, generated.Params, generated.Groups)
-	data.PopulateFromDataDir(flags.DataRoot())
-	data.CompileToFile(flags.OutputFile())
+	compiler := doccompiler.New()
+	compiler.AddDataFromGenerated(generated.Actions, generated.Config, generated.Extra, generated.Params, generated.Groups)
+	compiler.AddDataFromDir(flags.DataRoot())
+	compiler.CompileToFile(flags.OutputFile())
 }
