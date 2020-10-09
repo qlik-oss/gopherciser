@@ -17,7 +17,7 @@ type (
 	ContainerTabSettings struct {
 		Mode     ContainerTabMode `json:"mode" displayname:"Mode" doc-key:"containertab.mode"`
 		ID       string           `json:"id" displayname:"ID" appstructure:"active:!sheet" doc-key:"containertab.id"`
-		ActiveID string           `json:"activeid,omitempty" displayname:"Active ID" doc-key:"containertab.activeid"`
+		ActiveID string           `json:"activeid,omitempty" appstructure:"children:id" displayname:"Active ID" doc-key:"containertab.activeid"`
 		Index    int              `json:"index,omitempty" displayname:"Index" doc-key:"containertab.index"`
 	}
 )
@@ -132,36 +132,3 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 
 	sessionState.Wait(actionState) // Await all async requests, e.g. those triggered on changed objects
 }
-
-// AppStructureAction Implements AppStructureAction interface. It returns if this action should be included
-// when doing an "get app structure" from script, IsAppAction tells the scenario
-// to insert a "getappstructure" action after that action using data from
-// sessionState.CurrentApp. A list of Sub action to be evaluated can also be included
-// AppStructureAction returns if this action should be included when getting app structure
-// and any additional sub actions which should also be included
-//func (settings *ContainerTabSettings) AppStructureAction() (*scenario.AppStructureInfo, []scenario.Action) {
-//	return &scenario.AppStructureInfo{
-//		IsAppAction: false,
-//		Include:     true,
-//	}, nil
-//}
-
-// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-// Should be implemented by all actions that affect the availability of selectable objects for app structure consumption.
-// App structure of the current app is passed as an argument. The return is
-// * added *config.AppStructurePopulatedObjects - objects to be added to the selectable list by this action
-// * removed []string - ids of objects that are removed (including any children) by this action
-// * clearObjects bool - clears all objects except bookmarks and sheets
-//func (settings ContainerTabSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
-//	selectables, err := structure.GetSelectables(settings.ID)
-//	if err != nil {
-//		return nil, nil, false
-//	}
-//	newObjs := appstructure.AppStructurePopulatedObjects{
-//		Parent:    settings.ID,
-//		Objects:   make([]appstructure.AppStructureObject, 0),
-//		Bookmarks: nil,
-//	}
-//	newObjs.Objects = append(newObjs.Objects, selectables...)
-//	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, true
-//}
