@@ -19,7 +19,7 @@ func DataRoot() string {
 }
 
 func OutputFile() string {
-	return dataRoot
+	return output
 }
 
 func handleFlags() {

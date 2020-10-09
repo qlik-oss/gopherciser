@@ -408,20 +408,20 @@ var (
 			},
 		},
 		{
-			Name:    "qseowActions",
-			Title:   "Qlik Sense Enterprise on Windows (QSEoW) actions",
-			Actions: []string{"deleteodag", "generateodag", "openhub"},
-			DocEntry: common.DocEntry{
-				Description: "## Qlik Sense Enterprise on Windows (QSEoW) actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.\n",
-				Examples:    "",
-			},
-		},
-		{
 			Name:    "qseokActions",
 			Title:   "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
 			Actions: []string{"deletedata", "elasticcreateapp", "elasticcreatecollection", "elasticdeleteapp", "elasticdeletecollection", "elasticdeleteodag", "elasticduplicateapp", "elasticexplore", "elasticexportapp", "elasticgenerateodag", "elastichubsearch", "elasticmoveapp", "elasticopenhub", "elasticpublishapp", "elasticreload", "elasticuploadapp", "uploaddata", "disconnectelastic"},
 			DocEntry: common.DocEntry{
 				Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
+				Examples:    "",
+			},
+		},
+		{
+			Name:    "qseowActions",
+			Title:   "Qlik Sense Enterprise on Windows (QSEoW) actions",
+			Actions: []string{"deleteodag", "generateodag", "openhub"},
+			DocEntry: common.DocEntry{
+				Description: "## Qlik Sense Enterprise on Windows (QSEoW) actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.\n",
 				Examples:    "",
 			},
 		},
