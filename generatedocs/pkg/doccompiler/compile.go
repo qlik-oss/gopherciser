@@ -82,6 +82,7 @@ func (data *docData) Compile() []byte {
 		fmt.Fprintf(os.Stderr, "generated code has syntax error(s):\n  %v\n", err)
 		os.Exit(ExitCodeFailedSyntaxError)
 	}
+	checkAndWarn(data)
 	return formattedDocs
 }
 
@@ -320,20 +321,6 @@ func loadData(dataRoot string) *docData {
 	populateDocMap(dataRoot, "actions", data.ActionMap, &data.Actions)
 	populateDocMap(dataRoot, "config", data.ConfigMap, &data.ConfigFields)
 	populateDocMap(dataRoot, "extra", data.ExtraMap, &data.Extra)
-
-	// if UseFolderStructure {
-	// 	data.ConfigFields = subdirs(dataRoot + "/config")
-	// } else {
-	// 	var err error
-	// 	// Get all config fields
-	// 	data.ConfigFields, err = common.FieldsString()
-	// 	if err != nil {
-	// 		common.Exit(err, ExitCodeFailedConfigFields)
-	// 	}
-	// 	// Add documentation wrapping entire document as "main" entry into config map
-	// 	data.ConfigFields = append(data.ConfigFields, "main")
-	// }
-	// sort.Strings(data.ConfigFields)
 
 	return data
 
