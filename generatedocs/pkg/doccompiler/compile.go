@@ -91,7 +91,7 @@ func (data *docData) CompileToFile(fileName string) {
 	if err := ioutil.WriteFile(fileName, docs, 0644); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
-	fmt.Printf("Compiled to %s\n", fileName)
+	fmt.Printf("Compiled documentation to %s\n", fileName)
 }
 
 func (data *docData) AddDataFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
