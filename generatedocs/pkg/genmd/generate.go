@@ -70,7 +70,7 @@ func handleFlags() {
 	}
 }
 
-func generate() {
+func generateFromData(data *Data) []byte {
 	// Create template for generating settingup.md
 	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(templateString)
 	if err != nil {
@@ -88,11 +88,16 @@ func generate() {
 	if err := documentationTemplate.Execute(buf, data); err != nil {
 		common.Exit(err, ExitCodeFailedExecuteTemplate)
 	}
-	if err := ioutil.WriteFile(output, buf.Bytes(), 0644); err != nil {
+	return buf.Bytes()
+}
+
+func generate() {
+	mdBytes := generateFromData(&data)
+	if err := ioutil.WriteFile(output, mdBytes, 0644); err != nil {
 		_, _ = os.Stderr.WriteString(err.Error())
 		os.Exit(ExitCodeFailedWriteResult)
 	}
-	fmt.Printf("Generated markdown to output<%s>\n", output)
+	fmt.Printf("Generated markdown documentation to output<%s>\n", output)
 }
 
 func handleParams(obj interface{}) string {

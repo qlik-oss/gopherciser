@@ -1,0 +1,30 @@
+package genmd
+
+import (
+	"io/ioutil"
+	"testing"
+
+	generated "github.com/qlik-oss/gopherciser/generatedocs/pkg/genmd/testdata"
+)
+
+func TestGenerateMarkDown(t *testing.T) {
+	mdBytes := generateFromData(&Data{
+		Actions: generated.Actions,
+		Params:  generated.Params,
+		Config:  generated.Config,
+		Groups:  generated.Groups,
+		Extra:   generated.Extra,
+	})
+
+	markdown := string(mdBytes)
+	expectedMDBytes, err := ioutil.ReadFile("testdata/settingup.md")
+	if err != nil {
+		t.Error(err)
+	}
+
+	expectedMarkdown := string(expectedMDBytes)
+
+	if expectedMarkdown != markdown {
+		t.Error("unexpected result when generaterating markdown")
+	}
+}
