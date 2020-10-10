@@ -9,6 +9,12 @@ import (
 
 type check func(data *docData) []error
 
+var checks = []check{
+	checkAllActionsDocumented,
+	checkAllConfigFieldsDocumented,
+	checkAllActionsInGroup,
+}
+
 func checkAndWarn(data *docData) {
 	for _, finding := range checkAll(data) {
 		fmt.Printf("WARNING: %v\n", finding)
@@ -17,10 +23,6 @@ func checkAndWarn(data *docData) {
 }
 func checkAll(data *docData) []error {
 	findings := []error{}
-	var checks = []check{
-		checkAllActionsDocumented,
-		checkConfigFields,
-	}
 	for _, check := range checks {
 		findings = append(findings, check(data)...)
 	}
@@ -47,7 +49,7 @@ func checkAllActionsDocumented(data *docData) []error {
 	return findings
 }
 
-func checkConfigFields(data *docData) []error {
+func checkAllConfigFieldsDocumented(data *docData) []error {
 	findings := []error{}
 	// Get all config fields
 	expectedConfigFields, err := common.FieldsString()
@@ -70,5 +72,33 @@ func checkConfigFields(data *docData) []error {
 			findings = append(findings, errors.Errorf(`config field "%s" has no examples`, field))
 		}
 	}
+	return findings
+}
+
+func checkAllActionsInGroup(data *docData) []error {
+	findings := []error{}
+
+	// map actions to groups
+	actionToGroups := map[string][]string{}
+	for _, action := range data.Actions {
+		actionToGroups[action] = []string{}
+	}
+	for _, group := range data.Groups {
+		for _, action := range group.Actions {
+			actionToGroups[action] = append(actionToGroups[action], group.Name)
+		}
+	}
+
+	// check action belongs to one and only one group
+	for action, groups := range actionToGroups {
+		lenGroups := len(groups)
+		switch {
+		case lenGroups == 0:
+			findings = append(findings, errors.Errorf(`action "%s" does not belong to a group`, action))
+		case lenGroups > 1:
+			findings = append(findings, errors.Errorf(`action "%s" belong to %d groups %v`, action, lenGroups, groups))
+		}
+	}
+
 	return findings
 }
