@@ -1,4 +1,4 @@
-package main
+package genmd
 
 import (
 	"bytes"
@@ -46,26 +46,20 @@ var (
 		Groups:  generated.Groups,
 		Extra:   generated.Extra,
 	}
-	templatePath, output string
-	funcMap              = template.FuncMap{
-		"join":      strings.Join,
-		"params":    handleParams,
-		"ungrouped": UngroupedActions,
-	}
+	output string
 )
 
 const (
 	defaultIndent = "  "
 )
 
-func main() {
+func GenerateMarkdown() {
 	handleFlags()
 	generate()
 }
 
 func handleFlags() {
 	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&templatePath, "template", "generatedocs/generate/templates/settingup.md.template", "path to template of output file")
 	flag.StringVar(&output, "output", "generatedocs/generated/settingup.md", "path to output file")
 
 	flag.Parse()
@@ -78,11 +72,7 @@ func handleFlags() {
 
 func generate() {
 	// Create template for generating settingup.md
-	templateFile, err := common.ReadFile(templatePath)
-	if err != nil {
-		common.Exit(err, ExitCodeFailedReadTemplate)
-	}
-	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(string(templateFile))
+	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(templateString)
 	if err != nil {
 		common.Exit(err, ExitCodeFailedParseTemplate)
 	}
@@ -102,7 +92,7 @@ func generate() {
 		_, _ = os.Stderr.WriteString(err.Error())
 		os.Exit(ExitCodeFailedWriteResult)
 	}
-	fmt.Printf("Generated from template<%s> to output<%s>\n", templatePath, output)
+	fmt.Printf("Generated markdown to output<%s>\n", output)
 }
 
 func handleParams(obj interface{}) string {

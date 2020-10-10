@@ -103,11 +103,11 @@ func (data *docData) AddDataFromGenerated(actions, config, extra map[string]comm
 		&docData{
 			ParamMap:     params,
 			Groups:       groups,
-			Actions:      keys(actions),
+			Actions:      common.Keys(actions),
 			ActionMap:    actions,
-			ConfigFields: keys(config),
+			ConfigFields: common.Keys(config),
 			ConfigMap:    config,
-			Extra:        keys(extra),
+			Extra:        common.Keys(extra),
 			ExtraMap:     extra,
 		},
 	)
@@ -158,15 +158,6 @@ func prepareGroupDocEntries(groups []common.GroupsEntry) {
 	for idx, group := range groups {
 		groups[idx].DocEntry = prepareDocEntry(group.DocEntry)
 	}
-}
-
-func keys(m map[string]common.DocEntry) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func generateDocs(data *docData) []byte {

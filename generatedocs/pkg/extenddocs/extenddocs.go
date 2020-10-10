@@ -3,6 +3,7 @@ package extenddocs
 import (
 	"github.com/qlik-oss/gopherciser/generatedocs/generated"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler"
+	"github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompilerflag"
 )
 
 func ExtendOSSDocs() {

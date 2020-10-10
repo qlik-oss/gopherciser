@@ -1,3 +1,17 @@
+package genmd
+
+import (
+	"strings"
+	"text/template"
+)
+
+var funcMap = template.FuncMap{
+	"join":      strings.Join,
+	"params":    handleParams,
+	"ungrouped": UngroupedActions,
+}
+
+var templateString = strings.TrimSpace(`
 {{with $data := .}}{{(index $data.Config "main").Description}}
 {{range $field, $obj := $data.ConfigFields}}{{if ne $field "scenario"}}{{with $configEntry := index $data.Config $field}}<details>
 <summary>{{$field}}</summary>
@@ -35,3 +49,4 @@
 {{(index $data.Extra "sessionvariables").Description}}
 </details>{{end}}
 {{(index $data.Config "main").Examples}}{{end}}
+`)

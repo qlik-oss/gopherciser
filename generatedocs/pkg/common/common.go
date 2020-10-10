@@ -150,3 +150,13 @@ func Exit(err error, code int) {
 	_, _ = os.Stderr.WriteString(err.Error())
 	os.Exit(code)
 }
+
+// Keys returns a sorted slice of map keys
+func Keys(m map[string]DocEntry) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
