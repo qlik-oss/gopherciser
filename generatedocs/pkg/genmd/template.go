@@ -11,8 +11,7 @@ var funcMap = template.FuncMap{
 	"ungrouped": UngroupedActions,
 }
 
-var templateString = strings.TrimSpace(`
-{{with $data := .}}{{(index $data.Config "main").Description}}
+const templateString = `{{with $data := .}}{{(index $data.Config "main").Description}}
 {{range $field, $obj := $data.ConfigFields}}{{if ne $field "scenario"}}{{with $configEntry := index $data.Config $field}}<details>
 <summary>{{$field}}</summary>
 
@@ -48,5 +47,4 @@ var templateString = strings.TrimSpace(`
 </details>{{end}}{{end}}{{end}}
 {{(index $data.Extra "sessionvariables").Description}}
 </details>{{end}}
-{{(index $data.Config "main").Examples}}{{end}}
-`)
+{{(index $data.Config "main").Examples}}{{end}}`

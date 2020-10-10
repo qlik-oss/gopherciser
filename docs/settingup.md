@@ -1378,76 +1378,6 @@ Unsubscribe from all currently subscribed objects.
 ```
 </details>
 </details><details>
-<summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>
-
-## Qlik Sense Enterprise on Windows (QSEoW) actions
-
-These actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.
-
-
-<details>
-<summary>deleteodag</summary>
-
-## DeleteOdag action
-
-Delete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.
-
-### Settings
-
-* `linkname`: Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
-
-### Example
-
-```json
-{
-    "action": "DeleteOdag",
-    "settings": {
-        "linkname": "Drill to Template App"
-    }
-}
-```
-
-</details><details>
-<summary>generateodag</summary>
-
-## GenerateOdag action
-
-Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
-
-### Settings
-
-* `linkname`: Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
-
-### Example
-
-```json
-{
-    "action": "GenerateOdag",
-    "settings": {
-        "linkname": "Drill to Template App"
-    }
-}
-```
-
-</details><details>
-<summary>openhub</summary>
-
-## OpenHub action
-
-Open the hub in a QSEoW environment.
-
-
-### Example
-
-```json
-{
-     "action": "OpenHub",
-     "label": "Open the hub"
-}
-```
-
-</details>
-</details><details>
 <summary>Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions</summary>
 
 ## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions
@@ -2080,6 +2010,76 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 ```
 
 </details>
+</details><details>
+<summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>
+
+## Qlik Sense Enterprise on Windows (QSEoW) actions
+
+These actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.
+
+
+<details>
+<summary>deleteodag</summary>
+
+## DeleteOdag action
+
+Delete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.
+
+### Settings
+
+* `linkname`: Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
+
+### Example
+
+```json
+{
+    "action": "DeleteOdag",
+    "settings": {
+        "linkname": "Drill to Template App"
+    }
+}
+```
+
+</details><details>
+<summary>generateodag</summary>
+
+## GenerateOdag action
+
+Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
+
+### Settings
+
+* `linkname`: Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
+
+### Example
+
+```json
+{
+    "action": "GenerateOdag",
+    "settings": {
+        "linkname": "Drill to Template App"
+    }
+}
+```
+
+</details><details>
+<summary>openhub</summary>
+
+## OpenHub action
+
+Open the hub in a QSEoW environment.
+
+
+### Example
+
+```json
+{
+     "action": "OpenHub",
+     "label": "Open the hub"
+}
+```
+
+</details>
 </details>
 
 ## Session variables
@@ -2147,4 +2147,3 @@ The following functions are supported:
 ## Example
 
 * [Load scenario example](./examples/configuration_example.json)
-
