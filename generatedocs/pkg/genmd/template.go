@@ -159,8 +159,8 @@ func HandleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
 			_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
 		}
 		if docKey != "" {
-			params := compiledDocs.Params[docKey]
-			if len(params) < 1 {
+			params, ok := compiledDocsGlobal.Params[docKey]
+			if !ok || len(params) < 1 {
 				defaultString()
 			} else {
 				buf.WriteString(params[0])
@@ -179,16 +179,15 @@ func HandleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
 }
 
 // UngroupedActions filter grouped actions from all actions
-func UngroupedActions() []string {
+func UngroupedActions(groups []common.GroupsEntry) []string {
 	// fill map with all actions
-	allActions := common.ActionStrings()
-	actionMap := make(map[string]struct{}, len(allActions))
-	for _, action := range allActions {
+	actionMap := make(map[string]struct{})
+	for _, action := range common.ActionStrings() {
 		actionMap[action] = struct{}{}
 	}
 
 	// Remove grouped actions
-	for _, group := range compiledDocs.Groups {
+	for _, group := range groups {
 		for _, action := range group.Actions {
 			delete(actionMap, action)
 		}
