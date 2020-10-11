@@ -12,7 +12,6 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/gopherciser/generatedocs/generated"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
@@ -43,14 +42,8 @@ const (
 )
 
 var (
-	compiledDocs = &CompiledDocs{
-		Actions: generated.Actions,
-		Params:  generated.Params,
-		Config:  generated.Config,
-		Groups:  generated.Groups,
-		Extra:   generated.Extra,
-	}
-	output string
+	compiledDocs *CompiledDocs
+	output       string
 )
 
 const (
@@ -59,7 +52,7 @@ const (
 
 func GenerateMarkdown(docs *CompiledDocs) {
 	handleFlags()
-	mdBytes := generateFromCompiled(compiledDocs)
+	mdBytes := generateFromCompiled(docs)
 	if err := ioutil.WriteFile(output, mdBytes, 0644); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
@@ -79,6 +72,7 @@ func handleFlags() {
 }
 
 func generateFromCompiled(docs *CompiledDocs) []byte {
+	compiledDocs = docs
 	data := &Data{
 		CompiledDocs: docs,
 	}
@@ -234,7 +228,7 @@ func UngroupedActions() []string {
 	}
 
 	// Remove grouped actions
-	for _, group := range generated.Groups {
+	for _, group := range compiledDocs.Groups {
 		for _, action := range group.Actions {
 			delete(actionMap, action)
 		}
