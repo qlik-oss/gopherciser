@@ -18,13 +18,17 @@ import (
 
 type (
 	Data struct {
+		*CompiledDocs
 		ActionFields map[string]interface{}
-		Actions      map[string]common.DocEntry
-		Params       map[string][]string
 		ConfigFields map[string]interface{}
-		Config       map[string]common.DocEntry
-		Groups       []common.GroupsEntry
-		Extra        map[string]common.DocEntry
+	}
+
+	CompiledDocs struct {
+		Actions map[string]common.DocEntry
+		Params  map[string][]string
+		Config  map[string]common.DocEntry
+		Groups  []common.GroupsEntry
+		Extra   map[string]common.DocEntry
 	}
 )
 
@@ -39,7 +43,7 @@ const (
 )
 
 var (
-	data = Data{
+	compiledDocs = &CompiledDocs{
 		Actions: generated.Actions,
 		Params:  generated.Params,
 		Config:  generated.Config,
@@ -53,9 +57,13 @@ const (
 	defaultIndent = "  "
 )
 
-func GenerateMarkdown() {
+func GenerateMarkdown(docs *CompiledDocs) {
 	handleFlags()
-	generate()
+	mdBytes := generateFromCompiled(compiledDocs)
+	if err := ioutil.WriteFile(output, mdBytes, 0644); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	fmt.Printf("Generated markdown documentation to output<%s>\n", output)
 }
 
 func handleFlags() {
@@ -70,7 +78,11 @@ func handleFlags() {
 	}
 }
 
-func generateFromData(data *Data) []byte {
+func generateFromCompiled(docs *CompiledDocs) []byte {
+	data := &Data{
+		CompiledDocs: docs,
+	}
+
 	// Create template for generating settingup.md
 	documentationTemplate, err := template.New("documentationTemplate").Funcs(funcMap).Parse(templateString)
 	if err != nil {
@@ -89,15 +101,6 @@ func generateFromData(data *Data) []byte {
 		common.Exit(err, ExitCodeFailedExecuteTemplate)
 	}
 	return buf.Bytes()
-}
-
-func generate() {
-	mdBytes := generateFromData(&data)
-	if err := ioutil.WriteFile(output, mdBytes, 0644); err != nil {
-		_, _ = os.Stderr.WriteString(err.Error())
-		os.Exit(ExitCodeFailedWriteResult)
-	}
-	fmt.Printf("Generated markdown documentation to output<%s>\n", output)
 }
 
 func handleParams(obj interface{}) string {
@@ -202,7 +205,7 @@ func HandleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
 			_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
 		}
 		if docKey != "" {
-			params := data.Params[docKey]
+			params := compiledDocs.Params[docKey]
 			if len(params) < 1 {
 				defaultString()
 			} else {

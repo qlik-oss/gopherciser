@@ -8,13 +8,14 @@ import (
 )
 
 func TestGenerateMarkDown(t *testing.T) {
-	mdBytes := generateFromData(&Data{
+	compiledDocs := &CompiledDocs{
 		Actions: generated.Actions,
 		Params:  generated.Params,
 		Config:  generated.Config,
 		Groups:  generated.Groups,
 		Extra:   generated.Extra,
-	})
+	}
+	mdBytes := generateFromCompiled(compiledDocs)
 
 	markdown := string(mdBytes)
 	expectedMDBytes, err := ioutil.ReadFile("testdata/settingup.md")
