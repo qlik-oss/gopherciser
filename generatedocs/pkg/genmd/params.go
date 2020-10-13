@@ -43,11 +43,18 @@ func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
 		}
 		return errors.WithStack(handleValue(elem, buf, indent))
 	case reflect.Struct:
+		if len(indent) > 20*len(defaultIndent) {
+			return errors.Errorf("Error: recursive generation of paramater docs: add struct tag `rec:\"true\"` to recursive struct member ")
+		}
 		for i := 0; i < value.NumField(); i++ {
 			field := reflect.Indirect(value).Type().Field(i)
+			// stop on recursive data type
+			if field.Tag.Get("rec") != "" {
+				continue
+			}
+			// Template is recursive
 			if value.Type().String() == "session.SyncedTemplate" {
-				// go template.Template causes this to be recursive, exit here
-				return nil
+				continue
 			}
 
 			if value.Field(i).CanInterface() {
@@ -101,39 +108,40 @@ func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
 
 // handleFields
 func handleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
-	if !field.Anonymous {
-		jsonTag := field.Tag.Get("json")
-		if jsonTag == "" {
-			jsonTag = field.Name
-		}
-		jsonTag = strings.Split(jsonTag, ",")[0]
-		if jsonTag == "-" {
-			return // this field should be ignored
-		}
+	if field.Anonymous {
+		return
+	}
+	jsonTag := field.Tag.Get("json")
+	if jsonTag == "" {
+		jsonTag = field.Name
+	}
+	jsonTag = strings.Split(jsonTag, ",")[0]
+	if jsonTag == "-" {
+		return // this field should be ignored
+	}
 
-		buf.WriteString(fmt.Sprintf("%s* `%s`: ", indent, jsonTag))
-		docKey := field.Tag.Get("doc-key")
-		defaultString := func() {
-			buf.WriteString("*Missing documentation*\n")
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
-		}
-		if docKey != "" {
-			params, ok := compiledDocsGlobal.Params[docKey]
-			if !ok || len(params) < 1 {
-				defaultString()
-			} else {
-				buf.WriteString(params[0])
-				buf.WriteString("\n")
-				indent += "    * "
-				for i := 1; i < len(params); i++ {
-					buf.WriteString(indent)
-					buf.WriteString(params[i])
-					buf.WriteString("\n")
-				}
-			}
-		} else {
+	buf.WriteString(fmt.Sprintf("%s* `%s`: ", indent, jsonTag))
+	docKey := field.Tag.Get("doc-key")
+	defaultString := func() {
+		buf.WriteString("*Missing documentation*\n")
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
+	}
+	if docKey != "" {
+		params, ok := compiledDocsGlobal.Params[docKey]
+		if !ok || len(params) < 1 {
 			defaultString()
+		} else {
+			buf.WriteString(params[0])
+			buf.WriteString("\n")
+			indent += "    * "
+			for i := 1; i < len(params); i++ {
+				buf.WriteString(indent)
+				buf.WriteString(params[i])
+				buf.WriteString("\n")
+			}
 		}
+	} else {
+		defaultString()
 	}
 }
 

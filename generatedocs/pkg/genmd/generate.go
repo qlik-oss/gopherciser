@@ -109,7 +109,7 @@ func (node *DocNode) addActions(compiledDocs *CompiledDocs, actions []string, ac
 	for _, action := range actions {
 		compiledEntry, ok := compiledDocs.Actions[action]
 		if !ok {
-			compiledEntry.Description = "** NO DOCS **"
+			compiledEntry.Description = "*Missing description*\n"
 		}
 		actionParams := actionSettigns[action]
 		actionEntry := &DocEntryWithParams{
