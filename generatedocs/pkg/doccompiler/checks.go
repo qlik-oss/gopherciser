@@ -18,9 +18,9 @@ var checks = []check{
 func checkAndWarn(data *docData) {
 	for _, finding := range checkAll(data) {
 		fmt.Printf("WARNING: %v\n", finding)
-
 	}
 }
+
 func checkAll(data *docData) []error {
 	findings := []error{}
 	for _, check := range checks {

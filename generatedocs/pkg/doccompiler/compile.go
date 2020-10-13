@@ -267,14 +267,6 @@ func subDirs(path string) []string {
 	return dirs
 }
 
-// func groupNames(groups []common.GroupsEntry) []string {
-// 	names := make([]string, 0, len(groups))
-// 	for _, group := range groups {
-// 		names = append(names, group.Name)
-// 	}
-// 	return names
-// }
-
 func populateDocMap(dataRoot, subDir string, docMap map[string]common.DocEntry, entryNames *[]string) {
 	*entryNames = subDirs(fmt.Sprintf("%s/%s", dataRoot, subDir))
 	for _, entryName := range *entryNames {
