@@ -2,6 +2,11 @@
 
 A load scenario is defined in a JSON file with a number of sections.
 
+
+## Example
+
+* [Load scenario example](./examples/configuration_example.json)
+
 <details>
 <summary>connectionSettings</summary>
 
@@ -106,7 +111,9 @@ connectionSettings": {
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>loginSettings</summary>
 
 ## Login settings section
@@ -158,155 +165,9 @@ This section of the JSON file contains information on the login settings.
   }
 ```
 
-</details><details>
-<summary>scheduler</summary>
+</details>
 
-## Scheduler section
-
-This section of the JSON file contains scheduler settings for the users in the load scenario.
-
-* `type`: Type of scheduler
-    * `simple`: Standard scheduler
-* `iterationtimebuffer`: 
-  * `mode`: Time buffer mode. Defaults to `nowait`, if omitted.
-      * `nowait`: No time buffer in between the iterations.
-      * `constant`: Add a constant time buffer after each iteration. Defined by `duration`.
-      * `onerror`: Add a time buffer in case of an error. Defined by `duration`.
-      * `minduration`: Add a time buffer if the iteration duration is less than `duration`.
-  * `duration`: Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
-* `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
-* `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
-  * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`.
-  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
-      * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
-      * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
-      * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
-      * `20.0`: If the previous attempt to re-connect failed, wait 20.0s before attempting again
-* `settings`: 
-  * `executionTime`: Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time.
-  * `iterations`: Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations.
-  * `rampupDelay`: Time delay (seconds) scheduled in between each concurrent user during the startup period.
-  * `concurrentUsers`: Number of concurrent users to simulate. Allowed values are positive integers.
-  * `reuseUsers`: 
-      * `true`: Every iteration for each concurrent user uses the same user and session.
-      * `false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`.
-  * `onlyinstanceseed`: Disable session part of randomization seed. Defaults to `false`, if omitted.
-      * `true`: All users and sessions have the same randomization sequence, which only changes if the `instance` flag is changed.
-      * `false`: Normal randomization sequence, dependent on both the `instance` parameter and the current user session.
-
-### Using `reconnectsettings`
-
-If `reconnectsettings.reconnect` is enabled, the following is attempted:
-
-1. Re-connect the WebSocket.
-2. Get the currently opened app in the re-attached engine session.
-3. Re-subscribe to the same object as before the disconnection.
-4. If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
-5. Restart the action that was executed when the disconnection occurred (unless it is a `thinktime` action, which will not be restarted).
-6. Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`"
-    * `X`: True/false
-    * `Y`: An integer representing the number of re-connection attempts
-    * `Z`: The time spent re-connecting (ms)
-
-### Example
-
-Simple scheduler settings:
-
-```json
-"scheduler": {
-   "type": "simple",
-   "settings": {
-       "executiontime": 120,
-       "iterations": -1,
-       "rampupdelay": 7.0,
-       "concurrentusers": 10
-   },
-   "iterationtimebuffer" : {
-       "mode": "onerror",
-       "duration" : "5s"
-   },
-   "instance" : 2
-}
-```
-
-Simple scheduler set to attempt re-connection in case of an unexpected WebSocket disconnection: 
-
-```json
-"scheduler": {
-   "type": "simple",
-   "settings": {
-       "executiontime": 120,
-       "iterations": -1,
-       "rampupdelay": 7.0,
-       "concurrentusers": 10
-   },
-   "iterationtimebuffer" : {
-       "mode": "onerror",
-       "duration" : "5s"
-   },
-    "reconnectsettings" : {
-      "reconnect" : true
-    }
-}
-```
-
-</details><details>
-<summary>settings</summary>
-
-## Settings section
-
-This section of the JSON file contains timeout and logging settings for the load scenario.
-
-* `timeout`: Timeout setting (seconds) for WebSocket requests.
-* `logs`: Log settings
-  * `traffic`: Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
-  * `debug`: Log debug information (`true` / `false`). Defaults to `false`, if omitted.
-  * `metrics`: Log traffic metrics (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
-  * `filename`: Name of the log file (supports the use of [variables](#session_variables)).
-  * `format`: Log format. Defaults to `tsvfile`, if omitted.
-      * `tsvfile`: Log to file in TSV format and output status to console.
-      * `tsvconsole`: Log to console in TSV format without any status output.
-      * `jsonfile`: Log to file in JSON format and output status to console.
-      * `jsonconsole`: Log to console in JSON format without any status output.
-      * `console`: Log to console in color format without any status output.
-      * `combined`: Log to file in TSV format and to console in JSON format.
-      * `no`: Default logs and status output turned off.
-      * `onlystatus`: Default logs turned off, but status output turned on.
-  * `summary`: Type of summary to display after the test run. Defaults to simple for minimal performance impact.
-      * `0` or `undefined`: Simple, single-row summary
-      * `1` or `none`: No summary
-      * `2` or `simple`: Simple, single-row summary
-      * `3` or `extended`: Extended summary that includes statistics on each unique combination of action, label and app GUID
-      * `4` or `full`: Same as extended, but with statistics on each unique combination of method and endpoint added
-* `outputs`: Used by some actions to save results to a file.
-  * `dir`: Directory in which to save artifacts generated by the script (except log file).
-
-### Examples
-
-```json
-"settings": {
-	"timeout": 300,
-	"logs": {
-		"traffic": false,
-		"debug": false,
-		"filename": "logs/{{.ConfigFile}}-{{timestamp}}.log"
-	}
-}
-```
-
-```json
-"settings": {
-	"timeout": 300,
-	"logs": {
-		"filename": "logs/scenario.log"
-	},
-	"outputs" : {
-	    "dir" : "./outputs"
-	}
-}
-```
-
-</details><details>
+<details>
 <summary>scenario</summary>
 
 ## Scenario section
@@ -321,6 +182,7 @@ All actions follow the same basic structure:
 * `label`: (optional) Custom string set by the user. This can be used to distinguish the action from other actions of the same type when analyzing the test results.
 * `disabled`: (optional) Disable action (`true` / `false`). If set to `true`, the action is not executed.
 * `settings`: Most, but not all, actions have a settings section with action-specific settings.
+
 ### Example
 
 ```json
@@ -353,8 +215,6 @@ Apply a bookmark in the current app.
 
 **Note:** Specify *either* `title` *or* `id`, not both.
 
-### Settings
-
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
 
@@ -369,7 +229,9 @@ Apply a bookmark in the current app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>changesheet</summary>
 
 ## ChangeSheet action
@@ -398,8 +260,6 @@ The action supports getting data from the following objects:
 * Auto chart (including any support generated visualization from this list)
 * Waterfall chart
 
-### Settings
-
 * `id`: GUID of the sheet to change to.
 
 ### Example
@@ -414,7 +274,9 @@ The action supports getting data from the following objects:
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>clearall</summary>
 
 ## ClearAll action
@@ -431,7 +293,9 @@ Clear all selections in an app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>clickactionbutton</summary>
 
 ## ClickActionButton action
@@ -462,8 +326,6 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 - Change to previous sheet
 - Change sheet by name
 - Change sheet by ID
-### Settings
-
 * `id`: ID of the action-button to click.
 
 ### Examples
@@ -478,7 +340,9 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>createbookmark</summary>
 
 ## CreateBookmark action
@@ -486,8 +350,6 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 Create a bookmark from the current selection and selected sheet.
 
 **Note:** Both `title` and `id` can be used to identify the bookmark in subsequent actions. 
-
-### Settings
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
@@ -507,14 +369,14 @@ Create a bookmark from the current selection and selected sheet.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>createsheet</summary>
 
 ## CreateSheet action
 
 Create a new sheet in the current app.
-
-### Settings
 
 * `id`: (optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action.
 * `title`: Name of the sheet to create.
@@ -531,7 +393,9 @@ Create a new sheet in the current app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>deletebookmark</summary>
 
 ## DeleteBookmark action
@@ -539,8 +403,6 @@ Create a new sheet in the current app.
 Delete one or more bookmarks in the current app.
 
 **Note:** Specify *either* `title` *or* `id`, not both.
-
-### Settings
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
@@ -561,7 +423,9 @@ Delete one or more bookmarks in the current app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>deletesheet</summary>
 
 ## DeleteSheet action
@@ -569,8 +433,6 @@ Delete one or more bookmarks in the current app.
 Delete one or more sheets in the current app.
 
 **Note:** Specify *either* `title` *or* `id`, not both.
-
-### Settings
 
 * `mode`: 
     * `single`: Delete one sheet that matches the specified `title` or `id` in the current app.
@@ -591,7 +453,9 @@ Delete one or more sheets in the current app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>disconnectapp</summary>
 
 ## DisconnectApp action
@@ -608,14 +472,14 @@ Disconnect from an already connected app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>duplicatesheet</summary>
 
 ## DuplicateSheet action
 
 Duplicate a sheet, including all objects.
-
-### Settings
 
 * `id`: ID of the sheet to clone.
 * `changesheet`: Clear the objects currently subscribed to and then subribe to all objects on the cloned sheet (which essentially corresponds to using the `changesheet` action to go to the cloned sheet) (`true` / `false`). Defaults to `false`, if omitted.
@@ -636,7 +500,9 @@ Duplicate a sheet, including all objects.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>iterated</summary>
 
 ## Iterated action
@@ -644,8 +510,6 @@ Duplicate a sheet, including all objects.
 Loop one or more actions.
 
 **Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).
-
-### Settings
 
 * `iterations`: Number of loops.
 * `actions`: Actions to iterate
@@ -679,15 +543,15 @@ Loop one or more actions.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>listboxselect</summary>
 
 ## ListBoxSelect action
 
 Perform list object specific selectiontypes in listbox.
 
-
-### Settings
 
 * `id`: ID of the listbox in which to select values.
 * `type`: Selection type.
@@ -713,7 +577,9 @@ Perform list object specific selectiontypes in listbox.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>openapp</summary>
 
 ## OpenApp action
@@ -721,8 +587,6 @@ Perform list object specific selectiontypes in listbox.
 Open an app.
 
 **Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`, `elasticopenhub` or `elasticexplore`.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -765,14 +629,14 @@ Open an app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>productversion</summary>
 
 ## ProductVersion action
 
 Request the product version from the server and, optionally, save it to the log. This is a lightweight request that can be used as a keep-alive message in a loop.
-
-### Settings
 
 * `log`: Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted.
 
@@ -800,7 +664,9 @@ Request the product version from the server and, optionally, save it to the log.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>publishbookmark</summary>
 
 ## PublishBookmark action
@@ -808,8 +674,6 @@ Request the product version from the server and, optionally, save it to the log.
 Publish a bookmark.
 
 **Note:** Specify *either* `title` *or* `id`, not both.
-
-### Settings
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
@@ -842,14 +706,14 @@ Publish the bookmark with the `title` "bookmark of testuser", where "testuser" i
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>publishsheet</summary>
 
 ## PublishSheet action
 
 Publish sheets in the current app.
-
-### Settings
 
 * `mode`: 
     * `allsheets`: Publish all sheets in the app.
@@ -868,7 +732,9 @@ Publish sheets in the current app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>randomaction</summary>
 
 ## RandomAction action
@@ -880,8 +746,6 @@ Randomly select other actions to perform. This meta-action can be used as a star
 Each action executed by `randomaction` is followed by a customizable `thinktime`.
 
 **Note:** The recommended way to use this action is to prepend it with an `openapp` and a `changesheet` action as this ensures that a sheet is always in context.
-
-### Settings
 
 * `actions`: List of actions from which to randomly pick an action to execute. Each item has a number of possible parameters.
   * `type`: Type of action
@@ -1003,14 +867,14 @@ The following default values are used for the different actions:
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>reload</summary>
 
 ## Reload action
 
 Reload the current app by simulating selecting **Load data** in the Data load editor. To select an app, preceed this action with an `openapp` action.
-
-### Settings
 
 * `mode`: Error handling during the reload operation
     * `default`: Use the default error handling.
@@ -1031,7 +895,9 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>select</summary>
 
 ## Select action
@@ -1040,8 +906,6 @@ Select random values in an object.
 
 See the [Limitations](README.md#limitations) section in the README.md file for limitations related to this action.
  
-### Settings
-
 * `id`: ID of the object in which to select values.
 * `type`: Selection type
     * `randomfromall`: Randomly select within all values of the symbol table.
@@ -1073,14 +937,14 @@ See the [Limitations](README.md#limitations) section in the README.md file for l
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>setscript</summary>
 
 ## SetScript action
 
 Set the load script for the current app. To load the data from the script, use the `reload` action after the `setscript` action.
-
-### Settings
 
 * `script`: Load script for the app (written as a string).
 
@@ -1095,7 +959,9 @@ Set the load script for the current app. To load the data from the script, use t
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>sheetchanger</summary>
 
 ## SheetChanger action
@@ -1116,7 +982,9 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>staticselect</summary>
 
 ## StaticSelect action
@@ -1127,8 +995,6 @@ The action supports:
 
 * HyperCube: Normal hypercube
 * ListObject: Normal listbox
-
-### Settings
 
 * `id`: ID of the object in which to select values.
 * `path`: Path to the hypercube or listobject (differs depending on object type).
@@ -1178,14 +1044,14 @@ The action supports:
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>subscribeobjects</summary>
 
 ## Subscribeobjects action
 
 Subscribe to any object in the currently active app.
-
-### Settings
 
 * `clear`: Remove any previously subscribed objects from the subscription list.
 * `ids`: List of object IDs to subscribe to.
@@ -1219,7 +1085,9 @@ Subscribe to an additional single object (or a list of objects) in the currently
     }
 }
 ```
-</details><details>
+</details>
+
+<details>
 <summary>thinktime</summary>
 
 ## ThinkTime action
@@ -1227,8 +1095,6 @@ Subscribe to an additional single object (or a list of objects) in the currently
 Simulate user think time.
 
 **Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).
-
-### Settings
 
 * `type`: Type of think time
     * `static`: Static think time, defined by `delay`.
@@ -1270,7 +1136,9 @@ This simulates a think time of 5 seconds.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>unpublishbookmark</summary>
 
 ## UnpublishBookmark action
@@ -1278,8 +1146,6 @@ This simulates a think time of 5 seconds.
 Unpublish a bookmark.
 
 **Note:** Specify *either* `title` *or* `id`, not both.
-
-### Settings
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
@@ -1312,14 +1178,14 @@ Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser"
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>unpublishsheet</summary>
 
 ## UnpublishSheet action
 
 Unpublish sheets in the current app.
-
-### Settings
 
 * `mode`: 
     * `allsheets`: Unpublish all sheets in the app.
@@ -1337,14 +1203,14 @@ Unpublish sheets in the current app.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>unsubscribeobjects</summary>
 
 ## Unsubscribeobjects action
 
 Unsubscribe to any currently subscribed object.
-
-### Settings
 
 * `ids`: List of object IDs to unsubscribe from.
 * `clear`: Remove any previously subscribed objects from the subscription list.
@@ -1377,7 +1243,10 @@ Unsubscribe from all currently subscribed objects.
 }
 ```
 </details>
-</details><details>
+
+</details>
+
+<details>
 <summary>Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions</summary>
 
 ## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions
@@ -1391,8 +1260,6 @@ These actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK)
 ## DeleteData action
 
 Delete a data file from the Data manager.
-
-### Settings
 
 * `filename`: Name of the file to delete.
 * `path`: (optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted.
@@ -1409,14 +1276,35 @@ Delete a data file from the Data manager.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
+<summary>disconnectelastic</summary>
+
+## DisconnectElastic action
+
+Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
+
+Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
+
+
+### Example
+
+```json
+{
+    "label": "Disconnect from elastic environment",
+    "action" : "disconnectelastic"
+}
+```
+
+</details>
+
+<details>
 <summary>elasticcreateapp</summary>
 
 ## ElasticCreateApp action
 
 Create an app in a QSEoK deployment. The app will be private to the user who creates it.
-
-### Settings
 
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
@@ -1436,14 +1324,14 @@ Create an app in a QSEoK deployment. The app will be private to the user who cre
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticcreatecollection</summary>
 
 ## ElasticCreateCollection action
 
 Create a collection in a QSEoK deployment.
-
-### Settings
 
 * `name`: Name of the collection to create (supports the use of [session variables](#session_variables)).
 * `description`: (optional) Description of the collection to create.
@@ -1464,14 +1352,14 @@ Create a collection in a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticdeleteapp</summary>
 
 ## ElasticDeleteApp action
 
 Delete an app from a QSEoK deployment.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1510,14 +1398,14 @@ Delete an app from a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticdeletecollection</summary>
 
 ## ElasticDeleteCollection action
 
 Delete a collection in a QSEoK deployment.
-
-### Settings
 
 * `name`: Name of the collection to delete.
 * `deletecontents`: 
@@ -1537,14 +1425,14 @@ Delete a collection in a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticdeleteodag</summary>
 
 ## ElasticDeleteOdag action
 
 Delete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.
-
-### Settings
 
 * `linkname`: Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
 
@@ -1559,14 +1447,14 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticduplicateapp</summary>
 
 ## ElasticDuplicateApp action
 
 Duplicate an app in a QSEoK deployment.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1603,14 +1491,14 @@ Duplicate an app in a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticexplore</summary>
 
 ## ElasticExplore action
 
 Explore the hub for apps and fill the artifact map with apps to be used by other actions in the script (for example, the `openapp` action with `appmode` set to `random` or `round`).
-
-### Settings
 
 * `keepcurrent`: Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted.
 * `paging`: Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted.
@@ -1684,14 +1572,14 @@ The following example shows how to clear the artifact map and fill it with the a
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticexportapp</summary>
 
 ## ElasticExportApp action
 
 Export an app and, optionally, save it to file.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1729,14 +1617,14 @@ Export an app and, optionally, save it to file.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticgenerateodag</summary>
 
 ## ElasticGenerateOdag action
 
 Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
-
-### Settings
 
 * `linkname`: Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
 
@@ -1751,14 +1639,14 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elastichubsearch</summary>
 
 ## ElasticHubSearch action
 
 Search the hub in a QSEoK deployment.
-
-### Settings
 
 * `searchfor`: 
     * `collections`: Search for collections only.
@@ -1783,7 +1671,9 @@ Search the hub in a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticmoveapp</summary>
 
 ## ElasticMoveApp action
@@ -1791,8 +1681,6 @@ Search the hub in a QSEoK deployment.
 Move an app from its existing space into the specified destination space.
 
 **Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1827,7 +1715,9 @@ Move an app from its existing space into the specified destination space.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticopenhub</summary>
 
 ## ElasticOpenHub action
@@ -1844,7 +1734,9 @@ Open the hub in a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticpublishapp</summary>
 
 ## ElasticPublishApp action
@@ -1852,8 +1744,6 @@ Open the hub in a QSEoK deployment.
 Publish an app to a managed space.
 
 **Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1890,14 +1780,14 @@ Publish an app to a managed space.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticreload</summary>
 
 ## ElasticReload action
 
 Reload an app by simulating selecting **Reload** in the app context menu in the hub.
-
-### Settings
 
 * `appmode`: App selection mode
     * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
@@ -1930,14 +1820,14 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>elasticuploadapp</summary>
 
 ## ElasticUploadApp action
 
 Upload an app to a QSEoK deployment.
-
-### Settings
 
 * `chunksize`: (optional) Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
 * `retries`: (optional) Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
@@ -1967,14 +1857,14 @@ Upload an app to a QSEoK deployment.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>uploaddata</summary>
 
 ## UploadData action
 
 Upload a data file to the Data manager.
-
-### Settings
 
 * `filename`: Name of the local file to send as payload.
 * `destinationpath`: (optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted.
@@ -1990,27 +1880,11 @@ Upload a data file to the Data manager.
 }
 ```
 
-</details><details>
-<summary>disconnectelastic</summary>
-
-## DisconnectElastic action
-
-Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
-
-Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
-
-
-### Example
-
-```json
-{
-    "label": "Disconnect from elastic environment",
-    "action" : "disconnectelastic"
-}
-```
+</details>
 
 </details>
-</details><details>
+
+<details>
 <summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>
 
 ## Qlik Sense Enterprise on Windows (QSEoW) actions
@@ -2025,8 +1899,6 @@ These actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) de
 
 Delete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.
 
-### Settings
-
 * `linkname`: Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
 
 ### Example
@@ -2040,14 +1912,14 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>generateodag</summary>
 
 ## GenerateOdag action
 
 Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
-
-### Settings
 
 * `linkname`: Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
 
@@ -2062,7 +1934,9 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
-</details><details>
+</details>
+
+<details>
 <summary>openhub</summary>
 
 ## OpenHub action
@@ -2080,7 +1954,12 @@ Open the hub in a QSEoW environment.
 ```
 
 </details>
+
 </details>
+
+<details>
+<summary>Session Variables</summary>
+
 
 ## Session variables
 
@@ -2142,8 +2021,159 @@ The following functions are supported:
 ```
 </details>
 
+
 </details>
 
-## Example
+</details>
 
-* [Load scenario example](./examples/configuration_example.json)
+<details>
+<summary>scheduler</summary>
+
+## Scheduler section
+
+This section of the JSON file contains scheduler settings for the users in the load scenario.
+
+* `type`: Type of scheduler
+    * `simple`: Standard scheduler
+* `iterationtimebuffer`: 
+  * `mode`: Time buffer mode. Defaults to `nowait`, if omitted.
+      * `nowait`: No time buffer in between the iterations.
+      * `constant`: Add a constant time buffer after each iteration. Defined by `duration`.
+      * `onerror`: Add a time buffer in case of an error. Defined by `duration`.
+      * `minduration`: Add a time buffer if the iteration duration is less than `duration`.
+  * `duration`: Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
+* `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
+* `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
+  * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`.
+  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
+      * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
+      * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
+      * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
+      * `20.0`: If the previous attempt to re-connect failed, wait 20.0s before attempting again
+* `settings`: 
+  * `executionTime`: Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time.
+  * `iterations`: Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations.
+  * `rampupDelay`: Time delay (seconds) scheduled in between each concurrent user during the startup period.
+  * `concurrentUsers`: Number of concurrent users to simulate. Allowed values are positive integers.
+  * `reuseUsers`: 
+      * `true`: Every iteration for each concurrent user uses the same user and session.
+      * `false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`.
+  * `onlyinstanceseed`: Disable session part of randomization seed. Defaults to `false`, if omitted.
+      * `true`: All users and sessions have the same randomization sequence, which only changes if the `instance` flag is changed.
+      * `false`: Normal randomization sequence, dependent on both the `instance` parameter and the current user session.
+
+### Using `reconnectsettings`
+
+If `reconnectsettings.reconnect` is enabled, the following is attempted:
+
+1. Re-connect the WebSocket.
+2. Get the currently opened app in the re-attached engine session.
+3. Re-subscribe to the same object as before the disconnection.
+4. If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
+5. Restart the action that was executed when the disconnection occurred (unless it is a `thinktime` action, which will not be restarted).
+6. Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`"
+    * `X`: True/false
+    * `Y`: An integer representing the number of re-connection attempts
+    * `Z`: The time spent re-connecting (ms)
+
+### Example
+
+Simple scheduler settings:
+
+```json
+"scheduler": {
+   "type": "simple",
+   "settings": {
+       "executiontime": 120,
+       "iterations": -1,
+       "rampupdelay": 7.0,
+       "concurrentusers": 10
+   },
+   "iterationtimebuffer" : {
+       "mode": "onerror",
+       "duration" : "5s"
+   },
+   "instance" : 2
+}
+```
+
+Simple scheduler set to attempt re-connection in case of an unexpected WebSocket disconnection: 
+
+```json
+"scheduler": {
+   "type": "simple",
+   "settings": {
+       "executiontime": 120,
+       "iterations": -1,
+       "rampupdelay": 7.0,
+       "concurrentusers": 10
+   },
+   "iterationtimebuffer" : {
+       "mode": "onerror",
+       "duration" : "5s"
+   },
+    "reconnectsettings" : {
+      "reconnect" : true
+    }
+}
+```
+
+</details>
+
+<details>
+<summary>settings</summary>
+
+## Settings section
+
+This section of the JSON file contains timeout and logging settings for the load scenario.
+
+* `timeout`: Timeout setting (seconds) for WebSocket requests.
+* `logs`: Log settings
+  * `traffic`: Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
+  * `debug`: Log debug information (`true` / `false`). Defaults to `false`, if omitted.
+  * `metrics`: Log traffic metrics (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
+  * `filename`: Name of the log file (supports the use of [variables](#session_variables)).
+  * `format`: Log format. Defaults to `tsvfile`, if omitted.
+      * `tsvfile`: Log to file in TSV format and output status to console.
+      * `tsvconsole`: Log to console in TSV format without any status output.
+      * `jsonfile`: Log to file in JSON format and output status to console.
+      * `jsonconsole`: Log to console in JSON format without any status output.
+      * `console`: Log to console in color format without any status output.
+      * `combined`: Log to file in TSV format and to console in JSON format.
+      * `no`: Default logs and status output turned off.
+      * `onlystatus`: Default logs turned off, but status output turned on.
+  * `summary`: Type of summary to display after the test run. Defaults to simple for minimal performance impact.
+      * `0` or `undefined`: Simple, single-row summary
+      * `1` or `none`: No summary
+      * `2` or `simple`: Simple, single-row summary
+      * `3` or `extended`: Extended summary that includes statistics on each unique combination of action, label and app GUID
+      * `4` or `full`: Same as extended, but with statistics on each unique combination of method and endpoint added
+* `outputs`: Used by some actions to save results to a file.
+  * `dir`: Directory in which to save artifacts generated by the script (except log file).
+
+### Examples
+
+```json
+"settings": {
+	"timeout": 300,
+	"logs": {
+		"traffic": false,
+		"debug": false,
+		"filename": "logs/{{.ConfigFile}}-{{timestamp}}.log"
+	}
+}
+```
+
+```json
+"settings": {
+	"timeout": 300,
+	"logs": {
+		"filename": "logs/scenario.log"
+	},
+	"outputs" : {
+	    "dir" : "./outputs"
+	}
+}
+```
+
+</details>
