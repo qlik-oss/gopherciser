@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/qlik-oss/gopherciser/logger"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -15,8 +17,9 @@ type (
 	ContainerHandler struct{}
 
 	ContainerChildReference struct {
-		RefID string
-		ObjID string
+		RefID    string
+		ObjID    string
+		External bool
 	}
 
 	ContainerHandlerInstance struct {
@@ -25,10 +28,18 @@ type (
 		Children []ContainerChildReference
 	}
 
+	ContainerExternal struct {
+		MasterID string `json:"masterId"`
+		App      string `json:"app"`
+		ViewID   string `json:"viewId"`
+	}
+
 	ContainerChild struct {
-		RefID    string `json:"refId"`
-		Label    string `json:"label"`
-		IsMaster bool   `json:"isMaster"`
+		RefID             string             `json:"refId"`
+		Label             string             `json:"label"`
+		IsMaster          bool               `json:"isMaster"`
+		ExternalReference *ContainerExternal `json:"externalReference"`
+		Type              string             `json:"type"`
 	}
 
 	ContainerChildItemData struct {
@@ -72,6 +83,9 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		return
 	}
 
+	// TODO external objects is in children but not in qChildList
+	// TODO externalReference refID not in same app
+
 	var layout ContainerLayout
 	if err := jsonit.Unmarshal(rawLayout, &layout); err != nil {
 		actionState.AddErrors(err)
@@ -100,7 +114,11 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 	// Create child array with same order as .Children, this is the order of the tabs
 	handler.Children = make([]ContainerChildReference, 0, len(layout.Children))
 	for _, child := range layout.Children {
-		handler.Children = append(handler.Children, ContainerChildReference{RefID: child.RefID, ObjID: refMap[child.RefID]})
+		ccr := ContainerChildReference{RefID: child.RefID, ObjID: refMap[child.RefID]}
+		if child.ExternalReference != nil {
+			ccr.External = true
+		}
+		handler.Children = append(handler.Children, ccr)
 	}
 
 	// Get layout on object changed
@@ -112,9 +130,14 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 
 	// First tab according to "Children" is the default active tab
 	if len(handler.Children) > 0 {
-		handler.ActiveID = handler.Children[0].ObjID
-		// Subscribe to active object
-		GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
+		activeChild := handler.Children[0]
+		if !activeChild.External {
+			handler.ActiveID = handler.Children[0].ObjID
+			// Subscribe to active object
+			GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
+		} else {
+			sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+		}
 	}
 }
 

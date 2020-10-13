@@ -122,7 +122,6 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 			actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but container has only %d tabs", settings.Index, childCount))
 			return
 		}
-		// todo check nil
 		activeID = containerInstance.Children[settings.Index].ObjID
 	}
 
