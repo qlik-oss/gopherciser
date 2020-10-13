@@ -2,11 +2,9 @@ package genmd
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"sort"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
@@ -61,14 +59,14 @@ func (doc DocEntryWithParams) String() string {
 }
 
 func (node *DocNode) WriteTo(writer io.StringWriter) {
-	writer.WriteString(node.Doc.String())
+	_, _ = writer.WriteString(node.Doc.String())
 	sort.Slice(node.Children, func(i, j int) bool {
 		return node.Children[i].Name < node.Children[j].Name
 	})
 	for _, childNode := range node.Children {
-		writer.WriteString(fmt.Sprintf("\n<details>\n<summary>%s</summary>\n\n", childNode.Name))
+		_, _ = writer.WriteString(fmt.Sprintf("\n<details>\n<summary>%s</summary>\n\n", childNode.Name))
 		childNode.WriteTo(writer)
-		writer.WriteString("\n</details>\n")
+		_, _ = writer.WriteString("\n</details>\n")
 	}
 }
 
@@ -84,11 +82,6 @@ const (
 
 var (
 	compiledDocsGlobal *CompiledDocs
-	output             string
-)
-
-const (
-	defaultIndent = "  "
 )
 
 func GenerateMarkdown(docs *CompiledDocs) {
@@ -100,22 +93,10 @@ func GenerateMarkdown(docs *CompiledDocs) {
 	fmt.Printf("Generated markdown documentation to output<%s>\n", output)
 }
 
-func handleFlags() {
-	flagHelp := flag.Bool("help", false, "shows help")
-	flag.StringVar(&output, "output", "generatedocs/generated/settingup.md", "path to output file")
-
-	flag.Parse()
-
-	if *flagHelp {
-		flag.PrintDefaults()
-		os.Exit(ExitCodeOk)
-	}
-}
-
 func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
 	compiledDocsGlobal = compiledDocs
 
-	main, _ := compiledDocs.Config["main"]
+	main := compiledDocs.Config["main"]
 	mainNode := NewDocNode("main", DocEntry(main))
 	mainNode.addConfigFields(compiledDocs)
 
@@ -126,11 +107,14 @@ func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
 
 func (node *DocNode) addActions(compiledDocs *CompiledDocs, actions []string, actionSettigns map[string]interface{}) {
 	for _, action := range actions {
-		compiledEntry, _ := compiledDocs.Actions[action]
+		compiledEntry, ok := compiledDocs.Actions[action]
+		if !ok {
+			compiledEntry.Description = "** NO DOCS **"
+		}
 		actionParams := actionSettigns[action]
 		actionEntry := &DocEntryWithParams{
 			DocEntry: DocEntry(compiledEntry),
-			Params:   handleParams(actionParams),
+			Params:   MarkdownParams(actionParams),
 		}
 		newNode := NewDocNode(action, actionEntry)
 		node.AddChild(newNode)
@@ -168,7 +152,7 @@ func (node *DocNode) addConfigFields(compiledDocs *CompiledDocs) {
 	for name, configStruct := range configFields {
 		fieldEntry := &DocEntryWithParams{}
 		fieldEntry.DocEntry = DocEntry(compiledDocs.Config[name])
-		fieldEntry.Params = handleParams(configStruct)
+		fieldEntry.Params = MarkdownParams(configStruct)
 		newNode := NewDocNode(name, fieldEntry)
 		node.AddChild(newNode)
 		if name == "scenario" {
