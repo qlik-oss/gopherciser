@@ -83,7 +83,7 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
 func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
-	selectables, err := structure.GetSelectables(settings.ID)
+	activeObjects, err := structure.GetAllActive(settings.ID)
 	if err != nil {
 		return nil, nil, false
 	}
@@ -92,6 +92,6 @@ func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructu
 		Objects:   make([]appstructure.AppStructureObject, 0),
 		Bookmarks: nil,
 	}
-	newObjs.Objects = append(newObjs.Objects, selectables...)
+	newObjs.Objects = append(newObjs.Objects, activeObjects...)
 	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, true
 }
