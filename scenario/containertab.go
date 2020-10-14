@@ -15,25 +15,25 @@ type (
 	ContainerTabMode int
 	// ContainerTabSettings switches active object in container
 	ContainerTabSettings struct {
-		Mode     ContainerTabMode `json:"mode" displayname:"Mode" doc-key:"containertab.mode"`
-		ID       string           `json:"id" displayname:"ID" appstructure:"active:container" doc-key:"containertab.id"`
-		ActiveID string           `json:"activeid,omitempty" appstructure:"children:id" displayname:"Active ID" doc-key:"containertab.activeid"`
-		Index    int              `json:"index,omitempty" displayname:"Index" doc-key:"containertab.index"`
+		Mode        ContainerTabMode `json:"mode" displayname:"Mode" doc-key:"containertab.mode"`
+		ContainerID string           `json:"containerid" displayname:"ID" appstructure:"active:container" doc-key:"containertab.containerid"`
+		ObjectID    string           `json:"objectid,omitempty" appstructure:"children:id" displayname:"Active ID" doc-key:"containertab.objectid"`
+		Index       int              `json:"index,omitempty" displayname:"Index" doc-key:"containertab.index"`
 	}
 )
 
 // ContainerTabMode enum
 const (
-	ContainerTabModeID ContainerTabMode = iota
+	ContainerTabModeObjectID ContainerTabMode = iota
 	ContainerTabModeRandom
 	ContainerTabModeIndex
 )
 
 var (
 	containerTabMode = enummap.NewEnumMapOrPanic(map[string]int{
-		"id":     int(ContainerTabModeID),
-		"random": int(ContainerTabModeRandom),
-		"index":  int(ContainerTabModeIndex),
+		"objectid": int(ContainerTabModeObjectID),
+		"random":   int(ContainerTabModeRandom),
+		"index":    int(ContainerTabModeIndex),
 	})
 )
 
@@ -72,13 +72,13 @@ func (mode ContainerTabMode) String() string {
 
 // Validate ContainerTabSettings action (Implements ActionSettings interface)
 func (settings ContainerTabSettings) Validate() error {
-	if settings.ID == "" {
+	if settings.ContainerID == "" {
 		return errors.New("no container id defined")
 	}
 
 	switch settings.Mode {
-	case ContainerTabModeID:
-		if settings.ActiveID == "" {
+	case ContainerTabModeObjectID:
+		if settings.ObjectID == "" {
 			return errors.Errorf("no container activeid set for container tab mode<%s>", settings.Mode)
 		}
 	case ContainerTabModeRandom:
@@ -95,7 +95,7 @@ func (settings ContainerTabSettings) Validate() error {
 
 // Execute ContainerTabSettings action (Implements ActionSettings interface)
 func (settings ContainerTabSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-	id := sessionState.IDMap.Get(settings.ID)
+	id := sessionState.IDMap.Get(settings.ContainerID)
 
 	instance := sessionState.GetObjectHandlerInstance(id, "container")
 	if instance == nil {
@@ -111,8 +111,8 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 
 	activeID := ""
 	switch settings.Mode {
-	case ContainerTabModeID:
-		activeID = settings.ActiveID
+	case ContainerTabModeObjectID:
+		activeID = settings.ObjectID
 	case ContainerTabModeRandom:
 		idx := sessionState.Randomizer().Rand(len(containerInstance.Children))
 		activeID = containerInstance.Children[idx].ObjID
