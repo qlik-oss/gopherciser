@@ -82,9 +82,6 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		return
 	}
 
-	// TODO external objects is in children but not in qChildList
-	// TODO externalReference refID not in same app
-
 	var layout ContainerLayout
 	if err := jsonit.Unmarshal(rawLayout, &layout); err != nil {
 		actionState.AddErrors(err)
