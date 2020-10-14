@@ -132,8 +132,3 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 
 	sessionState.Wait(actionState) // Await all async requests, e.g. those triggered on changed objects
 }
-
-// AffectsAppObjectsAction implements AffectsAppObjectsAction interface
-//func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
-// TODO add activeID to appstructure
-//}
