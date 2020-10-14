@@ -44,17 +44,21 @@ func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
 		return errors.WithStack(handleValue(elem, buf, indent))
 	case reflect.Struct:
 		if len(indent) > 20*len(defaultIndent) {
-			return errors.Errorf("Error: recursive generation of paramater docs: add struct tag `rec:\"true\"` to recursive struct member ")
+			return errors.Errorf("Error: recursive generation of paramater docs: add \"rec\" to struct tag `doc-key:\"a.doc.key,rec\"` of recursive struct member ")
 		}
+	fieldLoop:
 		for i := 0; i < value.NumField(); i++ {
 			field := reflect.Indirect(value).Type().Field(i)
-			// stop on recursive data type
-			if field.Tag.Get("rec") != "" {
-				continue
+
+			// stop if recursive data type
+			for _, flag := range strings.Split(field.Tag.Get("doc-key"), ",")[1:] {
+				if strings.TrimSpace(flag) == "recursive" {
+					continue fieldLoop
+				}
 			}
 			// Template is recursive
 			if value.Type().String() == "session.SyncedTemplate" {
-				continue
+				continue fieldLoop
 			}
 
 			if value.Field(i).CanInterface() {
@@ -111,6 +115,7 @@ func handleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
 	if field.Anonymous {
 		return
 	}
+	// Write jsontag to buffer
 	jsonTag := field.Tag.Get("json")
 	if jsonTag == "" {
 		jsonTag = field.Name
@@ -119,29 +124,30 @@ func handleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
 	if jsonTag == "-" {
 		return // this field should be ignored
 	}
-
 	buf.WriteString(fmt.Sprintf("%s* `%s`: ", indent, jsonTag))
-	docKey := field.Tag.Get("doc-key")
+
+	// Write docs to buffer
 	defaultString := func() {
 		buf.WriteString("*Missing documentation*\n")
 		_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
 	}
-	if docKey != "" {
-		params, ok := compiledDocsGlobal.Params[docKey]
-		if !ok || len(params) < 1 {
-			defaultString()
-		} else {
-			buf.WriteString(params[0])
-			buf.WriteString("\n")
-			indent += "    * "
-			for i := 1; i < len(params); i++ {
-				buf.WriteString(indent)
-				buf.WriteString(params[i])
-				buf.WriteString("\n")
-			}
-		}
-	} else {
+	docKey := strings.Split(field.Tag.Get("doc-key"), ",")[0]
+	if docKey == "" || docKey == "-" {
 		defaultString()
+		return
+	}
+	params, ok := compiledDocsGlobal.Params[docKey]
+	if !ok || len(params) < 1 {
+		defaultString()
+		return
+	}
+	buf.WriteString(params[0])
+	buf.WriteString("\n")
+	indent += "    * "
+	for i := 1; i < len(params); i++ {
+		buf.WriteString(indent)
+		buf.WriteString(params[i])
+		buf.WriteString("\n")
 	}
 }
 
