@@ -527,7 +527,7 @@ A `Containertab` action simulates switching the active object in a `container` o
   "settings": {
     "id": "xyz",
     "mode": "index",
-    "index": "0"
+    "index": 0
   }
 }
 ```

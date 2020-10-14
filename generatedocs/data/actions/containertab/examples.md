@@ -30,7 +30,7 @@
   "settings": {
     "id": "xyz",
     "mode": "index",
-    "index": "0"
+    "index": 0
   }
 }
 ```
