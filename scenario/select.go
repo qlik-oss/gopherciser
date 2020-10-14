@@ -26,7 +26,7 @@ type (
 	// SelectionSettings selection settings
 	SelectionSettings struct {
 		// ID object id
-		ID string `json:"id" displayname:"Object ID" doc-key:"select.id" appstructure:"active:!sheet"`
+		ID string `json:"id" displayname:"Object ID" doc-key:"select.id" appstructure:"selectable:!sheet"`
 		// Type selection type
 		Type SelectionType `json:"type" displayname:"Selection type" doc-key:"select.type"`
 		// Accept true - confirm selection. false - abort selection
