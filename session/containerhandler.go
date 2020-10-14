@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/qlik-oss/gopherciser/logger"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 )
 
