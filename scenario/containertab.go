@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/qlik-oss/gopherciser/logger"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -83,10 +82,22 @@ func (settings ContainerTabSettings) Validate() error {
 		if settings.ObjectID == "" {
 			return errors.Errorf("no container activeid set for container tab mode<%s>", settings.Mode)
 		}
+		if settings.Index != 0 {
+			return errors.Errorf("index<%d> will not be used with mode<%s>", settings.Index, settings.Mode)
+		}
 	case ContainerTabModeRandom:
+		if settings.ObjectID != "" {
+			return errors.Errorf("object ID<%s> will not be used with mode<%s>", settings.ObjectID, settings.Mode)
+		}
+		if settings.Index != 0 {
+			return errors.Errorf("index<%d> will not be used with mode<%s>", settings.Index, settings.Mode)
+		}
 	case ContainerTabModeIndex:
 		if settings.Index < 0 {
 			return errors.Errorf("index<%d> not valid", settings.Index)
+		}
+		if settings.ObjectID != "" {
+			return errors.Errorf("object ID<%s> will not be used with mode<%s>", settings.ObjectID, settings.Mode)
 		}
 	default:
 		return errors.Errorf("unknown container tab mode<%v>", settings.Mode)
