@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"sort"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
@@ -168,7 +169,8 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 	if err != nil {
 		common.Exit(err, ExitCodeFailedHandleFields)
 	}
-	for name, configStruct := range configFields {
+	for _, name := range sortedKeys(configFields) {
+		configStruct := configFields[name]
 		fieldEntry := &DocEntryWithParams{}
 		fieldEntry.DocEntry = DocEntry(compiledDocs.Config[name])
 		fieldEntry.Params = MarkdownParams(configStruct)
@@ -179,4 +181,13 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 			addExtra(newNode, compiledDocs, "sessionvariables")
 		}
 	}
+}
+
+func sortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
