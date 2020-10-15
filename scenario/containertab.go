@@ -135,9 +135,6 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		}
 		idx := sessionState.Randomizer().Rand(childCount)
 		child := containerInstance.Children[idx]
-		if child.External {
-			sessionState.LogEntry.Log(logger.WarningLevel, "")
-		}
 		if isExternal(sessionState, &child) {
 			return
 		}
