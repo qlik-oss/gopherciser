@@ -17,8 +17,8 @@ type (
 	// ContainerTabSettings switches active object in container
 	ContainerTabSettings struct {
 		Mode        ContainerTabMode `json:"mode" displayname:"Mode" doc-key:"containertab.mode"`
-		ContainerID string           `json:"containerid" displayname:"ID" appstructure:"active:container" doc-key:"containertab.containerid"`
-		ObjectID    string           `json:"objectid,omitempty" appstructure:"children:id" displayname:"Active ID" doc-key:"containertab.objectid"`
+		ContainerID string           `json:"containerid" displayname:"Container ID" appstructure:"active:container" doc-key:"containertab.containerid"`
+		ObjectID    string           `json:"objectid,omitempty" appstructure:"children:id" displayname:"Object ID" doc-key:"containertab.objectid"`
 		Index       int              `json:"index,omitempty" displayname:"Index" doc-key:"containertab.index"`
 	}
 )
