@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/andreyvit/diff"
 	generated "github.com/qlik-oss/gopherciser/generatedocs/pkg/genmd/testdata"
 )
 
@@ -28,6 +27,5 @@ func TestGenerateMarkDown(t *testing.T) {
 
 	if expectedMarkdown != markdown {
 		t.Error("unexpected result when generaterating markdown")
-		diff.LineDiff(expectedMarkdown, markdown)
 	}
 }
