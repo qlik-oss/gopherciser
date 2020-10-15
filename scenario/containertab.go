@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/qlik-oss/gopherciser/logger"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -115,15 +117,33 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		activeID = settings.ObjectID
 	case ContainerTabModeRandom:
 		idx := sessionState.Randomizer().Rand(len(containerInstance.Children))
-		activeID = containerInstance.Children[idx].ObjID
+		child := containerInstance.Children[idx]
+		if child.External {
+			sessionState.LogEntry.Log(logger.WarningLevel, "")
+		}
+		if isExternal(sessionState, &child) {
+			return
+		}
+		activeID = child.ObjID
 	case ContainerTabModeIndex:
 		childCount := len(containerInstance.Children)
 		if !(settings.Index < childCount) {
 			actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but container has only %d tabs", settings.Index, childCount))
 			return
 		}
-		activeID = containerInstance.Children[settings.Index].ObjID
+		child := containerInstance.Children[settings.Index]
+		activeID = child.ObjID
+		if isExternal(sessionState, &child) {
+			return
+		}
 	}
+
+	if activeID == "" {
+		actionState.AddErrors(errors.New("could not resolve an object ID to switch to"))
+		return
+	}
+
+	actionState.Details = activeID
 
 	if err := containerInstance.SwitchActiveID(sessionState, actionState, activeID); err != nil {
 		actionState.AddErrors(errors.WithStack(err))
@@ -131,4 +151,12 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 	}
 
 	sessionState.Wait(actionState) // Await all async requests, e.g. those triggered on changed objects
+}
+
+func isExternal(sessionState *session.State, child *session.ContainerChildReference) bool {
+	if child.External {
+		sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+		return true
+	}
+	return false
 }
