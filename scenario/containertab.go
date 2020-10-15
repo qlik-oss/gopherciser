@@ -122,12 +122,18 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		return
 	}
 
+	childCount := len(containerInstance.Children)
+
 	activeID := ""
 	switch settings.Mode {
 	case ContainerTabModeObjectID:
 		activeID = settings.ObjectID
 	case ContainerTabModeRandom:
-		idx := sessionState.Randomizer().Rand(len(containerInstance.Children))
+		if childCount < 1 {
+			actionState.AddErrors(errors.Errorf("switch to random container tab defined, but container<%s> has no children", id))
+			return
+		}
+		idx := sessionState.Randomizer().Rand(childCount)
 		child := containerInstance.Children[idx]
 		if child.External {
 			sessionState.LogEntry.Log(logger.WarningLevel, "")
@@ -137,7 +143,6 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		}
 		activeID = child.ObjID
 	case ContainerTabModeIndex:
-		childCount := len(containerInstance.Children)
 		if !(settings.Index < childCount) {
 			actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but container has only %d tabs", settings.Index, childCount))
 			return
