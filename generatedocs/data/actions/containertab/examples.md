@@ -5,9 +5,9 @@
   "label": "Switch to object qwerty in container object XYZ",
   "action": "containertab",
   "settings": {
-    "id": "xyz",
+    "containerid": "xyz",
     "mode": "id",
-    "activeid" : "qwerty"
+    "objectid" : "qwerty"
   }
 }
 ```
@@ -17,7 +17,7 @@
   "label": "Switch to random object in container object XYZ",
   "action": "containertab",
   "settings": {
-    "id": "xyz",
+    "containerid": "xyz",
     "mode": "random"
   }
 }
@@ -28,7 +28,7 @@
   "label": "Switch to object in first tab in container object XYZ",
   "action": "containertab",
   "settings": {
-    "id": "xyz",
+    "containerid": "xyz",
     "mode": "index",
     "index": 0
   }
