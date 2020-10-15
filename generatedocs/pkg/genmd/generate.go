@@ -100,10 +100,6 @@ const (
 	ExitCodeFailedHandleParams
 )
 
-var (
-	compiledDocsGlobal *CompiledDocs
-)
-
 func GenerateMarkdown(docs *CompiledDocs) {
 	handleFlags()
 	mdBytes := generateFromCompiled(docs)
@@ -114,8 +110,6 @@ func GenerateMarkdown(docs *CompiledDocs) {
 }
 
 func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
-	compiledDocsGlobal = compiledDocs
-
 	main := compiledDocs.Config["main"]
 	mainNode := NewDocNode(DocEntry(main))
 	addConfigFields(mainNode, compiledDocs)
@@ -134,7 +128,7 @@ func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, acti
 		actionParams := actionSettigns[action]
 		actionEntry := &DocEntryWithParams{
 			DocEntry: DocEntry(compiledEntry),
-			Params:   MarkdownParams(actionParams),
+			Params:   MarkdownParams(actionParams, compiledDocs.Params),
 		}
 		newNode := NewFoldedDocNode(action, actionEntry)
 		node.AddChild(newNode)
@@ -173,7 +167,7 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 		configStruct := configFields[name]
 		fieldEntry := &DocEntryWithParams{}
 		fieldEntry.DocEntry = DocEntry(compiledDocs.Config[name])
-		fieldEntry.Params = MarkdownParams(configStruct)
+		fieldEntry.Params = MarkdownParams(configStruct, compiledDocs.Params)
 		newNode := NewFoldedDocNode(name, fieldEntry)
 		node.AddChild(newNode)
 		if name == "scenario" {

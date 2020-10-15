@@ -16,15 +16,15 @@ const (
 	defaultIndent = "  "
 )
 
-func MarkdownParams(obj interface{}) string {
+func MarkdownParams(obj interface{}, paramDocs map[string][]string) string {
 	buf := bytes.NewBuffer(nil)
-	if err := handleValue(reflect.ValueOf(obj), buf, ""); err != nil {
+	if err := handleValue(reflect.ValueOf(obj), paramDocs, buf, ""); err != nil {
 		common.Exit(err, ExitCodeFailedHandleParams)
 	}
 	return buf.String()
 }
 
-func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
+func handleValue(value reflect.Value, paramDocs map[string][]string, buf *bytes.Buffer, indent string) error {
 	switch value.Kind() {
 	case reflect.Ptr:
 		elem := value.Elem()
@@ -34,14 +34,14 @@ func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
 		if !elem.IsValid() {
 			return nil
 		}
-		return errors.WithStack(handleValue(elem, buf, indent))
+		return errors.WithStack(handleValue(elem, paramDocs, buf, indent))
 	case reflect.Interface:
 		elem := value.Elem()
 
 		if !elem.IsValid() {
 			return nil
 		}
-		return errors.WithStack(handleValue(elem, buf, indent))
+		return errors.WithStack(handleValue(elem, paramDocs, buf, indent))
 	case reflect.Struct:
 		if len(indent) > 20*len(defaultIndent) {
 			return errors.Errorf("Error: recursive generation of paramater docs: add \"rec\" to struct tag `doc-key:\"a.doc.key,rec\"` of recursive struct member ")
@@ -62,20 +62,20 @@ func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
 			}
 
 			if value.Field(i).CanInterface() {
-				handleFields(field, buf, indent)
+				handleFields(field, paramDocs, buf, indent)
 			}
 			innerIndent := indent
 			if !field.Anonymous {
 				innerIndent += defaultIndent
 			}
 
-			if err := handleValue(value.Field(i), buf, innerIndent); err != nil {
+			if err := handleValue(value.Field(i), paramDocs, buf, innerIndent); err != nil {
 				return errors.WithStack(err)
 			}
 		}
 	case reflect.Array, reflect.Slice:
 		if value.CanInterface() {
-			if err := handleValue(reflect.New(value.Type().Elem()), buf, indent); err != nil {
+			if err := handleValue(reflect.New(value.Type().Elem()), paramDocs, buf, indent); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -111,7 +111,7 @@ func handleValue(value reflect.Value, buf *bytes.Buffer, indent string) error {
 }
 
 // handleFields
-func handleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
+func handleFields(field reflect.StructField, fieldDocs map[string][]string, buf *bytes.Buffer, indent string) {
 	if field.Anonymous {
 		return
 	}
@@ -136,7 +136,7 @@ func handleFields(field reflect.StructField, buf *bytes.Buffer, indent string) {
 		defaultString()
 		return
 	}
-	params, ok := compiledDocsGlobal.Params[docKey]
+	params, ok := fieldDocs[docKey]
 	if !ok || len(params) < 1 {
 		defaultString()
 		return
