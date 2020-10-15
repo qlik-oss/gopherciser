@@ -8,6 +8,60 @@ A load scenario is defined in a JSON file with a number of sections.
 * [Load scenario example](./examples/configuration_example.json)
 
 <details>
+<summary>loginSettings</summary>
+
+## Login settings section
+
+This section of the JSON file contains information on the login settings.
+
+* `type`: Type of login request
+    * `prefix`: Add a prefix (specified by the `prefix` setting below) to the username, so that it will be `prefix_{session}`.
+    * `userlist`: List of users as specified by the `userList` setting below.
+    * `none`: Do not add a prefix to the username, so that it will be `{session}`.
+* `settings`: 
+    * `userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.
+  * `prefix`: Prefix to add to the username, so that it will be `prefix_{session}`.
+  * `directory`: Directory to set for the users.
+
+### Examples
+
+#### Prefix login request type
+
+```json
+"loginSettings": {
+   "type": "prefix",
+   "settings": {
+       "directory": "anydir",
+       "prefix": "Nunit"
+   }
+}
+```
+
+#### Userlist login request type
+
+```json
+  "loginSettings": {
+    "type": "userlist",
+    "settings": {
+      "userList": [
+        {
+          "username": "sim1@myhost.example",
+          "directory": "anydir1",
+          "password": "MyPassword1"
+        },
+        {
+          "username": "sim2@myhost.example"
+        }
+      ],
+      "directory": "anydir2",
+      "password": "MyPassword2"
+    }
+  }
+```
+
+</details>
+
+<details>
 <summary>connectionSettings</summary>
 
 ## Connection settings section
@@ -114,55 +168,95 @@ connectionSettings": {
 </details>
 
 <details>
-<summary>loginSettings</summary>
+<summary>scheduler</summary>
 
-## Login settings section
+## Scheduler section
 
-This section of the JSON file contains information on the login settings.
+This section of the JSON file contains scheduler settings for the users in the load scenario.
 
-* `type`: Type of login request
-    * `prefix`: Add a prefix (specified by the `prefix` setting below) to the username, so that it will be `prefix_{session}`.
-    * `userlist`: List of users as specified by the `userList` setting below.
-    * `none`: Do not add a prefix to the username, so that it will be `{session}`.
+* `type`: Type of scheduler
+    * `simple`: Standard scheduler
+* `iterationtimebuffer`: 
+  * `mode`: Time buffer mode. Defaults to `nowait`, if omitted.
+      * `nowait`: No time buffer in between the iterations.
+      * `constant`: Add a constant time buffer after each iteration. Defined by `duration`.
+      * `onerror`: Add a time buffer in case of an error. Defined by `duration`.
+      * `minduration`: Add a time buffer if the iteration duration is less than `duration`.
+  * `duration`: Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
+* `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
+* `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
+  * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`.
+  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
+      * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
+      * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
+      * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
+      * `20.0`: If the previous attempt to re-connect failed, wait 20.0s before attempting again
 * `settings`: 
-    * `userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.
-  * `prefix`: Prefix to add to the username, so that it will be `prefix_{session}`.
-  * `directory`: Directory to set for the users.
+  * `executionTime`: Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time.
+  * `iterations`: Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations.
+  * `rampupDelay`: Time delay (seconds) scheduled in between each concurrent user during the startup period.
+  * `concurrentUsers`: Number of concurrent users to simulate. Allowed values are positive integers.
+  * `reuseUsers`: 
+      * `true`: Every iteration for each concurrent user uses the same user and session.
+      * `false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`.
+  * `onlyinstanceseed`: Disable session part of randomization seed. Defaults to `false`, if omitted.
+      * `true`: All users and sessions have the same randomization sequence, which only changes if the `instance` flag is changed.
+      * `false`: Normal randomization sequence, dependent on both the `instance` parameter and the current user session.
 
-### Examples
+### Using `reconnectsettings`
 
-#### Prefix login request type
+If `reconnectsettings.reconnect` is enabled, the following is attempted:
+
+1. Re-connect the WebSocket.
+2. Get the currently opened app in the re-attached engine session.
+3. Re-subscribe to the same object as before the disconnection.
+4. If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
+5. Restart the action that was executed when the disconnection occurred (unless it is a `thinktime` action, which will not be restarted).
+6. Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`"
+    * `X`: True/false
+    * `Y`: An integer representing the number of re-connection attempts
+    * `Z`: The time spent re-connecting (ms)
+
+### Example
+
+Simple scheduler settings:
 
 ```json
-"loginSettings": {
-   "type": "prefix",
+"scheduler": {
+   "type": "simple",
    "settings": {
-       "directory": "anydir",
-       "prefix": "Nunit"
-   }
+       "executiontime": 120,
+       "iterations": -1,
+       "rampupdelay": 7.0,
+       "concurrentusers": 10
+   },
+   "iterationtimebuffer" : {
+       "mode": "onerror",
+       "duration" : "5s"
+   },
+   "instance" : 2
 }
 ```
 
-#### Userlist login request type
+Simple scheduler set to attempt re-connection in case of an unexpected WebSocket disconnection: 
 
 ```json
-  "loginSettings": {
-    "type": "userlist",
-    "settings": {
-      "userList": [
-        {
-          "username": "sim1@myhost.example",
-          "directory": "anydir1",
-          "password": "MyPassword1"
-        },
-        {
-          "username": "sim2@myhost.example"
-        }
-      ],
-      "directory": "anydir2",
-      "password": "MyPassword2"
+"scheduler": {
+   "type": "simple",
+   "settings": {
+       "executiontime": 120,
+       "iterations": -1,
+       "rampupdelay": 7.0,
+       "concurrentusers": 10
+   },
+   "iterationtimebuffer" : {
+       "mode": "onerror",
+       "duration" : "5s"
+   },
+    "reconnectsettings" : {
+      "reconnect" : true
     }
-  }
+}
 ```
 
 </details>
@@ -1279,27 +1373,6 @@ Delete a data file from the Data manager.
 </details>
 
 <details>
-<summary>disconnectelastic</summary>
-
-## DisconnectElastic action
-
-Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
-
-Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
-
-
-### Example
-
-```json
-{
-    "label": "Disconnect from elastic environment",
-    "action" : "disconnectelastic"
-}
-```
-
-</details>
-
-<details>
 <summary>elasticcreateapp</summary>
 
 ## ElasticCreateApp action
@@ -1882,6 +1955,27 @@ Upload a data file to the Data manager.
 
 </details>
 
+<details>
+<summary>disconnectelastic</summary>
+
+## DisconnectElastic action
+
+Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
+
+Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
+
+
+### Example
+
+```json
+{
+    "label": "Disconnect from elastic environment",
+    "action" : "disconnectelastic"
+}
+```
+
+</details>
+
 </details>
 
 <details>
@@ -1957,9 +2051,6 @@ Open the hub in a QSEoW environment.
 
 </details>
 
-<details>
-<summary>Session Variables</summary>
-
 
 ## Session variables
 
@@ -2024,102 +2115,6 @@ The following functions are supported:
 
 </details>
 
-</details>
-
-<details>
-<summary>scheduler</summary>
-
-## Scheduler section
-
-This section of the JSON file contains scheduler settings for the users in the load scenario.
-
-* `type`: Type of scheduler
-    * `simple`: Standard scheduler
-* `iterationtimebuffer`: 
-  * `mode`: Time buffer mode. Defaults to `nowait`, if omitted.
-      * `nowait`: No time buffer in between the iterations.
-      * `constant`: Add a constant time buffer after each iteration. Defined by `duration`.
-      * `onerror`: Add a time buffer in case of an error. Defined by `duration`.
-      * `minduration`: Add a time buffer if the iteration duration is less than `duration`.
-  * `duration`: Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
-* `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
-* `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
-  * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`.
-  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
-      * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
-      * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
-      * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
-      * `20.0`: If the previous attempt to re-connect failed, wait 20.0s before attempting again
-* `settings`: 
-  * `executionTime`: Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time.
-  * `iterations`: Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations.
-  * `rampupDelay`: Time delay (seconds) scheduled in between each concurrent user during the startup period.
-  * `concurrentUsers`: Number of concurrent users to simulate. Allowed values are positive integers.
-  * `reuseUsers`: 
-      * `true`: Every iteration for each concurrent user uses the same user and session.
-      * `false`: Every iteration for each concurrent user uses a new user and session. The total number of users is the product of `concurrentusers` and `iterations`.
-  * `onlyinstanceseed`: Disable session part of randomization seed. Defaults to `false`, if omitted.
-      * `true`: All users and sessions have the same randomization sequence, which only changes if the `instance` flag is changed.
-      * `false`: Normal randomization sequence, dependent on both the `instance` parameter and the current user session.
-
-### Using `reconnectsettings`
-
-If `reconnectsettings.reconnect` is enabled, the following is attempted:
-
-1. Re-connect the WebSocket.
-2. Get the currently opened app in the re-attached engine session.
-3. Re-subscribe to the same object as before the disconnection.
-4. If successful, the action during which the re-connect happened is logged as a successful action with `action` and `label` changed to `Reconnect(action)` and `Reconnect(label)`.
-5. Restart the action that was executed when the disconnection occurred (unless it is a `thinktime` action, which will not be restarted).
-6. Log an info row with info type `WebsocketReconnect` and with a semicolon-separated `details` section as follows: "success=`X`;attempts=`Y`;TimeSpent=`Z`"
-    * `X`: True/false
-    * `Y`: An integer representing the number of re-connection attempts
-    * `Z`: The time spent re-connecting (ms)
-
-### Example
-
-Simple scheduler settings:
-
-```json
-"scheduler": {
-   "type": "simple",
-   "settings": {
-       "executiontime": 120,
-       "iterations": -1,
-       "rampupdelay": 7.0,
-       "concurrentusers": 10
-   },
-   "iterationtimebuffer" : {
-       "mode": "onerror",
-       "duration" : "5s"
-   },
-   "instance" : 2
-}
-```
-
-Simple scheduler set to attempt re-connection in case of an unexpected WebSocket disconnection: 
-
-```json
-"scheduler": {
-   "type": "simple",
-   "settings": {
-       "executiontime": 120,
-       "iterations": -1,
-       "rampupdelay": 7.0,
-       "concurrentusers": 10
-   },
-   "iterationtimebuffer" : {
-       "mode": "onerror",
-       "duration" : "5s"
-   },
-    "reconnectsettings" : {
-      "reconnect" : true
-    }
-}
-```
-
-</details>
-
 <details>
 <summary>settings</summary>
 
@@ -2177,3 +2172,4 @@ This section of the JSON file contains timeout and logging settings for the load
 ```
 
 </details>
+

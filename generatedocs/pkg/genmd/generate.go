@@ -5,19 +5,28 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"sort"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
 type (
-	DocNode struct {
-		Name     string
-		Doc      fmt.Stringer
-		Children []*DocNode
+	DocNodeStruct struct {
+		doc      fmt.Stringer
+		children []DocNode
+	}
+
+	FoldedDocNode struct {
+		Name string
+		DocNode
 	}
 
 	DocEntry common.DocEntry
+
+	DocNode interface {
+		WriteTo(io.Writer)
+		AddChild(DocNode)
+		Children() []DocNode
+	}
 
 	EmptyDocEntry struct{}
 
@@ -35,19 +44,27 @@ type (
 	}
 )
 
-func NewDocNode(name string, doc fmt.Stringer) *DocNode {
-	return &DocNode{
-		Name:     name,
-		Doc:      doc,
-		Children: []*DocNode{},
+func NewDocNode(doc fmt.Stringer) DocNode {
+	return &DocNodeStruct{
+		doc:      doc,
+		children: []DocNode{},
 	}
 }
 
-func (node *DocNode) AddChild(child *DocNode) {
-	node.Children = append(node.Children, child)
+func NewFoldedDocNode(foldStr string, doc fmt.Stringer) DocNode {
+	return &FoldedDocNode{foldStr, NewDocNode(doc)}
 }
+
+func (node *DocNodeStruct) AddChild(child DocNode) {
+	node.children = append(node.children, child)
+}
+
+func (node *DocNodeStruct) Children() []DocNode {
+	return node.children
+}
+
 func (doc DocEntry) String() string {
-	return fmt.Sprintf("%s\n%s", doc.Description, doc.Examples)
+	return fmt.Sprintf("%s\n%s\n", doc.Description, doc.Examples)
 }
 
 func (doc EmptyDocEntry) String() string {
@@ -55,19 +72,21 @@ func (doc EmptyDocEntry) String() string {
 }
 
 func (doc DocEntryWithParams) String() string {
-	return fmt.Sprintf("%s\n%s\n%s", doc.Description, doc.Params, doc.Examples)
+	return fmt.Sprintf("%s\n%s\n%s\n", doc.Description, doc.Params, doc.Examples)
 }
 
-func (node *DocNode) WriteTo(writer io.StringWriter) {
-	_, _ = writer.WriteString(node.Doc.String())
-	sort.Slice(node.Children, func(i, j int) bool {
-		return node.Children[i].Name < node.Children[j].Name
-	})
-	for _, childNode := range node.Children {
-		_, _ = writer.WriteString(fmt.Sprintf("\n<details>\n<summary>%s</summary>\n\n", childNode.Name))
+func (node *DocNodeStruct) WriteTo(writer io.Writer) {
+	fmt.Fprintf(writer, "%s", node.doc)
+	for _, childNode := range node.children {
 		childNode.WriteTo(writer)
-		_, _ = writer.WriteString("\n</details>\n")
 	}
+}
+
+func (node *FoldedDocNode) WriteTo(writer io.Writer) {
+	fmt.Fprint(writer, "<details>\n")
+	fmt.Fprintf(writer, "<summary>%s</summary>\n\n", node.Name)
+	node.DocNode.WriteTo(writer)
+	fmt.Fprint(writer, "</details>\n\n")
 }
 
 const (
@@ -97,15 +116,15 @@ func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
 	compiledDocsGlobal = compiledDocs
 
 	main := compiledDocs.Config["main"]
-	mainNode := NewDocNode("main", DocEntry(main))
-	mainNode.addConfigFields(compiledDocs)
+	mainNode := NewDocNode(DocEntry(main))
+	addConfigFields(mainNode, compiledDocs)
 
 	var buf bytes.Buffer
 	mainNode.WriteTo(&buf)
 	return buf.Bytes()
 }
 
-func (node *DocNode) addActions(compiledDocs *CompiledDocs, actions []string, actionSettigns map[string]interface{}) {
+func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, actionSettigns map[string]interface{}) {
 	for _, action := range actions {
 		compiledEntry, ok := compiledDocs.Actions[action]
 		if !ok {
@@ -116,35 +135,35 @@ func (node *DocNode) addActions(compiledDocs *CompiledDocs, actions []string, ac
 			DocEntry: DocEntry(compiledEntry),
 			Params:   MarkdownParams(actionParams),
 		}
-		newNode := NewDocNode(action, actionEntry)
+		newNode := NewFoldedDocNode(action, actionEntry)
 		node.AddChild(newNode)
 	}
 }
 
-func (node *DocNode) addGroups(compiledDocs *CompiledDocs) {
+func addGroups(node DocNode, compiledDocs *CompiledDocs) {
 	actionSettigns := common.Actions()
 	for _, group := range compiledDocs.Groups {
-		groupNode := NewDocNode(group.Title, DocEntry(group.DocEntry))
+		groupNode := NewFoldedDocNode(group.Title, DocEntry(group.DocEntry))
 		node.AddChild(groupNode)
-		groupNode.addActions(compiledDocs, group.Actions, actionSettigns)
+		addActions(groupNode, compiledDocs, group.Actions, actionSettigns)
 	}
 	ungroupedActions := UngroupedActions(compiledDocs.Groups)
 	if len(ungroupedActions) > 0 {
-		ungroupedGroup := NewDocNode("Ungrouped actions", EmptyDocEntry{})
+		ungroupedGroup := NewFoldedDocNode("Ungrouped actions", EmptyDocEntry{})
 		node.AddChild(ungroupedGroup)
-		ungroupedGroup.addActions(compiledDocs, ungroupedActions, actionSettigns)
+		addActions(ungroupedGroup, compiledDocs, ungroupedActions, actionSettigns)
 	}
 
 }
 
-func (node *DocNode) addExtra(compiledDocs *CompiledDocs, name string, title string) {
+func addExtra(node DocNode, compiledDocs *CompiledDocs, name string) {
 	docEntry, ok := compiledDocs.Extra[name]
 	if ok {
-		node.AddChild(NewDocNode(title, DocEntry(docEntry)))
+		node.AddChild(NewDocNode(DocEntry(docEntry)))
 	}
 }
 
-func (node *DocNode) addConfigFields(compiledDocs *CompiledDocs) {
+func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 	configFields, err := common.Fields()
 	if err != nil {
 		common.Exit(err, ExitCodeFailedHandleFields)
@@ -153,11 +172,11 @@ func (node *DocNode) addConfigFields(compiledDocs *CompiledDocs) {
 		fieldEntry := &DocEntryWithParams{}
 		fieldEntry.DocEntry = DocEntry(compiledDocs.Config[name])
 		fieldEntry.Params = MarkdownParams(configStruct)
-		newNode := NewDocNode(name, fieldEntry)
+		newNode := NewFoldedDocNode(name, fieldEntry)
 		node.AddChild(newNode)
 		if name == "scenario" {
-			newNode.addGroups(compiledDocs)
-			newNode.addExtra(compiledDocs, "sessionvariables", "Session Variables")
+			addGroups(newNode, compiledDocs)
+			addExtra(newNode, compiledDocs, "sessionvariables")
 		}
 	}
 }
