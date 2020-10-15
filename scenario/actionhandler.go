@@ -151,6 +151,7 @@ const (
 	ActionListBoxSelect           = "listboxselect"
 	ActionDisconnectElastic       = "disconnectelastic"
 	ActionClickActionButton       = "clickactionbutton"
+	ActionContainerTab            = "containertab"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -272,6 +273,7 @@ func ResetDefaultActions() {
 		ActionListBoxSelect:           ListBoxSelectSettings{},
 		ActionDisconnectElastic:       DisconnectElastic{},
 		ActionClickActionButton:       ClickActionButtonSettings{},
+		ActionContainerTab:            ContainerTabSettings{},
 	}
 }
 
@@ -282,8 +284,8 @@ func RegisteredActions() []string {
 
 	actionList := make([]string, len(actionHandler))
 	i := 0
-	for action := range actionHandler {
-		actionList[i] = action
+	for registerAction := range actionHandler {
+		actionList[i] = registerAction
 		i++
 	}
 	return actionList

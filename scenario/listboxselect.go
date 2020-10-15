@@ -20,7 +20,7 @@ type (
 	// ListBoxSelectSettings selection settings
 	ListBoxSelectSettings struct {
 		// ID object id
-		ID string `json:"id" appstructure:"active:listbox" displayname:"Listbox ID" doc-key:"listboxselect.id"`
+		ID string `json:"id" appstructure:"selectable:listbox" displayname:"Listbox ID" doc-key:"listboxselect.id"`
 		// Type selection type
 		Type ListBoxSelectType `json:"type" displayname:"Selection type" doc-key:"listboxselect.type"`
 		// Accept true - confirm selection. false - abort selection
