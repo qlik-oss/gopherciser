@@ -12,9 +12,7 @@ import (
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
-const (
-	defaultIndent = "  "
-)
+const defaultIndent = "  "
 
 func MarkdownParams(obj interface{}, paramDocs map[string][]string) string {
 	buf := bytes.NewBuffer(nil)
@@ -128,6 +126,9 @@ func handleFields(field reflect.StructField, fieldDocs map[string][]string, buf 
 
 	// Write docs to buffer
 	defaultString := func() {
+		if unitTestMode {
+			return
+		}
 		buf.WriteString("*Missing documentation*\n")
 		_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
 	}
@@ -154,19 +155,19 @@ func handleFields(field reflect.StructField, fieldDocs map[string][]string, buf 
 // UngroupedActions filter grouped actions from all actions
 func UngroupedActions(groups []common.GroupsEntry) []string {
 	// fill map with all actions
-	actionMap := make(map[string]struct{})
+	actionSet := make(map[string]struct{})
 	for _, action := range common.ActionStrings() {
-		actionMap[action] = struct{}{}
+		actionSet[action] = struct{}{}
 	}
 
 	// Remove grouped actions
 	for _, group := range groups {
 		for _, action := range group.Actions {
-			delete(actionMap, action)
+			delete(actionSet, action)
 		}
 	}
-	actions := make([]string, 0, len(actionMap))
-	for action := range actionMap {
+	actions := make([]string, 0, len(actionSet))
+	for action := range actionSet {
 		actions = append(actions, action)
 	}
 	sort.Strings(actions)

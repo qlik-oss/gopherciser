@@ -10,6 +10,8 @@ import (
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
+var unitTestMode = false
+
 type (
 	DocNodeStruct struct {
 		doc      fmt.Stringer
@@ -144,6 +146,15 @@ func addGroups(node DocNode, compiledDocs *CompiledDocs) {
 		addActions(groupNode, compiledDocs, group.Actions, actionSettigns)
 	}
 	ungroupedActions := UngroupedActions(compiledDocs.Groups)
+	if unitTestMode {
+		ungroupedActionsSkipNew := []string{}
+		for _, action := range ungroupedActions {
+			if _, ok := compiledDocs.Actions[action]; ok {
+				ungroupedActionsSkipNew = append(ungroupedActionsSkipNew, action)
+			}
+		}
+		ungroupedActions = ungroupedActionsSkipNew
+	}
 	if len(ungroupedActions) > 0 {
 		ungroupedGroup := NewFoldedDocNode("Ungrouped actions", EmptyDocEntry{})
 		node.AddChild(ungroupedGroup)
