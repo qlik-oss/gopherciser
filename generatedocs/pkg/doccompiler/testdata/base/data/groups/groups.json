@@ -1,0 +1,68 @@
+[
+    {
+        "name": "commonActions",
+        "title": "Common actions",
+        "actions": [
+            "applybookmark",
+            "changesheet",
+            "clearall",
+            "clickactionbutton",
+            "createbookmark",
+            "createsheet",
+            "deletebookmark",
+            "deletesheet",
+            "disconnectapp",
+            "duplicatesheet",
+            "iterated",
+            "listboxselect",
+            "openapp",
+            "productversion",
+            "publishbookmark",
+            "publishsheet",
+            "randomaction",
+            "reload",
+            "select",
+            "setscript",
+            "sheetchanger",
+            "staticselect",
+            "subscribeobjects",
+            "thinktime",
+            "unpublishbookmark",
+            "unpublishsheet",
+            "unsubscribeobjects"
+        ]
+    },
+    {
+        "name": "qseowActions",
+        "title": "Qlik Sense Enterprise on Windows (QSEoW) actions",
+        "actions": [
+            "deleteodag",
+            "generateodag",
+            "openhub"
+        ]
+    },
+    {
+        "name": "qseokActions",
+        "title": "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
+        "actions": [
+            "deletedata",
+            "elasticcreateapp",
+            "elasticcreatecollection",
+            "elasticdeleteapp",
+            "elasticdeletecollection",
+            "elasticdeleteodag",
+            "elasticduplicateapp",
+            "elasticexplore",
+            "elasticexportapp",
+            "elasticgenerateodag",
+            "elastichubsearch",
+            "elasticmoveapp",
+            "elasticopenhub",
+            "elasticpublishapp",
+            "elasticreload",
+            "elasticuploadapp",
+            "uploaddata",
+            "disconnectelastic"
+        ]
+    }
+]

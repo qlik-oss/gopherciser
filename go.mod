@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/InVisionApp/tabular v0.3.0
+	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/buger/jsonparser v1.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eventials/go-tus v0.0.0-20200718001131-45c7ec8f5d59
@@ -20,6 +21,7 @@ require (
 	github.com/prometheus/client_golang v1.7.1
 	github.com/qlik-oss/enigma-go v1.1.3-0.20200629052521-574b1c3aa72a
 	github.com/rs/zerolog v1.20.0
+	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
 	github.com/spf13/cobra v1.1.0
 	github.com/stretchr/testify v1.6.1
