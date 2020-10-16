@@ -59,18 +59,18 @@ The structure of the `data` folder is as follows:
 
 ```
 data
-    -> actions
-        -> action folders
-    -> config
-        -> config sections folders
-    -> extra
-        -> extra folders
-    -> groups
-        -> groups folders
-        -> groups.json
-    -> documentation.template
-    -> params.json
-    -> settingup.md.template
+	-> actions
+		-> action folders
+	-> config
+		-> config sections folders
+	-> extra
+		-> extra folders
+	-> groups
+		-> groups folders
+		-> groups.json
+	-> documentation.template
+	-> params.json
+	-> settingup.md.template
 ```
 
 Data can be overloaded by passing a comma separated list to the `--data` flag, e.g. `--data=path/to/data1,path/to/data2`. The overload precedence goes from low to high within the list, meaning `data1` will be overloaded by `data2`.
@@ -87,10 +87,10 @@ The reason for the structure is to make the description and each parameter indiv
 
 ```
 data
-    -> actions
-        -> changesheet
-            -> description.md
-            -> examples.md
+	-> actions
+		-> changesheet
+			-> description.md
+			-> examples.md
 ```
 
 The parameters part is documented in the `params.json` file. The following example shows the parameters for the `changesheet` action:
@@ -123,9 +123,9 @@ The `doc-key` connects to the following entry in the `params.json` file:
 ```json
 {
 	"elasticexplore.owner" : ["Filter apps by owner",
-	    "`all`: Apps owned by anyone.",
-	    "`me`: Apps owned by the simulated user.",
-	    "`others`: Apps not owned by the simulated user."]
+		"`all`: Apps owned by anyone.",
+		"`me`: Apps owned by the simulated user.",
+		"`others`: Apps not owned by the simulated user."]
 }
 ```
 
@@ -133,9 +133,9 @@ The entry above renders the following markdown result:
 
 ```markdown
 * `owner`: Filter apps by owner
-    * `all`: Apps owned by anyone.
-    * `me`: Apps owned by the simulated user.
-    * `others`: Apps not owned by the simulated user.
+	* `all`: Apps owned by anyone.
+	* `me`: Apps owned by the simulated user.
+	* `others`: Apps not owned by the simulated user.
 ```
 
 ### Groups of actions
@@ -150,13 +150,13 @@ Example:
 
 ```json
 {
-    "name": "qseowActions",
-    "title": "Qlik Sense Enterprise on Windows (QSEoW) actions",
-    "actions": [
-        "deleteodag",
-        "generateodag",
-        "openhub"
-    ]
+	"name": "qseowActions",
+	"title": "Qlik Sense Enterprise on Windows (QSEoW) actions",
+	"actions": [
+		"deleteodag",
+		"generateodag",
+		"openhub"
+	]
 }
 ```
 
@@ -180,9 +180,9 @@ package main
 import (
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/extenddocs"
 
-    // Make sure to register any new actions that shall be included in the
-    // extended documentation. In this case they are registered in the `init()`
-    // function of the `registeractions` package below.
+	// Make sure to register any new actions that shall be included in the
+	// extended documentation. In this case they are registered in the `init()`
+	// function of the `registeractions` package below.
 	_ "github.com/my-user/extended-gopherciser/registeractions"
 )
 
@@ -202,8 +202,8 @@ import (
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/genmd"
 	"github.com/my-user/extended-gopherciser/generatedocs/generated"
 
-    // Once again, make sure to register any new actions that shall be included in the
-    // extended documentation.
+	// Once again, make sure to register any new actions that shall be included in the
+	// extended documentation.
 	_ "github.com/my-user/extended-gopherciser/registeractions"
 )
 
