@@ -111,6 +111,7 @@ connectionSettings": {
 }
 ```
 
+---
 </details>
 
 <details>
@@ -165,6 +166,7 @@ This section of the JSON file contains information on the login settings.
   }
 ```
 
+---
 </details>
 
 <details>
@@ -229,6 +231,7 @@ Apply a bookmark in the current app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -274,6 +277,7 @@ The action supports getting data from the following objects:
 }
 ```
 
+---
 </details>
 
 <details>
@@ -293,6 +297,7 @@ Clear all selections in an app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -340,6 +345,7 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 }
 ```
 
+---
 </details>
 
 <details>
@@ -369,6 +375,7 @@ Create a bookmark from the current selection and selected sheet.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -393,6 +400,7 @@ Create a new sheet in the current app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -423,6 +431,7 @@ Delete one or more bookmarks in the current app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -453,6 +462,7 @@ Delete one or more sheets in the current app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -472,6 +482,7 @@ Disconnect from an already connected app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -500,6 +511,7 @@ Duplicate a sheet, including all objects.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -543,6 +555,7 @@ Loop one or more actions.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -577,6 +590,7 @@ Perform list object specific selectiontypes in listbox.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -629,6 +643,7 @@ Open an app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -664,6 +679,7 @@ Request the product version from the server and, optionally, save it to the log.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -706,6 +722,7 @@ Publish the bookmark with the `title` "bookmark of testuser", where "testuser" i
 }
 ```
 
+---
 </details>
 
 <details>
@@ -732,6 +749,7 @@ Publish sheets in the current app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -867,6 +885,7 @@ The following default values are used for the different actions:
 }
 ```
 
+---
 </details>
 
 <details>
@@ -895,6 +914,7 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
 }
 ```
 
+---
 </details>
 
 <details>
@@ -937,6 +957,7 @@ See the [Limitations](README.md#limitations) section in the README.md file for l
 }
 ```
 
+---
 </details>
 
 <details>
@@ -959,6 +980,7 @@ Set the load script for the current app. To load the data from the script, use t
 }
 ```
 
+---
 </details>
 
 <details>
@@ -982,6 +1004,7 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1044,6 +1067,7 @@ The action supports:
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1085,6 +1109,7 @@ Subscribe to an additional single object (or a list of objects) in the currently
     }
 }
 ```
+---
 </details>
 
 <details>
@@ -1136,6 +1161,7 @@ This simulates a think time of 5 seconds.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1178,6 +1204,7 @@ Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser"
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1203,6 +1230,7 @@ Unpublish sheets in the current app.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1242,8 +1270,10 @@ Unsubscribe from all currently subscribed objects.
     }
 }
 ```
+---
 </details>
 
+---
 </details>
 
 <details>
@@ -1276,6 +1306,7 @@ Delete a data file from the Data manager.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1303,6 +1334,7 @@ Create an app in a QSEoK deployment. The app will be private to the user who cre
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1331,6 +1363,7 @@ Create a collection in a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1377,6 +1410,7 @@ Delete an app from a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1404,6 +1438,7 @@ Delete a collection in a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1426,6 +1461,7 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1470,6 +1506,7 @@ Duplicate an app in a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1551,6 +1588,7 @@ The following example shows how to clear the artifact map and fill it with the a
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1596,6 +1634,7 @@ Export an app and, optionally, save it to file.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1618,6 +1657,7 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1650,6 +1690,7 @@ Search the hub in a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1694,6 +1735,7 @@ Move an app from its existing space into the specified destination space.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1713,6 +1755,7 @@ Open the hub in a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1759,6 +1802,7 @@ Publish an app to a managed space.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1799,6 +1843,7 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1836,6 +1881,7 @@ Upload an app to a QSEoK deployment.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1859,6 +1905,7 @@ Upload a data file to the Data manager.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1880,8 +1927,10 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 }
 ```
 
+---
 </details>
 
+---
 </details>
 
 <details>
@@ -1912,6 +1961,7 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1934,6 +1984,7 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
+---
 </details>
 
 <details>
@@ -1953,8 +2004,10 @@ Open the hub in a QSEoW environment.
 }
 ```
 
+---
 </details>
 
+---
 </details>
 
 
@@ -2019,6 +2072,7 @@ The following functions are supported:
 </details>
 
 
+---
 </details>
 
 <details>
@@ -2113,6 +2167,7 @@ Simple scheduler set to attempt re-connection in case of an unexpected WebSocket
 }
 ```
 
+---
 </details>
 
 <details>
@@ -2171,5 +2226,6 @@ This section of the JSON file contains timeout and logging settings for the load
 }
 ```
 
+---
 </details>
 
