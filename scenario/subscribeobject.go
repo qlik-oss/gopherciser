@@ -36,7 +36,7 @@ func (settings SubscribeObjectsSettings) Execute(sessionState *session.State, ac
 	actionState.Details = strings.Join(settings.IDs, ",")
 
 	if settings.ClearCurrent {
-		ClearObjectSubscriptions(sessionState)
+		sessionState.ClearObjectSubscriptions()
 	}
 
 	for _, id := range settings.IDs {

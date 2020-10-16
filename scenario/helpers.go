@@ -3,11 +3,11 @@ package scenario
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -50,24 +50,6 @@ func GetCurrentSheet(uplink *enigmahandlers.SenseUplink) (*senseobjects.Sheet, e
 		return nil, errors.Errorf("failed to cast object id<%s> to sheet object", sheetObj.GenericId)
 	}
 	return sheetObj, nil
-}
-
-// ClearObjectSubscriptions and currently subscribed objects
-func ClearObjectSubscriptions(sessionState *session.State) {
-	upLink := sessionState.Connection.Sense()
-	// Clear subscribed objects
-	clearedObjects, errClearObject := upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
-	if errClearObject != nil {
-		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
-	}
-	sessionState.DeRegisterEvents(clearedObjects)
-
-	// Clear any sheets set
-	clearedObjects, errClearObject = upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheet)
-	if errClearObject != nil {
-		sessionState.LogEntry.Log(logger.WarningLevel, clearedObjects)
-	}
-	sessionState.DeRegisterEvents(clearedObjects)
 }
 
 func DebugPrintObjectSubscriptions(sessionState *session.State) {

@@ -934,3 +934,37 @@ func (lgr *EventMetricsLogger) SocketOpenMetric(url *neturl.URL, duration time.D
 
 	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS")
 }
+
+// ClearObjectSubscriptions and currently subscribed objects
+func (state *State) ClearObjectSubscriptions() {
+	upLink := state.Connection.Sense()
+	// Clear subscribed objects
+	clearedObjects, errClearObject := upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeGenericObject)
+	if errClearObject != nil {
+		state.LogEntry.Log(logger.WarningLevel, clearedObjects)
+	}
+	state.DeRegisterEvents(clearedObjects)
+
+	// Clear any sheets set
+	clearedObjects, errClearObject = upLink.Objects.ClearObjectsOfType(enigmahandlers.ObjTypeSheet)
+	if errClearObject != nil {
+		state.LogEntry.Log(logger.WarningLevel, clearedObjects)
+	}
+	state.DeRegisterEvents(clearedObjects)
+}
+
+// ClearSubscribedObjects unsubscribes from listed objects
+func (state *State) ClearSubscribedObjects(IDs []string) error {
+	upLink := state.Connection.Sense()
+	for _, id := range IDs {
+		obj, err := upLink.Objects.GetObjectByID(id)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if err := upLink.Objects.ClearObject(obj.Handle); err != nil {
+			return errors.WithStack(err)
+		}
+		state.DeRegisterEvent(obj.Handle)
+	}
+	return nil
+}
