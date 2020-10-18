@@ -23,7 +23,7 @@ require (
 	github.com/rs/zerolog v1.20.0
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
-	github.com/spf13/cobra v1.1.0
+	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.6.1
 	github.com/tus/tusd v1.3.0 // indirect
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
