@@ -70,7 +70,6 @@ type (
 		ArtifactMap      *ArtifactMap
 		IDMap            IDMap
 		HeaderJar        *HeaderJar
-		LoggedIn         bool
 		Timeout          time.Duration
 		User             *users.User
 		OutputsDir       string
@@ -248,7 +247,6 @@ func (state *State) Reset(ctx context.Context) {
 	state.IDMap = IDMap{}
 	state.trafficLogger = nil
 	state.HeaderJar = NewHeaderJar()
-	state.LoggedIn = false
 	state.CurrentActionState = nil
 	state.EW = statistics.ErrWarn{}
 	state.Rest = nil

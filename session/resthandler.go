@@ -181,7 +181,7 @@ func (handler *RestHandler) DecPending(request *RestRequest) {
 }
 
 // DefaultClient creates client instance with default client settings
-func DefaultClient(connectionSettings ConnectionSettings, state *State) (*http.Client, error) {
+func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 	// todo client values are currently from http.DefaultClient, should choose better values depending on
 	// configured timeout etc
 
@@ -200,7 +200,7 @@ func DefaultClient(connectionSettings ConnectionSettings, state *State) (*http.C
 				TLSHandshakeTimeout:   10 * time.Second,
 				ExpectContinueTimeout: 1 * time.Second,
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: connectionSettings.AllowUntrusted(),
+					InsecureSkipVerify: allowUntrusted,
 				},
 			},
 			state,
@@ -398,7 +398,7 @@ func (handler *RestHandler) QueueRequest(actionState *action.State, failOnError 
 	handler.QueueRequestWithCallback(actionState, failOnError, request, logEntry, nil)
 }
 
-// QueueRequest Async request with callback, set warnOnError to log warning instead of registering error for request
+// QueueRequestWithCallback Async request with callback, set warnOnError to log warning instead of registering error for request
 func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, failOnError bool,
 	request *RestRequest, logEntry *logger.LogEntry, callback func(err error, req *RestRequest)) {
 	handler.IncPending()
@@ -424,9 +424,9 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		}
 
 		if handler.Client == nil {
-			handler.Client = &http.Client{
-				Timeout: handler.timeout,
-			}
+			errRequest = errors.New("no REST client initialized")
+			actionState.AddErrors(errRequest)
+			return
 		}
 
 		var host string

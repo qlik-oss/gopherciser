@@ -488,9 +488,8 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 		return errors.Wrap(err, "failed to extract hostname")
 	}
 	sessionState.HeaderJar.SetHeader(host, headers)
-	sessionState.LoggedIn = true
 
-	client, err := session.DefaultClient(&cfg.ConnectionSettings, sessionState)
+	client, err := session.DefaultClient(cfg.ConnectionSettings.Allowuntrusted, sessionState)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up REST client")
 	}

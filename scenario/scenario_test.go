@@ -73,6 +73,10 @@ func TestPanicAndFailRecover(t *testing.T) {
 	"loginSettings" : {
 		"type" : "none"
 	},
+    "connectionSettings": {
+        "mode": "ws",
+        "server": "myserver.example"
+	},
 	"scenario": [
 		{
 			"action": "panic"

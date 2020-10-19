@@ -215,6 +215,10 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 
 		setLogEntry(sessionState, log, sessionID, thread, userName)
 
+		if err := setupRESTHandler(sessionState, sched.connectionSettings); err != nil {
+			return errors.WithStack(err)
+		}
+
 		err := sched.runIteration(userScenario, sessionState, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
@@ -228,6 +232,26 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	}
 
 	return helpers.FlattenMultiError(mErr)
+}
+
+func setupRESTHandler(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
+	headers, err := connectionSettings.GetHeaders(sessionState)
+	if err != nil {
+		return errors.Wrap(err, "failed to get connection settings headers")
+	}
+	host, err := connectionSettings.GetHost()
+	if err != nil {
+		return errors.Wrap(err, "failed to extract hostname")
+	}
+	sessionState.HeaderJar.SetHeader(host, headers)
+
+	client, err := session.DefaultClient(connectionSettings.Allowuntrusted, sessionState)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	sessionState.Rest.SetClient(client)
+	return nil
 }
 
 func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionState *session.State, ctx context.Context) error {
