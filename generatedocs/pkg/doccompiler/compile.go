@@ -221,10 +221,20 @@ func mergeGroups(baseGroups []common.GroupsEntry, newGroups []common.GroupsEntry
 
 func overloadDocMap(baseMap, newMap map[string]common.DocEntry, baseNames *[]string, newNames []string) {
 	if baseNames != nil {
-		*baseNames = append(*baseNames, newNames...)
+		for _, newName := range newNames {
+			if _, ok := baseMap[newName]; !ok {
+				*baseNames = append(*baseNames, newName)
+			}
+		}
 	}
-	for k, v := range newMap {
-		baseMap[k] = v
+	for newName, newDocEntry := range newMap {
+		if newDocEntry.Description == "" {
+			newDocEntry.Description = baseMap[newName].Description
+		}
+		if newDocEntry.Examples == "" {
+			newDocEntry.Examples = baseMap[newName].Examples
+		}
+		baseMap[newName] = newDocEntry
 	}
 }
 
