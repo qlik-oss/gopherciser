@@ -18,7 +18,7 @@ type (
 	ContainerTabSettings struct {
 		Mode        ContainerTabMode `json:"mode" displayname:"Mode" doc-key:"containertab.mode"`
 		ContainerID string           `json:"containerid" displayname:"Container ID" appstructure:"active:container" doc-key:"containertab.containerid"`
-		ObjectID    string           `json:"objectid,omitempty" appstructure:"children:id" displayname:"Object ID" doc-key:"containertab.objectid"`
+		ObjectID    string           `json:"objectid,omitempty" appstructure:"children:containerid" displayname:"Object ID" doc-key:"containertab.objectid"`
 		Index       int              `json:"index,omitempty" displayname:"Index" doc-key:"containertab.index"`
 	}
 )
