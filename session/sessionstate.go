@@ -64,20 +64,20 @@ type (
 
 	// State for user
 	State struct {
-		Cookies          http.CookieJar
-		VirtualProxy     string
-		Connection       IConnection
-		ArtifactMap      *ArtifactMap
-		IDMap            IDMap
-		HeaderJar        *HeaderJar
-		LoggedIn         bool
-		Timeout          time.Duration
-		User             *users.User
-		OutputsDir       string
-		CurrentApp       *ArtifactEntry
-		CurrentUser      *elasticstructs.User
-		Counters         *statistics.ExecutionCounters
-		DataConnectionId string
+		Cookies           http.CookieJar
+		VirtualProxy      string
+		Connection        IConnection
+		ArtifactMap       *ArtifactMap
+		IDMap             IDMap
+		HeaderJar         *HeaderJar
+		LoggedIn          bool
+		Timeout           time.Duration
+		User              *users.User
+		OutputsDir        string
+		CurrentApp        *ArtifactEntry
+		CurrentUser       *elasticstructs.User
+		Counters          *statistics.ExecutionCounters
+		DataConnectionIDs DataConnectionIDs
 		// CurrentActionState will contain the state of the latest action to be started
 		CurrentActionState *action.State
 		LogEntry           *logger.LogEntry

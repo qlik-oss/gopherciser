@@ -3,7 +3,6 @@ package scenario
 import (
 	"bytes"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -17,11 +16,15 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
+// TODO deprecate destinationpath
+// TODO update to new form-data
 type (
 	// UploadDataSettings specify data file to upload
 	UploadDataSettings struct {
 		Filename string `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
 		Path     string `json:"destinationpath" displayname:"Destination path" doc-key:"uploaddata.destinationpath"`
+		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
+		Replace  bool   `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
 	}
 )
 
@@ -54,12 +57,18 @@ func (settings UploadDataSettings) Execute(
 
 	restHandler := sessionState.Rest
 
-	if sessionState.DataConnectionId == "" {
-		FetchDataConnectionId(sessionState, actionState, host, true)
-		if sessionState.Wait(actionState) {
-			return // we had an error
-		}
+	dataConnectionID, err := sessionState.FetchDataConnectionID(actionState, host, settings.SpaceID)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
 	}
+	_ /*dataFiles-*/, err = sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	// TODO check replace flag
 
 	file, err := os.Open(settings.Filename)
 	if err != nil {
@@ -76,10 +85,11 @@ func (settings UploadDataSettings) Execute(
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
+	fileName := filepath.Base(settings.Filename)
 	// First create the multipart field with the path name
 	params := map[string]string{
 		"path": settings.Path,
-		"name": filepath.Base(settings.Filename),
+		"name": fileName,
 	}
 	for key, val := range params {
 		_ = writer.WriteField(key, val)
@@ -110,7 +120,7 @@ func (settings UploadDataSettings) Execute(
 	postData := session.RestRequest{
 		Method:        session.POST,
 		ContentType:   writer.FormDataContentType(),
-		Destination:   fmt.Sprintf("%s/%s", host, datafileEndpoint),
+		Destination:   fmt.Sprintf("%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, dataConnectionID, fileName),
 		ContentReader: body,
 	}
 
@@ -149,63 +159,11 @@ func (settings UploadDataSettings) Execute(
 	sessionState.Rest.GetAsync(
 		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
 	)
-	sessionState.Rest.GetAsync(
-		fmt.Sprintf(
-			"%s/%s?connectionId=%s&top=1000", host, datafileEndpoint, sessionState.DataConnectionId,
-		), actionState, sessionState.LogEntry, nil,
-	)
-	if sessionState.Wait(actionState) {
-		return // we had an error
-	}
-}
 
-func FetchDataConnectionId(sessionState *session.State, actionState *action.State, host string, userSpecific bool) *session.RestRequest {
-	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
-	var opts *session.ReqOptions
-	if userSpecific {
-		endpoint = fmt.Sprintf(
-			"%s/api/v1/dc-dataconnections?owner=%s&personal=true&alldatafiles=true&allspaces=true", host,
-			sessionState.CurrentUser.ID,
-		)
-	} else {
-		opts = &session.ReqOptions{FailOnError: false}
+	if _, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID); err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		// no return here, wait for async quota too
 	}
 
-	return sessionState.Rest.GetAsyncWithCallback(
-		endpoint, actionState, sessionState.LogEntry, opts, func(err error, req *session.RestRequest) {
-			var datafilesResp elasticstructs.DataFilesResp
-			var qID string
-			var qName = "DataFiles"
-			if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
-				actionState.AddErrors(errors.Wrap(err, "failed unmarshaling dataconnections data"))
-				return
-			}
-			for _, datafilesresp := range datafilesResp.Data {
-				if datafilesresp.QName == qName && datafilesresp.Space == "" {
-					qID = datafilesresp.QID
-					break
-				}
-
-			}
-
-			if qID == "" {
-				if userSpecific {
-					actionState.AddErrors(
-						errors.Errorf(
-							"failed to find qID for <%s> in dataconnections for user <%s>", qName,
-							sessionState.CurrentUser.ID,
-						),
-					)
-				} else {
-					sessionState.LogEntry.Log(logger.WarningLevel, fmt.Sprintf("failed to find qID in dataconnections for <%s>", qName))
-				}
-			} else {
-				sessionState.DataConnectionId = qID
-				sessionState.Rest.GetAsync(
-					fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState,
-					sessionState.LogEntry, nil,
-				)
-			}
-		},
-	)
+	sessionState.Wait(actionState)
 }

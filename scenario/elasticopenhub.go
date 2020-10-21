@@ -1,6 +1,7 @@
 package scenario
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	neturl "net/url"
@@ -211,7 +212,20 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, optionsNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, optionsNoError)
 
-	FetchDataConnectionId(sessionState, actionState, host, false)
+	var dataConnectionID string
+	sessionState.QueueRequestWithCallback(func(ctx context.Context) error {
+		var fetchErr error
+		dataConnectionID, fetchErr = sessionState.FetchDataConnectionID(actionState, host, "")
+		return fetchErr
+	}, actionState, false, "", func(err error) {
+		if err != nil {
+			// TODO validate if datafiles request should really be sent here
+			_, err = sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
+		}
+		if err != nil {
+			sessionState.LogEntry.Log(logger.WarningLevel, fmt.Sprint("failed to find qix data files:", err.Error()))
+		}
+	})
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
