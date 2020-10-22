@@ -212,6 +212,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, optionsNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/subscriptions", host), actionState, sessionState.LogEntry, optionsNoError)
 
+	// Async get data connection ID followed by qix data files
 	var dataConnectionID string
 	sessionState.QueueRequestWithCallback(func(ctx context.Context) error {
 		var fetchErr error
@@ -219,7 +220,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		return fetchErr
 	}, actionState, false, "", func(err error) {
 		if err != nil {
-			// TODO validate if datafiles request should really be sent here
 			_, err = sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
 		}
 		if err != nil {

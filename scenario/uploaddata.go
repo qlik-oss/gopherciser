@@ -18,7 +18,6 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-// TODO update to new form-data
 type (
 	// UploadDataSettingsCore core parameters used in UnMarshalJSON interface
 	UploadDataSettingsCore struct {
