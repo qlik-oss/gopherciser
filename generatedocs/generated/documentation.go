@@ -280,7 +280,7 @@ var (
 		"createsheet.title":                               {"Name of the sheet to create."},
 		"deletebookmark.mode":                             {"", "`single`: Delete one bookmark that matches the specified `title` or `id` in the current app.", "`matching`: Delete all bookmarks with the specified `title` in the current app.", "`all`: Delete all bookmarks in the current app."},
 		"deletedata.filename":                             {"Name of the file to delete."},
-		"deletedata.path":                                 {"(optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted."},
+		"deletedata.spaceid":                              {"(optional) space ID of space from where to delete the data. Leave blank to delete from personal space."},
 		"deleteodag.linkname":                             {"Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"deletesheet.id":                                  {"(optional) GUID of the sheet to delete."},
 		"deletesheet.mode":                                {"", "`single`: Delete one sheet that matches the specified `title` or `id` in the current app.", "`matching`: Delete all sheets with the specified `title` in the current app.", "`allunpublished`: Delete all unpublished sheets in the current app."},
@@ -374,8 +374,9 @@ var (
 		"unpublishsheet.sheetIds":                         {"(optional) Array of sheet IDs for the `sheetids` mode."},
 		"unsubscribeobjects.clear":                        {"Remove any previously subscribed objects from the subscription list."},
 		"unsubscribeobjects.ids":                          {"List of object IDs to unsubscribe from."},
-		"uploaddata.destinationpath":                      {"(optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted."},
 		"uploaddata.filename":                             {"Name of the local file to send as payload."},
+		"uploaddata.replace":                              {"Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."},
+		"uploaddata.spaceid":                              {"(optional) space ID of space where to upload the data. Leave blank to upload to personal space."},
 	}
 
 	Config = map[string]common.DocEntry{
