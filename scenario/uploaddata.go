@@ -12,25 +12,45 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-// TODO deprecate destinationpath
 // TODO update to new form-data
 type (
-	// UploadDataSettings specify data file to upload
-	UploadDataSettings struct {
+	// UploadDataSettingsCore core parameters used in UnMarshalJSON interface
+	UploadDataSettingsCore struct {
 		Filename string `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
-		Path     string `json:"destinationpath" displayname:"Destination path" doc-key:"uploaddata.destinationpath"`
 		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
 		Replace  bool   `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
+	}
+
+	// UploadDataSettings specify data file to upload
+	UploadDataSettings struct {
+		UploadDataSettingsCore
 	}
 )
 
 const datafileEndpoint = "api/v1/qix-datafiles"
-const refererPath = "%s/sense/app/%s/datamanager/datamanager"
-const defaultDataPath = "MyDataFiles"
+const refererPath = "%s/explore/spaces/%s/data"
+
+// UnmarshalJSON unmarshals upload data settings from JSON
+func (settings *UploadDataSettings) UnmarshalJSON(arg []byte) error {
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/destinationpath",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionUploadData, err.Error())
+	}
+	var uploadDataSettings UploadDataSettingsCore
+	if err := jsonit.Unmarshal(arg, &uploadDataSettings); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionUploadData)
+	}
+	*settings = UploadDataSettings{uploadDataSettings}
+
+	return nil
+}
 
 // Validate action (Implements ActionSettings interface)
 func (settings UploadDataSettings) Validate() error {
@@ -49,10 +69,6 @@ func (settings UploadDataSettings) Execute(
 	if err != nil {
 		actionState.AddErrors(err)
 		return
-	}
-
-	if settings.Path == "" {
-		settings.Path = defaultDataPath
 	}
 
 	restHandler := sessionState.Rest
@@ -86,14 +102,6 @@ func (settings UploadDataSettings) Execute(
 	writer := multipart.NewWriter(body)
 
 	fileName := filepath.Base(settings.Filename)
-	// First create the multipart field with the path name
-	params := map[string]string{
-		"path": settings.Path,
-		"name": fileName,
-	}
-	for key, val := range params {
-		_ = writer.WriteField(key, val)
-	}
 
 	// Then create the binary multipart field
 	part, err := writer.CreateFormFile("data", filepath.Base(settings.Filename))
@@ -124,16 +132,12 @@ func (settings UploadDataSettings) Execute(
 		ContentReader: body,
 	}
 
-	// If an app is open, use this as the referer field
-	if sessionState.Connection != nil {
-		senseConnection := sessionState.Connection.Sense()
-		if senseConnection.CurrentApp != nil {
-			currentAppGUID := senseConnection.CurrentApp.GUID
-			appInfo := make(map[string]string)
-			appInfo["Referer"] = fmt.Sprintf(refererPath, host, currentAppGUID)
-			postData.ExtraHeaders = appInfo
-		}
+	// Set referer to personal or space ID for space we are uploading to
+	referer := "personal"
+	if settings.SpaceID != "" {
+		referer = settings.SpaceID
 	}
+	postData.ExtraHeaders = map[string]string{"Referer": referer}
 
 	restHandler.QueueRequest(actionState, true, &postData, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {

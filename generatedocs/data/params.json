@@ -270,9 +270,6 @@
     "deletedata.filename": [
         "Name of the file to delete."
     ],
-    "deletedata.path": [
-        "(optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted."
-    ],
     "deleteodag.linkname": [
         "Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
     ],
@@ -596,8 +593,5 @@
     ],
     "uploaddata.filename": [
         "Name of the local file to send as payload."
-    ],
-    "uploaddata.destinationpath": [
-        "(optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted."
     ]
 }

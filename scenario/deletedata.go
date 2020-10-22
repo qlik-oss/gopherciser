@@ -7,18 +7,40 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
-	// DeleteDataSettings specify data file to delete
-	DeleteDataSettings struct {
+	// DeleteDataSettingsCore settings core used by UnmarshalJSON
+	DeleteDataSettingsCore struct {
 		Filename string `json:"filename" displayname:"Filename" doc-key:"deletedata.filename"`
-		Path     string `json:"path" displayname:"Path" doc-key:"deletedata.path"`
 		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"deletedata.spaceid"`
 	}
+
+	// DeleteDataSettings specify data file to delete
+	DeleteDataSettings struct {
+		DeleteDataSettingsCore
+	}
 )
+
+// UnmarshalJSON unmarshals upload data settings from JSON
+func (settings *DeleteDataSettings) UnmarshalJSON(arg []byte) error {
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/path",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionDeleteData, err.Error())
+	}
+	var deleteDataSettings DeleteDataSettingsCore
+	if err := jsonit.Unmarshal(arg, &deleteDataSettings); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionDeleteData)
+	}
+	*settings = DeleteDataSettings{deleteDataSettings}
+
+	return nil
+}
 
 // Validate action (Implements ActionSettings interface)
 func (settings DeleteDataSettings) Validate() error {
@@ -37,10 +59,6 @@ func (settings DeleteDataSettings) Execute(
 	if err != nil {
 		actionState.AddErrors(err)
 		return
-	}
-
-	if settings.Path == "" {
-		settings.Path = defaultDataPath
 	}
 
 	dataConnectionID, err := sessionState.FetchDataConnectionID(actionState, host, settings.SpaceID)
