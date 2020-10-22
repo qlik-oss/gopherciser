@@ -1,3 +1,3 @@
 ## DeleteData action
 
-Delete a data file from the Data manager.
+Delete a data file from data sources.

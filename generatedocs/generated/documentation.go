@@ -43,8 +43,8 @@ var (
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"deletebookmark\",\n    \"settings\": {\n        \"mode\": \"single\",\n        \"title\": \"My bookmark\"\n    }\n}\n```\n",
 		},
 		"deletedata": {
-			Description: "## DeleteData action\n\nDelete a data file from the Data manager.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\",\n         \"path\": \"MyDataFiles\"\n     }\n}\n```\n",
+			Description: "## DeleteData action\n\nDelete a data file from data sources.\n",
+			Examples:    "### Example\n\nDelete data from personal space.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\"\n     }\n}\n```\n\nDelete data from space with ID `25180576-755b-46e1-8683-12062584e52c`.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\",\n         \"spaceid\" : \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
 		},
 		"deleteodag": {
 			Description: "## DeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
@@ -203,8 +203,8 @@ var (
 			Examples:    "### Example\n\nUnsubscribe from a single object (or a list of objects).\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from object maVjt and its children\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"ids\" : [\"maVjt\"]\n    }\n}\n```\n\nUnsubscribe from all currently subscribed objects.\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from all objects\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"clear\": true\n    }\n}\n```",
 		},
 		"uploaddata": {
-			Description: "## UploadData action\n\nUpload a data file to the Data manager.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\"\n     }\n}\n```\n",
+			Description: "## UploadData action\n\nUpload a data file to data sources.\n",
+			Examples:    "### Example\n\nUpload data to personal space.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\"\n     }\n}\n```\n\nUpload data to personal space, replacing existing file.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"replace\": true\n     }\n}\n```\n\nUpload data to space with space ID 25180576-755b-46e1-8683-12062584e52c.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"spaceid\": \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
 		},
 	}
 
