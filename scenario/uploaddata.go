@@ -137,7 +137,7 @@ func (settings UploadDataSettings) Execute(
 	if settings.SpaceID != "" {
 		referer = settings.SpaceID
 	}
-	postData.ExtraHeaders = map[string]string{"Referer": referer}
+	postData.ExtraHeaders = map[string]string{"Referer": fmt.Sprintf(refererPath, host, referer)}
 
 	restHandler.QueueRequest(actionState, true, &postData, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
