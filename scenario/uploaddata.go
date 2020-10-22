@@ -89,14 +89,20 @@ func (settings UploadDataSettings) Execute(
 	fileName := filepath.Base(settings.Filename)
 
 	var existingFile *elasticstructs.QixDataFile
-	if settings.Replace {
-		// check to see if file exists already
-		for _, file := range dataFiles {
-			if file.Name == fileName {
-				existingFile = &file
-				break
-			}
+	// check to see if file exists already
+	for _, file := range dataFiles {
+		if file.Name == fileName {
+			existingFile = &file
+			break
 		}
+	}
+
+	if existingFile != nil && !settings.Replace {
+		sessionState.LogEntry.Logf(
+			logger.WarningLevel, "data file not uploaded, filename<%s> already exists and replace set to false", settings.Filename,
+		)
+		sessionState.Wait(actionState)
+		return
 	}
 
 	file, err := os.Open(settings.Filename)
