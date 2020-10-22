@@ -527,11 +527,17 @@ func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestReque
 }
 
 func (handler *RestHandler) postWithReader(ctx context.Context, request *RestRequest, client *http.Client, logEntry *logger.LogEntry, headers http.Header) error {
-	if request.Method != POST {
-		return errors.Errorf("Can only send io.Reader payload with a POST request. Method<%v>", request.Method)
+	var method string
+	switch request.Method {
+	case POST:
+		method = http.MethodPost
+	case PUT:
+		method = http.MethodPut
+	default:
+		return errors.Errorf("Can only send io.Reader payload with a POST or PUT request. Method<%v>", request.Method)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, request.Destination, request.ContentReader)
+	req, err := http.NewRequest(method, request.Destination, request.ContentReader)
 	if err != nil {
 		return errors.Wrap(err, "Failed to create HTTP request")
 	}

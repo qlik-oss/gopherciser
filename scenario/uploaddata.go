@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
@@ -78,13 +79,25 @@ func (settings UploadDataSettings) Execute(
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
-	_ /*dataFiles-*/, err = sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
+
+	dataFiles, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 
-	// TODO check replace flag
+	fileName := filepath.Base(settings.Filename)
+
+	var existingFile *elasticstructs.QixDataFile
+	if settings.Replace {
+		// check to see if file exists already
+		for _, file := range dataFiles {
+			if file.Name == fileName {
+				existingFile = &file
+				break
+			}
+		}
+	}
 
 	file, err := os.Open(settings.Filename)
 	if err != nil {
@@ -100,8 +113,6 @@ func (settings UploadDataSettings) Execute(
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-
-	fileName := filepath.Base(settings.Filename)
 
 	// Then create the binary multipart field
 	part, err := writer.CreateFormFile("data", filepath.Base(settings.Filename))
@@ -130,6 +141,11 @@ func (settings UploadDataSettings) Execute(
 		ContentType:   writer.FormDataContentType(),
 		Destination:   fmt.Sprintf("%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, dataConnectionID, fileName),
 		ContentReader: body,
+	}
+
+	if existingFile != nil {
+		postData.Method = session.PUT
+		postData.Destination = fmt.Sprintf("%s/%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, existingFile.ID, dataConnectionID, fileName)
 	}
 
 	// Set referer to personal or space ID for space we are uploading to
