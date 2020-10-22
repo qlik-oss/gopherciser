@@ -376,7 +376,7 @@ var (
 		"unsubscribeobjects.ids":                          {"List of object IDs to unsubscribe from."},
 		"uploaddata.filename":                             {"Name of the local file to send as payload."},
 		"uploaddata.replace":                              {"Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."},
-		"uploaddata.spaceid":                              {"(optional) space ID of space where to upload the data. Leave blank to upload to personal space."},
+		"uploaddata.spaceid":                              {"(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."},
 	}
 
 	Config = map[string]common.DocEntry{

@@ -52,7 +52,7 @@ func (idMap *DataConnectionIDs) FillDataConnectionIDs(data []elasticstructs.Data
 	}
 }
 
-// FetchDataConnectionID fetch connection id for space, use empty space for
+// FetchDataConnectionID fetch connection id for space, use empty space for personal space
 func (state *State) FetchDataConnectionID(actionState *action.State, host, space string) (string, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
 	opts := DefaultReqOptions()

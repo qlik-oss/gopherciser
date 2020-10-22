@@ -1960,7 +1960,7 @@ Upload an app to a QSEoK deployment.
 Upload a data file to data sources.
 
 * `filename`: Name of the local file to send as payload.
-* `spaceid`: (optional) space ID of space where to upload the data. Leave blank to upload to personal space.
+* `spaceid`: (optional) Space ID of space where to upload the data. Leave blank to upload to personal space.
 * `replace`: Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced.
 
 ### Example

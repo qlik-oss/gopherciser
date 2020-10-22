@@ -601,6 +601,6 @@
         "Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."
     ],
     "uploaddata.spaceid": [
-        "(optional) space ID of space where to upload the data. Leave blank to upload to personal space."
+        "(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."
     ]
 }
