@@ -16,11 +16,9 @@ type (
 	DeleteDataSettings struct {
 		Filename string `json:"filename" displayname:"Filename" doc-key:"deletedata.filename"`
 		Path     string `json:"path" displayname:"Path" doc-key:"deletedata.path"`
-		SpaceID  string `json:"spaceid" displayname:"Space ID", doc-key:"deletedata.spaceid"`
+		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"deletedata.spaceid"`
 	}
 )
-
-const dataListEndpoint = "api/v1/qix-datafiles"
 
 // Validate action (Implements ActionSettings interface)
 func (settings DeleteDataSettings) Validate() error {

@@ -65,7 +65,11 @@ func (state *State) FetchDataConnectionID(actionState *action.State, host, space
 	}
 
 	var requestError error
-	state.Rest.GetSyncWithCallback(endpoint, actionState, state.LogEntry, opts, func(err error, req *RestRequest) {
+	_, _ = state.Rest.GetSyncWithCallback(endpoint, actionState, state.LogEntry, opts, func(err error, req *RestRequest) {
+		if err != nil {
+			requestError = err
+			return
+		}
 		var datafilesResp elasticstructs.DataFilesResp
 
 		if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
