@@ -1,3 +1,3 @@
 ## UploadData action
 
-Upload a data file to the Data manager.
+Upload a data file to data sources.

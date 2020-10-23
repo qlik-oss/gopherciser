@@ -117,38 +117,40 @@ func handleFields(field reflect.StructField, fieldDocs map[string][]string, buf 
 	jsonTag := field.Tag.Get("json")
 	if jsonTag == "" {
 		jsonTag = field.Name
-	}
-	jsonTag = strings.Split(jsonTag, ",")[0]
-	if jsonTag == "-" {
+	} else if jsonTag = strings.Split(jsonTag, ",")[0]; jsonTag == "-" {
 		return // this field should be ignored
 	}
-	buf.WriteString(fmt.Sprintf("%s* `%s`: ", indent, jsonTag))
 
-	// Write docs to buffer
+	writeFieldDoc := func(docString string) {
+		// Write docs to buffer
+		fmt.Fprintf(buf, "%s* `%s`: %s\n", indent, jsonTag, docString)
+	}
+
+	// handle unexisting docs
 	defaultString := func() {
 		if unitTestMode {
 			return
 		}
-		buf.WriteString("*Missing documentation*\n")
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Warning: parameter %s is missing documentation\n", field.Name))
+		writeFieldDoc("*Missing documentation*")
+		fmt.Fprintf(os.Stderr, "Warning: parameter %s is missing documentation\n", field.Name)
 	}
+
 	docKey := strings.Split(field.Tag.Get("doc-key"), ",")[0]
 	if docKey == "" || docKey == "-" {
 		defaultString()
 		return
 	}
+
 	params, ok := fieldDocs[docKey]
 	if !ok || len(params) < 1 {
 		defaultString()
 		return
 	}
-	buf.WriteString(params[0])
-	buf.WriteString("\n")
-	indent += "    * "
-	for i := 1; i < len(params); i++ {
-		buf.WriteString(indent)
-		buf.WriteString(params[i])
-		buf.WriteString("\n")
+	// write docs
+	writeFieldDoc(params[0])
+	indent += "    "
+	for _, param := range params[1:] {
+		fmt.Fprintf(buf, "%s* %s\n", indent, param)
 	}
 }
 

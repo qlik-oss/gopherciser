@@ -270,8 +270,8 @@
     "deletedata.filename": [
         "Name of the file to delete."
     ],
-    "deletedata.path": [
-        "(optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted."
+    "deletedata.spaceid" : [
+        "(optional) space ID of space from where to delete the data. Leave blank to delete from personal space."
     ],
     "deleteodag.linkname": [
         "Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
@@ -597,7 +597,10 @@
     "uploaddata.filename": [
         "Name of the local file to send as payload."
     ],
-    "uploaddata.destinationpath": [
-        "(optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted."
+    "uploaddata.replace": [
+        "Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."
+    ],
+    "uploaddata.spaceid": [
+        "(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."
     ]
 }

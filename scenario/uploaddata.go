@@ -3,7 +3,6 @@ package scenario
 import (
 	"bytes"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -13,21 +12,45 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
+	// UploadDataSettingsCore core parameters used in UnMarshalJSON interface
+	UploadDataSettingsCore struct {
+		Filename string `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
+		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
+		Replace  bool   `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
+	}
+
 	// UploadDataSettings specify data file to upload
 	UploadDataSettings struct {
-		Filename string `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
-		Path     string `json:"destinationpath" displayname:"Destination path" doc-key:"uploaddata.destinationpath"`
+		UploadDataSettingsCore
 	}
 )
 
 const datafileEndpoint = "api/v1/qix-datafiles"
-const refererPath = "%s/sense/app/%s/datamanager/datamanager"
-const defaultDataPath = "MyDataFiles"
+const refererPath = "%s/explore/spaces/%s/data"
+
+// UnmarshalJSON unmarshals upload data settings from JSON
+func (settings *UploadDataSettings) UnmarshalJSON(arg []byte) error {
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/destinationpath",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionUploadData, err.Error())
+	}
+	var uploadDataSettings UploadDataSettingsCore
+	if err := jsonit.Unmarshal(arg, &uploadDataSettings); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionUploadData)
+	}
+	*settings = UploadDataSettings{uploadDataSettings}
+
+	return nil
+}
 
 // Validate action (Implements ActionSettings interface)
 func (settings UploadDataSettings) Validate() error {
@@ -48,17 +71,37 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	if settings.Path == "" {
-		settings.Path = defaultDataPath
-	}
-
 	restHandler := sessionState.Rest
 
-	if sessionState.DataConnectionId == "" {
-		FetchDataConnectionId(sessionState, actionState, host, true)
-		if sessionState.Wait(actionState) {
-			return // we had an error
+	dataConnectionID, err := sessionState.FetchDataConnectionID(actionState, host, settings.SpaceID)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	dataFiles, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	fileName := filepath.Base(settings.Filename)
+
+	var existingFile *elasticstructs.QixDataFile
+	// check to see if file exists already
+	for _, file := range dataFiles {
+		if file.Name == fileName {
+			existingFile = &file
+			break
 		}
+	}
+
+	if existingFile != nil && !settings.Replace {
+		sessionState.LogEntry.Logf(
+			logger.WarningLevel, "data file not uploaded, filename<%s> already exists and replace set to false", settings.Filename,
+		)
+		sessionState.Wait(actionState)
+		return
 	}
 
 	file, err := os.Open(settings.Filename)
@@ -75,15 +118,6 @@ func (settings UploadDataSettings) Execute(
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-
-	// First create the multipart field with the path name
-	params := map[string]string{
-		"path": settings.Path,
-		"name": filepath.Base(settings.Filename),
-	}
-	for key, val := range params {
-		_ = writer.WriteField(key, val)
-	}
 
 	// Then create the binary multipart field
 	part, err := writer.CreateFormFile("data", filepath.Base(settings.Filename))
@@ -110,20 +144,21 @@ func (settings UploadDataSettings) Execute(
 	postData := session.RestRequest{
 		Method:        session.POST,
 		ContentType:   writer.FormDataContentType(),
-		Destination:   fmt.Sprintf("%s/%s", host, datafileEndpoint),
+		Destination:   fmt.Sprintf("%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, dataConnectionID, fileName),
 		ContentReader: body,
 	}
 
-	// If an app is open, use this as the referer field
-	if sessionState.Connection != nil {
-		senseConnection := sessionState.Connection.Sense()
-		if senseConnection.CurrentApp != nil {
-			currentAppGUID := senseConnection.CurrentApp.GUID
-			appInfo := make(map[string]string)
-			appInfo["Referer"] = fmt.Sprintf(refererPath, host, currentAppGUID)
-			postData.ExtraHeaders = appInfo
-		}
+	if existingFile != nil {
+		postData.Method = session.PUT
+		postData.Destination = fmt.Sprintf("%s/%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, existingFile.ID, dataConnectionID, fileName)
 	}
+
+	// Set referer to personal or space ID for space we are uploading to
+	referer := "personal"
+	if settings.SpaceID != "" {
+		referer = settings.SpaceID
+	}
+	postData.ExtraHeaders = map[string]string{"Referer": fmt.Sprintf(refererPath, host, referer)}
 
 	restHandler.QueueRequest(actionState, true, &postData, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
@@ -149,63 +184,11 @@ func (settings UploadDataSettings) Execute(
 	sessionState.Rest.GetAsync(
 		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
 	)
-	sessionState.Rest.GetAsync(
-		fmt.Sprintf(
-			"%s/%s?connectionId=%s&top=1000", host, datafileEndpoint, sessionState.DataConnectionId,
-		), actionState, sessionState.LogEntry, nil,
-	)
-	if sessionState.Wait(actionState) {
-		return // we had an error
-	}
-}
 
-func FetchDataConnectionId(sessionState *session.State, actionState *action.State, host string, userSpecific bool) *session.RestRequest {
-	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
-	var opts *session.ReqOptions
-	if userSpecific {
-		endpoint = fmt.Sprintf(
-			"%s/api/v1/dc-dataconnections?owner=%s&personal=true&alldatafiles=true&allspaces=true", host,
-			sessionState.CurrentUser.ID,
-		)
-	} else {
-		opts = &session.ReqOptions{FailOnError: false}
+	if _, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID); err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		// no return here, wait for async quota too
 	}
 
-	return sessionState.Rest.GetAsyncWithCallback(
-		endpoint, actionState, sessionState.LogEntry, opts, func(err error, req *session.RestRequest) {
-			var datafilesResp elasticstructs.DataFilesResp
-			var qID string
-			var qName = "DataFiles"
-			if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
-				actionState.AddErrors(errors.Wrap(err, "failed unmarshaling dataconnections data"))
-				return
-			}
-			for _, datafilesresp := range datafilesResp.Data {
-				if datafilesresp.QName == qName && datafilesresp.Space == "" {
-					qID = datafilesresp.QID
-					break
-				}
-
-			}
-
-			if qID == "" {
-				if userSpecific {
-					actionState.AddErrors(
-						errors.Errorf(
-							"failed to find qID for <%s> in dataconnections for user <%s>", qName,
-							sessionState.CurrentUser.ID,
-						),
-					)
-				} else {
-					sessionState.LogEntry.Log(logger.WarningLevel, fmt.Sprintf("failed to find qID in dataconnections for <%s>", qName))
-				}
-			} else {
-				sessionState.DataConnectionId = qID
-				sessionState.Rest.GetAsync(
-					fmt.Sprintf("%s/api/v1/qix-datafiles?top=1000&connectionId=%s", host, qID), actionState,
-					sessionState.LogEntry, nil,
-				)
-			}
-		},
-	)
+	sessionState.Wait(actionState)
 }
