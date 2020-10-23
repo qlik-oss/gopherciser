@@ -46,31 +46,8 @@ func (openHub *ElasticOpenHubSettings) UnmarshalJSON(arg []byte) error {
 
 // Execute open Efe hub
 func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-	if !sessionState.LoggedIn {
-		headers, err := connection.GetHeaders(sessionState)
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to connect using ElasticOpenHub"))
-			return
-		}
-		host, err := connection.GetHost()
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to extract hostname"))
-			return
-		}
-		sessionState.HeaderJar.SetHeader(host, headers)
-		sessionState.LoggedIn = true
-	}
-
 	// New hub connection, clear any existing apps.
 	sessionState.ArtifactMap = session.NewAppMap()
-
-	client, err := session.DefaultClient(connection, sessionState)
-	if err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		return
-	}
-
-	sessionState.Rest.SetClient(client)
 
 	host, err := connection.GetRestUrl()
 	if err != nil {

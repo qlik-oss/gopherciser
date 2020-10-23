@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"github.com/qlik-oss/gopherciser/statistics"
 	"testing"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -72,9 +72,12 @@ func TestOnlyInstanceSeed(t *testing.T) {
 	iterations := 2
 	sched1 := &SimpleScheduler{
 		Scheduler: Scheduler{
-			SchedType:          SchedSimple,
-			InstanceNumber:     2,
-			connectionSettings: &connection.ConnectionSettings{},
+			SchedType:      SchedSimple,
+			InstanceNumber: 2,
+			connectionSettings: &connection.ConnectionSettings{
+				Server: "localhost",
+				Mode:   connection.WS,
+			},
 		},
 		Settings: SimpleSchedSettings{
 			ExecutionTime:    -1,
@@ -120,9 +123,12 @@ func TestReuseUserRandomizer(t *testing.T) {
 	// Test to make sure each iteration of re-use users has a unique randomizer
 	sched := &SimpleScheduler{
 		Scheduler: Scheduler{
-			SchedType:          SchedSimple,
-			InstanceNumber:     1,
-			connectionSettings: &connection.ConnectionSettings{},
+			SchedType:      SchedSimple,
+			InstanceNumber: 1,
+			connectionSettings: &connection.ConnectionSettings{
+				Server: "localhost",
+				Mode:   connection.WS,
+			},
 		},
 		Settings: SimpleSchedSettings{
 			ExecutionTime:    -1,

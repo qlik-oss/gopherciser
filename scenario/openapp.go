@@ -67,30 +67,6 @@ func (openApp *OpenAppSettings) UnmarshalJSON(arg []byte) error {
 
 // Execute open app
 func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, setOpenStart func()) {
-	if !sessionState.LoggedIn {
-		headers, err := connectionSettings.GetHeaders(sessionState)
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to connect using OpenApp"))
-			return
-		}
-		host, err := connectionSettings.GetHost()
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "Failed to extract hostname"))
-			return
-		}
-		sessionState.HeaderJar.SetHeader(host, headers)
-		sessionState.LoggedIn = true
-		client, err := session.DefaultClient(connectionSettings, sessionState)
-		if err != nil {
-			actionState.AddErrors(errors.WithStack(err))
-			return
-		}
-		if sessionState.Cookies != nil {
-			client.Jar = sessionState.Cookies
-		}
-		sessionState.Rest.SetClient(client)
-	}
-
 	appEntry, err := openApp.AppSelection.Select(sessionState)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "Failed to perform app selection"))

@@ -129,12 +129,6 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 			return
 		}
 
-		httpClient, err := session.DefaultClient(connection, sessionState)
-		if err != nil {
-			actionState.AddErrors(errors.WithStack(err))
-			return
-		}
-
 		// upload file using tus chunked uploads protocol
 		chunkSize := defaultChunkSize
 		if settings.ChunkSize > 0 {
@@ -143,7 +137,7 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		tusConfig := tus.DefaultConfig()
 		tusConfig.ChunkSize = chunkSize
 		tusConfig.Header = sessionState.HeaderJar.GetHeader(host)
-		tusConfig.HttpClient = httpClient
+		tusConfig.HttpClient = sessionState.Rest.Client
 
 		// upload to temporary storage
 		client, err := tus.NewClient(fmt.Sprintf("%v/api/v1/temp-contents/files", restUrl), tusConfig)
