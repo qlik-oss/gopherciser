@@ -152,6 +152,7 @@ const (
 	ActionDisconnectElastic       = "disconnectelastic"
 	ActionClickActionButton       = "clickactionbutton"
 	ActionContainerTab            = "containertab"
+	ActionDoSave                  = "dosave"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -274,6 +275,7 @@ func ResetDefaultActions() {
 		ActionDisconnectElastic:       DisconnectElastic{},
 		ActionClickActionButton:       ClickActionButtonSettings{},
 		ActionContainerTab:            ContainerTabSettings{},
+		ActionDoSave:                  DoSaveSettings{},
 	}
 }
 

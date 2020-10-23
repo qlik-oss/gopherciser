@@ -13,6 +13,7 @@
             "deletebookmark",
             "deletesheet",
             "disconnectapp",
+            "dosave",
             "duplicatesheet",
             "iterated",
             "listboxselect",
