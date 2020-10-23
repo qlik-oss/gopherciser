@@ -53,7 +53,7 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 
 	var appSelection session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
 	}
 	*settings = ElasticReloadSettings{appSelection}
 	return nil

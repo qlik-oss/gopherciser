@@ -1344,19 +1344,32 @@ These actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK)
 
 ## DeleteData action
 
-Delete a data file from the Data manager.
+Delete a data file from data sources.
 
 * `filename`: Name of the file to delete.
-* `path`: (optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted.
+* `spaceid`: (optional) space ID of space from where to delete the data. Leave blank to delete from personal space.
 
 ### Example
+
+Delete data from personal space.
+
+```json
+{
+     "action": "DeleteData",
+     "settings": {
+         "filename": "data.csv"
+     }
+}
+```
+
+Delete data from space with ID `25180576-755b-46e1-8683-12062584e52c`.
 
 ```json
 {
      "action": "DeleteData",
      "settings": {
          "filename": "data.csv",
-         "path": "MyDataFiles"
+         "spaceid" : "25180576-755b-46e1-8683-12062584e52c"
      }
 }
 ```
@@ -1944,18 +1957,45 @@ Upload an app to a QSEoK deployment.
 
 ## UploadData action
 
-Upload a data file to the Data manager.
+Upload a data file to data sources.
 
 * `filename`: Name of the local file to send as payload.
-* `destinationpath`: (optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted.
+* `spaceid`: (optional) Space ID of space where to upload the data. Leave blank to upload to personal space.
+* `replace`: Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced.
 
 ### Example
+
+Upload data to personal space.
 
 ```json
 {
      "action": "UploadData",
      "settings": {
          "filename": "/home/root/data.csv"
+     }
+}
+```
+
+Upload data to personal space, replacing existing file.
+
+```json
+{
+     "action": "UploadData",
+     "settings": {
+         "filename": "/home/root/data.csv",
+         "replace": true
+     }
+}
+```
+
+Upload data to space with space ID 25180576-755b-46e1-8683-12062584e52c.
+
+```json
+{
+     "action": "UploadData",
+     "settings": {
+         "filename": "/home/root/data.csv",
+         "spaceid": "25180576-755b-46e1-8683-12062584e52c"
      }
 }
 ```

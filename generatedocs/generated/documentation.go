@@ -43,8 +43,8 @@ var (
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"deletebookmark\",\n    \"settings\": {\n        \"mode\": \"single\",\n        \"title\": \"My bookmark\"\n    }\n}\n```\n",
 		},
 		"deletedata": {
-			Description: "## DeleteData action\n\nDelete a data file from the Data manager.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\",\n         \"path\": \"MyDataFiles\"\n     }\n}\n```\n",
+			Description: "## DeleteData action\n\nDelete a data file from data sources.\n",
+			Examples:    "### Example\n\nDelete data from personal space.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\"\n     }\n}\n```\n\nDelete data from space with ID `25180576-755b-46e1-8683-12062584e52c`.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\",\n         \"spaceid\" : \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
 		},
 		"deleteodag": {
 			Description: "## DeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
@@ -203,8 +203,8 @@ var (
 			Examples:    "### Example\n\nUnsubscribe from a single object (or a list of objects).\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from object maVjt and its children\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"ids\" : [\"maVjt\"]\n    }\n}\n```\n\nUnsubscribe from all currently subscribed objects.\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from all objects\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"clear\": true\n    }\n}\n```",
 		},
 		"uploaddata": {
-			Description: "## UploadData action\n\nUpload a data file to the Data manager.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\"\n     }\n}\n```\n",
+			Description: "## UploadData action\n\nUpload a data file to data sources.\n",
+			Examples:    "### Example\n\nUpload data to personal space.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\"\n     }\n}\n```\n\nUpload data to personal space, replacing existing file.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"replace\": true\n     }\n}\n```\n\nUpload data to space with space ID 25180576-755b-46e1-8683-12062584e52c.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"spaceid\": \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
 		},
 	}
 
@@ -280,7 +280,7 @@ var (
 		"createsheet.title":                               {"Name of the sheet to create."},
 		"deletebookmark.mode":                             {"", "`single`: Delete one bookmark that matches the specified `title` or `id` in the current app.", "`matching`: Delete all bookmarks with the specified `title` in the current app.", "`all`: Delete all bookmarks in the current app."},
 		"deletedata.filename":                             {"Name of the file to delete."},
-		"deletedata.path":                                 {"(optional) Path in which to look for the file. Defaults to `MyDataFiles`, if omitted."},
+		"deletedata.spaceid":                              {"(optional) space ID of space from where to delete the data. Leave blank to delete from personal space."},
 		"deleteodag.linkname":                             {"Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"deletesheet.id":                                  {"(optional) GUID of the sheet to delete."},
 		"deletesheet.mode":                                {"", "`single`: Delete one sheet that matches the specified `title` or `id` in the current app.", "`matching`: Delete all sheets with the specified `title` in the current app.", "`allunpublished`: Delete all unpublished sheets in the current app."},
@@ -374,8 +374,9 @@ var (
 		"unpublishsheet.sheetIds":                         {"(optional) Array of sheet IDs for the `sheetids` mode."},
 		"unsubscribeobjects.clear":                        {"Remove any previously subscribed objects from the subscription list."},
 		"unsubscribeobjects.ids":                          {"List of object IDs to unsubscribe from."},
-		"uploaddata.destinationpath":                      {"(optional) Path to which to upload the file. Defaults to `MyDataFiles`, if omitted."},
 		"uploaddata.filename":                             {"Name of the local file to send as payload."},
+		"uploaddata.replace":                              {"Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."},
+		"uploaddata.spaceid":                              {"(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."},
 	}
 
 	Config = map[string]common.DocEntry{

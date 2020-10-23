@@ -7,20 +7,40 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
+	// DeleteDataSettingsCore settings core used by UnmarshalJSON
+	DeleteDataSettingsCore struct {
+		Filename string `json:"filename" displayname:"Filename" doc-key:"deletedata.filename"`
+		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"deletedata.spaceid"`
+	}
+
 	// DeleteDataSettings specify data file to delete
 	DeleteDataSettings struct {
-		Filename string `json:"filename" displayname:"Filename" doc-key:"deletedata.filename"`
-		Path     string `json:"path" displayname:"Path" doc-key:"deletedata.path"`
+		DeleteDataSettingsCore
 	}
 )
 
-const dataListEndpoint = "api/v1/qix-datafiles"
+// UnmarshalJSON unmarshals upload data settings from JSON
+func (settings *DeleteDataSettings) UnmarshalJSON(arg []byte) error {
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/path",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionDeleteData, err.Error())
+	}
+	var deleteDataSettings DeleteDataSettingsCore
+	if err := jsonit.Unmarshal(arg, &deleteDataSettings); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionDeleteData)
+	}
+	*settings = DeleteDataSettings{deleteDataSettings}
+
+	return nil
+}
 
 // Validate action (Implements ActionSettings interface)
 func (settings DeleteDataSettings) Validate() error {
@@ -41,49 +61,30 @@ func (settings DeleteDataSettings) Execute(
 		return
 	}
 
-	if settings.Path == "" {
-		settings.Path = defaultDataPath
+	dataConnectionID, err := sessionState.FetchDataConnectionID(actionState, host, settings.SpaceID)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
 	}
-
-	restHandler := sessionState.Rest
-
-	if sessionState.DataConnectionId == "" {
-		FetchDataConnectionId(sessionState, actionState, host, true)
-		if sessionState.Wait(actionState) {
-			return // we had an error
-		}
-	}
-
-	// Look up the database ID for the file GUID
-	getItems := session.RestRequest{
-		Method:      session.GET,
-		Destination: fmt.Sprintf("%s/%s?path=%s", host, dataListEndpoint, settings.Path),
-	}
-	restHandler.QueueRequest(actionState, false, &getItems, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return // we had an error
-	}
-
-	var folder *elasticstructs.GetDataFolders
-
-	if err := jsonit.Unmarshal(getItems.ResponseBody, &folder); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to unmarshal getdatafolders"))
+	dataFiles, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 
 	n := 0
-	for _, file := range *folder {
+	for _, file := range dataFiles {
 		if file.Name == settings.Filename {
-			deleteId := file.ID
+			deleteID := file.ID
 
 			// Construct the Delete request with the database ID
 			deleteItem := session.RestRequest{
 				Method:      session.DELETE,
 				ContentType: "application/json",
-				Destination: fmt.Sprintf("%v/%v/%v", host, datafileEndpoint, deleteId),
+				Destination: fmt.Sprintf("%v/%v/%v", host, datafileEndpoint, deleteID),
 			}
 
-			restHandler.QueueRequest(actionState, true, &deleteItem, sessionState.LogEntry)
+			sessionState.Rest.QueueRequest(actionState, true, &deleteItem, sessionState.LogEntry)
 			if sessionState.Wait(actionState) {
 				return // we had an error
 			}
@@ -108,12 +109,10 @@ func (settings DeleteDataSettings) Execute(
 	sessionState.Rest.GetAsync(
 		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
 	)
-	sessionState.Rest.GetAsync(
-		fmt.Sprintf(
-			"%s/%s?connectionId=%s&top=1000", host, datafileEndpoint, sessionState.DataConnectionId,
-		), actionState, sessionState.LogEntry, nil,
-	)
-	if sessionState.Wait(actionState) {
-		return // we had an error
+
+	if _, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID); err != nil {
+		actionState.AddErrors(errors.WithStack(err))
 	}
+
+	sessionState.Wait(actionState)
 }
