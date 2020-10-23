@@ -63,7 +63,7 @@ var (
 			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from elastic environment\",\n    \"action\" : \"disconnectelastic\"\n}\n```\n",
 		},
 		"dosave": {
-			Description: "## DoSave action\n\n`DoSave` issues a command to engine to save the currently open app. If the simulated user do not have permission to save the app it will result in an error.",
+			Description: "## DoSave action\n\n`DoSave` issues a command to engine to save the currently open app. If the simulated user does not have permission to save the app it will result in an error.",
 			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Save MyApp\",\n    \"action\" : \"dosave\"\n}\n```\n",
 		},
 		"duplicatesheet": {
