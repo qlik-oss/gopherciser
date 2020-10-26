@@ -903,10 +903,12 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 			if err != nil && !state.IsAbortTriggered() && state.CurrentActionState != nil {
 				state.CurrentActionState.AddErrors(errors.Wrap(err, "error reconnecting event websocket"))
 			}
-			state.eventWs.FakeEvent(eventws.Event{
-				Operation: EventWsReconnectEnded,
-				Success:   err == nil,
-			})
+			if state.eventWs != nil {
+				state.eventWs.FakeEvent(eventws.Event{
+					Operation: EventWsReconnectEnded,
+					Success:   err == nil,
+				})
+			}
 		}
 		return nil
 	}, actionState, true, "")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"io"
 	"net"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	gobwas "github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
@@ -182,11 +182,18 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 				return len(data), data, DisconnectError{Type: dialer.Type}
 			}
 
+			attempts := 0
+			started := time.Now()
 			if dialer.Reconnect.OnReconnectStart != nil {
 				dialer.Reconnect.OnReconnectStart()
 			}
-			attempts := 0
-			started := time.Now()
+			reConnectDone := dialer.Reconnect.OnReconnectDone
+			if reConnectDone != nil {
+				defer func() {
+					reConnectDone(err, attempts, time.Since(started))
+				}()
+			}
+
 			backoff := dialer.Reconnect.Backoff
 			if len(backoff) < 1 {
 				backoff = DefaultBackoff
@@ -212,10 +219,6 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 					defer cancel()
 					err = dialer.Dial(ctx)
 				}()
-			}
-			timeSpent := time.Since(started)
-			if dialer.Reconnect.OnReconnectDone != nil {
-				dialer.Reconnect.OnReconnectDone(err, attempts, timeSpent)
 			}
 		}
 	}
