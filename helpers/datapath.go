@@ -78,8 +78,8 @@ func (path DataPath) lookup(data json.RawMessage, quoteString bool) (json.RawMes
 	}
 }
 
-// LookupAndSet look object in path and set to new object
-func (path DataPath) LookupAndSet(data []byte, newValue []byte) ([]byte, error) {
+// Set look object in path and set to new object
+func (path DataPath) Set(data []byte, newValue []byte) ([]byte, error) {
 	steps := path.steps()
 
 	if steps == nil || len(steps) < 1 {

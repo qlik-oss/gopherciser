@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
@@ -35,6 +36,7 @@ func AddConfigParameter(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", `Scenario config file.`)
 }
 
+// AddLoggingParameters add logging parameters to command
 func AddLoggingParameters(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&traffic, "traffic", "t", false, "Log traffic. Logging traffic is heavy and should only be done for debugging purposes.")
 	cmd.Flags().BoolVarP(&trafficMetrics, "trafficmetrics", "m", false, "Log traffic metrics.")
@@ -53,7 +55,8 @@ func unmarshalConfigFile() (*config.Config, error) {
 		return nil, errors.Wrapf(err, "Error reading config from file<%s>", cfgFile)
 	}
 
-	cfgJSON, err = overrideScriptValues(cfgJSON)
+	var overrides []string
+	cfgJSON, overrides, err = overrideScriptValues(cfgJSON)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -63,29 +66,37 @@ func unmarshalConfigFile() (*config.Config, error) {
 		return nil, errors.Wrap(err, "Failed to unmarshal config from json")
 	}
 
+	if cfg.Settings.LogSettings.Format != config.LogFormatNoLogs {
+		PrintOverrides(overrides)
+	}
+
 	return &cfg, nil
 }
 
-func overrideScriptValues(cfgJSON []byte) ([]byte, error) {
-	if len(scriptOverrides) > 0 {
-		for _, kvp := range scriptOverrides {
-			kvSplit := strings.Split(kvp, "=")
-			if len(kvSplit) != 2 {
-				return cfgJSON, errors.Errorf("malformed override: %s, should be in the form key.path=value", kvp)
-			}
-			path := helpers.DataPath(kvSplit[0])
-			var err error
-			cfgJSON, err = path.LookupAndSet(cfgJSON, []byte(kvSplit[1]))
-			switch errors.Cause(err).(type) {
-			case helpers.NoDataFound:
-				return cfgJSON, errors.Errorf("No data found at override path: %s", path)
-			case nil:
-			default:
-				return cfgJSON, errors.WithStack(err)
-			}
+func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
+	overrides := make([]string, 0, len(scriptOverrides))
+	for _, kvp := range scriptOverrides {
+		kvSplit := strings.Split(kvp, "=")
+		if len(kvSplit) != 2 {
+			return cfgJSON, overrides, errors.Errorf("malformed override: %s, should be in the form key.path=value", kvp)
 		}
+		path := helpers.DataPath(kvSplit[0])
+		rawOrig, err := path.Lookup(cfgJSON)
+		if err != nil {
+			return cfgJSON, overrides, errors.Wrap(err, "invalid script override")
+		}
+		cfgJSON, err = path.Set(cfgJSON, []byte(kvSplit[1]))
+		if err != nil {
+			return cfgJSON, overrides, errors.WithStack(err)
+		}
+		rawModified, err := path.Lookup(cfgJSON)
+		if err != nil {
+			return cfgJSON, overrides, errors.WithStack(err)
+		}
+		overrides = append(overrides, fmt.Sprintf("%s: %s -> %s\n", path, rawOrig, rawModified))
 	}
-	return cfgJSON, nil
+
+	return cfgJSON, overrides, nil
 }
 
 func getLogFormatHelpString() string {
@@ -110,6 +121,7 @@ func getSummaryTypeHelpString() string {
 	return buf.String()
 }
 
+// ConfigOverrideLogSettings override log settings with parameters
 func ConfigOverrideLogSettings(cfg *config.Config) error {
 	if trafficMetrics {
 		cfg.SetTrafficMetricsLogging()
@@ -140,4 +152,16 @@ func ConfigOverrideLogSettings(cfg *config.Config) error {
 	}
 
 	return nil
+}
+
+// PrintOverrides to script
+func PrintOverrides(overrides []string) {
+	if len(overrides) < 1 {
+		return
+	}
+	os.Stderr.WriteString("=== Script overrides ===\n")
+	for _, override := range overrides {
+		os.Stderr.WriteString(override)
+	}
+	os.Stderr.WriteString("========================\n")
 }

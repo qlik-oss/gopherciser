@@ -99,7 +99,7 @@ func TestLookupAndSet(t *testing.T) {
 		t.Run(fmt.Sprintf("TestLookupAndSet%d", i), func(t *testing.T) {
 			// Lookup and modify
 			t.Logf("%s;%s;%v", test.Path, string(test.NewData), test.ExpectedValue)
-			modifiedData, err := test.Path.LookupAndSet(data, test.NewData)
+			modifiedData, err := test.Path.Set(data, test.NewData)
 			if len(modifiedData) > 0 {
 				t.Logf("modified data: %s", modifiedData)
 			}
