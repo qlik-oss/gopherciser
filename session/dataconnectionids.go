@@ -21,7 +21,7 @@ type (
 )
 
 func (err DataConnectionIDNotFoundError) Error() string {
-	space := err
+	space := string(err)
 	if space == "" {
 		space = "personal"
 	}
