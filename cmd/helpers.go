@@ -74,7 +74,8 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, error) {
 				return cfgJSON, errors.Errorf("malformed override: %s, should be in the form key.path=value", kvp)
 			}
 			path := helpers.DataPath(kvSplit[0])
-			cfgJSON, err := path.LookupAndSet(cfgJSON, []byte(kvSplit[1]))
+			var err error
+			cfgJSON, err = path.LookupAndSet(cfgJSON, []byte(kvSplit[1]))
 			switch errors.Cause(err).(type) {
 			case helpers.NoDataFound:
 				return cfgJSON, errors.Errorf("No data found at override path: %s", path)
@@ -82,14 +83,8 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, error) {
 			default:
 				return cfgJSON, errors.WithStack(err)
 			}
-			fmt.Printf("raw override: ->%s\n", kvSplit[1])
 		}
 	}
-
-	schedulerSettings := helpers.DataPath("scheduler/settings")
-	s, _ := schedulerSettings.Lookup(cfgJSON)
-	fmt.Println("scheduler settings:", string(s))
-
 	return cfgJSON, nil
 }
 
