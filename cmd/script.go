@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/qlik-oss/gopherciser/appstructure"
-
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/spf13/cobra"
 )
