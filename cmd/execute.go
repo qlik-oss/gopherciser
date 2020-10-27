@@ -46,6 +46,7 @@ var (
 	metricsGroupings []string
 	profTyp          string
 	objDefFile       string
+	scriptOverrides  []string
 )
 
 // *** Custom errors ***
@@ -169,6 +170,9 @@ var executeCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(executeCmd)
 	AddAllSharedParameters(executeCmd)
+
+	// Script overrides
+	executeCmd.Flags().StringArrayVarP(&scriptOverrides, "set", "s", nil, "Override a value in script with key.path=value.")
 
 	// Custom object definitions
 	executeCmd.Flags().StringVarP(&objDefFile, "definitions", "d", "", `Custom object definitions and overrides.`)

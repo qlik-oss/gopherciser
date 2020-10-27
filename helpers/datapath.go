@@ -38,17 +38,17 @@ func (path *DataPath) String() string {
 	return string(*path)
 }
 
-//steps path substrings splitted on / (slash)
+// steps path substrings splitted on / (slash)
 func (path *DataPath) steps() []string {
 	return strings.Split(strings.Trim(path.String(), "/"), "/")
 }
 
-//Lookup object in path, if data found is of type string it will be quoted with ""
+// Lookup object in path, if data found is of type string it will be quoted with ""
 func (path DataPath) Lookup(data json.RawMessage) (json.RawMessage, error) {
 	return path.lookup(data, true)
 }
 
-//Lookup object in path, data of type string will not be quoted
+// LookupNoQuotes object in path, data of type string will not be quoted
 func (path DataPath) LookupNoQuotes(data json.RawMessage) (json.RawMessage, error) {
 	return path.lookup(data, false)
 }
@@ -78,7 +78,24 @@ func (path DataPath) lookup(data json.RawMessage, quoteString bool) (json.RawMes
 	}
 }
 
-//LookupMulti objects with subpaths under an array in a path
+// LookupAndSet look object in path and set to new object
+func (path DataPath) LookupAndSet(data []byte, newValue []byte) ([]byte, error) {
+	steps := path.steps()
+
+	if steps == nil || len(steps) < 1 {
+		return data, errors.WithStack(NoStepsError(string(path)))
+	}
+
+	var err error
+	data, err = jsonparser.Set([]byte(data), newValue, steps...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to set data<%s> at path<%s>", newValue, path)
+	}
+
+	return data, nil
+}
+
+// LookupMulti objects with subpaths under an array in a path
 func (path DataPath) LookupMulti(data json.RawMessage, separator string) ([]json.RawMessage, error) {
 	// todo change to use jsonparser
 	if separator == "" || !strings.Contains(string(path), separator) {

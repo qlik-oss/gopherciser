@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -52,12 +53,44 @@ func unmarshalConfigFile() (*config.Config, error) {
 		return nil, errors.Wrapf(err, "Error reading config from file<%s>", cfgFile)
 	}
 
+	cfgJSON, err = overrideScriptValues(cfgJSON)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	var cfg config.Config
 	if err = jsonit.Unmarshal(cfgJSON, &cfg); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal config from json")
 	}
 
 	return &cfg, nil
+}
+
+func overrideScriptValues(cfgJSON []byte) ([]byte, error) {
+	if len(scriptOverrides) > 0 {
+		for _, kvp := range scriptOverrides {
+			kvSplit := strings.Split(kvp, "=")
+			if len(kvSplit) != 2 {
+				return cfgJSON, errors.Errorf("malformed override: %s, should be in the form key.path=value", kvp)
+			}
+			path := helpers.DataPath(kvSplit[0])
+			cfgJSON, err := path.LookupAndSet(cfgJSON, []byte(kvSplit[1]))
+			switch errors.Cause(err).(type) {
+			case helpers.NoDataFound:
+				return cfgJSON, errors.Errorf("No data found at override path: %s", path)
+			case nil:
+			default:
+				return cfgJSON, errors.WithStack(err)
+			}
+			fmt.Printf("raw override: ->%s\n", kvSplit[1])
+		}
+	}
+
+	schedulerSettings := helpers.DataPath("scheduler/settings")
+	s, _ := schedulerSettings.Lookup(cfgJSON)
+	fmt.Println("scheduler settings:", string(s))
+
+	return cfgJSON, nil
 }
 
 func getLogFormatHelpString() string {
