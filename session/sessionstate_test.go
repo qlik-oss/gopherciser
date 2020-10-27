@@ -3,8 +3,9 @@ package session
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/statistics"
 	"testing"
+
+	"github.com/qlik-oss/gopherciser/statistics"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -274,4 +275,12 @@ func assertEventCounter(ec *eventCounter, ech, ecl int) error {
 	}
 
 	return nil
+}
+
+func TestDataConnectionIDNotFoundError(t *testing.T) {
+	err := DataConnectionIDNotFoundError("MySpace")
+	t.Log(err) // will panic if recursive
+	if err.Error() != "data connection ID for space<MySpace> not found" {
+		t.Error("unexpected value of DataConnectionIDNotFoundError")
+	}
 }
