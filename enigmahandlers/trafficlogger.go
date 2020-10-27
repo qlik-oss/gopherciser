@@ -37,13 +37,11 @@ func (tl *TrafficLogger) Sent(message []byte) {
 		tl.Requests.Inc() // Increase local request counter
 	}
 	tl.Counters.Requests.Inc() // Increase execution wide request counter
-	LogRegression(tl.LogEntry, Sent, message)
 }
 
 // Received message received on socket
 func (tl *TrafficLogger) Received(message []byte) {
 	tl.LogEntry.LogDetail(logger.TrafficLevel, string(message), "Received")
-	LogRegression(tl.LogEntry, Recieved, message)
 }
 
 // Closed log socket closed

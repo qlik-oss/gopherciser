@@ -271,7 +271,7 @@ func (log *Log) SetRegression() {
 		return
 	}
 	for _, l := range log.loggers {
-		l.Writer.Level(TrafficLevel)
+		l.Writer.Level(RegressionLevel)
 	}
 }
 

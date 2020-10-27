@@ -332,5 +332,5 @@ func (entry *LogEntry) ShouldLogRegression() bool {
 	if entry == nil || entry.logger == nil {
 		return false
 	}
-	return true
+	return entry.logger.Settings.Regression
 }

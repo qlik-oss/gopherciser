@@ -266,6 +266,10 @@ func (state *State) SetLogEntry(entry *logger.LogEntry) {
 		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter(state.Counters)
 	}
 
+	if entry.ShouldLogRegression() {
+		state.trafficLogger = enigmahandlers.WithRegressionLog(state.trafficLogger, entry)
+	}
+
 	state.Rest = NewRestHandler(state.ctx, 64, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
 }
 
