@@ -69,6 +69,7 @@ type (
 
 	// LogSettings settings for logging
 	LogSettings struct {
+		Regression     bool                   `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
 		Traffic        bool                   `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
 		Debug          bool                   `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
 		TrafficMetrics bool                   `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
@@ -943,9 +944,10 @@ func addTSVFileLogger(log *logger.Log, filename string) error {
 
 func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*logger.Logger, templateData interface{}, counters *statistics.ExecutionCounters) (*logger.Log, error) {
 	log := logger.NewLog(logger.LogSettings{
-		Traffic: settings.Traffic,
-		Metrics: settings.TrafficMetrics,
-		Debug:   settings.Debug,
+		Regression: settings.Regression,
+		Traffic:    settings.Traffic,
+		Metrics:    settings.TrafficMetrics,
+		Debug:      settings.Debug,
 	})
 
 	filename, err := settings.FileName.ReplaceWithoutSessionVariables(templateData)
@@ -1009,6 +1011,10 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 	// Traffic logging
 	if settings.Traffic {
 		log.SetTraffic()
+	}
+
+	if settings.Regression {
+		log.SetRegression()
 	}
 
 	// Debug logging

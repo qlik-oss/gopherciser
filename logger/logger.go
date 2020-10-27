@@ -51,9 +51,10 @@ type (
 
 	// LogSettings settings
 	LogSettings struct {
-		Traffic bool
-		Metrics bool
-		Debug   bool
+		Regression bool
+		Traffic    bool
+		Metrics    bool
+		Debug      bool
 	}
 
 	// Log main struct to keep track of and propagate log entries to loggers. Close finished will be signaled on Closed channel.
@@ -79,6 +80,7 @@ const (
 	MetricsLevel
 	TrafficLevel
 	DebugLevel
+	RegressionLevel
 )
 
 func (l LogLevel) String() string {
@@ -97,6 +99,8 @@ func (l LogLevel) String() string {
 		return "traffic"
 	case MetricsLevel:
 		return "metric"
+	case RegressionLevel:
+		return "regression"
 	default:
 		return "unknown"
 	}
@@ -253,6 +257,16 @@ func (log *Log) SetMetrics() {
 
 // SetTraffic level on logging for all loggers
 func (log *Log) SetTraffic() {
+	if log == nil {
+		return
+	}
+	for _, l := range log.loggers {
+		l.Writer.Level(TrafficLevel)
+	}
+}
+
+// SetTraffic level on logging for all loggers
+func (log *Log) SetRegression() {
 	if log == nil {
 		return
 	}
