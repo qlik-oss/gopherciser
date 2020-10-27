@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/qlik-oss/gopherciser/statistics"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
