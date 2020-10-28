@@ -79,7 +79,7 @@ func unmarshalConfigFile() (*config.Config, error) {
 func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 	overrides := make([]string, 0, len(scriptOverrides))
 	for _, kvp := range scriptOverrides {
-		kvSplit := strings.Split(kvp, "=")
+		kvSplit := strings.SplitN(kvp, "=", 2)
 		if len(kvSplit) != 2 {
 			return cfgJSON, overrides, errors.Errorf("malformed override: %s, should be in the form key.path=value", kvp)
 		}
