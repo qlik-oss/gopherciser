@@ -586,7 +586,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 	}
 
 	// traffic logging turned on?
-	logTraffic := transport.LogEntry.ShouldLogTraffic()
+	logTraffic := transport.LogEntry.ShouldLogTraffic() || transport.LogEntry.ShouldLogRegression()
 
 	if logTraffic && transport.trafficLogger != nil {
 		body := true
