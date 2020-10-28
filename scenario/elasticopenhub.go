@@ -196,7 +196,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		dataConnectionID, fetchErr = sessionState.FetchDataConnectionID(actionState, host, "")
 		return fetchErr
 	}, actionState, false, "", func(err error) {
-		if err != nil {
+		if err == nil {
 			_, err = sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
 		}
 		if err != nil {
