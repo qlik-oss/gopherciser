@@ -48,7 +48,7 @@ func (logger *regressionLogger) Received(message []byte) {
 }
 
 func LogRegression(logEntry *logger.LogEntry, direction Direction, message []byte) {
-	protocol := Unknown
+	var protocol Protocol
 	switch {
 	case len(message) > 0 && message[0] == byte('{'):
 		protocol = WS
