@@ -127,7 +127,7 @@ jobs:
   publish-github:
     <<: *defaults
     docker:
-      - image: golang:1.11-alpine
+      - image: golang:1.15-alpine
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
