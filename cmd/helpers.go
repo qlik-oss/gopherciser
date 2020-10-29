@@ -81,7 +81,7 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 	for _, kvp := range scriptOverrides {
 		kvSplit := strings.SplitN(kvp, "=", 2)
 		if len(kvSplit) != 2 {
-			return cfgJSON, overrides, errors.Errorf("malformed override: %s, should be in the form key.path=value", kvp)
+			return cfgJSON, overrides, errors.Errorf("malformed override: %s, should be in the form 'path/to/key=value'", kvp)
 		}
 		path := helpers.DataPath(kvSplit[0])
 		rawOrig, err := path.Lookup(cfgJSON)
