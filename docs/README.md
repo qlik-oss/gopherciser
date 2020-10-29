@@ -181,7 +181,7 @@ Sub-commands:
 
 #### Using script overrides
 
-Script overrides overrides a value pointed to by a path to its key. If the key doesn't exist in the script there will be a not found error, even if it's a valid value according to config.
+Script overrides overrides a value pointed to by a path to its key. If the key doesn't exist in the script there will an error, even if it's a valid value according to config.
 
 The syntax is path/to/key=value. A common thing to override would be the settings of the simple scheduler.
 

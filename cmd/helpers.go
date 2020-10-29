@@ -36,7 +36,7 @@ func AddConfigParameter(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", `Scenario config file.`)
 
 	// Script overrides
-	cmd.Flags().StringArrayVarP(&scriptOverrides, "set", "s", nil, "Override a value in script with key.path=value.")
+	cmd.Flags().StringArrayVarP(&scriptOverrides, "set", "s", nil, "Override a value in script with 'path/to/key=value'.")
 }
 
 // AddLoggingParameters add logging parameters to command
