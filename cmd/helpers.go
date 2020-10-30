@@ -29,14 +29,18 @@ var (
 // AddAllSharedParameters add shared parameters to command
 func AddAllSharedParameters(cmd *cobra.Command) {
 	AddConfigParameter(cmd)
+	AddOverrideParameters(cmd)
 }
 
 // AddConfigParameter add config file parameter to command
 func AddConfigParameter(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", `Scenario config file.`)
+}
 
-	// Script overrides
+// AddOverrideParameters to command
+func AddOverrideParameters(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVarP(&scriptOverrides, "set", "s", nil, "Override a value in script with 'path/to/key=value'.")
+	cmd.Flags().StringVar(&scriptOverrideFile, "setfromfile", "", "Override values from file where each row is path/to/key=value.")
 }
 
 // AddLoggingParameters add logging parameters to command
@@ -77,12 +81,25 @@ func unmarshalConfigFile() (*config.Config, error) {
 }
 
 func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
-	overrides := make([]string, 0, len(scriptOverrides))
+	var overrides []string
+	if scriptOverrideFile != "" {
+		overrideFile, err := helpers.NewRowFile(scriptOverrideFile)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "Error reading overrides from file<%s>", scriptOverrideFile)
+		}
+		if scriptOverrides == nil {
+			scriptOverrides = make([]string, 0, len(overrideFile.Rows()))
+		}
+		scriptOverrides = append(overrideFile.Rows(), scriptOverrides...) // let command line overrides override file overrides
+	}
+
+	overrides = make([]string, 0, len(scriptOverrides))
 	for _, kvp := range scriptOverrides {
 		kvSplit := strings.SplitN(kvp, "=", 2)
 		if len(kvSplit) != 2 {
 			return cfgJSON, overrides, errors.Errorf("malformed override: %s, should be in the form 'path/to/key=value'", kvp)
 		}
+
 		path := helpers.DataPath(kvSplit[0])
 		rawOrig, err := path.Lookup(cfgJSON)
 		if err != nil {
