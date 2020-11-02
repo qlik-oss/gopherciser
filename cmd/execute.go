@@ -107,14 +107,6 @@ var executeCmd = &cobra.Command{
 			}
 		}()
 
-		//if cfgFile == "" {
-		//	_, _ = os.Stderr.WriteString("Error: No config provided\n")
-		//	if err := cmd.Help(); err != nil {
-		//		_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-		//	}
-		//	os.Exit(ExitCodeMissingParameter)
-		//}
-
 		if execErr := execute(); execErr != nil {
 			errMsg := "Unknown error"
 			var exitCode int
