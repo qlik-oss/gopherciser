@@ -122,6 +122,20 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 			scriptOverrides = make([]string, 0, len(overrideFile.Rows()))
 		}
 		scriptOverrides = append(overrideFile.Rows(), scriptOverrides...) // let command line overrides override file overrides
+	} else if cfgFile != "" { // if cfg file has been pointed to, but has stdin piped, assume it's overrides
+		hasPipe, err := hasPipe()
+		if err != nil {
+			return nil, nil,  errors.Wrap(err, "error reading overrides from stdin")
+		}
+		if hasPipe {
+			if scriptOverrides == nil {
+				scriptOverrides = make([]string, 0, 10)
+			}
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				scriptOverrides = append(scriptOverrides, scanner.Text())
+			}
+		}
 	}
 
 	overrides = make([]string, 0, len(scriptOverrides))
