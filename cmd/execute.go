@@ -40,12 +40,14 @@ type (
 )
 
 var (
-	metricsPort      int
-	metricsAddress   string
-	metricsLabel     string
-	metricsGroupings []string
-	profTyp          string
-	objDefFile       string
+	metricsPort        int
+	metricsAddress     string
+	metricsLabel       string
+	metricsGroupings   []string
+	profTyp            string
+	objDefFile         string
+	scriptOverrides    []string
+	scriptOverrideFile string
 )
 
 // *** Custom errors ***

@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -27,6 +29,7 @@ var (
 // AddAllSharedParameters add shared parameters to command
 func AddAllSharedParameters(cmd *cobra.Command) {
 	AddConfigParameter(cmd)
+	AddOverrideParameters(cmd)
 }
 
 // AddConfigParameter add config file parameter to command
@@ -34,6 +37,13 @@ func AddConfigParameter(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", `Scenario config file.`)
 }
 
+// AddOverrideParameters to command
+func AddOverrideParameters(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVarP(&scriptOverrides, "set", "s", nil, "Override a value in script with 'path/to/key=value'.")
+	cmd.Flags().StringVar(&scriptOverrideFile, "setfromfile", "", "Override values from file where each row is path/to/key=value.")
+}
+
+// AddLoggingParameters add logging parameters to command
 func AddLoggingParameters(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&traffic, "traffic", "t", false, "Log traffic. Logging traffic is heavy and should only be done for debugging purposes.")
 	cmd.Flags().BoolVarP(&trafficMetrics, "trafficmetrics", "m", false, "Log traffic metrics.")
@@ -52,12 +62,61 @@ func unmarshalConfigFile() (*config.Config, error) {
 		return nil, errors.Wrapf(err, "Error reading config from file<%s>", cfgFile)
 	}
 
+	var overrides []string
+	cfgJSON, overrides, err = overrideScriptValues(cfgJSON)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	var cfg config.Config
 	if err = jsonit.Unmarshal(cfgJSON, &cfg); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal config from json")
 	}
 
+	if cfg.Settings.LogSettings.Format != config.LogFormatNoLogs {
+		PrintOverrides(overrides)
+	}
+
 	return &cfg, nil
+}
+
+func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
+	var overrides []string
+	if scriptOverrideFile != "" {
+		overrideFile, err := helpers.NewRowFile(scriptOverrideFile)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "Error reading overrides from file<%s>", scriptOverrideFile)
+		}
+		if scriptOverrides == nil {
+			scriptOverrides = make([]string, 0, len(overrideFile.Rows()))
+		}
+		scriptOverrides = append(overrideFile.Rows(), scriptOverrides...) // let command line overrides override file overrides
+	}
+
+	overrides = make([]string, 0, len(scriptOverrides))
+	for _, kvp := range scriptOverrides {
+		kvSplit := strings.SplitN(kvp, "=", 2)
+		if len(kvSplit) != 2 {
+			return cfgJSON, overrides, errors.Errorf("malformed override: %s, should be in the form 'path/to/key=value'", kvp)
+		}
+
+		path := helpers.DataPath(kvSplit[0])
+		rawOrig, err := path.Lookup(cfgJSON)
+		if err != nil {
+			return cfgJSON, overrides, errors.Wrap(err, "invalid script override")
+		}
+		cfgJSON, err = path.Set(cfgJSON, []byte(kvSplit[1]))
+		if err != nil {
+			return cfgJSON, overrides, errors.WithStack(err)
+		}
+		rawModified, err := path.Lookup(cfgJSON)
+		if err != nil {
+			return cfgJSON, overrides, errors.WithStack(err)
+		}
+		overrides = append(overrides, fmt.Sprintf("%s: %s -> %s\n", path, rawOrig, rawModified))
+	}
+
+	return cfgJSON, overrides, nil
 }
 
 func getLogFormatHelpString() string {
@@ -82,6 +141,7 @@ func getSummaryTypeHelpString() string {
 	return buf.String()
 }
 
+// ConfigOverrideLogSettings override log settings with parameters
 func ConfigOverrideLogSettings(cfg *config.Config) error {
 	if trafficMetrics {
 		cfg.SetTrafficMetricsLogging()
@@ -112,4 +172,16 @@ func ConfigOverrideLogSettings(cfg *config.Config) error {
 	}
 
 	return nil
+}
+
+// PrintOverrides to script
+func PrintOverrides(overrides []string) {
+	if len(overrides) < 1 {
+		return
+	}
+	os.Stderr.WriteString("=== Script overrides ===\n")
+	for _, override := range overrides {
+		os.Stderr.WriteString(override)
+	}
+	os.Stderr.WriteString("========================\n")
 }

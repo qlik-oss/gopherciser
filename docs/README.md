@@ -51,6 +51,7 @@ Flags:
 
 * `-c`, `--config string`: Load the specified scenario setup file.
 * `--debug`: Log debug information.
+* `-d`, `--definitions`: Custom object definitions and overrides.
 * `-h`, `--help`: Show the help for the `execute` command.
 * `--logformat string`: Set the specified log format. The log format specified in the scenario setup file is used by default. If no log format is specified, `tsvfile` is used.
   * `0` or `tsvfile`: TSV file
@@ -74,6 +75,7 @@ Flags:
   * `6` or `mutex`: Mutex
   * `7` or `trace`: Trace
   * `8` or `mem`: Mem
+* `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.
 * `--summary string`: Set the type of summary to display after the test run. Defaults to `simple` for minimal performance impact.
   * `0` or `undefined`: Simple, single-row summary
   * `1` or `none`: No summary
@@ -137,6 +139,7 @@ Sub-commands:
 
 * `-c`, `--config string`: Connect using the specified scenario config file.
 * `-h`, `--help`: Show the help for the `connect` command.
+* `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.
 
 `structure` command flags:
 
@@ -162,17 +165,77 @@ Sub-commands:
   * `4` or `full`: Currently the same as the `extended` summary, includes a list of all objects in the structure.
 * `-t`, `--traffic`: Log traffic information.
 * `-m`, `--trafficmetrics`: Log metrics information.
+* `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.
+* `--setfromfile`: Override values from file where each row is path/to/key=value.
 
 `validate` command flags:
 
 * `-c`, `--config string`: Load the specified scenario setup file.
 * `-h`, `--help`: Show the help for the `validate` command.
+* `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.
+* `--setfromfile`: Override values from file where each row is path/to/key=value.
 
 `template` command flags:
 
 * `-c`, `--config string`: (optional) Create the specified scenario setup file. Defaults to `template.json`.
 * `-f`, `--force`: Overwrite existing scenario setup file.
 * `-h`, `--help`: Show the help for the `template` command.
+
+#### Using script overrides
+
+Script overrides overrides a value pointed to by a path to its key. If the key doesn't exist in the script there will an error, even if it's a valid value according to config.
+
+The syntax is path/to/key=value. A common thing to override would be the settings of the simple scheduler.
+
+```json
+"scheduler": {
+  "type": "simple",
+  "settings": {
+    "executiontime": -1,
+    "iterations": 1,
+    "rampupdelay": 1.0,
+    "concurrentusers": 1
+  }
+}
+```
+
+`scheduler` is in the root of the JSON, so the path to the key of `concurrentusers` would be `scheduler/settings/concurrentusers`. To override concurrent users from command line:
+
+```bash
+./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json -s 'scheduler/settings/concurrentusers=2'
+```
+
+Overriding a string, such as the server the servername requires it to be wrapped with double quotes. E.g. to override the server:
+
+```bash
+./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json -s 'connectionSettings/server="127.0.0.1"'
+```
+
+Do note that the path is case sensitive. It needs to be `connectionSettings/server` as `connectionsettings/server` would try, and fail, to add new key called `connectionsettings`.
+
+Overrides could also be used to with more advanced paths. If the position in `scenario` is known for `openapp` we could replace e.g. the app opened, assuming `openapp` is the first action in `scenario`:
+
+```bash
+./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json -s 'scenario/[0]/settings/app="mynewapp"'
+```
+
+It could even replace an entire JSON object such as the `connectionSettings` with one replace call:
+
+```bash
+./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json -s 'connectionSettings={"mode":"ws","server":"127.0.0.1","port":19076}'
+```
+
+Overrides could also be defined in a file. Each row in the file should be in the same format as when using overrides from command line, although should not be wrapped with single quotes as this is for command line interpretation purposes. Using the same overrides as above, the file could look like the following:
+
+```
+connectionSettings/server="1.2.3.4"
+scenario/[0]/settings/app="mynewapp"
+connectionSettings={"mode":"ws","server":"127.0.0.1","port":19076}
+```
+
+Overrides will be executed from top to button, as such the third line will override the `server` overriden by the first line and script will execute towards `127.0.0.1:19076`.
+
+Any command line overrides will be executed _after_ the overrides defined in file.
 
 ## Analyzing the test results
 
