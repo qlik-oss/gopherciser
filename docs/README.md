@@ -181,6 +181,22 @@ Sub-commands:
 * `-f`, `--force`: Overwrite existing scenario setup file.
 * `-h`, `--help`: Show the help for the `template` command.
 
+##### Piping stdin
+
+Config file and override file can be piped from stdin. If no config is set stdin is assumed to be the config file, if config file is set, stdin is assumed to be the ovverides file.
+
+This would execute the sheetchanger example from stdin:
+
+```bash
+cat ./docs/examples/sheetChangerQlikCore.json | ./build/gopherciser x
+```
+
+This would execute overrides from stdin:
+
+```bash
+cat overrides.txt |./build/gopherciser x -c ./docs/examples/sheetChangerQlikCore.json
+```
+
 #### Using script overrides
 
 Script overrides overrides a value pointed to by a path to its key. If the key doesn't exist in the script there will an error, even if it's a valid value according to config.
