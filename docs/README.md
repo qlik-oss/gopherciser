@@ -183,7 +183,7 @@ Sub-commands:
 
 ##### Piping stdin
 
-Config file and override file can be piped from stdin. If no config is set stdin is assumed to be the config file, if config file is set, stdin is assumed to be the ovverides file.
+Config file and overrides file can be piped from stdin. If no config is set stdin is assumed to be the config file, if config file is set, stdin is assumed to be the overrides file.
 
 This would execute the sheetchanger example from stdin:
 
