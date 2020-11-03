@@ -15,9 +15,11 @@ import (
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/regression"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -459,9 +461,61 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 		containerActionEntry = originalActionEntry
 	}
 
-	err := logResult(sessionState, actionState, actionState.Details, containerActionEntry)
+	var errs error
+
+	if err := logResult(sessionState, actionState, actionState.Details, containerActionEntry); err != nil {
+		errs = multierror.Append(errs, err)
+	}
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
-	return errors.WithStack(err)
+
+	// things to dump
+	// 1. HyperCube*Pages
+	// 2. ListObjectDataPages
+	// hypercube listobject
+
+	// sessionState.LogEntry.Session
+
+	if sessionState.Connection == nil {
+		// some actions do not have a connetion set up
+		return errors.WithStack(errs)
+	}
+	uplink := sessionState.Connection.Sense()
+	if uplink == nil {
+		errs = multierror.Append(errs, errors.New("could not log regression data: no sense connection"))
+		return errors.WithStack(errs)
+	}
+
+	// log regression analysis data for each subscribed object
+	err := uplink.Objects.ForEachWithLock(
+		func(obj *enigmahandlers.Object) error {
+			err := regression.Log(
+				// use unique id SESSION.ACTION.OBJ
+				fmt.Sprintf("%d.%d.%s", sessionState.LogEntry.Session.Session, sessionState.Counters.ActionID.Current(), obj.ID),
+				map[string]interface{}{
+					// "hyperCubeDataPages":  obj.HyperCubeDataPages(),
+					// "hyperCubeStackPages": obj.HyperCubeStackPages(),
+					// "hyperPivotPages":     obj.HyperPivotPages(),
+					"hyperCube":  obj.HyperCube(),
+					"listObject": obj.ListObject(),
+				},
+				map[string]interface{}{
+					"actionType":  act.ActionCore.Type,
+					"actionLabel": act.ActionCore.Label,
+					"actionID":    sessionState.Counters.ActionID.Current(),
+					"objectID":    obj.ID,
+				})
+			return errors.Wrap(err, "failed to log regression data")
+		},
+	)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	// logging thoughts:
+	// log-file name inspire from structure
+	// reuse tsvwriter?
+
+	return errors.WithStack(errs)
 }
 
 // AppStructureAction returns if this action should be included when getting app structure
