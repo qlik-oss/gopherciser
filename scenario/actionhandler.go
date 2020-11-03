@@ -19,7 +19,6 @@ import (
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
-	"github.com/qlik-oss/gopherciser/regression"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -468,54 +467,60 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 	}
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
 
-	// things to dump
-	// 1. HyperCube*Pages
-	// 2. ListObjectDataPages
-	// hypercube listobject
+	if err := logObjectRegressionData(sessionState); err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
-	// sessionState.LogEntry.Session
+	return errors.WithStack(errs)
+}
 
+func logObjectRegressionData(sessionState *session.State) error {
+	// regression logging
+	if !sessionState.LogEntry.ShouldLogRegression() {
+		return nil
+	}
 	if sessionState.Connection == nil {
 		// some actions do not have a connetion set up
-		return errors.WithStack(errs)
+		return nil
 	}
 	uplink := sessionState.Connection.Sense()
 	if uplink == nil {
-		errs = multierror.Append(errs, errors.New("could not log regression data: no sense connection"))
-		return errors.WithStack(errs)
+		return errors.New("could not log regression data: no sense connection")
 	}
 
 	// log regression analysis data for each subscribed object
 	err := uplink.Objects.ForEachWithLock(
 		func(obj *enigmahandlers.Object) error {
-			err := regression.Log(
+			hyperCube := obj.HyperCube()
+			listObject := obj.ListObject()
+
+			// TODO(atluq): investigate solution when empty objID
+			if obj.ID == "" && (hyperCube != nil || listObject != nil) {
+				// TMP: fail if we have no id and have data
+				return errors.New("empty")
+			}
+
+			err := sessionState.LogEntry.LogRegression(
 				// use unique id SESSION.ACTION.OBJ
 				fmt.Sprintf("%d.%d.%s", sessionState.LogEntry.Session.Session, sessionState.Counters.ActionID.Current(), obj.ID),
 				map[string]interface{}{
 					// "hyperCubeDataPages":  obj.HyperCubeDataPages(),
 					// "hyperCubeStackPages": obj.HyperCubeStackPages(),
 					// "hyperPivotPages":     obj.HyperPivotPages(),
-					"hyperCube":  obj.HyperCube(),
-					"listObject": obj.ListObject(),
+					"hyperCube":  hyperCube,
+					"listObject": listObject,
 				},
 				map[string]interface{}{
-					"actionType":  act.ActionCore.Type,
-					"actionLabel": act.ActionCore.Label,
-					"actionID":    sessionState.Counters.ActionID.Current(),
+					"actionType":  sessionState.LogEntry.Action.Action,
+					"actionLabel": sessionState.LogEntry.Action.Label,
+					"actionID":    sessionState.LogEntry.Action.ActionID,
 					"objectID":    obj.ID,
+					"sessionID":   sessionState.LogEntry.Session.Session,
 				})
 			return errors.Wrap(err, "failed to log regression data")
 		},
 	)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-
-	// logging thoughts:
-	// log-file name inspire from structure
-	// reuse tsvwriter?
-
-	return errors.WithStack(errs)
+	return err
 }
 
 // AppStructureAction returns if this action should be included when getting app structure

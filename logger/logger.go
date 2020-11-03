@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -51,9 +53,10 @@ type (
 
 	// LogSettings settings
 	LogSettings struct {
-		Traffic bool
-		Metrics bool
-		Debug   bool
+		Traffic    bool
+		Metrics    bool
+		Debug      bool
+		Regression bool
 	}
 
 	// Log main struct to keep track of and propagate log entries to loggers. Close finished will be signaled on Closed channel.
@@ -64,6 +67,8 @@ type (
 
 		Closed   chan interface{}
 		Settings LogSettings
+
+		regressionLogger RegressionLoggerCloser
 	}
 )
 
@@ -141,6 +146,27 @@ func (log *Log) AddLoggers(loggers ...*Logger) {
 	log.loggers = append(log.loggers, loggers...)
 }
 
+// SetRegressionLogger to be used for logging regression data
+func (log *Log) SetRegressionLogger(w io.WriteCloser) {
+	log.regressionLogger = NewRegressionLogger(w)
+}
+
+// SetRegressionLoggerFile to be used for logging regression data to file. The
+// file name is chosen, using `backupName`, to match the name of the standard
+// log file.
+func (log *Log) SetRegressionLoggerFile(fileName string) error {
+	fileName = backupName(fileName)
+	fileName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+	fileName += ".regression"
+
+	f, err := NewWriter(fileName)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	log.regressionLogger = NewRegressionLogger(f)
+	return nil
+}
+
 // CloseWithTimeout functions with custom timeout
 func (log *Log) CloseWithTimeout(timeout time.Duration) error {
 	log.closeFlag.Store(true)
@@ -158,6 +184,9 @@ func (log *Log) CloseWithTimeout(timeout time.Duration) error {
 			}
 		}
 		log.loggers = nil
+	}
+	if log.regressionLogger != nil {
+		log.regressionLogger.Close()
 	}
 
 	return errors.WithStack(helpers.FlattenMultiError(mErr))

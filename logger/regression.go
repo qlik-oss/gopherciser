@@ -1,4 +1,4 @@
-package regression
+package logger
 
 import (
 	"encoding/json"
@@ -7,14 +7,20 @@ import (
 )
 
 type (
-	Logger struct {
+	RegressionLogger interface {
+		Log(dataID string, data interface{}, meta map[string]interface{}) error
+	}
+
+	RegressionLoggerCloser interface {
+		io.Closer
+		RegressionLogger
+	}
+
+	regressionLogger struct {
 		w io.WriteCloser
 	}
-	filterType string
-)
 
-const (
-	enabled = true
+	filterType string
 )
 
 var filters = marshalFilters(
@@ -34,16 +40,16 @@ func marshalFilters(filters ...filterType) []byte {
 	return rawJson
 }
 
-func NewLogger(w io.WriteCloser) *Logger {
+func NewRegressionLogger(w io.WriteCloser) RegressionLoggerCloser {
 	fmt.Fprintf(w, "FILTERS %s\n\n", filters)
-	return &Logger{w}
+	return &regressionLogger{w}
 }
 
-func (logger *Logger) Close() error {
+func (logger *regressionLogger) Close() error {
 	return logger.w.Close()
 }
 
-func (logger *Logger) Log(dataID string, data interface{}, meta map[string]interface{}) error {
+func (logger *regressionLogger) Log(dataID string, data interface{}, meta map[string]interface{}) error {
 	dataIDJSON, err := json.Marshal(dataID)
 	if err != nil {
 		return err
@@ -59,6 +65,6 @@ func (logger *Logger) Log(dataID string, data interface{}, meta map[string]inter
 		return err
 	}
 
-	fmt.Fprintf(logger.w, `ID %s\nDATA %s\nMETA %s\n\n`, dataIDJSON, string(dataJSON), string(metaJSON))
+	fmt.Fprintf(logger.w, "\nID %s\nDATA %s\nMETA %s\n", dataIDJSON, dataJSON, metaJSON)
 	return nil
 }

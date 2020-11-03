@@ -72,6 +72,7 @@ type (
 		Traffic        bool                   `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
 		Debug          bool                   `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
 		TrafficMetrics bool                   `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression     bool                   `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
 		FileName       session.SyncedTemplate `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
 		Format         LogFormatType          `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
 		Summary        SummaryType            `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
@@ -943,14 +944,19 @@ func addTSVFileLogger(log *logger.Log, filename string) error {
 
 func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*logger.Logger, templateData interface{}, counters *statistics.ExecutionCounters) (*logger.Log, error) {
 	log := logger.NewLog(logger.LogSettings{
-		Traffic: settings.Traffic,
-		Metrics: settings.TrafficMetrics,
-		Debug:   settings.Debug,
+		Traffic:    settings.Traffic,
+		Metrics:    settings.TrafficMetrics,
+		Debug:      settings.Debug,
+		Regression: settings.Regression,
 	})
 
 	filename, err := settings.FileName.ReplaceWithoutSessionVariables(templateData)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to expand session variables in filename")
+	}
+
+	if log.Settings.Regression {
+		log.SetRegressionLoggerFile(filename)
 	}
 
 	switch settings.Format {
