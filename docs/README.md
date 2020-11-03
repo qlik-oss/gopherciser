@@ -188,13 +188,13 @@ Config file and overrides file can be piped from stdin. If no config is set stdi
 This would execute the sheetchanger example from stdin:
 
 ```bash
-cat ./docs/examples/sheetChangerQlikCore.json | ./build/gopherciser x
+cat ./docs/examples/sheetChangerQlikCore.json | ./gopherciser x
 ```
 
 This would execute overrides from stdin:
 
 ```bash
-cat overrides.txt |./build/gopherciser x -c ./docs/examples/sheetChangerQlikCore.json
+cat overrides.txt |./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json
 ```
 
 #### Using script overrides
