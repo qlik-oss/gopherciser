@@ -46,6 +46,8 @@ func marshalFilters(filters ...filterType) []byte {
 	return rawJson
 }
 
+// NewRegressionLogger creates a new RegressionLoggerCloser with headerLines are
+// written at the top of the log file.
 func NewRegressionLogger(w io.WriteCloser, headerLines ...HeaderLine) RegressionLoggerCloser {
 	fmt.Fprintf(w, "FILTERS %s\n", filters)
 	for _, hl := range headerLines {
@@ -60,6 +62,9 @@ func (logger *regressionLogger) Close() error {
 	return logger.w.Close()
 }
 
+// Log the regression analysis data accosiated with a unique id. Caller is
+// responsible for setting unique ids. Pass meta data to support interpretaton of
+// log results.
 func (logger *regressionLogger) Log(dataID string, data interface{}, meta map[string]interface{}) error {
 	dataIDJSON, err := json.Marshal(dataID)
 	if err != nil {
