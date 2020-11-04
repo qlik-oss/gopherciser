@@ -155,10 +155,7 @@ func (log *Log) SetRegressionLogger(w io.WriteCloser) {
 // file name is chosen, using `backupName`, to match the name of the standard
 // log file.
 func (log *Log) SetRegressionLoggerFile(fileName string) error {
-	fileName = backupName(fileName)
-	fileName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
-	fileName += ".regression"
-
+	fileName = strings.TrimSuffix(backupName(fileName), filepath.Ext(fileName)) + ".regression"
 	f, err := NewWriter(fileName)
 	if err != nil {
 		return errors.WithStack(err)

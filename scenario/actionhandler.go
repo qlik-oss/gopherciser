@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
@@ -460,18 +461,16 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 		containerActionEntry = originalActionEntry
 	}
 
-	var errs error
-
 	if err := logResult(sessionState, actionState, actionState.Details, containerActionEntry); err != nil {
-		errs = multierror.Append(errs, err)
+		return err
 	}
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
 
 	if err := logObjectRegressionData(sessionState); err != nil {
-		errs = multierror.Append(errs, err)
+		return err
 	}
 
-	return errors.WithStack(errs)
+	return nil
 }
 
 func logObjectRegressionData(sessionState *session.State) error {
@@ -491,14 +490,18 @@ func logObjectRegressionData(sessionState *session.State) error {
 	// log regression analysis data for each subscribed object
 	err := uplink.Objects.ForEachWithLock(
 		func(obj *enigmahandlers.Object) error {
+			// skip sheet and app types
+			if obj.Type != enigmahandlers.ObjTypeGenericObject {
+				return nil
+			}
+
+			genType := ""
+			if genObj, ok := obj.EnigmaObject.(*enigma.GenericObject); ok {
+				genType = genObj.GenericType
+			}
+
 			hyperCube := obj.HyperCube()
 			listObject := obj.ListObject()
-
-			// TODO(atluq): investigate solution when empty objID
-			if obj.ID == "" && (hyperCube != nil || listObject != nil) {
-				// TMP: fail if we have no id and have data
-				return errors.New("empty")
-			}
 
 			err := sessionState.LogEntry.LogRegression(
 				// use unique id SESSION.ACTION.OBJ
@@ -515,6 +518,7 @@ func logObjectRegressionData(sessionState *session.State) error {
 					"actionLabel": sessionState.LogEntry.Action.Label,
 					"actionID":    sessionState.LogEntry.Action.ActionID,
 					"objectID":    obj.ID,
+					"objectType":  genType,
 					"sessionID":   sessionState.LogEntry.Session.Session,
 				})
 			return errors.Wrap(err, "failed to log regression data")

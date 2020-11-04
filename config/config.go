@@ -956,7 +956,10 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 	}
 
 	if log.Settings.Regression {
-		log.SetRegressionLoggerFile(filename)
+		err := log.SetRegressionLoggerFile(filename)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to set up regression logging")
+		}
 	}
 
 	switch settings.Format {

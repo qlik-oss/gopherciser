@@ -41,7 +41,7 @@ func marshalFilters(filters ...filterType) []byte {
 }
 
 func NewRegressionLogger(w io.WriteCloser) RegressionLoggerCloser {
-	fmt.Fprintf(w, "FILTERS %s\n\n", filters)
+	fmt.Fprintf(w, "FILTERS %s\n", filters)
 	return &regressionLogger{w}
 }
 
