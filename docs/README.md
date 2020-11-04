@@ -194,7 +194,13 @@ cat ./docs/examples/sheetChangerQlikCore.json | ./gopherciser x
 This would execute overrides from stdin:
 
 ```bash
-cat overrides.txt |./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json
+cat overrides.txt | ./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json
+```
+
+Advanced example. Use `jq` to disable all `sheetchanger` actions then run the sheet changer example script, this would now only do the openapp action:
+
+```bash
+jq '(.scenario[] | select(.action=="sheetchanger") | .settings.disabled) = true' ./docs/examples/sheetChangerQlikCore.json| ./gopherciser x
 ```
 
 #### Using script overrides
