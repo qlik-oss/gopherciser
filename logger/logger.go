@@ -155,7 +155,7 @@ func (log *Log) SetRegressionLoggerFile(fileName string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	log.regressionLogger = NewRegressionLogger(f, HeaderLine{"ID_FORMAT", "sessionID.actionID.objectID"})
+	log.regressionLogger = NewRegressionLogger(f, HeaderEntry{"ID_FORMAT", "sessionID.actionID.objectID"})
 	return nil
 }
 

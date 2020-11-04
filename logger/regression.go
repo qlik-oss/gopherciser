@@ -8,10 +8,14 @@ import (
 )
 
 type (
+	// RegressionLogger logs data associated with unique ids, with optional
+	// meta data.
 	RegressionLogger interface {
 		Log(dataID string, data interface{}, meta map[string]interface{}) error
 	}
 
+	// RegressionLoggerCloser is a closable RegressionLogger, which is typically
+	// used when writing log to file.
 	RegressionLoggerCloser interface {
 		io.Closer
 		RegressionLogger
@@ -23,7 +27,8 @@ type (
 
 	filterType string
 
-	HeaderLine struct {
+	// HeaderEntry contains a Key mapped to a regression log meta data Value.
+	HeaderEntry struct {
 		Key   string
 		Value string
 	}
@@ -46,13 +51,13 @@ func marshalFilters(filters ...filterType) []byte {
 	return rawJson
 }
 
-// NewRegressionLogger creates a new RegressionLoggerCloser with headerLines are
-// written at the top of the log file.
-func NewRegressionLogger(w io.WriteCloser, headerLines ...HeaderLine) RegressionLoggerCloser {
+// NewRegressionLogger creates a new RegressionLoggerCloser with headerEntries
+// written in the header of the log.
+func NewRegressionLogger(w io.WriteCloser, headerEntries ...HeaderEntry) RegressionLoggerCloser {
 	fmt.Fprintf(w, "HEADER_KEY\tHEADER_VALUE\n")
 	fmt.Fprintf(w, "FILTERS\t%s\n", filters)
-	for _, hl := range headerLines {
-		fmt.Fprintf(w, "%s\t%s\n", strings.ToUpper(strings.TrimSpace(hl.Key)), strings.TrimSpace(hl.Value))
+	for _, he := range headerEntries {
+		fmt.Fprintf(w, "%s\t%s\n", strings.ToUpper(strings.TrimSpace(he.Key)), strings.TrimSpace(he.Value))
 	}
 	fmt.Fprintln(w, "---")
 	fmt.Fprintln(w, "ID\tMETA\tDATA")

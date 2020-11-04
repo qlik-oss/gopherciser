@@ -502,6 +502,7 @@ func logObjectRegressionData(sessionState *session.State) error {
 					"hyperCubePivotPages": obj.HyperPivotPages(),
 					"hyperCube":           obj.HyperCube(),
 					"listObject":          obj.ListObject(),
+					"listObjectDataPages": obj.ListObjectDataPages(),
 				},
 				map[string]interface{}{
 					"actionType":  sessionState.LogEntry.Action.Action,
