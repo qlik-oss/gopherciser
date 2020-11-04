@@ -146,21 +146,16 @@ func (log *Log) AddLoggers(loggers ...*Logger) {
 	log.loggers = append(log.loggers, loggers...)
 }
 
-// SetRegressionLogger to be used for logging regression data
-func (log *Log) SetRegressionLogger(w io.WriteCloser) {
-	log.regressionLogger = NewRegressionLogger(w)
-}
-
 // SetRegressionLoggerFile to be used for logging regression data to file. The
 // file name is chosen, using `backupName`, to match the name of the standard
 // log file.
 func (log *Log) SetRegressionLoggerFile(fileName string) error {
-	fileName = strings.TrimSuffix(backupName(fileName), filepath.Ext(fileName)) + ".regression"
+	fileName = strings.TrimSuffix(backupName(fileName), filepath.Ext(fileName)) + "-regression.tsv"
 	f, err := NewWriter(fileName)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	log.regressionLogger = NewRegressionLogger(f)
+	log.regressionLogger = NewRegressionLogger(f, HeaderLine{"ID_FORMAT", "sessionID.actionID.objectID"})
 	return nil
 }
 

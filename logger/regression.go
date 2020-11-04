@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type (
@@ -21,15 +22,20 @@ type (
 	}
 
 	filterType string
+
+	HeaderLine struct {
+		Key   string
+		Value string
+	}
 )
 
 var filters = marshalFilters(
-	"- qNum",
-	"+ qStateCounts",
-	"+ qGrandTotalRow",
-	"+ qPivotDataPages",
-	"+ qStackedDataPages",
-	"+ qDataPages",
+	"-qNum",
+	"+qStateCounts",
+	"+qGrandTotalRow",
+	"+qPivotDataPages",
+	"+qStackedDataPages",
+	"+qDataPages",
 )
 
 func marshalFilters(filters ...filterType) []byte {
@@ -40,8 +46,13 @@ func marshalFilters(filters ...filterType) []byte {
 	return rawJson
 }
 
-func NewRegressionLogger(w io.WriteCloser) RegressionLoggerCloser {
+func NewRegressionLogger(w io.WriteCloser, headerLines ...HeaderLine) RegressionLoggerCloser {
 	fmt.Fprintf(w, "FILTERS %s\n", filters)
+	for _, hl := range headerLines {
+		fmt.Fprintf(w, "%s %s\n", strings.ToUpper(strings.TrimSpace(hl.Key)), strings.TrimSpace(hl.Value))
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "ID\tMETA\tDATA")
 	return &regressionLogger{w}
 }
 
@@ -65,6 +76,6 @@ func (logger *regressionLogger) Log(dataID string, data interface{}, meta map[st
 		return err
 	}
 
-	fmt.Fprintf(logger.w, "\nID %s\nDATA %s\nMETA %s\n", dataIDJSON, dataJSON, metaJSON)
+	fmt.Fprintf(logger.w, "%s\t%s\t%s\n", dataIDJSON, metaJSON, dataJSON)
 	return nil
 }
