@@ -461,16 +461,17 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 		containerActionEntry = originalActionEntry
 	}
 
-	if err := logResult(sessionState, actionState, actionState.Details, containerActionEntry); err != nil {
-		return err
-	}
+	logResultErr := logResult(sessionState, actionState, actionState.Details, containerActionEntry)
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
-
-	if err := logObjectRegressionData(sessionState); err != nil {
-		return err
+	logRegressionErr := logObjectRegressionData(sessionState)
+	var errs *multierror.Error
+	if logResultErr != nil {
+		errs = multierror.Append(errs, logResultErr)
 	}
-
-	return nil
+	if logRegressionErr != nil {
+		errs = multierror.Append(errs, logRegressionErr)
+	}
+	return helpers.FlattenMultiError(errs)
 }
 
 func logObjectRegressionData(sessionState *session.State) error {
@@ -494,31 +495,27 @@ func logObjectRegressionData(sessionState *session.State) error {
 			if obj.Type != enigmahandlers.ObjTypeGenericObject {
 				return nil
 			}
-
-			genType := ""
-			if genObj, ok := obj.EnigmaObject.(*enigma.GenericObject); ok {
-				genType = genObj.GenericType
+			genObj, ok := obj.EnigmaObject.(*enigma.GenericObject)
+			if !ok {
+				return errors.Errorf("expected object of type %T, but got %T", genObj, obj.EnigmaObject)
 			}
 
-			hyperCube := obj.HyperCube()
-			listObject := obj.ListObject()
-
 			err := sessionState.LogEntry.LogRegression(
-				// use unique id SESSION.ACTION.OBJ
-				fmt.Sprintf("%d.%d.%s", sessionState.LogEntry.Session.Session, sessionState.Counters.ActionID.Current(), obj.ID),
+				// use unique id SESSION.ACTION.OBJECT
+				fmt.Sprintf("%d.%d.%s", sessionState.LogEntry.Session.Session, sessionState.LogEntry.Action.ActionID, obj.ID),
 				map[string]interface{}{
-					// "hyperCubeDataPages":  obj.HyperCubeDataPages(),
-					// "hyperCubeStackPages": obj.HyperCubeStackPages(),
-					// "hyperPivotPages":     obj.HyperPivotPages(),
-					"hyperCube":  hyperCube,
-					"listObject": listObject,
+					"hyperCubeDataPages":  obj.HyperCubeDataPages(),
+					"hyperCubeStackPages": obj.HyperCubeStackPages(),
+					"hyperCubePivotPages": obj.HyperPivotPages(),
+					"hyperCube":           obj.HyperCube(),
+					"listObject":          obj.ListObject(),
 				},
 				map[string]interface{}{
 					"actionType":  sessionState.LogEntry.Action.Action,
 					"actionLabel": sessionState.LogEntry.Action.Label,
 					"actionID":    sessionState.LogEntry.Action.ActionID,
 					"objectID":    obj.ID,
-					"objectType":  genType,
+					"objectType":  genObj.Type,
 					"sessionID":   sessionState.LogEntry.Session.Session,
 				})
 			return errors.Wrap(err, "failed to log regression data")

@@ -29,7 +29,7 @@ var filters = marshalFilters(
 	"+ qGrandTotalRow",
 	"+ qPivotDataPages",
 	"+ qStackedDataPages",
-	"+ qNum",
+	"+ qDataPages",
 )
 
 func marshalFilters(filters ...filterType) []byte {
