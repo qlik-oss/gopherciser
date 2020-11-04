@@ -49,11 +49,12 @@ func marshalFilters(filters ...filterType) []byte {
 // NewRegressionLogger creates a new RegressionLoggerCloser with headerLines are
 // written at the top of the log file.
 func NewRegressionLogger(w io.WriteCloser, headerLines ...HeaderLine) RegressionLoggerCloser {
-	fmt.Fprintf(w, "FILTERS %s\n", filters)
+	fmt.Fprintf(w, "HEADER_KEY\tHEADER_VALUE\n")
+	fmt.Fprintf(w, "FILTERS\t%s\n", filters)
 	for _, hl := range headerLines {
-		fmt.Fprintf(w, "%s %s\n", strings.ToUpper(strings.TrimSpace(hl.Key)), strings.TrimSpace(hl.Value))
+		fmt.Fprintf(w, "%s\t%s\n", strings.ToUpper(strings.TrimSpace(hl.Key)), strings.TrimSpace(hl.Value))
 	}
-	fmt.Fprintln(w)
+	fmt.Fprintln(w, "---")
 	fmt.Fprintln(w, "ID\tMETA\tDATA")
 	return &regressionLogger{w}
 }
@@ -62,9 +63,9 @@ func (logger *regressionLogger) Close() error {
 	return logger.w.Close()
 }
 
-// Log the regression analysis data accosiated with a unique id. Caller is
-// responsible for setting unique ids. Pass meta data to support interpretaton of
-// log results.
+// Log the regression analysis data associated with a unique id. Caller is
+// responsible for setting a unique id. Pass meta data to support interpretaton
+// of log and regression analysis results.
 func (logger *regressionLogger) Log(dataID string, data interface{}, meta map[string]interface{}) error {
 	dataIDJSON, err := json.Marshal(dataID)
 	if err != nil {
