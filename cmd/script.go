@@ -105,13 +105,6 @@ var validateCmd = &cobra.Command{
 	Short:   "validate a scenario config file",
 	Long:    `validate a scenario config file`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if cfgFile == "" {
-			_, _ = os.Stderr.WriteString("Error: No config provided\n")
-			if err := cmd.Help(); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			}
-			return
-		}
 		cfg, err := unmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
@@ -133,13 +126,6 @@ var testConnectionCmd = &cobra.Command{
 	Short:   "test connection",
 	Long:    `test connection using settings provided by the config file`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if cfgFile == "" {
-			_, _ = os.Stderr.WriteString("Error: No config provided\n")
-			if err := cmd.Help(); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			}
-			os.Exit(ExitCodeMissingParameter)
-		}
 		cfg, err := unmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
@@ -162,14 +148,6 @@ var structureCmd = &cobra.Command{
 	Long: `Get app structure using settings provided by the config file.
 Will save one .structure file per app in script in the folder defined by output parameter.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if cfgFile == "" {
-			_, _ = os.Stderr.WriteString("Error: No config provided\n")
-			if err := cmd.Help(); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			}
-			os.Exit(ExitCodeMissingParameter)
-		}
-
 		// Read object definition overrides and additions
 		if err := ReadObjectDefinitions(); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "ObjectDefError: %s\n", err)
