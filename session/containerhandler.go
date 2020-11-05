@@ -3,12 +3,16 @@ package session
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/logger"
+
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 )
 
@@ -19,6 +23,7 @@ type (
 		RefID    string
 		ObjID    string
 		External bool
+		Show     bool
 	}
 
 	ContainerHandlerInstance struct {
@@ -39,6 +44,8 @@ type (
 		IsMaster          bool               `json:"isMaster"`
 		ExternalReference *ContainerExternal `json:"externalReference"`
 		Type              string             `json:"type"`
+		// Condition fulfilled  show condition. Value is nil on no show condition, true if it should show and false otherwise
+		Condition *string `json:"condition"`
 	}
 
 	ContainerChildItemData struct {
@@ -76,18 +83,64 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		return GetObjectProperties(sessionState, actionState, obj)
 	}, actionState, true, "")
 
-	rawLayout, err := sessionState.SendRequestRaw(actionState, genObj.GetLayoutRaw)
-	if err != nil {
+	layout := GetContainerLayout(sessionState, actionState, genObj)
+	if layout == nil {
+		return // error occured and has been reported on actionState
+	}
+
+	if err := handler.UpdateChildren(layout); err != nil {
 		actionState.AddErrors(err)
 		return
+	}
+
+	// Get layout on object changed
+	event := func(ctx context.Context, as *action.State) error {
+		layout := GetContainerLayout(sessionState, as, genObj)
+		if as.Failed {
+			return nil // error occured, but has been reported
+		}
+
+		if err := handler.UpdateChildren(layout); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to update children for container object<%s>", genObj.GenericId))
+		}
+
+		child, current := handler.FirstShowableChild()
+		if current {
+			return nil
+		}
+
+		// update active child
+		return errors.WithStack(handler.SwitchActiveChild(sessionState, as, child))
+	}
+	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+
+	// First tab according to "Children" is the default active tab
+	child, _ := handler.FirstShowableChild()
+	if child != nil {
+		_ = handler.SwitchActiveChild(sessionState, actionState, child)
+	}
+}
+
+// GetContainerLayout returns unmarshaled container layout, errors reported on action state
+func GetContainerLayout(sessionState *State, actionState *action.State, containerObject *enigma.GenericObject) *ContainerLayout {
+	rawLayout, err := sessionState.SendRequestRaw(actionState, containerObject.GetLayoutRaw)
+	if err != nil {
+		actionState.AddErrors(err)
+		return nil
 	}
 
 	var layout ContainerLayout
 	if err := jsonit.Unmarshal(rawLayout, &layout); err != nil {
 		actionState.AddErrors(err)
-		return
+		return nil
 	}
+	return &layout
+}
 
+// UpdateChildren of the container
+func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout) error {
+	// TODO add lock on children
+	var mErr *multierror.Error
 	// Create map with reference and the object id
 	refMap := make(map[string]string, len(layout.ChildList.Items))
 	for _, item := range layout.ChildList.Items {
@@ -96,15 +149,14 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 			ref = item.Data.ExtendsId
 		}
 		if ref == "" {
-			actionState.AddErrors(errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
+			mErr = multierror.Append(mErr, errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
 			continue
 		}
 		refMap[ref] = item.Info.Id
 	}
 
-	// Return resolving any child got an error
-	if actionState.Failed {
-		return
+	if mErr != nil {
+		return helpers.FlattenMultiError(mErr)
 	}
 
 	// Create child array with same order as .Children, this is the order of the tabs
@@ -114,27 +166,48 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		if child.ExternalReference != nil {
 			ccr.External = true
 		}
+		if child.Condition == nil || strings.ToLower(*child.Condition) == "true" {
+			ccr.Show = true
+		}
 		handler.Children = append(handler.Children, ccr)
 	}
 
-	// Get layout on object changed
-	event := func(ctx context.Context, as *action.State) error {
-		_, err := genObj.GetLayoutRaw(ctx)
-		return errors.Wrap(err, fmt.Sprintf("failed to get layout for container object<%s>", genObj.GenericId))
-	}
-	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+	return nil
+}
 
-	// First tab according to "Children" is the default active tab
-	if len(handler.Children) > 0 {
-		activeChild := handler.Children[0]
-		if !activeChild.External {
-			handler.ActiveID = handler.Children[0].ObjID
-			// Subscribe to active object
-			GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
-		} else {
-			sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+// FirstShowableChild gets reference to first object from container which fulfills conditions, true if already active object
+func (handler *ContainerHandlerInstance) FirstShowableChild() (*ContainerChildReference, bool) {
+	// First check if active ID fulfills conditions
+	if handler.ActiveID != "" {
+		if child := handler.ActiveChildReference(); child != nil {
+			if child.Show {
+				return child, true
+			}
 		}
 	}
+
+	// find first with no condition or condition = true
+	for _, child := range handler.Children {
+		if child.Show {
+			return &child, false
+		}
+	}
+
+	// no showable child found, show nothing
+	return nil, false
+}
+
+// ActiveChildReference returns reference to currently active child or nil
+func (handler *ContainerHandlerInstance) ActiveChildReference() *ContainerChildReference {
+	if handler.ActiveID == "" {
+		return nil
+	}
+	for _, child := range handler.Children {
+		if child.ObjID == handler.ActiveID {
+			return &child
+		}
+	}
+	return nil
 }
 
 // GetObjectDefinition implements ObjectHandlerInstance interface
@@ -148,9 +221,12 @@ func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) 
 // SwitchActiveID unsubscribes from the current activeid and subscribes to the new one
 func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, actionState *action.State, activeID string) error {
 	found := false
+	external := false
 	for _, child := range handler.Children {
 		if child.ObjID == activeID {
 			found = true
+			external = child.External
+			break
 		}
 	}
 
@@ -165,7 +241,42 @@ func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, act
 			}
 		}
 		handler.ActiveID = activeID
+		if handler.ActiveID != "" {
+			GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
+		}
+	}
+
+	if external {
+		sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+	}
+
+	return nil
+}
+
+// SwitchActiveChild to referenced child
+func (handler *ContainerHandlerInstance) SwitchActiveChild(sessionState *State, actionState *action.State, child *ContainerChildReference) error {
+	if child == nil {
+		// set no active child
+		if handler.ActiveID != "" {
+			if err := sessionState.ClearSubscribedObjects([]string{handler.ActiveID}); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+	}
+
+	// Check if already active
+	if handler.ActiveID == child.ObjID {
+		return nil
+	}
+
+	handler.ActiveID = child.ObjID
+	if child.ObjID != "" && !child.External {
 		GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
 	}
+
+	if child.External {
+		sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+	}
+
 	return nil
 }
