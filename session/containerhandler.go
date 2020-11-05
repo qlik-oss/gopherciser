@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/qlik-oss/gopherciser/helpers"
-	"github.com/qlik-oss/gopherciser/logger"
+	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 )
 
@@ -30,6 +30,8 @@ type (
 		ID       string
 		ActiveID string
 		Children []ContainerChildReference
+
+		lock sync.Mutex
 	}
 
 	ContainerExternal struct {
@@ -114,7 +116,6 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 	}
 	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
 
-	// First tab according to "Children" is the default active tab
 	child, _ := handler.FirstShowableChild()
 	if child != nil {
 		_ = handler.SwitchActiveChild(sessionState, actionState, child)
@@ -139,7 +140,9 @@ func GetContainerLayout(sessionState *State, actionState *action.State, containe
 
 // UpdateChildren of the container
 func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout) error {
-	// TODO add lock on children
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
 	var mErr *multierror.Error
 	// Create map with reference and the object id
 	refMap := make(map[string]string, len(layout.ChildList.Items))
@@ -220,6 +223,17 @@ func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) 
 
 // SwitchActiveID unsubscribes from the current activeid and subscribes to the new one
 func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, actionState *action.State, activeID string) error {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
+	if sessionState.LogEntry.ShouldLogDebug() {
+		defer func(current string) {
+			if current != handler.ActiveID {
+				sessionState.LogEntry.Logf(logger.DebugLevel, "SwitchActiveID(): switching container<%s> active child <%s> -> <%s>", handler.ID, current, handler.ActiveID)
+			}
+		}(handler.ActiveID)
+	}
+
 	found := false
 	external := false
 	for _, child := range handler.Children {
@@ -255,6 +269,17 @@ func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, act
 
 // SwitchActiveChild to referenced child
 func (handler *ContainerHandlerInstance) SwitchActiveChild(sessionState *State, actionState *action.State, child *ContainerChildReference) error {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
+	if sessionState.LogEntry.ShouldLogDebug() {
+		defer func(current string) {
+			if current != handler.ActiveID {
+				sessionState.LogEntry.Logf(logger.DebugLevel, "SwitchActiveChild(): switching container<%s> active child <%s> -> <%s>", handler.ID, current, handler.ActiveID)
+			}
+		}(handler.ActiveID)
+	}
+
 	if child == nil {
 		// set no active child
 		if handler.ActiveID != "" {
@@ -262,6 +287,7 @@ func (handler *ContainerHandlerInstance) SwitchActiveChild(sessionState *State, 
 				return errors.WithStack(err)
 			}
 		}
+		return nil
 	}
 
 	// Check if already active

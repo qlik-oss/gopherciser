@@ -129,6 +129,7 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 	case ContainerTabModeObjectID:
 		activeID = settings.ObjectID
 	case ContainerTabModeRandom:
+		// TODO random of show = true only
 		if childCount < 1 {
 			actionState.AddErrors(errors.Errorf("switch to random container tab defined, but container<%s> has no children", id))
 			return
