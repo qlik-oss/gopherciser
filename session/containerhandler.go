@@ -221,49 +221,62 @@ func (handler *ContainerHandlerInstance) GetObjectDefinition(objectType string) 
 	return (&DefaultHandlerInstance{}).GetObjectDefinition("container")
 }
 
-// SwitchActiveID unsubscribes from the current activeid and subscribes to the new one
-func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, actionState *action.State, activeID string) error {
+// // SwitchActiveID unsubscribes from the current activeid and subscribes to the new one
+// func (handler *ContainerHandlerInstance) SwitchActiveID(sessionState *State, actionState *action.State, activeID string) error {
+// 	handler.lock.Lock()
+// 	defer handler.lock.Unlock()
+
+// 	if sessionState.LogEntry.ShouldLogDebug() {
+// 		defer func(current string) {
+// 			if current != handler.ActiveID {
+// 				sessionState.LogEntry.Logf(logger.DebugLevel, "SwitchActiveID(): switching container<%s> active child <%s> -> <%s>", handler.ID, current, handler.ActiveID)
+// 			}
+// 		}(handler.ActiveID)
+// 	}
+
+// 	found := false
+// 	external := false
+// 	for _, child := range handler.Children {
+// 		if child.ObjID == activeID {
+// 			found = true
+// 			external = child.External
+// 			break
+// 		}
+// 	}
+
+// 	if !found {
+// 		return errors.Errorf("could not find object<%s> as a child to container<%s>", activeID, handler.ID)
+// 	}
+
+// 	if handler.ActiveID != activeID {
+// 		if handler.ActiveID != "" {
+// 			if err := sessionState.ClearSubscribedObjects([]string{handler.ActiveID}); err != nil {
+// 				return errors.WithStack(err)
+// 			}
+// 		}
+// 		handler.ActiveID = activeID
+// 		if handler.ActiveID != "" {
+// 			GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
+// 		}
+// 	}
+
+// 	if external {
+// 		sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+// 	}
+
+// 	return nil
+// }
+
+// ChildWithID returns child reference to child with defined object ID
+func (handler *ContainerHandlerInstance) ChildWithID(id string) *ContainerChildReference {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	if sessionState.LogEntry.ShouldLogDebug() {
-		defer func(current string) {
-			if current != handler.ActiveID {
-				sessionState.LogEntry.Logf(logger.DebugLevel, "SwitchActiveID(): switching container<%s> active child <%s> -> <%s>", handler.ID, current, handler.ActiveID)
-			}
-		}(handler.ActiveID)
-	}
-
-	found := false
-	external := false
 	for _, child := range handler.Children {
-		if child.ObjID == activeID {
-			found = true
-			external = child.External
-			break
+		if child.ObjID == id {
+			return &child
 		}
 	}
-
-	if !found {
-		return errors.Errorf("could not find object<%s> as a child to container<%s>", activeID, handler.ID)
-	}
-
-	if handler.ActiveID != activeID {
-		if handler.ActiveID != "" {
-			if err := sessionState.ClearSubscribedObjects([]string{handler.ActiveID}); err != nil {
-				return errors.WithStack(err)
-			}
-		}
-		handler.ActiveID = activeID
-		if handler.ActiveID != "" {
-			GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
-		}
-	}
-
-	if external {
-		sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
-	}
-
 	return nil
 }
 
