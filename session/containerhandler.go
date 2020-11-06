@@ -46,7 +46,7 @@ type (
 		IsMaster          bool               `json:"isMaster"`
 		ExternalReference *ContainerExternal `json:"externalReference"`
 		Type              string             `json:"type"`
-		// Condition fulfilled  show condition. Value is nil on no show condition, true if it should show and false otherwise
+		// Condition fulfilled  show condition. Value is nil on no show condition, "True" if it should show and "False" otherwise.
 		Condition *string `json:"condition"`
 	}
 
