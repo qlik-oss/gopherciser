@@ -122,7 +122,8 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		return
 	}
 
-	childCount := len(containerInstance.Children)
+	children := containerInstance.Children()
+	childCount := len(children)
 
 	var newActive *session.ContainerChildReference
 	switch settings.Mode {
@@ -135,7 +136,7 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		}
 
 		visibleChildren := make([]*session.ContainerChildReference, 0, childCount)
-		for _, child := range containerInstance.Children {
+		for _, child := range children {
 			if child.Show {
 				visibleChildren = append(visibleChildren, &child)
 			}
@@ -152,10 +153,10 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		newActive = visibleChildren[idx]
 	case ContainerTabModeIndex:
 		if !(settings.Index < childCount) {
-			actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but container has only %d tabs", settings.Index, childCount))
+			actionState.AddErrors(errors.Errorf("container<%s> tab index<%d> defined, but container has only %d tabs", id, settings.Index, childCount))
 			return
 		}
-		newActive = &containerInstance.Children[settings.Index]
+		newActive = &children[settings.Index]
 	}
 
 	if newActive == nil {

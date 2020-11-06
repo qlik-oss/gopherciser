@@ -29,7 +29,7 @@ type (
 	ContainerHandlerInstance struct {
 		ID       string
 		ActiveID string
-		Children []ContainerChildReference
+		children []ContainerChildReference
 
 		lock sync.Mutex
 	}
@@ -97,6 +97,7 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 
 	// Get layout on object changed
 	event := func(ctx context.Context, as *action.State) error {
+		sessionState.LogEntry.Logf(logger.DebugLevel, "Getting layout for object<%s> handle<%d> type<%s>", genObj.GenericId, genObj.Handle, genObj.GenericType)
 		layout := GetContainerLayout(sessionState, as, genObj)
 		if as.Failed {
 			return nil // error occured, but has been reported
@@ -107,6 +108,7 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		}
 
 		child, current := handler.FirstShowableChild()
+		sessionState.LogEntry.Logf(logger.DebugLevel, "container<%s> first showable child<%s> active child<%s>", handler.ID, child.ObjID, handler.ActiveID)
 		if current {
 			return nil
 		}
@@ -163,7 +165,7 @@ func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout)
 	}
 
 	// Create child array with same order as .Children, this is the order of the tabs
-	handler.Children = make([]ContainerChildReference, 0, len(layout.Children))
+	handler.children = make([]ContainerChildReference, 0, len(layout.Children))
 	for _, child := range layout.Children {
 		ccr := ContainerChildReference{RefID: child.RefID, ObjID: refMap[child.RefID]}
 		if child.ExternalReference != nil {
@@ -172,7 +174,7 @@ func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout)
 		if child.Condition == nil || strings.ToLower(*child.Condition) == "true" {
 			ccr.Show = true
 		}
-		handler.Children = append(handler.Children, ccr)
+		handler.children = append(handler.children, ccr)
 	}
 
 	return nil
@@ -189,8 +191,12 @@ func (handler *ContainerHandlerInstance) FirstShowableChild() (*ContainerChildRe
 		}
 	}
 
+	// ActiveChildReference also locks, don't lock before this
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
 	// find first with no condition or condition = true
-	for _, child := range handler.Children {
+	for _, child := range handler.children {
 		if child.Show {
 			return &child, false
 		}
@@ -202,10 +208,13 @@ func (handler *ContainerHandlerInstance) FirstShowableChild() (*ContainerChildRe
 
 // ActiveChildReference returns reference to currently active child or nil
 func (handler *ContainerHandlerInstance) ActiveChildReference() *ContainerChildReference {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
 	if handler.ActiveID == "" {
 		return nil
 	}
-	for _, child := range handler.Children {
+	for _, child := range handler.children {
 		if child.ObjID == handler.ActiveID {
 			return &child
 		}
@@ -226,12 +235,26 @@ func (handler *ContainerHandlerInstance) ChildWithID(id string) *ContainerChildR
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	for _, child := range handler.Children {
+	for _, child := range handler.children {
 		if child.ObjID == id {
 			return &child
 		}
 	}
 	return nil
+}
+
+// Children returns copy of children
+func (handler *ContainerHandlerInstance) Children() []ContainerChildReference {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
+	children := make([]ContainerChildReference, 0, len(handler.children))
+
+	for _, child := range handler.children {
+		children = append(children, child)
+	}
+
+	return children
 }
 
 // SwitchActiveChild to referenced child
