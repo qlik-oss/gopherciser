@@ -357,7 +357,7 @@ A `Containertab` action simulates switching the active object in a `container` o
 
 * `mode`: Mode for container tab switching, one of: `objectid`, `random` or `index`.
     * `objectid`: Switch to tab with object defined by `objectid`.
-    * `random`: Switch to a random tab within the container.
+    * `random`: Switch to a random visible tab within the container.
     * `index`: Switch to tab with zero based index defined but `index`.
 * `containerid`: ID of the container object.
 * `objectid`: ID of the object to set as active, used with mode `objectid`.
