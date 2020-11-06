@@ -249,12 +249,7 @@ func (handler *ContainerHandlerInstance) Children() []ContainerChildReference {
 	defer handler.lock.Unlock()
 
 	children := make([]ContainerChildReference, 0, len(handler.children))
-
-	for _, child := range handler.children {
-		children = append(children, child)
-	}
-
-	return children
+	return append(children, handler.children...)
 }
 
 // SwitchActiveChild to referenced child
