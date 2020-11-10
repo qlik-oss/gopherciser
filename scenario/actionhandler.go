@@ -512,7 +512,7 @@ func logObjectRegressionData(sessionState *session.State) error {
 					"actionLabel": sessionState.LogEntry.Action.Label,
 					"actionID":    sessionState.LogEntry.Action.ActionID,
 					"objectID":    obj.ID,
-					"objectType":  genObj.Type,
+					"objectType":  genObj.GenericType,
 					"sessionID":   sessionState.LogEntry.Session.Session,
 				})
 			return errors.Wrap(err, "failed to log regression data")
