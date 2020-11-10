@@ -90,25 +90,6 @@ func (o *ObjectsMap) AddObject(obj *Object) error {
 
 	o.Store(obj.Handle, obj)
 
-	// // +++
-	// rawObj, _ := json.MarshalIndent(obj, "", "    ")
-	// fmt.Fprintf(os.Stderr, "%s\n", string(rawObj))
-	// switch typedObj := obj.EnigmaObject.(type) {
-	// case *enigma.GenericObject:
-	// 	rawLayout, err := typedObj.GetLayoutRaw(context.TODO())
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	fmt.Fprintf(os.Stderr, "genobj layout:\n%s\n", string(rawLayout))
-
-	// 	rawProps, err := typedObj.GetPropertiesRaw(context.TODO())
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	fmt.Fprintf(os.Stderr, "genobj props:\n%s\n", string(rawProps))
-	// }
-	// fmt.Fprintln(os.Stderr, "-----------------------------")
-
 	return nil
 }
 
