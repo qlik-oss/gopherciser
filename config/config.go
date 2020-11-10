@@ -424,6 +424,11 @@ func (cfg *Config) SetDebugLogging() {
 	cfg.Settings.LogSettings.Debug = true
 }
 
+// SetRegressionLogging override function to set regression logging
+func (cfg *Config) SetRegressionLogging() {
+	cfg.Settings.LogSettings.Regression = true
+}
+
 // Validate scenario
 func (cfg *Config) Validate() error {
 	if cfg.Scheduler == nil {

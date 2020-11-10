@@ -35,12 +35,12 @@ type (
 )
 
 var filters = marshalFilters(
-	"-qNum",
 	"+qStateCounts",
 	"+qGrandTotalRow",
+	"+qDataPages",
 	"+qPivotDataPages",
 	"+qStackedDataPages",
-	"+qDataPages",
+	"-qNum",
 )
 
 func marshalFilters(filters ...filterType) []byte {

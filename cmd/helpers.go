@@ -20,6 +20,7 @@ var (
 	traffic        bool
 	trafficMetrics bool
 	debug          bool
+	regression     bool
 	logFormat      string
 	summaryType    string
 
@@ -46,6 +47,7 @@ func AddOverrideParameters(cmd *cobra.Command) {
 // AddLoggingParameters add logging parameters to command
 func AddLoggingParameters(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&traffic, "traffic", "t", false, "Log traffic. Logging traffic is heavy and should only be done for debugging purposes.")
+	cmd.Flags().BoolVar(&regression, "regression", false, "Log data for regression analysis.")
 	cmd.Flags().BoolVarP(&trafficMetrics, "trafficmetrics", "m", false, "Log traffic metrics.")
 	cmd.Flags().BoolVar(&debug, "debug", false, "Log debug info.")
 	cmd.Flags().StringVar(&logFormat, "logformat", "", getLogFormatHelpString())
@@ -153,6 +155,10 @@ func ConfigOverrideLogSettings(cfg *config.Config) error {
 
 	if debug {
 		cfg.SetDebugLogging()
+	}
+
+	if regression {
+		cfg.SetRegressionLogging()
 	}
 
 	if logFormat != "" {
