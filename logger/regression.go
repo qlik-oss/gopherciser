@@ -64,6 +64,7 @@ func NewRegressionLogger(w io.WriteCloser, headerEntries ...HeaderEntry) Regress
 	return &regressionLogger{w}
 }
 
+// Close the io.WriteCloser used to create the regressionLogger
 func (logger *regressionLogger) Close() error {
 	return logger.w.Close()
 }

@@ -468,6 +468,9 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 	return helpers.FlattenMultiError(errs)
 }
 
+// logObjectRegressionData writes the currently subscribed objects to regression
+// log if regession logging is enabled. The objects are locked and read from
+// state shared shared by actions.
 func logObjectRegressionData(sessionState *session.State) error {
 	if !sessionState.LogEntry.ShouldLogRegression() {
 		return nil
@@ -515,7 +518,7 @@ func logObjectRegressionData(sessionState *session.State) error {
 			return errors.Wrap(err, "failed to log regression data")
 		},
 	)
-	return err
+	return errors.WithStack(err)
 }
 
 // AppStructureAction returns if this action should be included when getting app structure
