@@ -23,6 +23,7 @@ type (
 		currentSelections *CurrentSelections
 		localeInfo        *enigma.LocaleInfo
 		variablelist      *VariableList
+		storylist         *StoryList
 		mutex             sync.Mutex
 	}
 )
@@ -104,7 +105,7 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	// update sheetList layout when bookmark list has a change event
+	// update bookmark list layout when bookmark list has a change event
 	onBookmarkListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.bookmarkList.UpdateLayout(ctx))
 	}
@@ -152,13 +153,11 @@ func (app *App) GetVariableList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	// update sheetList layout when variable list has a change event
+	// update variable list layout when variable list has a change event
 	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
 	}
-
-	sessionState.RegisterEvent(app.variablelist.enigmaObject.Handle,
-		onVariableListChanged, nil, true)
+	sessionState.RegisterEvent(app.variablelist.enigmaObject.Handle, onVariableListChanged, nil, true)
 
 	return app.variablelist, nil
 }
@@ -172,8 +171,51 @@ func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
 	app.variablelist = vl
 }
 
-// TODO StoryList
-//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"StoryList","qType":"StoryList"},"qAppObjectListDef":{"qType":"story","qData":{"title":"/qMetaDef/title","description":"/qMetaDef/description","thumbnail":"/thumbnail","rank":"/rank"}}}],"id":13,"jsonrpc":"2.0"}
+// GetStoryList create or return existing story list session object
+func (app *App) GetStoryList(sessionState SessionState, actionState *action.State) (*StoryList, error) {
+	if app.storylist != nil {
+		return app.storylist, nil
+	}
+
+	// create story list
+	createStoryList := func(ctx context.Context) error {
+		sl, err := CreateStoryListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setStoryList(sessionState, sl)
+		return err
+	}
+
+	if err := sessionState.SendRequest(actionState, createStoryList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.storylist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.storylist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// update story list layout when story list has a change event
+	onStoryListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.storylist.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.storylist.enigmaObject.Handle, onStoryListChanged, nil, true)
+
+	return app.storylist, nil
+}
+
+func (app *App) setStoryList(sessionState SessionState, sl *StoryList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.storylist != nil && app.storylist.enigmaObject != nil && app.storylist.enigmaObject.Handle > 0 && sl != app.storylist {
+		sessionState.DeRegisterEvent(app.storylist.enigmaObject.Handle)
+	}
+	app.storylist = sl
+}
 
 // TODO LoadModelList
 //{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"LoadModelList","qType":"LoadModelList"},"qAppObjectListDef":{"qType":"LoadModel"}}],"id":30,"jsonrpc":"2.0"}
