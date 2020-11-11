@@ -160,6 +160,15 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return desktopErr
 	}, actionState, true, "Failed getting authenticated user")
 
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	// TODO should create these session objects
+	//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"StoryList","qType":"StoryList"},"qAppObjectListDef":{"qType":"story","qData":{"title":"/qMetaDef/title","description":"/qMetaDef/description","thumbnail":"/thumbnail","rank":"/rank"}}}],"id":13,"jsonrpc":"2.0"}
+	//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"LoadModelList","qType":"LoadModelList"},"qAppObjectListDef":{"qType":"LoadModel"}}],"id":30,"jsonrpc":"2.0"}
+
 	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {
 		return

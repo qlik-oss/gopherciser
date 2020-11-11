@@ -22,6 +22,7 @@ type (
 		bookmarks         map[string]*enigma.GenericBookmark
 		currentSelections *CurrentSelections
 		localeInfo        *enigma.LocaleInfo
+		variablelist      *VariableList
 		mutex             sync.Mutex
 	}
 )
@@ -81,8 +82,8 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return app.bookmarkList, nil
 	}
 
-	// update sheetList to latest
-	updateBookmarkList := func(ctx context.Context) error {
+	// create bookmark list
+	createBookmarkList := func(ctx context.Context) error {
 		bl, err := CreateBookmarkListObject(ctx, app.Doc)
 		if err != nil {
 			return err
@@ -91,7 +92,7 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return err
 	}
 
-	if err := sessionState.SendRequest(actionState, updateBookmarkList); err != nil {
+	if err := sessionState.SendRequest(actionState, createBookmarkList); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -103,7 +104,7 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	// update sheetList layout when sheetList has a change event
+	// update sheetList layout when bookmark list has a change event
 	onBookmarkListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.bookmarkList.UpdateLayout(ctx))
 	}
@@ -123,6 +124,61 @@ func (app *App) setBookmarkList(sessionState SessionState, bl *BookmarkList) {
 	app.bookmarkList = bl
 }
 
+// GetVariableList create or return existing variable list session object
+func (app *App) GetVariableList(sessionState SessionState, actionState *action.State) (*VariableList, error) {
+	if app.variablelist != nil {
+		return app.variablelist, nil
+	}
+
+	// create variable list
+	createVariableList := func(ctx context.Context) error {
+		vl, err := CreateVariableListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setVariableList(sessionState, vl)
+		return err
+	}
+
+	if err := sessionState.SendRequest(actionState, createVariableList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// update sheetList layout when variable list has a change event
+	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
+	}
+
+	sessionState.RegisterEvent(app.variablelist.enigmaObject.Handle,
+		onVariableListChanged, nil, true)
+
+	return app.variablelist, nil
+}
+
+func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.variablelist != nil && app.variablelist.enigmaObject != nil && app.variablelist.enigmaObject.Handle > 0 && vl != app.variablelist {
+		sessionState.DeRegisterEvent(app.variablelist.enigmaObject.Handle)
+	}
+	app.variablelist = vl
+}
+
+// TODO StoryList
+//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"StoryList","qType":"StoryList"},"qAppObjectListDef":{"qType":"story","qData":{"title":"/qMetaDef/title","description":"/qMetaDef/description","thumbnail":"/thumbnail","rank":"/rank"}}}],"id":13,"jsonrpc":"2.0"}
+
+// TODO LoadModelList
+//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"LoadModelList","qType":"LoadModelList"},"qAppObjectListDef":{"qType":"LoadModel"}}],"id":30,"jsonrpc":"2.0"}
+
+// GetBookmarkObject with ID
 func (app *App) GetBookmarkObject(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericBookmark, error) {
 	// Ge id from map of bookmarks
 	bm := app.getBookmarkFromMap(id)
