@@ -589,6 +589,72 @@ var (
 		Select: nil,
 	}
 
+	DefaultQlikShareButton = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
+	DefaultQlikVariableInput = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
+	DefaultQlikAnimator = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCube",
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil, // TODO requires special handling with rotating selects of "white" values based on frequency
+	}
+
+	DefaultQlikDatePicker = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefListObject,
+			Path: "/qListObject",
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil, // TODO
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -624,5 +690,9 @@ var (
 		"odag-toolbar-navpoint": &DefaultOdagToolbarNavpoint,
 		"action-button":         &DefaultActionButton,
 		"container":             &DefaultContainer,
+		"qlik-share-button":     &DefaultQlikShareButton,
+		"qlik-variable-input":   &DefaultQlikVariableInput,
+		"qlik-animator":         &DefaultQlikAnimator,
+		"qlik-date-picker":      &DefaultQlikDatePicker,
 	}
 )

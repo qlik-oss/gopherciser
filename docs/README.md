@@ -293,6 +293,10 @@ These are the current limitations in Gopherciser:
   * Selections can only be made in the first layer (that is, layer 0)
 * Visualization bundle:
   * Selections are not fully supported in the Heatmap chart
+* Dashboard bundle:
+  * Changing variables using variable input not supported.
+  * Selections done by animator not supported.
+  * Selections done using date picker not supported.
 
 ## Links
 
