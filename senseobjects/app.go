@@ -12,20 +12,25 @@ import (
 )
 
 type (
-	// App sense app object
-	App struct {
-		GUID              string
-		Doc               *enigma.Doc
-		Layout            *enigma.NxAppLayout
+	// SessionObjects for the app
+	SessionObjects struct {
 		sheetList         *SheetList
 		bookmarkList      *BookmarkList
-		bookmarks         map[string]*enigma.GenericBookmark
 		currentSelections *CurrentSelections
 		localeInfo        *enigma.LocaleInfo
 		variablelist      *VariableList
 		storylist         *StoryList
 		loadmodellist     *LoadModelList
-		mutex             sync.Mutex
+	}
+
+	// App sense app object
+	App struct {
+		GUID      string
+		Doc       *enigma.Doc
+		Layout    *enigma.NxAppLayout
+		bookmarks map[string]*enigma.GenericBookmark
+		mutex     sync.Mutex
+		SessionObjects
 	}
 )
 
