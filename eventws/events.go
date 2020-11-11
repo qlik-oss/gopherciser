@@ -21,10 +21,12 @@ const (
 	OperationDataUpdated       = "data.updated"
 	OperationAttributesUpdated = "attributes.updated"
 	OperationResult            = "result"
+	OperationUpdated           = "updated"
 )
 
 // Constants for known ResourceType
 const (
-	ResourceTypeApp    = "app"
-	ResourceTypeReload = "reload"
+	ResourceTypeApp        = "app"
+	ResourceTypeReload     = "reload"
+	ResourceTypeEvaluation = "evaluation"
 )
