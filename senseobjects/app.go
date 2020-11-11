@@ -24,6 +24,7 @@ type (
 		localeInfo        *enigma.LocaleInfo
 		variablelist      *VariableList
 		storylist         *StoryList
+		loadmodellist     *LoadModelList
 		mutex             sync.Mutex
 	}
 )
@@ -217,8 +218,51 @@ func (app *App) setStoryList(sessionState SessionState, sl *StoryList) {
 	app.storylist = sl
 }
 
-// TODO LoadModelList
-//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"LoadModelList","qType":"LoadModelList"},"qAppObjectListDef":{"qType":"LoadModel"}}],"id":30,"jsonrpc":"2.0"}
+// GetLoadModelList create or return existing load model list session object
+func (app *App) GetLoadModelList(sessionState SessionState, actionState *action.State) (*LoadModelList, error) {
+	if app.loadmodellist != nil {
+		return app.loadmodellist, nil
+	}
+
+	// create load model list
+	createLoadModelList := func(ctx context.Context) error {
+		lml, err := CreateLoadModelListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setLoadModelList(sessionState, lml)
+		return err
+	}
+
+	if err := sessionState.SendRequest(actionState, createLoadModelList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.loadmodellist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.loadmodellist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// update load model list layout when load model list has a change event
+	onLoadModelListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.loadmodellist.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.loadmodellist.enigmaObject.Handle, onLoadModelListChanged, nil, true)
+
+	return app.loadmodellist, nil
+}
+
+func (app *App) setLoadModelList(sessionState SessionState, lml *LoadModelList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.loadmodellist != nil && app.loadmodellist.enigmaObject != nil && app.loadmodellist.enigmaObject.Handle > 0 && lml != app.loadmodellist {
+		sessionState.DeRegisterEvent(app.loadmodellist.enigmaObject.Handle)
+	}
+	app.loadmodellist = lml
+}
 
 // GetBookmarkObject with ID
 func (app *App) GetBookmarkObject(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericBookmark, error) {

@@ -78,7 +78,7 @@ func (variableList *VariableList) setLayout(layout *enigma.GenericObjectLayout) 
 // UpdateProperties get and set properties for VariableList
 func (variableList *VariableList) UpdateProperties(ctx context.Context) error {
 	if variableList.enigmaObject == nil {
-		return errors.Errorf("bookmarklist enigma object is nil")
+		return errors.Errorf("variableList enigma object is nil")
 	}
 
 	propertiesRaw, err := variableList.enigmaObject.GetPropertiesRaw(ctx)

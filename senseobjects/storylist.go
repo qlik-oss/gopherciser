@@ -78,7 +78,7 @@ func (storyList *StoryList) setLayout(layout *enigma.GenericObjectLayout) {
 // UpdateProperties get and set properties for StoryList
 func (storyList *StoryList) UpdateProperties(ctx context.Context) error {
 	if storyList.enigmaObject == nil {
-		return errors.Errorf("bookmarklist enigma object is nil")
+		return errors.Errorf("storyList enigma object is nil")
 	}
 
 	propertiesRaw, err := storyList.enigmaObject.GetPropertiesRaw(ctx)
@@ -89,7 +89,7 @@ func (storyList *StoryList) UpdateProperties(ctx context.Context) error {
 	var properties enigma.GenericObjectProperties
 	err = jsonit.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal variableList properties")
+		return errors.Wrap(err, "Failed to unmarshal storyList properties")
 	}
 
 	storyList.setProperties(&properties)

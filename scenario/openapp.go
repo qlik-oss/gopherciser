@@ -170,8 +170,10 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return errors.WithStack(err)
 	}, actionState, true, "")
 
-	// TODO should create these session objects
-	//{"delta":true,"handle":1,"method":"CreateSessionObject","params":[{"qInfo":{"qId":"LoadModelList","qType":"LoadModelList"},"qAppObjectListDef":{"qType":"LoadModel"}}],"id":30,"jsonrpc":"2.0"}
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetLoadModelList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
 
 	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {
