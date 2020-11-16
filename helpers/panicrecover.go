@@ -18,3 +18,13 @@ func RecoverWithError(panicErr *error) {
 		}
 	}
 }
+
+// RecoverWithErrorFunc recovers from panic and returns panic error
+func RecoverWithErrorFunc(f func()) error {
+	var panicErr error
+	func() {
+		defer RecoverWithError(&panicErr)
+		f()
+	}()
+	return panicErr
+}
