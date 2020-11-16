@@ -51,17 +51,25 @@ func marshalFilters(filters ...filterType) []byte {
 	return rawJson
 }
 
+func (logger *regressionLogger) write(record ...string) {
+	for i, r := range record {
+		record[i] = replacer.Replace(r)
+	}
+	fmt.Fprintln(logger.w, strings.Join(record, "\t"))
+}
+
 // NewRegressionLogger creates a new RegressionLoggerCloser with headerEntries
 // written in the header of the log.
 func NewRegressionLogger(w io.WriteCloser, headerEntries ...HeaderEntry) RegressionLoggerCloser {
-	fmt.Fprintf(w, "HEADER_KEY\tHEADER_VALUE\n")
-	fmt.Fprintf(w, "FILTERS\t%s\n", filters)
+	logger := &regressionLogger{w}
+	logger.write("HEADER_KEY", "HEADER_VALUE")
+	logger.write("FILTERS", string(filters))
 	for _, he := range headerEntries {
-		fmt.Fprintf(w, "%s\t%s\n", strings.ToUpper(strings.TrimSpace(he.Key)), strings.TrimSpace(he.Value))
+		logger.write(strings.ToUpper(strings.TrimSpace(he.Key)), strings.TrimSpace(he.Value))
 	}
-	fmt.Fprintln(w, "---")
-	fmt.Fprintln(w, "ID\tMETA\tDATA")
-	return &regressionLogger{w}
+	logger.write("---")
+	logger.write("ID", "META", "DATA")
+	return logger
 }
 
 // Close the io.WriteCloser used to create the regressionLogger
@@ -88,6 +96,6 @@ func (logger *regressionLogger) Log(dataID string, data interface{}, meta map[st
 		return err
 	}
 
-	fmt.Fprintf(logger.w, "%s\t%s\t%s\n", dataIDJSON, metaJSON, dataJSON)
+	logger.write(string(dataIDJSON), string(metaJSON), string(dataJSON))
 	return nil
 }
