@@ -274,7 +274,7 @@ var (
 		"config.settings.timeout":                         {"Timeout setting (seconds) for WebSocket requests."},
 		"containertab.containerid":                        {"ID of the container object."},
 		"containertab.index":                              {"Zero based index of tab to switch to, used with mode `index`."},
-		"containertab.mode":                               {"Mode for container tab switching, one of: `objectid`, `random` or `index`.", "`objectid`: Switch to tab with object defined by `objectid`.", "`random`: Switch to a random tab within the container.", "`index`: Switch to tab with zero based index defined but `index`."},
+		"containertab.mode":                               {"Mode for container tab switching, one of: `objectid`, `random` or `index`.", "`objectid`: Switch to tab with object defined by `objectid`.", "`random`: Switch to a random visible tab within the container.", "`index`: Switch to tab with zero based index defined but `index`."},
 		"containertab.objectid":                           {"ID of the object to set as active, used with mode `objectid`."},
 		"createbookmark.description":                      {"(optional) Description of the bookmark to create."},
 		"createbookmark.nosheet":                          {"Do not include the sheet location in the bookmark."},

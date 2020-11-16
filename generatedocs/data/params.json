@@ -222,7 +222,7 @@
     "containertab.mode": [
         "Mode for container tab switching, one of: `objectid`, `random` or `index`.",
         "`objectid`: Switch to tab with object defined by `objectid`.",
-        "`random`: Switch to a random tab within the container.",
+        "`random`: Switch to a random visible tab within the container.",
         "`index`: Switch to tab with zero based index defined but `index`."
     ],
     "containertab.containerid": [

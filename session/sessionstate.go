@@ -254,6 +254,7 @@ func (state *State) Reset(ctx context.Context) {
 	state.events = make(map[int]*Event)
 	state.CurrentApp = nil
 	state.CurrentUser = nil
+	state.objects = nil
 }
 
 // SetLogEntry set the log entry
