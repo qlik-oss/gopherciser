@@ -257,7 +257,7 @@ func (settings ElasticDeleteAppSettings) deleteAppByGuid(host string, deleteGuid
 	// Look up the database ID for the app GUID
 	getItems := session.RestRequest{
 		Method:      session.GET,
-		Destination: fmt.Sprintf("%v/%v?resourceId=%v", host, getAppsEndpoint, deleteGuid),
+		Destination: fmt.Sprintf("%v/%v?resourceId=%v&resourceType=app,qvapp", host, getAppsEndpoint, deleteGuid),
 	}
 	restHandler.QueueRequest(actionState, true, &getItems, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
