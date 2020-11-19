@@ -138,7 +138,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	}
 
 	// send evaluation request for collections and spaces
-	sendEvaluation(sessionState, actionState, host, []elasticstructs.EvaluationResource{
+	sendPoliciesEvaluation(sessionState, actionState, host, []elasticstructs.EvaluationResource{
 		{
 			ID:   userData.ID,
 			Type: "app",
@@ -171,7 +171,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	})
 
 	// send evaluation request for data connections
-	sendEvaluation(sessionState, actionState, host, []elasticstructs.EvaluationResource{
+	sendPoliciesEvaluation(sessionState, actionState, host, []elasticstructs.EvaluationResource{
 		{
 			ID:   "datafile_personal",
 			Type: "datafile",
@@ -245,7 +245,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	}
 }
 
-func sendEvaluation(sessionState *session.State, actionState *action.State, host string, resources []elasticstructs.EvaluationResource) {
+func sendPoliciesEvaluation(sessionState *session.State, actionState *action.State, host string, resources []elasticstructs.EvaluationResource) {
 	evaluation := elasticstructs.Evaluation{
 		Resources: resources,
 	}
