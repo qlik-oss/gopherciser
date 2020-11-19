@@ -72,7 +72,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 			actionState.AddErrors(errors.New("No favorite collection id"))
 			return
 		}
-		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections/%s/items?limit=24&sort=-createdAt", host, favCollection.ID), actionState, sessionState.LogEntry, nil, func(err error, collectionRequest *session.RestRequest) {
+		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections/%s/items?limit=24&sort=-createdAt&collectionId=%s&resourceType=app,qvapp,qlikview,genericlink,sharingservicetask", host, favCollection.ID, favCollection.ID), actionState, sessionState.LogEntry, nil, func(err error, collectionRequest *session.RestRequest) {
 			fillAppMapFromItemRequest(sessionState, actionState, collectionRequest, false)
 		})
 	})
@@ -107,7 +107,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/tenants/me", host), actionState, sessionState.LogEntry, nil)
 
 	// This get items request is done by client, but resulting apps are never shown to users
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24&resourceType=app,qvapp,qlikview,genericlink,sharingservicetask", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false) // todo should we fill map as these are never shown to user?
 	})
 
@@ -137,53 +137,66 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		return // we had an error
 	}
 
-	// send evaluation request
-	evaluation := elasticstructs.Evaluation{
-		Resources: []elasticstructs.EvaluationResource{
-			{
-				ID:   userData.ID,
-				Type: "app",
-				Properties: elasticstructs.EvaluationProperties{
-					Owner: userData.Subject,
-				},
+	// send evaluation request for collections and spaces
+	sendEvaluation(sessionState, actionState, host, []elasticstructs.EvaluationResource{
+		{
+			ID:   userData.ID,
+			Type: "app",
+			Properties: elasticstructs.EvaluationProperties{
+				OwnerID: userData.ID,
 			},
-			// todo these 3 should also be evaluated, unfortunately the first existence of the ID's are in a javascript for the client and thus not reachable for us and can't be tested.
-			//{
-			//	ID:   "",
-			//	Type: "collection",
-			//	Properties: elasticstructs.EvaluationProperties{
-			//		Type: "public",
-			//	},
-			//},
-			//{
-			//	ID:   "",
-			//	Type: "space",
-			//	Properties: elasticstructs.EvaluationProperties{
-			//		Type: "shared",
-			//	},
-			//},
-			//{
-			//	ID:   "",
-			//	Type: "space",
-			//	Properties: elasticstructs.EvaluationProperties{
-			//		Type: "managed",
-			//	},
-			//},
 		},
-	}
+		// todo these 3 should also be evaluated, unfortunately the first existence of the ID's are in a javascript for the client and thus not reachable for us and can't be tested.
+		//{
+		//	ID:   "",
+		//	Type: "collection",
+		//	Properties: elasticstructs.EvaluationProperties{
+		//		Type: "public",
+		//	},
+		//},
+		//{
+		//	ID:   "",
+		//	Type: "space",
+		//	Properties: elasticstructs.EvaluationProperties{
+		//		Type: "shared",
+		//	},
+		//},
+		//{
+		//	ID:   "",
+		//	Type: "space",
+		//	Properties: elasticstructs.EvaluationProperties{
+		//		Type: "managed",
+		//	},
+		//},
+	})
 
-	postData, err := jsonit.Marshal(evaluation)
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to marshal evaluation request"))
-		return
-	}
+	// send evaluation request for data connections
+	sendEvaluation(sessionState, actionState, host, []elasticstructs.EvaluationResource{
+		{
+			ID:   "datafile_personal",
+			Type: "datafile",
+			Properties: elasticstructs.EvaluationProperties{
+				OwnerID: userData.ID,
+				UserID:  userData.ID,
+			},
+		},
+		{
+			ID:   "dataconnections_personal",
+			Type: "dataconnections",
+			Properties: elasticstructs.EvaluationProperties{
+				OwnerID: userData.ID,
+			},
+		},
+	})
 
-	sessionState.Rest.PostAsync(fmt.Sprintf("%s/api/v1/policies/evaluation", host), actionState, sessionState.LogEntry, postData, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qlik-groups?tenantId=%s&limit=0&fields=displayName", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/api-keys/configs/%s", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users?tenantId=%s&limit=100&fields=name,picture,email,status&status=active,disabled", host, userData.TenantID), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24&resourceType=sharingservicetask", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/qix-datafiles/quota", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/data-alerts/settings", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/transport/smtp-check", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/dcaas/datasources?includeui=true", host), actionState, sessionState.LogEntry, nil)
 
 	// These requests differ on some configurations, set to warn only if not existing.
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/web-notifications", host), actionState, sessionState.LogEntry, optionsNoError)
@@ -204,7 +217,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		}
 	})
 
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items?sort=-createdAt&limit=24&ownerId=%s&resourceType=app,qvapp,qlikview", host, userData.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, false)
 	})
 
@@ -230,6 +243,19 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, err)
 	}
+}
+
+func sendEvaluation(sessionState *session.State, actionState *action.State, host string, resources []elasticstructs.EvaluationResource) {
+	evaluation := elasticstructs.Evaluation{
+		Resources: resources,
+	}
+
+	postData, err := jsonit.Marshal(evaluation)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to marshal evaluation request"))
+		return
+	}
+	sessionState.Rest.PostAsync(fmt.Sprintf("%s/api/v1/policies/evaluation", host), actionState, sessionState.LogEntry, postData, nil)
 }
 
 // get locale is semi-async, the first request is synchronous and sub-sequent request/-s async.
