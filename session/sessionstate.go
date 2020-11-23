@@ -18,7 +18,7 @@ import (
 	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
-	pending "github.com/qlik-oss/gopherciser/pendinghandler"
+	pending "github.com/qlik-oss/gopherciser/pending"
 	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
