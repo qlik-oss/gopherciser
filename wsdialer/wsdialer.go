@@ -19,6 +19,7 @@ import (
 )
 
 type (
+	// ReConnectSettings settings for automatically reconnecting websocket
 	ReConnectSettings struct {
 		// AutoReconnect, set to automatically try to reconnect when disconnected, will be set to false on "Close"
 		AutoReconnect bool
@@ -35,12 +36,16 @@ type (
 		GetContext func() context.Context
 	}
 
+	// WsDialer wraps gobwas websocket dialer
 	WsDialer struct {
 		gobwas.Dialer
 		net.Conn
 		// Type of websocket, will be used by DisconnectError
-		Type      string
+		Type string
+		// Reconnect settings
 		Reconnect ReConnectSettings
+		// OnUnexpectedDisconnect triggers on disconnect of websocket
+		OnUnexpectedDisconnect func()
 
 		url       *neturl.URL
 		closed    chan struct{}
@@ -54,11 +59,13 @@ type (
 )
 
 const (
+	// DefaultTimeout of websocker dialer
 	DefaultTimeout = 30 * time.Second
 )
 
 var (
-	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0}
+	// DefaultBackoff of reconnection
+	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0}
 
 	closedChan = make(chan struct{}) // reusable closed channel
 )
@@ -138,6 +145,7 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 	return &dialer, nil
 }
 
+// Dial new websocket connection
 func (dialer *WsDialer) Dial(ctx context.Context) error {
 	var err error
 	dialer.Conn, _ /*br*/, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
@@ -161,6 +169,9 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	}
 
 	if err == io.EOF {
+		if dialer.OnUnexpectedDisconnect != nil {
+			dialer.OnUnexpectedDisconnect()
+		}
 		if !dialer.Reconnect.AutoReconnect {
 			err = DisconnectError{Type: dialer.Type}
 		} else {

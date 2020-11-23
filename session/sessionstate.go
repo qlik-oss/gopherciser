@@ -18,6 +18,7 @@ import (
 	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	pending "github.com/qlik-oss/gopherciser/pending"
 	"github.com/qlik-oss/gopherciser/randomizer"
 	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
@@ -81,7 +82,7 @@ type (
 		CurrentActionState *action.State
 		LogEntry           *logger.LogEntry
 		EW                 statistics.ErrWarn
-		Pending            PendingHandler
+		Pending            pending.Handler
 		Rest               *RestHandler
 		RequestMetrics     *requestmetrics.RequestMetrics
 		ReconnectSettings  ReconnectSettings
@@ -113,7 +114,7 @@ type (
 
 	ReconnectInfo struct {
 		err                 error
-		pendingReconnection PendingHandler
+		pendingReconnection pending.Handler
 		reconnectFunc       func() (string, error)
 	}
 
@@ -152,7 +153,7 @@ const (
 )
 
 var (
-	defaultReconnectBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0}
+	defaultReconnectBackoff = wsdialer.DefaultBackoff // current set to same as event ws backoff, but keeping constant so it could be independently changed
 )
 
 // Error implements error interface
@@ -194,7 +195,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		// Buffer size for the pendingHandler has been chosen after evaluation tests towards sense
 		// with medium amount of objects in the sheets. Evaluation was done before introducing spinLoopPending
 		// in pendingHandler and could possibly be lowered, this would however require re-evaluation.
-		Pending:        NewPendingHandler(32),
+		Pending:        pending.NewHandler(32),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		Counters:       counters,
 
@@ -203,7 +204,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		events:    make(map[int]*Event),
 		reconnect: ReconnectInfo{
 			reconnectFunc:       nil,
-			pendingReconnection: NewPendingHandler(32),
+			pendingReconnection: pending.NewHandler(32),
 		},
 	}
 
@@ -227,7 +228,7 @@ func New(ctx context.Context, outputsDir string, timeout time.Duration, user *us
 	return state
 }
 
-// New instance of session state with custom randomizer
+// NewWithRandomizer instance of session state with custom randomizer
 func NewWithRandomizer(ctx context.Context, outputsDir string, timeout time.Duration, user *users.User, virtualProxy string,
 	rnd helpers.Randomizer, counters *statistics.ExecutionCounters) *State {
 	state := newSessionState(ctx, outputsDir, timeout, user, virtualProxy, counters)
@@ -636,11 +637,23 @@ func (state *State) Cancel() {
 // WSFailed Should be executed on websocket unexpectedly failing
 func (state *State) WSFailed() {
 	if state != nil && state.ReconnectSettings.Reconnect {
-		if err := state.Reconnect(); err != nil {
-			state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
-			state.Cancel()
-			return
-		}
+		state.reconnect.pendingReconnection.IncPending()
+		state.LogEntry.LogInfo("WSFailed", "Sense websocket unexpectedly disconnected")
+		go func() { // failed executefuncs executed synchronously so this need to be async
+			defer state.reconnect.pendingReconnection.DecPending()
+
+			panicErr := helpers.RecoverWithErrorFunc(func() {
+				if err := state.Reconnect(); err != nil {
+					state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
+					state.Cancel()
+					return
+				}
+			})
+
+			if panicErr != nil && state.LogEntry != nil {
+				state.LogEntry.LogErrorWithMsg("panic triggering functions on failed connection", panicErr)
+			}
+		}()
 	}
 }
 

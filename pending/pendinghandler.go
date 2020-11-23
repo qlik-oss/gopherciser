@@ -1,4 +1,4 @@
-package session
+package pending
 
 import (
 	"context"
@@ -13,23 +13,23 @@ import (
 )
 
 type (
-	// PendingHandler handles waiting for pending requests and responses
-	PendingHandler struct {
+	// Handler handles waiting for pending requests and responses
+	Handler struct {
 		cond *sync.Cond
 		pc   atomichandlers.AtomicCounter
 	}
 )
 
-// NewPendingHandler new instance of PendingHandler
-func NewPendingHandler(size int) PendingHandler {
-	return PendingHandler{
+// NewHandler new instance of PendingHandler
+func NewHandler(size int) Handler {
+	return Handler{
 		cond: sync.NewCond(&sync.Mutex{}),
 	}
 }
 
 // WaitForPending uses double locking of mutex to wait until mutex is unlocked by
 // loop listening for pending req/resp
-func (pending *PendingHandler) WaitForPending(ctx context.Context) {
+func (pending *Handler) WaitForPending(ctx context.Context) {
 	if helpers.IsContextTriggered(ctx) {
 		return
 	}
@@ -43,12 +43,12 @@ func (pending *PendingHandler) WaitForPending(ctx context.Context) {
 }
 
 // IncPending increase pending requests
-func (pending *PendingHandler) IncPending() {
+func (pending *Handler) IncPending() {
 	pending.pc.Inc()
 }
 
 // DecPending increase finished requests
-func (pending *PendingHandler) DecPending() {
+func (pending *Handler) DecPending() {
 	pending.pc.Dec()
 	if pending.pc.Current() < 1 {
 		pending.cond.Broadcast()
@@ -56,7 +56,7 @@ func (pending *PendingHandler) DecPending() {
 }
 
 // QueueRequest Async request,
-func (pending *PendingHandler) QueueRequest(baseCtx context.Context, timeout time.Duration,
+func (pending *Handler) QueueRequest(baseCtx context.Context, timeout time.Duration,
 	f func(ctx context.Context) error, logEntry *logger.LogEntry, onFinished func(err error)) {
 	pending.IncPending()
 
