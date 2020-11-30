@@ -87,7 +87,7 @@ func (settings ElasticExportAppSettings) Execute(sessionState *session.State, ac
 	postExport := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "",
-		Destination: fmt.Sprintf("%s/api/v1/apps/%s/export?NoData=%v", host, entry.GUID, settings.NoData),
+		Destination: fmt.Sprintf("%s/api/v1/apps/%s/export?NoData=%v", host, entry.ID, settings.NoData),
 	}
 	sessionState.Rest.QueueRequest(actionState, true, &postExport, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
@@ -126,12 +126,12 @@ func (settings ElasticExportAppSettings) Execute(sessionState *session.State, ac
 	}
 
 	if settings.SaveToFile {
-		filename := entry.Title
+		filename := entry.Name
 
 		if settings.FileName.String() != "" {
 			data := struct {
 				Title string
-			}{Title: strings.TrimSuffix(entry.Title, ".qvf")}
+			}{Title: strings.TrimSuffix(entry.Name, ".qvf")}
 
 			filename, err = sessionState.ReplaceSessionVariablesWithLocalData(&settings.FileName, data)
 			if err != nil {

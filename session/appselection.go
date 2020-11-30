@@ -224,7 +224,7 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 	case AppModeRoundGUIDFromList:
 		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.AppList)
 		entry = &ArtifactEntry{ // todo itemID, title?
-			GUID: guid,
+			ID: guid,
 		}
 	case AppModeRandomNameFromFile:
 		app, err := getRandomAppListEntry(sessionState, appSelection.Filename.Rows())
@@ -254,17 +254,14 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 	case AppModeRoundGUIDFromFile:
 		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.Filename.Rows())
 		entry = &ArtifactEntry{ // todo itemID, title?
-			GUID: guid,
+			ID: guid,
 		}
 	default:
 		return nil, errors.Errorf("app selection mode <%s> not supported", appSelection.AppMode)
 	}
 
-	// todo these info loggings any useful?
-	// sessionState.LogEntry.LogInfo("AppSelect", randomApp.Title)
-	// sessionState.LogEntry.LogInfo("AppGUID", randomApp.GUID)
-	sessionState.LogEntry.Session.AppName = entry.Title
-	sessionState.LogEntry.Session.AppGUID = entry.GUID
+	sessionState.LogEntry.Session.AppName = entry.Name
+	sessionState.LogEntry.Session.AppGUID = entry.ID
 	sessionState.CurrentApp = entry
 
 	return entry, nil

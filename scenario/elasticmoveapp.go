@@ -3,12 +3,13 @@ package scenario
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/session"
-	"net/http"
 )
 
 type (
@@ -79,7 +80,7 @@ func (settings ElasticMoveAppSettings) Execute(sessionState *session.State, acti
 	putApp := session.RestRequest{
 		Method:      session.PUT,
 		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/api/v1/apps/%s/space", host, entry.GUID),
+		Destination: fmt.Sprintf("%s/api/v1/apps/%s/space", host, entry.ID),
 		Content:     spaceReferenceJson,
 	}
 

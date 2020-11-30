@@ -280,7 +280,7 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 		}
 	}
 	err = sessionState.ArtifactMap.FillAppsUsingName(&session.AppData{
-		Data: []session.AppsResp{
+		Data: []session.ArtifactEntry{
 			{
 				Name:   title,
 				ID:     appGuid,
@@ -293,7 +293,7 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 	}
 
 	// Set "current" app
-	sessionState.CurrentApp = &session.ArtifactEntry{Title: title, GUID: appGuid, ItemID: itemId}
+	sessionState.CurrentApp = &session.ArtifactEntry{Name: title, ID: appGuid, ItemID: itemId}
 
 	// Debug log of artifact map in it's entirety after uploading app
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
