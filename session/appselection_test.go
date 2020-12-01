@@ -40,18 +40,18 @@ func Test_AppSelection_RoundRobin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	verifyRoundPos(t, appSelection, entry.GUID, 0)
+	verifyRoundPos(t, appSelection, entry.ID, 0)
 	entry, err = appSelection2.Select(sessionState)
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyRoundPos(t, appSelection2, entry.GUID, 1)
+	verifyRoundPos(t, appSelection2, entry.ID, 1)
 
 	entry, err = appSelection.Select(sessionState)
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyRoundPos(t, appSelection, entry.GUID, 0)
+	verifyRoundPos(t, appSelection, entry.ID, 0)
 }
 
 func verifyRoundPos(t *testing.T, appSelection session.AppSelection, result string, pos int) {

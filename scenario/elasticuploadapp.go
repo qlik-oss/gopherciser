@@ -49,6 +49,7 @@ const (
 	Legacy
 )
 
+// GetEnumMap for upload mode
 func (value UploadMode) GetEnumMap() *enummap.EnumMap {
 	enumMap, _ := enummap.NewEnumMap(map[string]int{
 		"tus":    int(Tus),
@@ -263,28 +264,29 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 		return err
 	}
 
-	itemId, ok := collectionServiceItemResponse["id"].(string)
+	itemID, ok := collectionServiceItemResponse["id"].(string)
 	if !ok {
 		return errors.New("failed to get id from collection service response")
 	}
-	appGuid, ok := collectionServiceItemResponse["resourceId"].(string)
+	appGUID, ok := collectionServiceItemResponse["resourceId"].(string)
 	if !ok {
 		return errors.New("failed to get resource id from collection service response")
 	}
 
 	// No collection to add it to; we're done
 	if streamID != "" {
-		err := AddTag(sessionState, actionState, itemId, host, streamID)
+		err := AddTag(sessionState, actionState, itemID, host, streamID)
 		if err != nil {
 			return err
 		}
 	}
-	err = sessionState.ArtifactMap.FillAppsUsingName(&session.AppData{
+	err = sessionState.ArtifactMap.FillArtifacts(&session.ItemData{
 		Data: []session.ArtifactEntry{
 			{
-				Name:   title,
-				ID:     appGuid,
-				ItemID: itemId,
+				Name:         title,
+				ID:           appGUID,
+				ItemID:       itemID,
+				ResourceType: session.ResourceTypeApp,
 			},
 		},
 	})
@@ -293,7 +295,7 @@ func AddAppToCollection(settings CanAddToCollection, sessionState *session.State
 	}
 
 	// Set "current" app
-	sessionState.CurrentApp = &session.ArtifactEntry{Name: title, ID: appGuid, ItemID: itemId}
+	sessionState.CurrentApp = &session.ArtifactEntry{Name: title, ID: appGUID, ItemID: itemID, ResourceType: session.ResourceTypeApp}
 
 	// Debug log of artifact map in it's entirety after uploading app
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {

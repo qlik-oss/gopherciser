@@ -325,12 +325,12 @@ func fillAppMapFromItemRequest(sessionState *session.State, actionState *action.
 	}
 }
 
-func fillAppMapFromCollection(appMap *session.ArtifactMap, items *elasticstructs.CollectionItems) error {
-	appsResp := make([]session.ArtifactEntry, 0, len(items.Data))
+func fillAppMapFromCollection(artifacts *session.ArtifactMap, items *elasticstructs.CollectionItems) error {
+	artifactEntries := make([]session.ArtifactEntry, 0, len(items.Data))
 	for _, item := range items.Data {
-		appsResp = append(appsResp, session.ArtifactEntry{Name: item.Name, ID: item.ResourceID, ItemID: item.ID, ResourceType: item.ResourceType})
+		artifactEntries = append(artifactEntries, session.ArtifactEntry{Name: item.Name, ID: item.ResourceID, ItemID: item.ID, ResourceType: item.ResourceType})
 	}
-	err := appMap.FillAppsUsingName(&session.AppData{Data: appsResp})
+	err := artifacts.FillArtifacts(&session.ItemData{Data: artifactEntries})
 	if err != nil {
 		return err
 	}

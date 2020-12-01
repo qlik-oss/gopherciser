@@ -147,7 +147,7 @@ func (settings ElasticExploreSettings) Validate() error {
 // Execute  ElasticExplore action
 func (settings ElasticExploreSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	if !settings.KeepCurrent {
-		sessionState.ArtifactMap.EmptyApps()
+		sessionState.ArtifactMap.ClearArtifactMap()
 	}
 
 	host, err := connection.GetRestUrl()

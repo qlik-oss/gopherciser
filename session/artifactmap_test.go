@@ -13,11 +13,11 @@ import (
 
 var (
 	emptyAppMap  = &ArtifactMap{}
-	emptyAppData = &AppData{}
+	emptyAppData = &ItemData{}
 
 	someAppTitle     = "my-app-title"
 	someAppID        = "my-app-id"
-	someAppDataTitle = &AppData{
+	someAppDataTitle = &ItemData{
 		Data: []ArtifactEntry{
 			{
 				Name:         someAppTitle,
@@ -32,7 +32,7 @@ var (
 		},
 	}
 
-	someAppDataName = &AppData{
+	someAppDataName = &ItemData{
 		Data: []ArtifactEntry{
 			{
 				Name:         someAppTitle,
@@ -42,7 +42,7 @@ var (
 		},
 	}
 
-	duplicateKeysApp = &AppData{
+	duplicateKeysApp = &ItemData{
 		Data: []ArtifactEntry{
 			{
 				Name:         someAppTitle,
@@ -76,33 +76,35 @@ func TestNewAppMap(t *testing.T) {
 
 func TestAppMap_fill_name(t *testing.T) {
 	am := NewAppMap()
-	err := am.fillAppMap(someAppDataName)
+	err := am.FillArtifacts(someAppDataName)
 	assert.NoError(t, err)
-	assert.NotNil(t, am.artifactList)
+	assert.NotNil(t, am.resourceMap)
+	assert.NotNil(t, am.resourceMap[ResourceTypeApp])
 }
 
 func TestAppMap_FillWithName(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(someAppDataName)
+	err := am.FillArtifacts(someAppDataName)
 	assert.NoError(t, err)
-	assert.NotNil(t, am.artifactList)
+	assert.NotNil(t, am.resourceMap)
+	assert.NotNil(t, am.resourceMap[ResourceTypeApp])
 }
 
 func TestAppMap_FillWithName_emptyAppData(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(emptyAppData)
+	err := am.FillArtifacts(emptyAppData)
 	assert.Error(t, err)
 }
 
 func TestAppMap_FillWithName_nil(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(nil)
+	err := am.FillArtifacts(nil)
 	assert.Error(t, err)
 }
 
 func TestAppMap_GetAppID(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(someAppDataTitle)
+	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 	appID, err := am.GetAppID(someAppTitle)
 	assert.NoError(t, err)
@@ -111,7 +113,7 @@ func TestAppMap_GetAppID(t *testing.T) {
 
 func TestAppMap_GetAppID_notFound(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(someAppDataTitle)
+	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 	_, err = am.GetAppID("not-to-be-found")
 	assert.Error(t, err)
@@ -119,18 +121,18 @@ func TestAppMap_GetAppID_notFound(t *testing.T) {
 
 func TestAppMap_GetAppID_duplicateKeys(t *testing.T) {
 	// When 2 or more apps have the same Title, the
-	// get should return the last of them
+	// get should return the first of them
 	am := NewAppMap()
-	err := am.FillAppsUsingName(duplicateKeysApp)
+	err := am.FillArtifacts(duplicateKeysApp)
 	assert.NoError(t, err)
 	appID1, err1 := am.GetAppID(someAppTitle)
 	assert.NoError(t, err1)
-	assert.Equal(t, someAppID+"2", appID1)
+	assert.Equal(t, someAppID, appID1)
 }
 
 func TestAppMap_GetAppID_concurrent(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(someAppDataTitle)
+	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 
 	wg := sync.WaitGroup{}
@@ -148,7 +150,7 @@ func TestAppMap_GetAppID_concurrent(t *testing.T) {
 
 func TestAppMap_GetRandomAppID(t *testing.T) {
 	am := NewAppMap()
-	err := am.FillAppsUsingName(someAppDataTitle)
+	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 	_, err = am.GetRandomApp(dummyState)
 	assert.NoError(t, err)

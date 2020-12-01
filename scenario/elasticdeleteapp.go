@@ -149,19 +149,15 @@ func (settings ElasticDeleteAppSettings) Execute(sessionState *session.State, ac
 			return
 		}
 	case Everything:
-		if sessionState.ArtifactMap.Len() == 0 {
+		if sessionState.ArtifactMap.Count(session.ResourceTypeApp) == 0 {
 			sessionState.LogEntry.Logf(logger.WarningLevel, "deletion mode 'everything' - no apps to delete")
 		}
-		sessionState.ArtifactMap.ForEach(func(entry *session.ArtifactEntry) bool {
-			if entry.ResourceType != session.ResourceTypeApp {
-				return true
-			}
-			err = settings.deleteAppByGuid(host, entry.ID, sessionState, actionState)
-			if err != nil {
+
+		for entry := sessionState.ArtifactMap.First(session.ResourceTypeApp); entry != nil; entry = sessionState.ArtifactMap.First(session.ResourceTypeApp) {
+			if err := settings.deleteAppByGuid(host, entry.ID, sessionState, actionState); err != nil {
 				actionState.AddErrors(err)
 			}
-			return true
-		})
+		}
 	case ClearCollection:
 		guidsInCollection, err := settings.appsInCollection(host, sessionState, actionState)
 		deletedApps := make([]string, 0, len(guidsInCollection))
