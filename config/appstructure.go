@@ -270,6 +270,9 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectSlideItem:
 			structure.handleStories(ctx, app, id, typ, includeRaw)
 			return nil
+		case appstructure.ObjectAlertBookmark:
+			// ignore this object type
+			return nil
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
 				return errors.Wrapf(err, "id<%s> type<%s>", id, typ)
