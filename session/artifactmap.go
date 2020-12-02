@@ -97,13 +97,8 @@ func (entry *ArtifactEntry) Copy() *ArtifactEntry {
 		return nil
 	}
 
-	return &ArtifactEntry{
-		Name:         entry.Name,
-		ID:           entry.ID,
-		ItemID:       entry.ItemID,
-		ResourceType: entry.ResourceType,
-		Data:         entry.Data,
-	}
+	cpy := *entry
+	return &cpy
 }
 
 // DataAsSpace return artifact entry Data as space
