@@ -86,6 +86,11 @@ func (d ArtifactList) Swap(i, j int) {
 	d.list[i], d.list[j] = d.list[j], d.list[i]
 }
 
+// MarshalJSON marshal artifact list to JSON
+func (d ArtifactList) MarshalJSON() ([]byte, error) {
+	return jsonit.Marshal(d.list)
+}
+
 // NewArtifactMap returns an empty ArtifactMap
 func NewArtifactMap() *ArtifactMap {
 	return &ArtifactMap{resourceMap: make(map[string]*ArtifactList)}
