@@ -27,11 +27,14 @@ type (
 	}
 
 	// ArtifactList all items, spaces and collections
-	ArtifactList []*ArtifactEntry
+	ArtifactList struct {
+		list   []*ArtifactEntry
+		sorted bool
+	}
 
 	// ArtifactMap is the map between app names and GUIDs
 	ArtifactMap struct {
-		resourceMap map[string]ArtifactList
+		resourceMap map[string]*ArtifactList
 		mu          sync.RWMutex
 	}
 
@@ -68,19 +71,24 @@ func (err SpaceIDNotFoundError) Error() string {
 	return fmt.Sprintf("space id <%s> not found", string(err))
 }
 
-func (d ArtifactList) Len() int {
-	return len(d)
+func (d *ArtifactList) Len() int {
+	if d == nil {
+		return 0
+	}
+	return len(d.list)
 }
+
 func (d ArtifactList) Less(i, j int) bool {
-	return d[i].Name < d[j].Name
+	return d.list[i].Name < d.list[j].Name
 }
+
 func (d ArtifactList) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
+	d.list[i], d.list[j] = d.list[j], d.list[i]
 }
 
 // NewAppMap returns an empty ArtifactMap
 func NewAppMap() *ArtifactMap {
-	return &ArtifactMap{resourceMap: make(map[string]ArtifactList)}
+	return &ArtifactMap{resourceMap: make(map[string]*ArtifactList)}
 }
 
 // Copy of ArtifactEntry
@@ -109,6 +117,27 @@ func (entry *ArtifactEntry) DataAsSpace() (*elasticstructs.Space, error) {
 	return space, nil
 }
 
+// Append entry to artifact list
+func (am *ArtifactMap) Append(resourceType string, entry *ArtifactEntry) {
+	am.allocateResourceType(resourceType, 1)
+	am.resourceMap[resourceType].list = append(am.resourceMap[resourceType].list, entry)
+	am.resourceMap[resourceType].sorted = false
+}
+
+// Sort entries of resource type
+func (am *ArtifactMap) Sort(resourceType string) {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	if am.resourceMap[resourceType].Len() < 1 {
+		return
+	}
+
+	if !am.resourceMap[resourceType].sorted {
+		sort.Sort(am.resourceMap[resourceType])
+	}
+}
+
 // FillArtifacts puts the app name (key) and the app ID (value) in the ArtifactMap
 func (am *ArtifactMap) FillArtifacts(item *ItemData) error {
 	if item == nil || item.Data == nil {
@@ -123,8 +152,7 @@ func (am *ArtifactMap) FillArtifacts(item *ItemData) error {
 	defer am.mu.Unlock()
 
 	for _, data := range item.Data {
-		am.allocateResourceType(data.ResourceType, 1)
-		am.resourceMap[data.ResourceType] = append(am.resourceMap[data.ResourceType], data.Copy())
+		am.Append(data.ResourceType, data.Copy())
 	}
 
 	return nil
@@ -145,14 +173,14 @@ func (am *ArtifactMap) DeleteItem(resourceType, lookfor string, id bool) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	if len(am.resourceMap[resourceType]) < 1 {
+	if am.resourceMap[resourceType].Len() < 1 {
 		return
 	}
 
 	compare := getCompareFunc(id)
-	for index, entry := range am.resourceMap[resourceType] {
+	for index, entry := range am.resourceMap[resourceType].list {
 		if compare(entry, lookfor) {
-			am.resourceMap[resourceType] = append(am.resourceMap[resourceType][:index], am.resourceMap[resourceType][index+1:]...)
+			am.resourceMap[resourceType].list = append(am.resourceMap[resourceType].list[:index], am.resourceMap[resourceType].list[index+1:]...)
 			return
 		}
 	}
@@ -168,7 +196,7 @@ func (am *ArtifactMap) ClearArtifactMap() {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	am.resourceMap = make(map[string]ArtifactList)
+	am.resourceMap = make(map[string]*ArtifactList)
 }
 
 // FillAppsUsingDocListEntries should be used to fillAppMap app map in QSEoW
@@ -176,12 +204,8 @@ func (am *ArtifactMap) FillAppsUsingDocListEntries(docListEntries []*enigma.DocL
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	am.allocateResourceType(ResourceTypeApp, len(docListEntries))
-
 	for _, docListEntry := range docListEntries {
-		id := docListEntry.DocId
-		name := docListEntry.DocName
-		am.resourceMap[ResourceTypeApp] = append(am.resourceMap[ResourceTypeApp], &ArtifactEntry{name, id, "" /* QSEoW does not have item ID */, ResourceTypeApp, nil})
+		am.Append(ResourceTypeApp, &ArtifactEntry{docListEntry.DocName, docListEntry.DocId, "" /* QSEoW does not have item ID */, ResourceTypeApp, nil})
 	}
 	return nil
 }
@@ -189,11 +213,11 @@ func (am *ArtifactMap) FillAppsUsingDocListEntries(docListEntries []*enigma.DocL
 // allocateResourceType ArtifactMap should be locked before calling this function
 func (am *ArtifactMap) allocateResourceType(resourceType string, len int) {
 	if am.resourceMap == nil {
-		am.resourceMap = make(map[string]ArtifactList)
+		am.resourceMap = make(map[string]*ArtifactList)
 	}
 
 	if am.resourceMap[resourceType] == nil {
-		am.resourceMap[resourceType] = make(ArtifactList, 0, len)
+		am.resourceMap[resourceType] = &ArtifactList{list: make([]*ArtifactEntry, 0, len)}
 	}
 }
 
@@ -202,10 +226,8 @@ func (am *ArtifactMap) FillStreams(streamList []elasticstructs.Collection) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	am.allocateResourceType(ResourceTypeStream, len(streamList))
-
 	for _, stream := range streamList {
-		am.resourceMap[ResourceTypeStream] = append(am.resourceMap[ResourceTypeStream], &ArtifactEntry{Name: stream.Name, ID: stream.ID, ResourceType: ResourceTypeStream})
+		am.Append(ResourceTypeStream, &ArtifactEntry{Name: stream.Name, ID: stream.ID, ResourceType: ResourceTypeStream})
 	}
 }
 
@@ -214,10 +236,8 @@ func (am *ArtifactMap) FillSpaces(spaces []elasticstructs.Space) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	am.allocateResourceType(ResourceTypeSpace, len(spaces))
-
 	for _, space := range spaces {
-		am.resourceMap[ResourceTypeSpace] = append(am.resourceMap[ResourceTypeSpace], &ArtifactEntry{Name: space.Name, ID: space.ID, ResourceType: ResourceTypeSpace, Data: &space})
+		am.Append(ResourceTypeSpace, &ArtifactEntry{Name: space.Name, ID: space.ID, ResourceType: ResourceTypeSpace, Data: &space})
 	}
 }
 
@@ -226,9 +246,7 @@ func (am *ArtifactMap) AddSpace(space elasticstructs.Space) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	am.allocateResourceType(ResourceTypeSpace, 1)
-
-	am.resourceMap[ResourceTypeSpace] = append(am.resourceMap[ResourceTypeSpace], &ArtifactEntry{Name: space.Name, ID: space.ID, ResourceType: ResourceTypeSpace, Data: &space})
+	am.Append(ResourceTypeSpace, &ArtifactEntry{Name: space.Name, ID: space.ID, ResourceType: ResourceTypeSpace, Data: &space})
 }
 
 // GetAppID returns the app ID given the app Title. When multiple apps
@@ -312,33 +330,33 @@ func (am *ArtifactMap) GetSpaceByID(spaceID string) (*elasticstructs.Space, erro
 
 // GetRandomApp returns a random app for the map, chosen by a uniform distribution
 func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) {
-	am.mu.Lock()
-	defer am.mu.Unlock()
+	am.Sort(ResourceTypeApp)
 
-	n := len(am.resourceMap[ResourceTypeApp])
+	am.mu.RLock()
+	defer am.mu.RUnlock()
+
+	n := am.resourceMap[ResourceTypeApp].Len()
 	if n < 1 {
 		return ArtifactEntry{}, errors.New("cannot select random app: ArtifactMap is empty")
 	}
 
-	// todo add flag to mark unsorted list
-	sort.Sort(am.resourceMap[ResourceTypeApp])
-	return *am.resourceMap[ResourceTypeApp][sessionState.Randomizer().Rand(n)], nil
+	return *am.resourceMap[ResourceTypeApp].list[sessionState.Randomizer().Rand(n)], nil
 }
 
 // GetRoundRobin returns a app round robin for the map
 func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error) {
-	am.mu.Lock()
-	defer am.mu.Unlock()
+	am.Sort(ResourceTypeApp)
+
+	am.mu.RLock()
+	defer am.mu.RUnlock()
 
 	appNumber := sessionState.Counters.AppCounter.Inc() - 1
-	n := len(am.resourceMap[ResourceTypeApp])
+	n := am.resourceMap[ResourceTypeApp].Len()
 	if n < 1 {
 		return ArtifactEntry{}, errors.New("cannot select app round robin: ArtifactMap is empty")
 	}
 
-	// todo add flag to mark unsorted list
-	sort.Sort(am.resourceMap[ResourceTypeApp])
-	return *am.resourceMap[ResourceTypeApp][appNumber%uint64(n)], nil
+	return *am.resourceMap[ResourceTypeApp].list[appNumber%uint64(n)], nil
 }
 
 // LookupAppTitle lookup app using title
@@ -362,9 +380,11 @@ func (am *ArtifactMap) lookup(resourcetype, lookup string, id bool) (*ArtifactEn
 
 	compare := getCompareFunc(id)
 
-	for _, entry := range am.resourceMap[resourcetype] {
-		if compare(entry, lookup) {
-			return entry.Copy(), nil
+	if am.resourceMap[resourcetype] != nil {
+		for _, entry := range am.resourceMap[resourcetype].list {
+			if compare(entry, lookup) {
+				return entry.Copy(), nil
+			}
 		}
 	}
 
@@ -421,7 +441,7 @@ func (am *ArtifactMap) Count(resourceType string) int {
 	am.mu.RLock()
 	defer am.mu.RUnlock()
 
-	return len(am.resourceMap[resourceType])
+	return am.resourceMap[resourceType].Len()
 }
 
 // First entry of resource type
@@ -429,9 +449,8 @@ func (am *ArtifactMap) First(resourceType string) *ArtifactEntry {
 	am.mu.RLock()
 	defer am.mu.RUnlock()
 
-	// TODO make sure to check nil everywhere else too
-	if len(am.resourceMap[resourceType]) > 0 {
-		return am.resourceMap[resourceType][0].Copy()
+	if am.resourceMap[resourceType].Len() > 0 {
+		return am.resourceMap[resourceType].list[0].Copy()
 	}
 
 	return nil
