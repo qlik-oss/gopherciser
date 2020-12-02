@@ -86,8 +86,8 @@ func (d ArtifactList) Swap(i, j int) {
 	d.list[i], d.list[j] = d.list[j], d.list[i]
 }
 
-// NewAppMap returns an empty ArtifactMap
-func NewAppMap() *ArtifactMap {
+// NewArtifactMap returns an empty ArtifactMap
+func NewArtifactMap() *ArtifactMap {
 	return &ArtifactMap{resourceMap: make(map[string]*ArtifactList)}
 }
 
@@ -102,6 +102,7 @@ func (entry *ArtifactEntry) Copy() *ArtifactEntry {
 		ID:           entry.ID,
 		ItemID:       entry.ItemID,
 		ResourceType: entry.ResourceType,
+		Data:         entry.Data,
 	}
 }
 

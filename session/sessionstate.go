@@ -187,7 +187,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 
 	state := &State{
 		Timeout:      timeout,
-		ArtifactMap:  NewAppMap(),
+		ArtifactMap:  NewArtifactMap(),
 		OutputsDir:   outputsDir,
 		User:         user,
 		HeaderJar:    NewHeaderJar(),
@@ -244,7 +244,7 @@ func (state *State) Reset(ctx context.Context) {
 	state.ctx, state.ctxCancel = context.WithCancel(ctx)
 
 	state.Connection = nil
-	state.ArtifactMap = NewAppMap()
+	state.ArtifactMap = NewArtifactMap()
 	state.IDMap = IDMap{}
 	state.trafficLogger = nil
 	state.HeaderJar = NewHeaderJar()

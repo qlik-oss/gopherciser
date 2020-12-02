@@ -47,7 +47,7 @@ func (openHub *ElasticOpenHubSettings) UnmarshalJSON(arg []byte) error {
 // Execute open Efe hub
 func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	// New hub connection, clear any existing apps.
-	sessionState.ArtifactMap = session.NewAppMap()
+	sessionState.ArtifactMap = session.NewArtifactMap()
 
 	host, err := connection.GetRestUrl()
 	if err != nil {

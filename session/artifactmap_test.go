@@ -68,14 +68,14 @@ var (
 	}
 )
 
-func TestNewAppMap(t *testing.T) {
-	am := NewAppMap()
+func TestNewArtifactMap(t *testing.T) {
+	am := NewArtifactMap()
 	assert.NotNil(t, am)
 	assert.IsType(t, emptyAppMap, am)
 }
 
 func TestAppMap_fill_name(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(someAppDataName)
 	assert.NoError(t, err)
 	assert.NotNil(t, am.resourceMap)
@@ -83,7 +83,7 @@ func TestAppMap_fill_name(t *testing.T) {
 }
 
 func TestAppMap_FillWithName(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(someAppDataName)
 	assert.NoError(t, err)
 	assert.NotNil(t, am.resourceMap)
@@ -91,19 +91,19 @@ func TestAppMap_FillWithName(t *testing.T) {
 }
 
 func TestAppMap_FillWithName_emptyAppData(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(emptyAppData)
 	assert.Error(t, err)
 }
 
 func TestAppMap_FillWithName_nil(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(nil)
 	assert.Error(t, err)
 }
 
 func TestAppMap_GetAppID(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 	appID, err := am.GetAppID(someAppTitle)
@@ -112,7 +112,7 @@ func TestAppMap_GetAppID(t *testing.T) {
 }
 
 func TestAppMap_GetAppID_notFound(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 	_, err = am.GetAppID("not-to-be-found")
@@ -122,7 +122,7 @@ func TestAppMap_GetAppID_notFound(t *testing.T) {
 func TestAppMap_GetAppID_duplicateKeys(t *testing.T) {
 	// When 2 or more apps have the same Title, the
 	// get should return the first of them
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(duplicateKeysApp)
 	assert.NoError(t, err)
 	appID1, err1 := am.GetAppID(someAppTitle)
@@ -131,7 +131,7 @@ func TestAppMap_GetAppID_duplicateKeys(t *testing.T) {
 }
 
 func TestAppMap_GetAppID_concurrent(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 
@@ -149,7 +149,7 @@ func TestAppMap_GetAppID_concurrent(t *testing.T) {
 }
 
 func TestAppMap_GetRandomAppID(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	err := am.FillArtifacts(someAppDataTitle)
 	assert.NoError(t, err)
 	_, err = am.GetRandomApp(dummyState)
@@ -157,7 +157,7 @@ func TestAppMap_GetRandomAppID(t *testing.T) {
 }
 
 func TestAppMap_GetRandomAppID_noApps(t *testing.T) {
-	am := NewAppMap()
+	am := NewArtifactMap()
 	_, err := am.GetRandomApp(dummyState)
 	assert.Error(t, err)
 }
