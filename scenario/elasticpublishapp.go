@@ -3,12 +3,13 @@ package scenario
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/session"
-	"net/http"
 )
 
 type (
@@ -102,7 +103,7 @@ func (settings ElasticPublishAppSettings) Execute(sessionState *session.State, a
 	publishApp := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/api/v1/apps/%s/publish", host, entry.GUID),
+		Destination: fmt.Sprintf("%s/api/v1/apps/%s/publish", host, entry.ID),
 		Content:     spaceReferenceJson,
 	}
 

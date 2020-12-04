@@ -75,7 +75,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 
 	actionState.Details = sessionState.LogEntry.Session.AppName
 
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.GUID)
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to get connect function"))
 		return
@@ -106,7 +106,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 
 	uplink := sessionState.Connection.Sense()
 
-	openApp.doOpen(sessionState, actionState, uplink, appEntry.GUID)
+	openApp.doOpen(sessionState, actionState, uplink, appEntry.ID)
 	if actionState.Failed {
 		return
 	}
@@ -142,7 +142,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		}
 		uplink.CurrentApp.Layout = layout
 		return nil
-	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appEntry.GUID))
+	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appEntry.ID))
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		version, versionErr := uplink.Global.EngineVersion(ctx)

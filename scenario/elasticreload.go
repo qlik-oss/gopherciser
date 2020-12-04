@@ -83,7 +83,7 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		return
 	}
 
-	reloadGuid := entry.GUID
+	reloadGuid := entry.ID
 
 	postReload := session.RestRequest{
 		Method:      session.POST,
