@@ -568,7 +568,7 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 	case constant.LocerrCalcEvalConditionFailed:
 		return nil
 	default:
-		return errors.Errorf("object<%s> has hypercube error<%+v>", id, *err)
+		return errors.Errorf("object<%s> has hypercube error<ErrorCode:%d (%s)>", id, err.ErrorCode, enigma.ErrorCodeLookup(err.ErrorCode))
 	}
 }
 
