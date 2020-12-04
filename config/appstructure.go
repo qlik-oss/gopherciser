@@ -270,9 +270,6 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectSlideItem:
 			structure.handleStories(ctx, app, id, typ, includeRaw)
 			return nil
-		case appstructure.ObjectAlertBookmark:
-			// ignore this object type
-			return nil
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
 				return errors.Wrapf(err, "id<%s> type<%s>", id, typ)
@@ -336,6 +333,19 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	if genObj.Handle == 0 {
+		switch typ {
+		case "alertbookmark", "hiddenbookmark":
+			// known objects without interactions
+		default:
+			// Log any other types found with warning
+			warning := fmt.Sprintf("object<%s> type<%s> ", id, typ)
+			structure.logEntry.Log(logger.WarningLevel, warning)
+			structure.report.AddWarning(warning)
+		}
+		return nil
+	}
+
 	obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
 	if err != nil {
 		return errors.WithStack(err)
