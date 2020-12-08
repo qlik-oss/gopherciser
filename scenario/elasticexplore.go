@@ -187,7 +187,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 		}
 	}
 	if space != nil && space.Links.Assignments.Href != "" {
-		sessionState.Rest.GetAsync(space.Links.Assignments.Href, actionState, sessionState.LogEntry, nil) // Need to add ?limit=100 to space.Links.Assignments.Href
+		sessionState.Rest.GetAsync(space.Links.Assignments.Href+"?limit=100", actionState, sessionState.LogEntry, nil)
 	}
 
 	collectionCount := len(settings.CollectionNames) + len(settings.CollectionIds)
@@ -195,7 +195,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 	// Was tags dropdown "clicked"?
 	if collectionCount > 0 {
 		collectionIds := make([]string, 0, collectionCount)
-		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections?type=public&sort=-name&limit=100", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf(`%s/api/v1/collections?type=public&sort=-name&limit=100`, host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 			var collectionData elasticstructs.CollectionRequest
 			if err := jsonit.Unmarshal(req.ResponseBody, &collectionData); err != nil {
 				actionState.AddErrors(errors.Wrap(err, "failed unmarshaling collection data"))
