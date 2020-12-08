@@ -187,7 +187,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 		}
 	}
 	if space != nil && space.Links.Assignments.Href != "" {
-		sessionState.Rest.GetAsync(space.Links.Assignments.Href, actionState, sessionState.LogEntry, nil)
+		sessionState.Rest.GetAsync(space.Links.Assignments.Href, actionState, sessionState.LogEntry, nil) // Need to add ?limit=100 to space.Links.Assignments.Href
 	}
 
 	collectionCount := len(settings.CollectionNames) + len(settings.CollectionIds)
