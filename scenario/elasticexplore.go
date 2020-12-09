@@ -355,7 +355,7 @@ func searchForSpaceByID(sessionState *session.State, actionState *action.State, 
 		return space, nil
 	}
 	switch err.(type) {
-	case session.SpaceNameNotFoundError:
+	case session.SpaceIDNotFoundError:
 		spaceReq, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/api/v1/spaces/%s", host, spaceID), actionState, sessionState.LogEntry, nil)
 		if err != nil {
 			return nil, errors.WithStack(err)

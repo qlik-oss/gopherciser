@@ -197,7 +197,15 @@ func (am *ArtifactMap) ClearArtifactMap() {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	am.resourceMap = make(map[string]*ArtifactList)
+	// Clear everything ephemeral from map
+	for resource := range am.resourceMap {
+		switch resource {
+		case ResourceTypeSpace, ResourceTypeStream:
+			// Non-ephemeral resource types
+		default:
+			delete(am.resourceMap, resource)
+		}
+	}
 }
 
 // FillAppsUsingDocListEntries should be used to fillAppMap app map in QSEoW
