@@ -104,7 +104,7 @@ func (sorting SortingMode) Value() string {
 	case SortingModeUpdatedAt:
 		return "-updatedAt"
 	case SortingModeName:
-		return "-name"
+		return "%2Bname"
 	default:
 		return "-createdAt"
 	}
@@ -187,7 +187,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 		}
 	}
 	if space != nil && space.Links.Assignments.Href != "" {
-		sessionState.Rest.GetAsync(space.Links.Assignments.Href, actionState, sessionState.LogEntry, nil)
+		sessionState.Rest.GetAsync(space.Links.Assignments.Href+"?limit=100", actionState, sessionState.LogEntry, nil)
 	}
 
 	collectionCount := len(settings.CollectionNames) + len(settings.CollectionIds)
@@ -255,6 +255,9 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 
 	// apply sorting
 	urlParams["sort"] = settings.Sorting.Value()
+
+	// apply resourceType
+	urlParams["resourceType"] = "app,qvapp,qlikview,genericlink,sharingservicetask"
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items%s", host, urlParams), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, settings.DoPaging)
