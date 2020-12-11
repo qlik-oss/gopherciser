@@ -245,7 +245,8 @@ func (am *ArtifactMap) FillSpaces(spaces []elasticstructs.Space) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	for _, space := range spaces {
+	for _, s := range spaces {
+		space := s // allocate new variable so pointer can be used
 		am.Append(ResourceTypeSpace, &ArtifactEntry{Name: space.Name, ID: space.ID, ResourceType: ResourceTypeSpace, Data: &space})
 	}
 }
