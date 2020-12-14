@@ -46,8 +46,6 @@ var (
 	metricsGroupings   []string
 	profTyp            string
 	objDefFile         string
-	scriptOverrides    []string
-	scriptOverrideFile string
 )
 
 // *** Custom errors ***
@@ -108,13 +106,6 @@ var executeCmd = &cobra.Command{
 				_, _ = os.Stderr.WriteString(fmt.Sprintf("%+v", panicErr))
 			}
 		}()
-		if cfgFile == "" {
-			_, _ = os.Stderr.WriteString("Error: No config provided\n")
-			if err := cmd.Help(); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			}
-			os.Exit(ExitCodeMissingParameter)
-		}
 
 		if execErr := execute(); execErr != nil {
 			errMsg := "Unknown error"
@@ -321,4 +312,12 @@ func resolveSummaryType() (config.SummaryType, error) {
 		}
 		return config.SummaryType(i), nil
 	}
+}
+
+func hasPipe() (bool, error) {
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	return fileInfo.Mode() & os.ModeCharDevice == 0, nil
 }

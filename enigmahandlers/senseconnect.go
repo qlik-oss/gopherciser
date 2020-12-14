@@ -136,7 +136,14 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 	}
 	dialer.TrafficLogger = uplink.Traffic
 
-	setupDialer(&dialer, timeout)
+	onUnexpectedDisconnect := func() {
+		if helpers.IsContextTriggered(uplink.ctx) {
+			return
+		}
+		uplink.executeFailedConnectFuncs()
+	}
+
+	setupDialer(&dialer, timeout, uplink.logEntry, onUnexpectedDisconnect)
 
 	// TODO somehow get better values for connect time
 	startTimestamp := time.Now()
@@ -233,18 +240,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		}
 	}
 
-	go func() {
-		select {
-		case <-uplink.ctx.Done():
-			break
-		case <-global.Disconnected():
-			if helpers.IsContextTriggered(uplink.ctx) {
-				break
-			}
-			uplink.executeFailedConnectFuncs()
-		}
-	}()
-
 	return nil
 }
 
@@ -324,17 +319,7 @@ func (uplink *SenseUplink) executeFailedConnectFuncs() {
 		return
 	}
 	for _, f := range uplink.failedConnectFuncs {
-		failedFunc := f // copy of function pointer for execution in go-routine
-		go func() {
-			var panicErr error
-			func() {
-				defer helpers.RecoverWithError(&panicErr)
-				failedFunc()
-			}()
-			if panicErr != nil && uplink.logEntry != nil {
-				uplink.logEntry.LogErrorWithMsg("panic triggering functions on failed connection", panicErr)
-			}
-		}()
+		f()
 	}
 }
 

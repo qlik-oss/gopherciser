@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -51,6 +52,7 @@ func (state *State) GetSheetList(actionState *action.State, uplink *enigmahandle
 	}
 }
 
+// SetupChangeChan start listening to enigma change channel
 func (state *State) SetupChangeChan() error {
 	if state == nil {
 		return errors.New("use of nil state")

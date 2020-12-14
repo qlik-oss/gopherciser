@@ -10,7 +10,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.15
     steps:
       - checkout
       - setup_remote_docker
@@ -20,7 +20,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.14{{ checksum "go.sum" }}
+          key: dependency-cache-1.15{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -34,7 +34,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.14{{ checksum "go.sum" }}
+          key: dependency-cache-1.15{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
       - run:
@@ -97,10 +97,10 @@ jobs:
           paths:
             - "/go/pkg/mod"
 
-  build-go-1.15:
+  build-go-1.14:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.15
+      - image: circleci/golang:1.14
     steps:
       - checkout
       - setup_remote_docker
@@ -110,7 +110,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.15{{ checksum "go.sum" }}
+          key: dependency-cache-1.14{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -120,7 +120,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.15{{ checksum "go.sum" }}
+          key: dependency-cache-1.14{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
 
@@ -147,7 +147,7 @@ jobs:
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.15
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
@@ -195,7 +195,7 @@ workflows:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - build-go-1.13
-      - build-go-1.15
+      - build-go-1.14
       - publish-github:
           requires:
             - build

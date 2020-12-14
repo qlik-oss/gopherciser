@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,7 +15,12 @@ import (
 )
 
 var (
+	// parameters for config file
 	cfgFile string
+
+	// parameters for overrides
+	scriptOverrides    []string
+	scriptOverrideFile string
 
 	// parameters for logging
 	traffic        bool
@@ -55,13 +61,30 @@ func AddLoggingParameters(cmd *cobra.Command) {
 }
 
 func unmarshalConfigFile() (*config.Config, error) {
+	var cfgJSON []byte
+	var err error
 	if cfgFile == "" {
-		return nil, errors.Errorf("No config file defined")
-	}
+		hasPipe, err := hasPipe()
+		if err != nil {
+			return nil, errors.Wrap(err, "error reading config from stdin")
+		}
+		if !hasPipe {
+			return  nil, errors.New("no config file and nothing on stdin")
+		}
 
-	cfgJSON, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error reading config from file<%s>", cfgFile)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			b := scanner.Bytes()
+			if cfgJSON == nil {
+				cfgJSON = make([]byte, 0, len(b))
+			}
+			cfgJSON = append(cfgJSON, b...)
+		}
+	} else {
+		cfgJSON, err = cfgJsonFromFile()
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error reading config from file<%s>", cfgFile)
+		}
 	}
 
 	var overrides []string
@@ -82,6 +105,14 @@ func unmarshalConfigFile() (*config.Config, error) {
 	return &cfg, nil
 }
 
+func cfgJsonFromFile() ([]byte, error) {
+	if cfgFile == "" {
+		return nil, errors.Errorf("No config file defined")
+	}
+
+	return ioutil.ReadFile(cfgFile)
+}
+
 func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 	var overrides []string
 	if scriptOverrideFile != "" {
@@ -93,6 +124,20 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 			scriptOverrides = make([]string, 0, len(overrideFile.Rows()))
 		}
 		scriptOverrides = append(overrideFile.Rows(), scriptOverrides...) // let command line overrides override file overrides
+	} else if cfgFile != "" { // if cfg file has been pointed to, but has stdin piped, assume it's overrides
+		hasPipe, err := hasPipe()
+		if err != nil {
+			return nil, nil,  errors.Wrap(err, "error reading overrides from stdin")
+		}
+		if hasPipe {
+			if scriptOverrides == nil {
+				scriptOverrides = make([]string, 0, 10)
+			}
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				scriptOverrides = append(scriptOverrides, scanner.Text())
+			}
+		}
 	}
 
 	overrides = make([]string, 0, len(scriptOverrides))

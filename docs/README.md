@@ -181,6 +181,28 @@ Sub-commands:
 * `-f`, `--force`: Overwrite existing scenario setup file.
 * `-h`, `--help`: Show the help for the `template` command.
 
+##### Piping stdin
+
+Config file and overrides file can be piped from stdin. If no config is set stdin is assumed to be the config file, if config file is set, stdin is assumed to be the overrides file.
+
+This would execute the sheetchanger example from stdin:
+
+```bash
+cat ./docs/examples/sheetChangerQlikCore.json | ./gopherciser x
+```
+
+This would execute overrides from stdin:
+
+```bash
+cat overrides.txt | ./gopherciser x -c ./docs/examples/sheetChangerQlikCore.json
+```
+
+Advanced example. Use `jq` to disable all `sheetchanger` actions then run the sheet changer example script, this would now only do the openapp action:
+
+```bash
+jq '(.scenario[] | select(.action=="sheetchanger") | .settings.disabled) = true' ./docs/examples/sheetChangerQlikCore.json| ./gopherciser x
+```
+
 #### Using script overrides
 
 Script overrides overrides a value pointed to by a path to its key. If the key doesn't exist in the script there will an error, even if it's a valid value according to config.
@@ -271,6 +293,10 @@ These are the current limitations in Gopherciser:
   * Selections can only be made in the first layer (that is, layer 0)
 * Visualization bundle:
   * Selections are not fully supported in the Heatmap chart
+* Dashboard bundle:
+  * Changing variables using variable input not supported.
+  * Selections done by animator not supported.
+  * Selections done using date picker not supported.
 
 ## Links
 

@@ -160,6 +160,21 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return desktopErr
 	}, actionState, true, "Failed getting authenticated user")
 
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetStoryList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetLoadModelList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
 	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {
 		return

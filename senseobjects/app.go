@@ -12,17 +12,25 @@ import (
 )
 
 type (
-	// App sense app object
-	App struct {
-		GUID              string
-		Doc               *enigma.Doc
-		Layout            *enigma.NxAppLayout
+	// SessionObjects for the app
+	SessionObjects struct {
 		sheetList         *SheetList
 		bookmarkList      *BookmarkList
-		bookmarks         map[string]*enigma.GenericBookmark
 		currentSelections *CurrentSelections
 		localeInfo        *enigma.LocaleInfo
-		mutex             sync.Mutex
+		variablelist      *VariableList
+		storylist         *StoryList
+		loadmodellist     *LoadModelList
+	}
+
+	// App sense app object
+	App struct {
+		GUID      string
+		Doc       *enigma.Doc
+		Layout    *enigma.NxAppLayout
+		bookmarks map[string]*enigma.GenericBookmark
+		mutex     sync.Mutex
+		SessionObjects
 	}
 )
 
@@ -81,8 +89,8 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return app.bookmarkList, nil
 	}
 
-	// update sheetList to latest
-	updateBookmarkList := func(ctx context.Context) error {
+	// create bookmark list
+	createBookmarkList := func(ctx context.Context) error {
 		bl, err := CreateBookmarkListObject(ctx, app.Doc)
 		if err != nil {
 			return err
@@ -91,7 +99,7 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return err
 	}
 
-	if err := sessionState.SendRequest(actionState, updateBookmarkList); err != nil {
+	if err := sessionState.SendRequest(actionState, createBookmarkList); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -103,7 +111,7 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	// update sheetList layout when sheetList has a change event
+	// update bookmark list layout when bookmark list has a change event
 	onBookmarkListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.bookmarkList.UpdateLayout(ctx))
 	}
@@ -123,6 +131,145 @@ func (app *App) setBookmarkList(sessionState SessionState, bl *BookmarkList) {
 	app.bookmarkList = bl
 }
 
+// GetVariableList create or return existing variable list session object
+func (app *App) GetVariableList(sessionState SessionState, actionState *action.State) (*VariableList, error) {
+	if app.variablelist != nil {
+		return app.variablelist, nil
+	}
+
+	// create variable list
+	createVariableList := func(ctx context.Context) error {
+		vl, err := CreateVariableListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setVariableList(sessionState, vl)
+		return err
+	}
+
+	if err := sessionState.SendRequest(actionState, createVariableList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// update variable list layout when variable list has a change event
+	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.variablelist.enigmaObject.Handle, onVariableListChanged, nil, true)
+
+	return app.variablelist, nil
+}
+
+func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.variablelist != nil && app.variablelist.enigmaObject != nil && app.variablelist.enigmaObject.Handle > 0 && vl != app.variablelist {
+		sessionState.DeRegisterEvent(app.variablelist.enigmaObject.Handle)
+	}
+	app.variablelist = vl
+}
+
+// GetStoryList create or return existing story list session object
+func (app *App) GetStoryList(sessionState SessionState, actionState *action.State) (*StoryList, error) {
+	if app.storylist != nil {
+		return app.storylist, nil
+	}
+
+	// create story list
+	createStoryList := func(ctx context.Context) error {
+		sl, err := CreateStoryListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setStoryList(sessionState, sl)
+		return err
+	}
+
+	if err := sessionState.SendRequest(actionState, createStoryList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.storylist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.storylist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// update story list layout when story list has a change event
+	onStoryListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.storylist.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.storylist.enigmaObject.Handle, onStoryListChanged, nil, true)
+
+	return app.storylist, nil
+}
+
+func (app *App) setStoryList(sessionState SessionState, sl *StoryList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.storylist != nil && app.storylist.enigmaObject != nil && app.storylist.enigmaObject.Handle > 0 && sl != app.storylist {
+		sessionState.DeRegisterEvent(app.storylist.enigmaObject.Handle)
+	}
+	app.storylist = sl
+}
+
+// GetLoadModelList create or return existing load model list session object
+func (app *App) GetLoadModelList(sessionState SessionState, actionState *action.State) (*LoadModelList, error) {
+	if app.loadmodellist != nil {
+		return app.loadmodellist, nil
+	}
+
+	// create load model list
+	createLoadModelList := func(ctx context.Context) error {
+		lml, err := CreateLoadModelListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setLoadModelList(sessionState, lml)
+		return err
+	}
+
+	if err := sessionState.SendRequest(actionState, createLoadModelList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.loadmodellist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.loadmodellist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// update load model list layout when load model list has a change event
+	onLoadModelListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.loadmodellist.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.loadmodellist.enigmaObject.Handle, onLoadModelListChanged, nil, true)
+
+	return app.loadmodellist, nil
+}
+
+func (app *App) setLoadModelList(sessionState SessionState, lml *LoadModelList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.loadmodellist != nil && app.loadmodellist.enigmaObject != nil && app.loadmodellist.enigmaObject.Handle > 0 && lml != app.loadmodellist {
+		sessionState.DeRegisterEvent(app.loadmodellist.enigmaObject.Handle)
+	}
+	app.loadmodellist = lml
+}
+
+// GetBookmarkObject with ID
 func (app *App) GetBookmarkObject(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericBookmark, error) {
 	// Ge id from map of bookmarks
 	bm := app.getBookmarkFromMap(id)

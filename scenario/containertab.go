@@ -122,43 +122,61 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		return
 	}
 
-	childCount := len(containerInstance.Children)
+	children := containerInstance.Children()
+	childCount := len(children)
 
-	activeID := ""
+	var newActive *session.ContainerChildReference
 	switch settings.Mode {
 	case ContainerTabModeObjectID:
-		activeID = settings.ObjectID
+		newActive = containerInstance.ChildWithID(settings.ObjectID)
 	case ContainerTabModeRandom:
 		if childCount < 1 {
 			actionState.AddErrors(errors.Errorf("switch to random container tab defined, but container<%s> has no children", id))
 			return
 		}
-		idx := sessionState.Randomizer().Rand(childCount)
-		child := containerInstance.Children[idx]
-		if isExternal(sessionState, &child) {
+
+		visibleChildren := make([]*session.ContainerChildReference, 0, childCount)
+		for _, child := range children {
+			if child.Show {
+				visibleChildren = append(visibleChildren, &child)
+			}
+		}
+
+		visibleChildCount := len(visibleChildren)
+		if visibleChildCount < 1 {
+			sessionState.LogEntry.Logf(logger.WarningLevel, "switch to random container tab defined, but container<%s> has no visible children", id)
+			sessionState.Wait(actionState)
 			return
 		}
-		activeID = child.ObjID
+
+		idx := sessionState.Randomizer().Rand(visibleChildCount)
+		newActive = visibleChildren[idx]
 	case ContainerTabModeIndex:
 		if !(settings.Index < childCount) {
-			actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but container has only %d tabs", settings.Index, childCount))
+			actionState.AddErrors(errors.Errorf("container<%s> tab index<%d> defined, but container has only %d tabs", id, settings.Index, childCount))
 			return
 		}
-		child := containerInstance.Children[settings.Index]
-		activeID = child.ObjID
-		if isExternal(sessionState, &child) {
-			return
-		}
+		newActive = &children[settings.Index]
 	}
 
-	if activeID == "" {
+	if newActive == nil {
 		actionState.AddErrors(errors.New("could not resolve an object ID to switch to"))
 		return
 	}
 
-	actionState.Details = activeID
+	if isExternal(sessionState, newActive) {
+		sessionState.Wait(actionState)
+		return
+	}
 
-	if err := containerInstance.SwitchActiveID(sessionState, actionState, activeID); err != nil {
+	if !newActive.Show {
+		actionState.AddErrors(errors.Errorf("container tab index<%d> defined, but visualization<%s> at index position is not visible", settings.Index, newActive.ObjID))
+		return
+	}
+
+	actionState.Details = newActive.ObjID
+
+	if err := containerInstance.SwitchActiveChild(sessionState, actionState, newActive); err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
@@ -168,7 +186,7 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 
 func isExternal(sessionState *session.State, child *session.ContainerChildReference) bool {
 	if child.External {
-		sessionState.LogEntry.Log(logger.WarningLevel, "container contains external reference, external references are not supported")
+		sessionState.LogEntry.Log(logger.WarningLevel, "active container child is an external reference, external references are not supported")
 		return true
 	}
 	return false
