@@ -167,6 +167,7 @@ const (
 	ObjectSheet
 	ObjectLoadModel
 	ObjectAppprops
+	ObjectAlertBookmark
 
 	// Objects connected to snapshots and stories
 	ObjectSnapshotList
@@ -194,6 +195,7 @@ var (
 		"story":            int(ObjectStory),
 		"slide":            int(ObjectSlide),
 		"slideitem":        int(ObjectSlideItem),
+		"alertbookmark":    int(ObjectAlertBookmark),
 	})
 )
 

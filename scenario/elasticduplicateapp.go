@@ -108,7 +108,7 @@ func (settings ElasticDuplicateAppSettings) Execute(sessionState *session.State,
 	copyRequestRest := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/api/v1/apps/%s/copy", host, entry.GUID),
+		Destination: fmt.Sprintf("%s/api/v1/apps/%s/copy", host, entry.ID),
 		Content:     copyRequestContent,
 	}
 

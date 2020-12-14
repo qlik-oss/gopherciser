@@ -104,7 +104,7 @@ func (sorting SortingMode) Value() string {
 	case SortingModeUpdatedAt:
 		return "-updatedAt"
 	case SortingModeName:
-		return "-name"
+		return "%2Bname"
 	default:
 		return "-createdAt"
 	}
@@ -147,7 +147,7 @@ func (settings ElasticExploreSettings) Validate() error {
 // Execute  ElasticExplore action
 func (settings ElasticExploreSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	if !settings.KeepCurrent {
-		sessionState.ArtifactMap.EmptyApps()
+		sessionState.ArtifactMap.ClearArtifactMap()
 	}
 
 	host, err := connection.GetRestUrl()
@@ -187,7 +187,7 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 		}
 	}
 	if space != nil && space.Links.Assignments.Href != "" {
-		sessionState.Rest.GetAsync(space.Links.Assignments.Href, actionState, sessionState.LogEntry, nil)
+		sessionState.Rest.GetAsync(space.Links.Assignments.Href+"?limit=100", actionState, sessionState.LogEntry, nil)
 	}
 
 	collectionCount := len(settings.CollectionNames) + len(settings.CollectionIds)
@@ -255,6 +255,9 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 
 	// apply sorting
 	urlParams["sort"] = settings.Sorting.Value()
+
+	// apply resourceType
+	urlParams["resourceType"] = "app,qvapp,qlikview,genericlink,sharingservicetask"
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/items%s", host, urlParams), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		fillAppMapFromItemRequest(sessionState, actionState, req, settings.DoPaging)
@@ -352,7 +355,7 @@ func searchForSpaceByID(sessionState *session.State, actionState *action.State, 
 		return space, nil
 	}
 	switch err.(type) {
-	case session.SpaceNameNotFoundError:
+	case session.SpaceIDNotFoundError:
 		spaceReq, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/api/v1/spaces/%s", host, spaceID), actionState, sessionState.LogEntry, nil)
 		if err != nil {
 			return nil, errors.WithStack(err)

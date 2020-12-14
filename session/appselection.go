@@ -165,7 +165,7 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 			return nil, errors.New("No app defined for app selection mode<guid>")
 		}
 
-		entry, err = sessionState.ArtifactMap.LookupAppGUID(sessionState, app)
+		entry, err = sessionState.ArtifactMap.LookupAppGUID(app)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -178,7 +178,7 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 			return nil, errors.New("No app defined for app selection mode<name>")
 		}
 
-		entry, err = sessionState.ArtifactMap.LookupAppTitle(sessionState, app)
+		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -194,7 +194,7 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		entry, err = sessionState.ArtifactMap.LookupAppTitle(sessionState, app)
+		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -203,7 +203,7 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		entry, err = sessionState.ArtifactMap.LookupAppGUID(sessionState, guid)
+		entry, err = sessionState.ArtifactMap.LookupAppGUID(guid)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -217,21 +217,21 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 	case AppModeRoundNameFromList:
 		app := appSelection.getRoundAppListEntry(sessionState, appSelection.AppList)
 		var err error
-		entry, err = sessionState.ArtifactMap.LookupAppTitle(sessionState, app)
+		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to find app with title<%s>", app)
 		}
 	case AppModeRoundGUIDFromList:
 		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.AppList)
 		entry = &ArtifactEntry{ // todo itemID, title?
-			GUID: guid,
+			ID: guid,
 		}
 	case AppModeRandomNameFromFile:
 		app, err := getRandomAppListEntry(sessionState, appSelection.Filename.Rows())
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		entry, err = sessionState.ArtifactMap.LookupAppTitle(sessionState, app)
+		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -240,31 +240,31 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		entry, err = sessionState.ArtifactMap.LookupAppGUID(sessionState, guid)
+		entry, err = sessionState.ArtifactMap.LookupAppGUID(guid)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 	case AppModeRoundNameFromFile:
 		app := appSelection.getRoundAppListEntry(sessionState, appSelection.Filename.Rows())
 		var err error
-		entry, err = sessionState.ArtifactMap.LookupAppTitle(sessionState, app)
+		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to find app with title<%s>", app)
 		}
 	case AppModeRoundGUIDFromFile:
 		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.Filename.Rows())
 		entry = &ArtifactEntry{ // todo itemID, title?
-			GUID: guid,
+			ID: guid,
 		}
 	default:
 		return nil, errors.Errorf("app selection mode <%s> not supported", appSelection.AppMode)
 	}
 
-	// todo these info loggings any useful?
-	// sessionState.LogEntry.LogInfo("AppSelect", randomApp.Title)
-	// sessionState.LogEntry.LogInfo("AppGUID", randomApp.GUID)
-	sessionState.LogEntry.Session.AppName = entry.Title
-	sessionState.LogEntry.Session.AppGUID = entry.GUID
+	if entry.ResourceType == "" {
+		entry.ResourceType = ResourceTypeApp
+	}
+	sessionState.LogEntry.Session.AppName = entry.Name
+	sessionState.LogEntry.Session.AppGUID = entry.ID
 	sessionState.CurrentApp = entry
 
 	return entry, nil
