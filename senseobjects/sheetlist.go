@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
@@ -36,15 +37,30 @@ type (
 		Approved  bool `json:"approved,omitempty"`
 	}
 
+	SheetBounds struct {
+		Y      int `json:"y,omitempty"`
+		X      int `json:"x,omitempty"`
+		Width  int `json:"width,omitempty"`
+		Height int `json:"height,omitempty"`
+	}
+
 	// SheetData data for a sheet
 	SheetData struct {
 		Cells []struct {
 			Name string `json:"name,omitempty"`
 			Type string `json:"type,omitempty"`
 		} `json:"cells,omitempty"`
-		Title       string      `json:"title,omitempty"`
-		Description string      `json:"description,omitempty"`
-		Rank        interface{} `json:"rank,omitempty"`
+		Columns               int                `json:"columns,omitempty"`
+		Rows                  int                `json:"rows,omitempty"`
+		Colspan               int                `json:"colspan,omitempty"`
+		Rowspan               int                `json:"rowspan,omitempty"`
+		Bounds                SheetBounds        `json:"bounds,omitempty"`
+		Title                 string             `json:"title,omitempty"`
+		LabelExpression       string             `json:"labelExpression,omitempty"`
+		Description           string             `json:"description,omitempty"`
+		DescriptionExpression string             `json:"descriptionExpression,omitempty"`
+		Rank                  interface{}        `json:"rank,omitempty"`
+		ShowCondition         helpers.StringBool `json:"showCondition,omitempty"`
 	}
 
 	// SheetListPropertiesData properties of sheetlist
@@ -176,10 +192,16 @@ func CreateSheetListObject(ctx context.Context, doc *enigma.Doc) (*SheetList, er
 			Type: "sheet",
 			Data: json.RawMessage(`{
 				"title": "/qMetaDef/title",
+				"labelExpression": "/labelExpression",
+				"showCondition": "/showCondition",
 				"description": "/qMetaDef/description",
+				"descriptionExpression": "/descriptionExpression",
+				"thumbnail": "/thumbnail",
 				"cells": "/cells",
-				"rank": "/rank"
-      }`),
+				"rank": "/rank",
+				"columns": "/columns",
+				"rows": "/rows"
+}`),
 		},
 	}
 
