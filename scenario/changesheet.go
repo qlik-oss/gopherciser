@@ -118,20 +118,22 @@ func isSheetHidden(sessionState *session.State, actionState *action.State, id st
 		return false
 	}
 
-	if sheetEntry, err := sheetlist.GetSheetEntry(id); err != nil {
+	sheetEntry, err := sheetlist.GetSheetEntry(id)
+	if err != nil {
 		switch helpers.TrueCause(err).(type) {
 		case senseobjects.SheetEntryNotFoundError:
 			sessionState.LogEntry.Logf(logger.WarningLevel, "sheet<%s> not found in sheet list", id)
+			return false
 		default:
 			actionState.AddErrors(errors.WithStack(err))
 			return false
 		}
-	} else {
-		if sheetEntry == nil || sheetEntry.Data == nil {
-			sessionState.LogEntry.Logf(logger.WarningLevel, "sheetEntry<%s> has no data", id)
-		} else {
-			return !bool(sheetEntry.Data.ShowCondition)
-		}
 	}
-	return false
+
+	if sheetEntry == nil || sheetEntry.Data == nil {
+		sessionState.LogEntry.Logf(logger.WarningLevel, "sheetEntry<%s> has no data", id)
+		return false
+	}
+
+	return !bool(sheetEntry.Data.ShowCondition)
 }
