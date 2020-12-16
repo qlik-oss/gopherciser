@@ -127,10 +127,10 @@ func isSheetHidden(sessionState *session.State, actionState *action.State, id st
 			return false
 		}
 	} else {
-		if sheetEntry != nil || sheetEntry.Data != nil {
+		if sheetEntry == nil || sheetEntry.Data == nil {
 			sessionState.LogEntry.Logf(logger.WarningLevel, "sheetEntry<%s> has no data", id)
 		} else {
-			return bool(sheetEntry.Data.ShowCondition)
+			return !bool(sheetEntry.Data.ShowCondition)
 		}
 	}
 	return false

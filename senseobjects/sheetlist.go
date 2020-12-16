@@ -39,29 +39,31 @@ type (
 	}
 
 	SheetBounds struct {
-		Y      int `json:"y,omitempty"`
-		X      int `json:"x,omitempty"`
-		Width  int `json:"width,omitempty"`
-		Height int `json:"height,omitempty"`
+		Y      float64 `json:"y"`
+		X      float64 `json:"x"`
+		Width  float64 `json:"width"`
+		Height float64 `json:"height"`
 	}
 
 	// SheetData data for a sheet
 	SheetData struct {
 		Cells []struct {
-			Name string `json:"name,omitempty"`
-			Type string `json:"type,omitempty"`
+			Name    string      `json:"name"`
+			Type    string      `json:"type"`
+			Col     int         `json:"col"`
+			Row     int         `json:"row"`
+			Colspan int         `json:"colspan"`
+			Rowspan int         `json:"rowspan"`
+			Bounds  SheetBounds `json:"bounds,omitempty"`
 		} `json:"cells,omitempty"`
-		Columns               int                `json:"columns,omitempty"`
-		Rows                  int                `json:"rows,omitempty"`
-		Colspan               int                `json:"colspan,omitempty"`
-		Rowspan               int                `json:"rowspan,omitempty"`
-		Bounds                SheetBounds        `json:"bounds,omitempty"`
-		Title                 string             `json:"title,omitempty"`
-		LabelExpression       string             `json:"labelExpression,omitempty"`
-		Description           string             `json:"description,omitempty"`
-		DescriptionExpression string             `json:"descriptionExpression,omitempty"`
-		Rank                  interface{}        `json:"rank,omitempty"`
-		ShowCondition         helpers.StringBool `json:"showCondition,omitempty"`
+		Columns               int                `json:"columns"`
+		Rows                  int                `json:"rows"`
+		Title                 string             `json:"title"`
+		LabelExpression       string             `json:"labelExpression"`
+		Description           string             `json:"description"`
+		DescriptionExpression string             `json:"descriptionExpression"`
+		Rank                  interface{}        `json:"rank"`
+		ShowCondition         helpers.StringBool `json:"showCondition"`
 	}
 
 	// SheetListPropertiesData properties of sheetlist
