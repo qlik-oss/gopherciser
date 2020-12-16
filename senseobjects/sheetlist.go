@@ -3,6 +3,7 @@ package senseobjects
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"sync"
 
@@ -84,7 +85,15 @@ type (
 		properties   *SheetListProperties
 		mutex        sync.Mutex
 	}
+
+	// SheetEntryNotFoundError error returned when sheet entry was not found in sheet list
+	SheetEntryNotFoundError string
 )
+
+// Error returned when sheet entry was not found in sheet list
+func (err SheetEntryNotFoundError) Error() string {
+	return fmt.Sprintf("no sheet entry found for id<%s>", string(err))
+}
 
 func (sheetList *SheetList) setLayout(layout *SheetListLayout) {
 	sheetList.mutex.Lock()
@@ -178,7 +187,7 @@ func (sheetList *SheetList) GetSheetEntry(sheetid string) (*SheetNxContainerEntr
 			return v, nil
 		}
 	}
-	return nil, errors.Errorf("no sheet entry found for id<%s>", sheetid)
+	return nil, SheetEntryNotFoundError(sheetid)
 }
 
 // CreateSheetListObject create sheetlist session object
