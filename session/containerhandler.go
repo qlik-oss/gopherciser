@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
@@ -46,8 +45,7 @@ type (
 		IsMaster          bool               `json:"isMaster"`
 		ExternalReference *ContainerExternal `json:"externalReference"`
 		Type              string             `json:"type"`
-		// Condition fulfilled  show condition. Value is nil on no show condition, "True" if it should show and "False" otherwise.
-		Condition *string `json:"condition"`
+		Condition         helpers.StringBool `json:"condition"`
 	}
 
 	ContainerChildItemData struct {
@@ -137,6 +135,7 @@ func GetContainerLayout(sessionState *State, actionState *action.State, containe
 		actionState.AddErrors(err)
 		return nil
 	}
+
 	return &layout
 }
 
@@ -171,9 +170,7 @@ func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout)
 		if child.ExternalReference != nil {
 			ccr.External = true
 		}
-		if child.Condition == nil || strings.ToLower(*child.Condition) == "true" {
-			ccr.Show = true
-		}
+		ccr.Show = bool(child.Condition)
 		handler.children = append(handler.children, ccr)
 	}
 

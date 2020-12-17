@@ -3,11 +3,13 @@ package senseobjects
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
@@ -36,15 +38,32 @@ type (
 		Approved  bool `json:"approved,omitempty"`
 	}
 
+	SheetBounds struct {
+		Y      float64 `json:"y"`
+		X      float64 `json:"x"`
+		Width  float64 `json:"width"`
+		Height float64 `json:"height"`
+	}
+
 	// SheetData data for a sheet
 	SheetData struct {
 		Cells []struct {
-			Name string `json:"name,omitempty"`
-			Type string `json:"type,omitempty"`
+			Name    string      `json:"name"`
+			Type    string      `json:"type"`
+			Col     int         `json:"col"`
+			Row     int         `json:"row"`
+			Colspan int         `json:"colspan"`
+			Rowspan int         `json:"rowspan"`
+			Bounds  SheetBounds `json:"bounds,omitempty"`
 		} `json:"cells,omitempty"`
-		Title       string      `json:"title,omitempty"`
-		Description string      `json:"description,omitempty"`
-		Rank        interface{} `json:"rank,omitempty"`
+		Columns               int                `json:"columns"`
+		Rows                  int                `json:"rows"`
+		Title                 string             `json:"title"`
+		LabelExpression       string             `json:"labelExpression"`
+		Description           string             `json:"description"`
+		DescriptionExpression string             `json:"descriptionExpression"`
+		Rank                  interface{}        `json:"rank"`
+		ShowCondition         helpers.StringBool `json:"showCondition"`
 	}
 
 	// SheetListPropertiesData properties of sheetlist
@@ -68,7 +87,15 @@ type (
 		properties   *SheetListProperties
 		mutex        sync.Mutex
 	}
+
+	// SheetEntryNotFoundError error returned when sheet entry was not found in sheet list
+	SheetEntryNotFoundError string
 )
+
+// Error returned when sheet entry was not found in sheet list
+func (err SheetEntryNotFoundError) Error() string {
+	return fmt.Sprintf("no sheet entry found for id<%s>", string(err))
+}
 
 func (sheetList *SheetList) setLayout(layout *SheetListLayout) {
 	sheetList.mutex.Lock()
@@ -162,7 +189,7 @@ func (sheetList *SheetList) GetSheetEntry(sheetid string) (*SheetNxContainerEntr
 			return v, nil
 		}
 	}
-	return nil, errors.Errorf("no sheet entry found for id<%s>", sheetid)
+	return nil, SheetEntryNotFoundError(sheetid)
 }
 
 // CreateSheetListObject create sheetlist session object
@@ -176,10 +203,16 @@ func CreateSheetListObject(ctx context.Context, doc *enigma.Doc) (*SheetList, er
 			Type: "sheet",
 			Data: json.RawMessage(`{
 				"title": "/qMetaDef/title",
+				"labelExpression": "/labelExpression",
+				"showCondition": "/showCondition",
 				"description": "/qMetaDef/description",
+				"descriptionExpression": "/descriptionExpression",
+				"thumbnail": "/thumbnail",
 				"cells": "/cells",
-				"rank": "/rank"
-      }`),
+				"rank": "/rank",
+				"columns": "/columns",
+				"rows": "/rows"
+}`),
 		},
 	}
 
