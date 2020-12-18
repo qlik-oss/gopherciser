@@ -1,7 +1,6 @@
 package scenario
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -116,7 +115,8 @@ func (settings UploadDataSettings) Execute(
 		}
 	}()
 
-	body := &bytes.Buffer{}
+	body := helpers.GlobalBufferPool.Get()
+	defer helpers.GlobalBufferPool.Put(body)
 	writer := multipart.NewWriter(body)
 
 	// Then create the binary multipart field

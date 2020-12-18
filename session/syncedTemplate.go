@@ -1,7 +1,6 @@
 package session
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +11,7 @@ import (
 	uuid "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
@@ -117,7 +117,8 @@ func (syn *SyncedTemplate) String() string {
 
 // ReplaceWithoutSessionVariables execute template without session variables - only use if we do not have a session
 func (input *SyncedTemplate) ReplaceWithoutSessionVariables(data interface{}) (string, error) {
-	buf := bytes.NewBuffer(nil)
+	buf := helpers.GlobalBufferPool.Get()
+	defer helpers.GlobalBufferPool.Put(buf)
 	if err := input.Execute(buf, data); err != nil {
 		return "", errors.Wrap(err, "failed to execute variables template")
 	}
