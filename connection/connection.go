@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/users"
 )
@@ -276,7 +276,8 @@ func (connectionSettings *ConnectionSettings) addReqHeaders(data *users.User, he
 			continue
 		}
 
-		buf := bytes.NewBuffer(nil)
+		buf := helpers.GlobalBufferPool.Get()
+		defer helpers.GlobalBufferPool.Put(buf)
 		if err := tmpl.Execute(buf, data); err != nil {
 			return header, errors.Wrapf(err, "failed executing %s template", tmpl.Name())
 		}

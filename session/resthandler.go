@@ -459,6 +459,32 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 	}()
 }
 
+func ReadAll(r io.Reader) ([]byte, error) {
+	buf := helpers.GlobalBufferPool.Get()
+	defer helpers.GlobalBufferPool.Put(buf)
+
+	capacity := int64(bytes.MinRead)
+	var err error
+	// If the buffer overflows, we will get bytes.ErrTooLarge.
+	// Return that as an error. Any other panic remains.
+	defer func() {
+		e := recover()
+		if e == nil {
+			return
+		}
+		if panicErr, ok := e.(error); ok && panicErr == bytes.ErrTooLarge {
+			err = panicErr
+		} else {
+			panic(e)
+		}
+	}()
+	if int64(int(capacity)) == capacity {
+		buf.Grow(int(capacity))
+	}
+	_, err = buf.ReadFrom(r)
+	return buf.Bytes(), err
+}
+
 func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
 
 	destination := request.Destination
@@ -639,7 +665,9 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 
 		if transport.LogEntry.ShouldLogTrafficMetrics() {
 			// todo somehow id sent/rec requests?
-			buf := bytes.NewBufferString(req.Method)
+			buf := helpers.GlobalBufferPool.Get()
+			defer helpers.GlobalBufferPool.Put(buf)
+			buf.WriteString(req.Method)
 			var query string
 			if req.URL != nil {
 				if _, err := buf.WriteString(" "); err != nil {
