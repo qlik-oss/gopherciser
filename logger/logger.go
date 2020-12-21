@@ -150,7 +150,7 @@ func (log *Log) AddLoggers(loggers ...*Logger) {
 // file name is chosen, using `backupName`, to match the name of the standard
 // log file.
 func (log *Log) SetRegressionLoggerFile(fileName string) error {
-	fileName = strings.TrimSuffix(backupName(fileName), filepath.Ext(fileName)) + "-regression.tsv"
+	fileName = strings.TrimSuffix(backupName(fileName), filepath.Ext(fileName)) + ".regression"
 	f, err := NewWriter(fileName)
 	if err != nil {
 		return errors.WithStack(err)
