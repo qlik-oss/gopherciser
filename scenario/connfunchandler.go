@@ -3,7 +3,6 @@ package scenario
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -73,25 +72,16 @@ func restGetConnectTest(connectionSettings *connection.ConnectionSettings, sessi
 	if err != nil {
 		return errors.Wrap(err, "failed to get REST URL")
 	}
-	pilotRequest := session.RestRequest{
-		Method:      session.GET,
-		Destination: fmt.Sprintf("%s/api/v1/locale", host),
+	sessionState.Rest.Client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
 	}
-	sessionState.Rest.QueueRequest(actionState, true, &pilotRequest, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		actionError := actionState.Errors()
-		return errors.Wrap(actionError, "failed to execute REST request")
+	reqOptions := session.DefaultReqOptions()
+	reqOptions.ExpectedStatusCode = []int{302}
+	_, err = sessionState.Rest.GetSync(fmt.Sprintf("%s/login", host), actionState, sessionState.LogEntry, reqOptions)
+	if err != nil {
+		return errors.WithStack(err)
 	}
-	sessionState.Rest.WaitForPending()
-
-	if pilotRequest.ResponseStatusCode != http.StatusOK {
-		if strings.Contains(string(pilotRequest.ResponseBody), "<html>") {
-			return errors.Errorf("failed response code: %s",
-				pilotRequest.ResponseStatus)
-		}
-		return errors.Errorf("failed response code: %s (%s)",
-			pilotRequest.ResponseStatus, pilotRequest.ResponseBody)
-	}
+	sessionState.Rest.Client.CheckRedirect = nil
 
 	return nil
 }
