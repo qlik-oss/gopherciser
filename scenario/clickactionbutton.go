@@ -266,7 +266,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			BookMarkSettings{
 				ID: buttonAction.Bookmark,
 			},
-			false,
+			true,
 		}
 
 	case clearAllSelections:
