@@ -76,7 +76,7 @@ func restGetConnectTest(connectionSettings *connection.ConnectionSettings, sessi
 		return http.ErrUseLastResponse
 	}
 	reqOptions := session.DefaultReqOptions()
-	reqOptions.ExpectedStatusCode = []int{302}
+	reqOptions.ExpectedStatusCode = []int{http.StatusFound}
 	_, err = sessionState.Rest.GetSync(fmt.Sprintf("%s/login", host), actionState, sessionState.LogEntry, reqOptions)
 	if err != nil {
 		return errors.WithStack(err)
