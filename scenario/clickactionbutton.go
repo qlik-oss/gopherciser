@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"strconv"
 	"strings"
+
+	"github.com/qlik-oss/gopherciser/helpers"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
@@ -265,6 +266,7 @@ func (buttonAction *buttonAction) execute(sessionState *session.State, actionSta
 			BookMarkSettings{
 				ID: buttonAction.Bookmark,
 			},
+			false,
 		}
 
 	case clearAllSelections:

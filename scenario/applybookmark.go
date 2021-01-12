@@ -15,6 +15,7 @@ type (
 	//ApplyBookmarkSettings apply bookmark settings
 	ApplyBookmarkSettings struct {
 		BookMarkSettings
+		SelectionsOnly bool `json:"selectionsonly"`
 	}
 
 	bmSearchTerm int
@@ -85,13 +86,13 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 		return // An error occurred
 	}
 
-	if sheetID != "" {
+	if sheetID != "" && !settings.SelectionsOnly {
 		sessionState.LogEntry.LogDebug(fmt.Sprint("ApplyBookmark: Change sheet to ", sheetID))
 		(&ChangeSheetSettings{
 			ID: sheetID,
 		}).Execute(sessionState, actionState, connectionSettings, label, reset)
 	}
-	actionState.Details = fmt.Sprintf("%v;%s", sheetID != "", sheetID) // log details in results as {Has sheet};{Sheet ID}
+	actionState.Details = fmt.Sprintf("%v;%s;%v", sheetID != "", sheetID, settings.SelectionsOnly) // log details in results as {Has sheet};{Sheet ID};{Apply Selections Only}
 
 	sessionState.Wait(actionState)
 }
