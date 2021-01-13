@@ -56,8 +56,8 @@ type (
 			Rowspan int         `json:"rowspan"`
 			Bounds  SheetBounds `json:"bounds,omitempty"`
 		} `json:"cells,omitempty"`
-		Columns               int                `json:"columns"`
-		Rows                  int                `json:"rows"`
+		Columns               interface{}        `json:"columns"`
+		Rows                  interface{}        `json:"rows"`
 		Title                 string             `json:"title"`
 		LabelExpression       string             `json:"labelExpression"`
 		Description           string             `json:"description"`
