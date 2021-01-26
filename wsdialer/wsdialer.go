@@ -147,6 +147,12 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 
 // Dial new websocket connection
 func (dialer *WsDialer) Dial(ctx context.Context) error {
+	_, hasDeadline := ctx.Deadline()
+	if !hasDeadline {
+		// make sure we have a timeout on connect
+		dialer.Dialer.Timeout = time.Minute
+	}
+
 	var err error
 	dialer.Conn, _ /*br*/, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
 	return errors.WithStack(err)
