@@ -15,7 +15,21 @@ type (
 		m  map[string]bool
 		mu sync.Mutex
 	}
+
+	// FeatureAllocationError returned when feature map is expected to be allocated but is not
+	FeatureAllocationError struct{}
+
+	// FeatureFlagNotFoundError returned when feature flag was not found
+	FeatureFlagNotFoundError string
 )
+
+func (err FeatureAllocationError) Error() string {
+	return "features map not allocated"
+}
+
+func (err FeatureFlagNotFoundError) Error() string {
+	return fmt.Sprintf("feature %s does not exist in feature map", string(err))
+}
 
 // UpdateFeatureMap request features from server and updates feature map
 func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actionState *action.State, logEntry *logger.LogEntry) {
@@ -43,12 +57,12 @@ func (features *Features) IsFeatureEnabled(feature string) (bool, error) {
 	defer features.mu.Unlock()
 
 	if features.m == nil {
-		return false, errors.New("features map not allocated")
+		return false, FeatureAllocationError{}
 	}
 
 	enabled, exists := features.m[feature]
 	if !exists {
-		return false, errors.New(fmt.Sprintf("feature %s does not exist in feature map", feature))
+		return false, FeatureFlagNotFoundError(feature)
 	}
 
 	return enabled, nil
