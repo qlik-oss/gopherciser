@@ -43,7 +43,11 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 			}
 		}
 
-		if err := sense.Connect(sessionState.BaseContext(), url, header, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout); err != nil {
+		// Connect
+		ctx, cancel := sessionState.ContextWithTimeout(sessionState.BaseContext())
+		defer cancel()
+
+		if err := sense.Connect(ctx, url, header, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout); err != nil {
 			return appGUID, errors.Wrap(err, "Failed connecting to sense server")
 		}
 
