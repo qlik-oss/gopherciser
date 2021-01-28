@@ -85,6 +85,7 @@ type (
 		Rest               *RestHandler
 		RequestMetrics     *requestmetrics.RequestMetrics
 		ReconnectSettings  ReconnectSettings
+		Features           Features
 
 		rand          *rand
 		trafficLogger enigmahandlers.ITrafficLogger
@@ -981,4 +982,9 @@ func (state *State) ClearSubscribedObjects(IDs []string) error {
 		state.DeRegisterEvent(obj.Handle)
 	}
 	return nil
+}
+
+// UpdateFeatureMap request features from server and updates feature map
+func (state *State) UpdateFeatureMap(host string, actionState *action.State) {
+	state.Features.UpdateFeatureMap(state.Rest, host, actionState, state.LogEntry)
 }

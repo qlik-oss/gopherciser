@@ -56,6 +56,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 	}
 
 	getLocale(sessionState, actionState, host)
+	sessionState.UpdateFeatureMap(host, actionState)
 
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections/favorites", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
@@ -72,6 +73,7 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 			actionState.AddErrors(errors.New("No favorite collection id"))
 			return
 		}
+
 		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/v1/collections/%s/items?limit=24&sort=-createdAt&collectionId=%s&resourceType=app,qvapp,qlikview,genericlink,sharingservicetask", host, favCollection.ID, favCollection.ID), actionState, sessionState.LogEntry, nil, func(err error, collectionRequest *session.RestRequest) {
 			fillAppMapFromItemRequest(sessionState, actionState, collectionRequest, false)
 		})
@@ -82,7 +84,6 @@ func (openHub ElasticOpenHubSettings) Execute(sessionState *session.State, actio
 		spaces = fillArtifactsFromSpaces(sessionState, actionState, req, false) // Will have execute after next sessionState.Wait
 	})
 
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/features", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/licenses/status", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/quotas?reportUsage=true", host), actionState, sessionState.LogEntry, nil)
 	userDataReq := sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/users/me", host), actionState, sessionState.LogEntry, nil)
