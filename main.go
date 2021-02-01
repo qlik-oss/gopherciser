@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "net/http/pprof"
+
 	"github.com/qlik-oss/gopherciser/cmd"
 )
 

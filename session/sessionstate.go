@@ -1,7 +1,6 @@
 package session
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -86,6 +85,7 @@ type (
 		Rest               *RestHandler
 		RequestMetrics     *requestmetrics.RequestMetrics
 		ReconnectSettings  ReconnectSettings
+		Features           Features
 
 		rand          *rand
 		trafficLogger enigmahandlers.ITrafficLogger
@@ -620,7 +620,8 @@ func (state *State) ReplaceSessionVariablesWithLocalData(input *SyncedTemplate, 
 		return "", errors.New("nil Session on LogEntry")
 	}
 
-	buf := bytes.NewBuffer(nil)
+	buf := helpers.GlobalBufferPool.Get()
+	defer helpers.GlobalBufferPool.Put(buf)
 	if err := input.Execute(buf, state.GetSessionVariable(localData)); err != nil {
 		return "", errors.Wrap(err, "failed to execute variables template")
 	}
@@ -981,4 +982,9 @@ func (state *State) ClearSubscribedObjects(IDs []string) error {
 		state.DeRegisterEvent(obj.Handle)
 	}
 	return nil
+}
+
+// UpdateFeatureMap request features from server and updates feature map
+func (state *State) UpdateFeatureMap(host string, actionState *action.State) {
+	state.Features.UpdateFeatureMap(state.Rest, host, actionState, state.LogEntry)
 }

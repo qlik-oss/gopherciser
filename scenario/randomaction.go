@@ -15,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -226,7 +227,14 @@ func (settings RandomActionSettings) Execute(sessionState *session.State, state 
 				return
 			}
 
-			items := sheetList.Layout().AppObjectList.Items
+			allItems := sheetList.Layout().AppObjectList.Items
+			items := make([]*senseobjects.SheetNxContainerEntry, 0, len(allItems))
+			for _, item := range allItems { // Only randomize between non-hidden sheets
+				if item != nil && item.Data != nil && item.Data.ShowCondition {
+					items = append(items, item)
+				}
+			}
+
 			n := len(items)
 			if n < 1 {
 				sessionState.LogEntry.LogInfo("nosheets", "Cannot change sheets - no sheets in app")

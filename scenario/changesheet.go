@@ -7,6 +7,9 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -27,7 +30,8 @@ func (settings ChangeSheetSettings) Validate() error {
 
 // Execute change sheet action
 func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-	actionState.Details = settings.ID
+	id := sessionState.IDMap.Get(settings.ID)
+	actionState.Details = id
 
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("not connected to a Sense environment"))
@@ -37,6 +41,16 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 	uplink := sessionState.Connection.Sense()
 	if uplink.CurrentApp == nil {
 		actionState.AddErrors(errors.New("not connected to app"))
+	}
+
+	// Before changing sheet, check if it shows in the sheet selector
+	isHidden := isSheetHidden(sessionState, actionState, id)
+	if sessionState.Wait(actionState) {
+		return // Error occured
+	}
+	if isHidden {
+		actionState.AddErrors(errors.Errorf("Sheet<%s> is a hidden sheet", id))
+		return
 	}
 
 	sessionState.ClearObjectSubscriptions()
@@ -67,13 +81,13 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 	}, actionState, false, "GetAppLayout request failed")
 
 	// Get sheet
-	if _, _, err := sessionState.GetSheet(actionState, uplink, settings.ID); err != nil {
+	if _, _, err := sessionState.GetSheet(actionState, uplink, id); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to get sheet"))
 		return
 	}
 
 	// get all objects on sheet
-	if err := subscribeSheetObjectsAsync(sessionState, actionState, uplink.CurrentApp, settings.ID); err != nil {
+	if err := subscribeSheetObjectsAsync(sessionState, actionState, uplink.CurrentApp, id); err != nil {
 		actionState.AddErrors(err)
 		return
 	}
@@ -94,4 +108,32 @@ func (settings ChangeSheetSettings) AffectsAppObjectsAction(structure appstructu
 	}
 	newObjs.Objects = append(newObjs.Objects, activeObjects...)
 	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, true
+}
+
+// isSheetHidden check if sheet is set to hidden, default to false
+func isSheetHidden(sessionState *session.State, actionState *action.State, id string) bool {
+	sheetlist, err := sessionState.Connection.Sense().CurrentApp.GetSheetList(sessionState, actionState)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to get sheetlist"))
+		return false
+	}
+
+	sheetEntry, err := sheetlist.GetSheetEntry(id)
+	if err != nil {
+		switch helpers.TrueCause(err).(type) {
+		case senseobjects.SheetEntryNotFoundError:
+			sessionState.LogEntry.Logf(logger.WarningLevel, "sheet<%s> not found in sheet list", id)
+			return false
+		default:
+			actionState.AddErrors(errors.WithStack(err))
+			return false
+		}
+	}
+
+	if sheetEntry == nil || sheetEntry.Data == nil {
+		sessionState.LogEntry.Logf(logger.WarningLevel, "sheetEntry<%s> has no data", id)
+		return false
+	}
+
+	return !bool(sheetEntry.Data.ShowCondition)
 }
