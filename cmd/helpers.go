@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -131,10 +134,26 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 			if scriptOverrides == nil {
 				scriptOverrides = make([]string, 0, 10)
 			}
+
+			// golang can't detect char devices properly in cygwin, handle this by closing stdin after a second
+			readingCtx, done := context.WithCancel(context.Background())
+			if runtime.GOOS == "windows" {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				go func() {
+					select {
+					case <-ctx.Done():
+						os.Stdin.Close()
+					case <-readingCtx.Done():
+					}
+				}()
+			}
+
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				scriptOverrides = append(scriptOverrides, scanner.Text())
 			}
+			done()
 		}
 	}
 
