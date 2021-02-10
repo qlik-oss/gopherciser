@@ -138,11 +138,9 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 			// golang can't detect char devices properly in cygwin, handle this by closing stdin after a second
 			readingCtx, done := context.WithCancel(context.Background())
 			if runtime.GOOS == "windows" {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-				defer cancel()
 				go func() {
 					select {
-					case <-ctx.Done():
+					case <-time.After(time.Second):
 						os.Stdin.Close()
 					case <-readingCtx.Done():
 					}
