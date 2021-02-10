@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -67,7 +70,7 @@ func unmarshalConfigFile() (*config.Config, error) {
 			return nil, errors.Wrap(err, "error reading config from stdin")
 		}
 		if !hasPipe {
-			return  nil, errors.New("no config file and nothing on stdin")
+			return nil, errors.New("no config file and nothing on stdin")
 		}
 
 		scanner := bufio.NewScanner(os.Stdin)
@@ -125,16 +128,30 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 	} else if cfgFile != "" { // if cfg file has been pointed to, but has stdin piped, assume it's overrides
 		hasPipe, err := hasPipe()
 		if err != nil {
-			return nil, nil,  errors.Wrap(err, "error reading overrides from stdin")
+			return nil, nil, errors.Wrap(err, "error reading overrides from stdin")
 		}
 		if hasPipe {
 			if scriptOverrides == nil {
 				scriptOverrides = make([]string, 0, 10)
 			}
+
+			// golang can't detect char devices properly in cygwin, handle this by closing stdin after a second
+			readingCtx, done := context.WithCancel(context.Background())
+			if runtime.GOOS == "windows" {
+				go func() {
+					select {
+					case <-time.After(time.Second):
+						os.Stdin.Close()
+					case <-readingCtx.Done():
+					}
+				}()
+			}
+
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				scriptOverrides = append(scriptOverrides, scanner.Text())
 			}
+			done()
 		}
 	}
 
@@ -229,4 +246,12 @@ func PrintOverrides(overrides []string) {
 		os.Stderr.WriteString(override)
 	}
 	os.Stderr.WriteString("========================\n")
+}
+
+func hasPipe() (bool, error) {
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	return fileInfo.Mode()&os.ModeCharDevice == 0, nil
 }
