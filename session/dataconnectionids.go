@@ -95,7 +95,7 @@ func (state *State) FetchDataConnectionID(actionState *action.State, host, space
 // FetchQixDataFiles for provided data connection ID
 func (state *State) FetchQixDataFiles(actionState *action.State, host, connectionID string) ([]elasticstructs.QixDataFile, error) {
 	req, err := state.Rest.GetSync(
-		fmt.Sprintf("%s/api/v1/qix-datafiles?top=656536&connectionId=%s", host, connectionID), actionState,
+		fmt.Sprintf("%s/api/v1/qix-datafiles?top=10000&connectionId=%s", host, connectionID), actionState,
 		state.LogEntry, nil,
 	)
 	dataFiles := make([]elasticstructs.QixDataFile, 0)
