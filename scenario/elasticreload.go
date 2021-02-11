@@ -26,6 +26,7 @@ type (
 const (
 	postReloadEndpoint = "api/v1/reloads"
 	getReloadEndpoint  = "api/v1/reloads"
+	getItemsEndpoint   = "api/v1/items"
 
 	// Delay time between re-connect of event websocket and checking status page if reload is still not done
 	StatusCheckDelay = 30 * time.Second
@@ -117,6 +118,15 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 			reloadEventChan <- &event
 		}
 	}, true)
+
+	itemsUpdatedFunc := events.RegisterFunc(eventws.OperationUpdated, func(event eventws.Event) {
+		if !helpers.IsContextTriggered(statusContext) && event.ResourceType == eventws.ResourceTypeItems {
+			_ = sessionState.Rest.GetAsync(
+				fmt.Sprintf("%s/%s/%s", host, getItemsEndpoint, event.ResourceID),
+				actionState, sessionState.LogEntry, nil)
+		}
+	}, true)
+
 	// Re-use event structure to "listen" on websocket re-connecting
 	wsReconnectFunc := events.RegisterFunc(session.EventWsReconnectEnded, func(event eventws.Event) {
 		// If event websocket was re-connected during reload, wait "StatusCheckDelay" then check status page if reload event still hasn't triggered to make sure reload is still ongoing
@@ -131,6 +141,7 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		func() {
 			defer helpers.RecoverWithError(&panicErr)
 			events.DeRegisterFunc(wsReconnectFunc)
+			events.DeRegisterFunc(itemsUpdatedFunc)
 			cancelStatusCheck()
 			events.DeRegisterFunc(eventEndedFunc)
 			emptyAndCloseEventChan(checkStatusChan)
@@ -177,6 +188,11 @@ forLoop:
 					actionState.AddErrors(errors.Errorf("reload result event contains reload id of unexpected type<%T> value<%v>", eventReloadIDEntry, eventReloadIDEntry))
 					break forLoop
 				}
+
+				_ = sessionState.Rest.GetAsync(
+					fmt.Sprintf("%s/%s?appId=%s", host, getReloadEndpoint, event.ResourceID),
+					actionState, sessionState.LogEntry, nil)
+
 			default:
 				eventReloadID = event.ReloadId
 			}

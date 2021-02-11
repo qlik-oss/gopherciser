@@ -29,4 +29,5 @@ const (
 	ResourceTypeApp        = "app"
 	ResourceTypeReload     = "reload"
 	ResourceTypeEvaluation = "evaluation"
+	ResourceTypeItems      = "items"
 )
