@@ -40,12 +40,12 @@ type (
 	}
 
 	ContainerChild struct {
-		RefID             string             `json:"refId"`
-		Label             string             `json:"label"`
-		IsMaster          bool               `json:"isMaster"`
-		ExternalReference *ContainerExternal `json:"externalReference"`
-		Type              string             `json:"type"`
-		Condition         helpers.StringBool `json:"condition"`
+		RefID             string              `json:"refId"`
+		Label             string              `json:"label"`
+		IsMaster          bool                `json:"isMaster"`
+		ExternalReference *ContainerExternal  `json:"externalReference"`
+		Type              string              `json:"type"`
+		Condition         *helpers.StringBool `json:"condition"`
 	}
 
 	ContainerChildItemData struct {
@@ -106,7 +106,11 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 		}
 
 		child, current := handler.FirstShowableChild()
-		sessionState.LogEntry.Logf(logger.DebugLevel, "container<%s> first showable child<%s> active child<%s>", handler.ID, child.ObjID, handler.ActiveID)
+		childID := ""
+		if child != nil {
+			childID = child.ObjID
+		}
+		sessionState.LogEntry.Logf(logger.DebugLevel, "container<%s> first showable child<%s> active child<%s>", handler.ID, childID, handler.ActiveID)
 		if current {
 			return nil
 		}
@@ -170,7 +174,12 @@ func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout)
 		if child.ExternalReference != nil {
 			ccr.External = true
 		}
-		ccr.Show = bool(child.Condition)
+		if child.Condition == nil {
+			ccr.Show = true
+		} else {
+			ccr.Show = bool(*child.Condition)
+		}
+
 		handler.children = append(handler.children, ccr)
 	}
 
