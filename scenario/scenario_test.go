@@ -2,6 +2,7 @@ package scenario_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -102,7 +103,8 @@ func TestPanicAndFailRecover(t *testing.T) {
 			}
 
 			for i, v := range mErr.Errors {
-				if v.Error() != expectedErrs[i] {
+				errMsg := strings.SplitN(v.Error(), " Stack", 2)
+				if len(errMsg) < 1 || errMsg[0] != expectedErrs[i] {
 					t.Errorf("[%d] Unexpected error<%s> expected<%s>", i, v, expectedErrs[i])
 				}
 			}
