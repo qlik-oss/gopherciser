@@ -671,6 +671,24 @@ var (
 		Select: nil,
 	}
 
+	DefaultSNGridChart = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefHyperCube, // TODO support tree data
+			Path: "/qHyperCube",
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeHyperCubeTreeData,
+						Path: "/qHyperCubeDef",
+					},
+				},
+			}},
+		},
+		Select: nil, // TODO support select in grid chart, select using unsupported SelectPivotCells method
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -711,5 +729,6 @@ var (
 		"qlik-animator":         &DefaultQlikAnimator,
 		"qlik-date-picker":      &DefaultQlikDatePicker,
 		"sn-video-player":       &DefaultSNVideoPlayer,
+		"sn-grid-chart":         &DefaultSNGridChart,
 	}
 )

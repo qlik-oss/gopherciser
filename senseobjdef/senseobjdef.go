@@ -3,13 +3,13 @@ package senseobjdef
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"io/ioutil"
 	"os"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
@@ -125,6 +125,8 @@ const (
 	DataTypeHyperCubeStackData
 	// DataTypeHyperCubeContinuousData get hypercube continuous data
 	DataTypeHyperCubeContinuousData
+	// DataTypeHyperCubeTreeData get hypercube tree data
+	DataTypeHyperCubeTreeData
 )
 
 var (
@@ -153,6 +155,7 @@ var (
 		"hypercubestackdata":      int(DataTypeHyperCubeStackData),
 		"hypercubedatacolumns":    int(DataTypeHyperCubeDataColumns),
 		"hypercubecontinuousdata": int(DataTypeHyperCubeContinuousData),
+		"hypercubetreedata":       int(DataTypeHyperCubeTreeData),
 	})
 
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary

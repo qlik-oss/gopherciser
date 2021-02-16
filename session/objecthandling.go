@@ -699,6 +699,8 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 			UpdateObjectHyperCubeStackDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		case senseobjdef.DataTypeHyperCubeContinuousData:
 			UpdateObjectHyperCubeContinuousDataAsync(sessionState, actionState, enigmaObject, obj, r)
+		case senseobjdef.DataTypeHyperCubeTreeData:
+			return errors.New("DataTypeHyperCubeTreeData not yet implemented")
 		default:
 			sessionState.LogEntry.Logf(logger.WarningLevel,
 				"Get Data for object type<%s> not supported", enigmaObject.GenericType)
