@@ -164,13 +164,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		case "ws":
 			u.Scheme = "http"
 		}
-
-		for _, v := range dialer.Jar.Cookies(u) {
-			// A "normal" connection has cookie name "X-Qlik-Session" a virtual proxy has configurable cookie name, as long as the name configured starts with "X-Qlik-Session" it will be logged
-			if v != nil && strings.HasPrefix(v.Name, "X-Qlik-Session") {
-				uplink.logEntry.Session.SessionName = v.Value
-			}
-		}
 	}
 
 	if err := uplink.trafficMetrics.Update(startTimestamp, time.Now(), 0, 0); err != nil {
