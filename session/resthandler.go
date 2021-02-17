@@ -641,7 +641,14 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 
 	apiPath := apiCallFromPath(req.URL.Path)
 	if apiPath != "" {
-		buildmetrics.ReportApiResult(apiPath, req.Method, resp.StatusCode, recTS.Sub(sentTS))
+		actionString := "unknown"
+		labelString := ""
+		if transport.State.LogEntry.Action != nil {
+			actionString = transport.State.LogEntry.Action.Action
+			labelString = transport.State.LogEntry.Action.Label
+		}
+		buildmetrics.ReportApiResult(actionString, labelString,
+			apiPath, req.Method, resp.StatusCode, recTS.Sub(sentTS))
 	}
 
 	respSize := int64(0)
@@ -720,12 +727,12 @@ func contentIsBinary(header http.Header) bool {
 const apiSeparator = "api/v1/"
 
 func apiCallFromPath(path string) string {
-	splitApiV1 := strings.Split(path, apiSeparator)
+	splitApiV1 := strings.SplitN(path, apiSeparator, 2)
 	if len(splitApiV1) < 2 {
 		return "" // No api call found in path
 	}
 	apiCall := splitApiV1[1]
-	splitSlash := strings.Split(apiCall, "/")
+	splitSlash := strings.SplitN(apiCall, "/", 2)
 	if len(splitSlash) < 1 {
 		return "" // Nothing after apiSeparator (which is weird)
 	}
