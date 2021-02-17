@@ -680,8 +680,9 @@ var (
 			{DataCore{
 				Requests: []GetDataRequests{
 					{
-						Type: DataTypeHyperCubeTreeData,
-						Path: "/qHyperCubeDef",
+						Type:   DataTypeHyperCubeTreeData,
+						Path:   "/qHyperCubeDef",
+						Height: 50,
 					},
 				},
 			}},
