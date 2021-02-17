@@ -17,6 +17,11 @@ type (
 	ElasticMoveAppSettings struct {
 		session.AppSelection
 		DestinationSpace
+		NavigateToSpaceSettings
+	}
+
+	NavigateToSpaceSettings struct {
+		DoNotNavigateToSpace bool `json:"donotnavigatetospace" displayname:"Navigate to space" doc-key:"elasticmoveapp.donotnavigatetospace"`
 	}
 
 	DestinationSpace struct {
@@ -29,6 +34,9 @@ type (
 
 // UnmarshalJSON unmarshals ElasticMoveAppSettings from JSON
 func (settings *ElasticMoveAppSettings) UnmarshalJSON(arg []byte) error {
+	if err := jsonit.Unmarshal(arg, &settings.NavigateToSpaceSettings); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
+	}
 	var actionCore DestinationSpace
 	if err := jsonit.Unmarshal(arg, &actionCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
@@ -37,8 +45,8 @@ func (settings *ElasticMoveAppSettings) UnmarshalJSON(arg []byte) error {
 	if err := jsonit.Unmarshal(arg, &appSelectCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticMoveApp)
 	}
-	(*settings).DestinationSpace = actionCore
-	(*settings).AppSelection = appSelectCore
+	settings.DestinationSpace = actionCore
+	settings.AppSelection = appSelectCore
 	return nil
 }
 
@@ -92,6 +100,18 @@ func (settings ElasticMoveAppSettings) Execute(sessionState *session.State, acti
 	}
 	if putApp.ResponseStatusCode != http.StatusOK {
 		actionState.AddErrors(errors.Errorf("unexpected response code <%d> when putting app in new space: %s", putApp.ResponseStatusCode, putApp.ResponseBody))
+	}
+	settings.NavigateToSpace(sessionState, actionState, host, destSpace.ID)
+}
+
+func (settings NavigateToSpaceSettings) NavigateToSpace(sessionState *session.State, actionState *action.State, host string, spaceID string) {
+	if settings.DoNotNavigateToSpace {
+		return
+	}
+	_, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/api/v1/spaces/%s/assignments?limit=100", host, spaceID), actionState, sessionState.LogEntry, nil)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed during navigate to space"))
+		return
 	}
 }
 
