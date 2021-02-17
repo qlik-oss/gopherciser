@@ -709,3 +709,18 @@ func contentIsBinary(header http.Header) bool {
 	}
 	return false
 }
+
+const apiSeparator = "api/v1/"
+
+func apiCallFromPath(path string) string {
+	splitApiV1 := strings.Split(path, apiSeparator)
+	if len(splitApiV1) < 2 {
+		return "" // No api call found in path
+	}
+	apiCall := splitApiV1[1]
+	splitSlash := strings.Split(apiCall, "/")
+	if len(splitSlash) < 1 {
+		return "" // Nothing after apiSeparator (which is weird)
+	}
+	return fmt.Sprintf("%s%s", apiSeparator, splitSlash[0])
+}
