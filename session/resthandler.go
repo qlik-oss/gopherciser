@@ -641,7 +641,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 
 	apiPath := apiCallFromPath(req.URL.Path)
 	if apiPath != "" {
-		buildmetrics.ReportApiResult(apiPath, resp.StatusCode, recTS.Sub(sentTS))
+		buildmetrics.ReportApiResult(apiPath, req.Method, resp.StatusCode, recTS.Sub(sentTS))
 	}
 
 	respSize := int64(0)
