@@ -64,9 +64,9 @@ func TestReqOptions(t *testing.T) {
 }
 
 func TestApiExtract(t *testing.T) {
-	test1 := "http://myserver:9565/api/v1/items/abc123/action"
-	test2 := "http://myserver:9565/api/dcaas"
-	test3 := "http://myserver.com/api/v1/evaluation"
+	test1 := "api/v1/items/abc123/action"
+	test2 := "api/dcaas"
+	test3 := "api/v1/evaluation"
 
 	assert.Equal(t, "api/v1/items", apiCallFromPath(test1))
 	assert.Equal(t, "", apiCallFromPath(test2))

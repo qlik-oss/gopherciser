@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/qlik-oss/gopherciser/buildmetrics"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -636,6 +638,11 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 	}
 
 	recTS := time.Now()
+
+	apiPath := apiCallFromPath(req.URL.Path)
+	if apiPath != "" {
+		buildmetrics.ReportApiResult(apiPath, resp.StatusCode, recTS.Sub(sentTS))
+	}
 
 	respSize := int64(0)
 	if resp.ContentLength > 0 {
