@@ -4,6 +4,8 @@ package buildmetrics
 
 import (
 	"context"
+	"strconv"
+	"time"
 
 	"github.com/qlik-oss/gopherciser/metrics"
 )
@@ -22,6 +24,15 @@ func getLabel(action string, label string) string {
 		return label
 	}
 	return action
+}
+
+// ReportApiResult reports the duration for a specific API path and response code
+func ReportApiResult(path string, responseCode int, duration time.Duration) {
+	if metricEnabled() {
+		resultString := strconv.Itoa(responseCode)
+		metrics.ApiCallDuration.WithLabelValues(path, resultString).Observe(duration.Seconds())
+		metrics.ApiCallDurationQuantile.WithLabelValues(path, resultString).Observe(duration.Seconds())
+	}
 }
 
 // ReportSuccess is invoked when a simulated user action is successfully completed.
