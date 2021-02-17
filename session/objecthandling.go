@@ -608,9 +608,13 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 			nodes = append(nodes, node)
 		}
 
-		gob.GetHyperCubeTreeData(ctx, requestDef.Path, &enigma.NxTreeDataOption{
+		// TODO save tree to object hypercube?
+		_, err := gob.GetHyperCubeTreeData(ctx, requestDef.Path, &enigma.NxTreeDataOption{
 			TreeNodes: nodes,
 		})
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
 		return nil
 	}, actionState, true, fmt.Sprintf("failed to get tree data for object<%s>", gob.GenericId))
