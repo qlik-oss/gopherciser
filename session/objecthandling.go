@@ -566,7 +566,7 @@ func UpdateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 	}, actionState, true, fmt.Sprintf("failed to get continous data for object<%s>", gob.GenericId))
 }
 
-// UpdateObjectHyperCubeTreeDataAsync send get hypercube tree data request and update saved hypercube
+// UpdateObjectHyperCubeTreeDataAsync send get hypercube tree data request and update saved data
 func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
@@ -592,7 +592,6 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 
 			allValues := true
 			if i == 0 {
-				// TODO check client what really decides this
 				allValues = false
 			}
 
@@ -608,11 +607,14 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 			nodes = append(nodes, node)
 		}
 
-		// TODO save tree to object hypercube?
-		_, err := gob.GetHyperCubeTreeData(ctx, requestDef.Path, &enigma.NxTreeDataOption{
+		treeNodes, err := gob.GetHyperCubeTreeData(ctx, requestDef.Path, &enigma.NxTreeDataOption{
 			TreeNodes: nodes,
 		})
 		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if err := obj.SetTreeDataPages(treeNodes); err != nil {
 			return errors.WithStack(err)
 		}
 
