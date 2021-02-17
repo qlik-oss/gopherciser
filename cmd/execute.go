@@ -40,12 +40,12 @@ type (
 )
 
 var (
-	metricsPort        int
-	metricsAddress     string
-	metricsLabel       string
-	metricsGroupings   []string
-	profTyp            string
-	objDefFile         string
+	metricsPort      int
+	metricsAddress   string
+	metricsLabel     string
+	metricsGroupings []string
+	profTyp          string
+	objDefFile       string
 )
 
 // *** Custom errors ***
@@ -312,12 +312,4 @@ func resolveSummaryType() (config.SummaryType, error) {
 		}
 		return config.SummaryType(i), nil
 	}
-}
-
-func hasPipe() (bool, error) {
-	fileInfo, err := os.Stdin.Stat()
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	return fileInfo.Mode() & os.ModeCharDevice == 0, nil
 }

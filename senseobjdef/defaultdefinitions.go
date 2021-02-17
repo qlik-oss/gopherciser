@@ -655,6 +655,22 @@ var (
 		Select: nil, // TODO
 	}
 
+	DefaultSNVideoPlayer = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -694,5 +710,6 @@ var (
 		"qlik-variable-input":   &DefaultQlikVariableInput,
 		"qlik-animator":         &DefaultQlikAnimator,
 		"qlik-date-picker":      &DefaultQlikDatePicker,
+		"sn-video-player":       &DefaultSNVideoPlayer,
 	}
 )

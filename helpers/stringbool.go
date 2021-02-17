@@ -20,6 +20,7 @@ func (sb *StringBool) UnmarshalJSON(arg []byte) error {
 
 	switch strings.ToLower(s) {
 	case "false":
+	case "0":
 		*sb = false
 	default:
 		*sb = true
