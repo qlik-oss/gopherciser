@@ -590,11 +590,6 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 				height = requestDef.Height
 			}
 
-			allValues := true
-			if i == 0 {
-				allValues = false
-			}
-
 			node := &enigma.NxPageTreeNode{
 				Area: &enigma.Rect{
 					Left:   i,
@@ -602,7 +597,7 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 					Width:  1,
 					Height: height,
 				},
-				AllValues: allValues,
+				AllValues: i != 0,
 			}
 			nodes = append(nodes, node)
 		}
