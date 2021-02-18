@@ -8,6 +8,26 @@ const (
 	promNS = "gopherciser"
 )
 
+// ApiCallDuration histogram for API call duration
+var ApiCallDuration = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name:    "api_request_duration_seconds",
+		Help:    "A histogram of HTTP request durations.",
+		Buckets: []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.15, 0.25, 0.5, 1., 2.0, 2.5, 5., 10.},
+	},
+	[]string{"action", "path", "method", "status_code"},
+)
+
+// ApiCallDurationQuantile summary for API call duration
+var ApiCallDurationQuantile = prometheus.NewSummaryVec(
+	prometheus.SummaryOpts{
+		Name:       "api_request_duration_quantiles_seconds",
+		Help:       "A summary of HTTP request durations",
+		Objectives: map[float64]float64{0.1: 0.1, 0.5: 0.05, 0.95: 0.01, 0.99: 0.001, 0.999: 0.0001},
+	},
+	[]string{"action", "path", "method", "status_code"},
+)
+
 // GopherActions action counter
 var GopherActions = prometheus.NewCounterVec(
 	prometheus.CounterOpts{

@@ -62,3 +62,13 @@ func TestReqOptions(t *testing.T) {
 		t.Errorf("Default options changed when modifying instance returned from DefaultReqOptions()")
 	}
 }
+
+func TestApiCallFromPath(t *testing.T) {
+	test1 := "api/v1/items/abc123/action"
+	test2 := "api/dcaas"
+	test3 := "api/v1/evaluation"
+
+	assert.Equal(t, "api/v1/items", apiCallFromPath(test1))
+	assert.Equal(t, "", apiCallFromPath(test2))
+	assert.Equal(t, "api/v1/evaluation", apiCallFromPath(test3))
+}

@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/qlik-oss/gopherciser/buildmetrics"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -637,6 +639,18 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 
 	recTS := time.Now()
 
+	apiPath := apiCallFromPath(req.URL.Path)
+	if apiPath != "" {
+		actionString := "unknown"
+		labelString := ""
+		if transport.State.LogEntry.Action != nil {
+			actionString = transport.State.LogEntry.Action.Action
+			labelString = transport.State.LogEntry.Action.Label
+		}
+		buildmetrics.ReportApiResult(actionString, labelString,
+			apiPath, req.Method, resp.StatusCode, recTS.Sub(sentTS))
+	}
+
 	respSize := int64(0)
 	if resp.ContentLength > 0 {
 		respSize = resp.ContentLength
@@ -708,4 +722,19 @@ func contentIsBinary(header http.Header) bool {
 		}
 	}
 	return false
+}
+
+const apiSeparator = "api/v1/"
+
+func apiCallFromPath(path string) string {
+	splitApiV1 := strings.SplitN(path, apiSeparator, 2)
+	if len(splitApiV1) < 2 {
+		return "" // No api call found in path
+	}
+	apiCall := splitApiV1[1]
+	splitSlash := strings.SplitN(apiCall, "/", 2)
+	if len(splitSlash) < 1 {
+		return "" // Nothing after apiSeparator (which is weird)
+	}
+	return fmt.Sprintf("%s%s", apiSeparator, splitSlash[0])
 }
