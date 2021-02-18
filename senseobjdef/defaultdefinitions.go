@@ -673,7 +673,7 @@ var (
 
 	DefaultSNGridChart = ObjectDef{
 		DataDef: DataDef{
-			Type: DataDefHyperCube, // TODO support tree data
+			Type: DataDefHyperCube,
 			Path: "/qHyperCube",
 		},
 		Data: []Data{
