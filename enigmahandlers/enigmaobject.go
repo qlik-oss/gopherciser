@@ -21,11 +21,12 @@ type (
 	}
 
 	objectData struct {
-		properties *enigma.GenericObjectProperties
-		childlist  *enigma.ChildList
-		children   *[]ObjChild
-		listobject *enigma.ListObject
-		hypercube  *HyperCube
+		properties    *enigma.GenericObjectProperties
+		childlist     *enigma.ChildList
+		children      *[]ObjChild
+		listobject    *enigma.ListObject
+		hypercube     *HyperCube
+		treeDataPages []*enigma.NxTreeNode
 	}
 
 	// Object sense object handler
@@ -244,6 +245,19 @@ func (obj *Object) SetPivotHyperCubePages(datapages []*enigma.NxPivotPage) error
 		return errors.Errorf("object<%s> has no hypercube", obj.ID)
 	}
 	obj.data.hypercube.PivotDataPages = datapages
+	return nil
+}
+
+// SetTreeDataPages on object
+func (obj *Object) SetTreeDataPages(treeDataPages []*enigma.NxTreeNode) error {
+	obj.lockData.Lock()
+	defer obj.lockData.Unlock()
+
+	if obj.data == nil {
+		return errors.Errorf("object<%s> has no data structure", obj.ID)
+	}
+
+	obj.data.treeDataPages = treeDataPages
 	return nil
 }
 
