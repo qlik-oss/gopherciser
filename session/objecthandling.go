@@ -389,7 +389,7 @@ func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 	}, actionState, true, fmt.Sprintf("Failed to update object hypercube reduced data for object<%s>", gob.GenericId))
 }
 
-// UpdateObjectHyperCubeBinnedDataAsync sed get hypercube binned data request and update saved hypercube
+// UpdateObjectHyperCubeBinnedDataAsync send get hypercube binned data request and update saved hypercube
 func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *action.State, gob *enigma.GenericObject,
 	obj *enigmahandlers.Object, requestDef senseobjdef.GetDataRequests) {
 	sessionState.QueueRequest(func(ctx context.Context) error {
