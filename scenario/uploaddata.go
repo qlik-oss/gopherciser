@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -94,23 +95,29 @@ func (settings UploadDataSettings) Execute(
 
 	if existingFile != nil && !settings.Replace {
 		sessionState.LogEntry.Logf(
-			logger.WarningLevel, "data file not uploaded, filename<%s> already exists and replace set to false", settings.Filename,
+			logger.WarningLevel, "data file not uploaded, filename<%s> already exists and replace set to false", fileName,
 		)
 		sessionState.Wait(actionState)
 		return
 	}
 
-	tempContentPostRequest := sessionState.Rest.PostAsync(
-		fmt.Sprintf("%s/%s", host, tempContentFilesEndpoint),
-		actionState, sessionState.LogEntry, nil, nil,
-	)
-
 	fileContent, err := ioutil.ReadFile(settings.Filename)
-	// fileSize := len(fileContent)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to open file <%s>", settings.Filename))
 		return
 	}
+	fileSize := len(fileContent)
+
+	tempContentPostRequest := sessionState.Rest.PostWithHeadersAsync(
+		fmt.Sprintf("%s/%s", host, tempContentFilesEndpoint),
+		actionState, sessionState.LogEntry, nil, map[string]string{
+			"upload-length": strconv.Itoa(fileSize),
+			"tus-resumable": "1.0.0",
+		}, &session.ReqOptions{
+			ExpectedStatusCode: []int{200, 201},
+			FailOnError:        true,
+		},
+	)
 
 	if sessionState.Wait(actionState) {
 		return
@@ -130,15 +137,31 @@ func (settings UploadDataSettings) Execute(
 
 	tempContentFileID := path.Base(tempLocationURL.Path)
 
-	_ = sessionState.Rest.PatchAsync(
+	_ = sessionState.Rest.PatchWithHeadersAsync(
 		fmt.Sprintf("%s/%s/%s", host, tempContentFilesEndpoint, tempContentFileID),
-		actionState, sessionState.LogEntry, fileContent, nil,
+		actionState, sessionState.LogEntry, fileContent,
+		map[string]string{
+			"tus-resumable": "1.0.0",
+			"upload-offset": "0",
+		},
+		&session.ReqOptions{
+			ExpectedStatusCode: []int{200, 204},
+			FailOnError:        true,
+			ContentType:        "application/offset+octet-stream",
+		},
 	)
 
-	reqParams := fmt.Sprintf("connectionId=%s&name=%stempContentFileId=%s", dataConnectionID, fileName, tempContentFileID)
+	reqParams := fmt.Sprintf("connectionId=%s&name=%s&tempContentFileId=%s", dataConnectionID, fileName, tempContentFileID)
+
+	if sessionState.Wait(actionState) {
+		return
+	}
 
 	dataFilesPostRequest := sessionState.Rest.PostAsync(
-		fmt.Sprintf("%s/%s?%s", host, datafileEndpoint, reqParams), actionState, sessionState.LogEntry, nil, nil,
+		fmt.Sprintf("%s/%s?%s", host, datafileEndpoint, reqParams), actionState, sessionState.LogEntry, nil, &session.ReqOptions{
+			ExpectedStatusCode: []int{200, 201},
+			FailOnError:        true,
+		},
 	)
 	if sessionState.Wait(actionState) {
 		return
