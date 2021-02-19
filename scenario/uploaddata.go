@@ -1,11 +1,12 @@
 package scenario
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"net/http"
+	"io/ioutil"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -31,8 +32,11 @@ type (
 	}
 )
 
-const datafileEndpoint = "api/v1/qix-datafiles"
-const refererPath = "%s/explore/spaces/%s/data"
+const (
+	datafileEndpoint = "api/v1/qix-datafiles"
+	// refererPath              = "%s/explore/spaces/%s/data"
+	tempContentFilesEndpoint = "api/v1/temp-contents/files"
+)
 
 // UnmarshalJSON unmarshals upload data settings from JSON
 func (settings *UploadDataSettings) UnmarshalJSON(arg []byte) error {
@@ -70,7 +74,9 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	restHandler := sessionState.Rest
+	sessionState.Rest.GetAsync(
+		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
+	)
 
 	dataConnectionID, err := sessionState.FetchDataConnectionID(actionState, host, settings.SpaceID)
 	if err != nil {
@@ -78,21 +84,12 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	dataFiles, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID)
+	fileName := filepath.Base(settings.Filename)
+
+	existingFile, err := sessionState.FetchQixDataFile(actionState, host, dataConnectionID, fileName)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
-	}
-
-	fileName := filepath.Base(settings.Filename)
-
-	var existingFile *elasticstructs.QixDataFile
-	// check to see if file exists already
-	for _, file := range dataFiles {
-		if file.Name == fileName {
-			existingFile = &file
-			break
-		}
 	}
 
 	if existingFile != nil && !settings.Replace {
@@ -103,91 +100,55 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	file, err := os.Open(settings.Filename)
+	tempContentPostRequest := sessionState.Rest.PostAsync(
+		fmt.Sprintf("%s/%s", host, tempContentFilesEndpoint),
+		actionState, sessionState.LogEntry, nil, nil,
+	)
+
+	fileContent, err := ioutil.ReadFile(settings.Filename)
+	// fileSize := len(fileContent)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to open file <%s>", settings.Filename))
 		return
 	}
-	defer func() {
-		err = file.Close()
-		if err != nil {
-			actionState.AddErrors(errors.Wrapf(err, "failed to close file <%s>", settings.Filename))
-		}
-	}()
 
-	body := helpers.GlobalBufferPool.Get()
-	defer helpers.GlobalBufferPool.Put(body)
-	writer := multipart.NewWriter(body)
-
-	// Then create the binary multipart field
-	part, err := writer.CreateFormFile("data", filepath.Base(settings.Filename))
-	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed to create multipart form"))
-		return
-	}
-	_, err = io.Copy(part, file)
-	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed to copy file contents to part"))
-		return
-	}
-
-	err = writer.Close()
-	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed to close multipart writer"))
-		return
-	}
-
-	sessionState.Rest.GetAsync(
-		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
-	)
-
-	postData := session.RestRequest{
-		Method:        session.POST,
-		ContentType:   writer.FormDataContentType(),
-		Destination:   fmt.Sprintf("%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, dataConnectionID, fileName),
-		ContentReader: body,
-	}
-
-	if existingFile != nil {
-		postData.Method = session.PUT
-		postData.Destination = fmt.Sprintf("%s/%s/%s?connectionId=%s&name=%s", host, datafileEndpoint, existingFile.ID, dataConnectionID, fileName)
-	}
-
-	// Set referer to personal or space ID for space we are uploading to
-	referer := "personal"
-	if settings.SpaceID != "" {
-		referer = settings.SpaceID
-	}
-	postData.ExtraHeaders = map[string]string{"Referer": fmt.Sprintf(refererPath, host, referer)}
-
-	restHandler.QueueRequest(actionState, true, &postData, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
-		return // we had an error
-	}
-	if postData.ResponseStatusCode == http.StatusConflict {
-		sessionState.LogEntry.Logf(
-			logger.WarningLevel, "cannot upload data file: filename conflict <%s>", settings.Filename,
-		)
-		return
-	}
-	if postData.ResponseStatusCode != http.StatusCreated {
-		actionState.AddErrors(
-			errors.New(
-				fmt.Sprintf(
-					"failed to upload data file payload: %d <%s>", postData.ResponseStatusCode, postData.ResponseBody,
-				),
-			),
-		)
 		return
 	}
 
-	sessionState.Rest.GetAsync(
-		fmt.Sprintf("%s/%s/quota", host, datafileEndpoint), actionState, sessionState.LogEntry, nil,
+	tempLocation := tempContentPostRequest.ResponseHeaders.Get("location")
+	if tempLocation == "" {
+		actionState.AddErrors(errors.New("temp-content did not return a storage location"))
+		return
+	}
+
+	tempLocationURL, err := url.Parse(tempLocation)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to parse temp content location"))
+		return
+	}
+
+	tempContentFileID := path.Base(tempLocationURL.Path)
+
+	_ = sessionState.Rest.PatchAsync(
+		fmt.Sprintf("%s/%s/%s", host, tempContentFilesEndpoint, tempContentFileID),
+		actionState, sessionState.LogEntry, fileContent, nil,
 	)
 
-	if _, err := sessionState.FetchQixDataFiles(actionState, host, dataConnectionID); err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		// no return here, wait for async quota too
+	reqParams := fmt.Sprintf("connectionId=%s&name=%stempContentFileId=%s", dataConnectionID, fileName, tempContentFileID)
+
+	dataFilesPostRequest := sessionState.Rest.PostAsync(
+		fmt.Sprintf("%s/%s?%s", host, datafileEndpoint, reqParams), actionState, sessionState.LogEntry, nil, nil,
+	)
+	if sessionState.Wait(actionState) {
+		return
+	}
+
+	qixDataFile := elasticstructs.QixDataFile{}
+
+	if err := json.Unmarshal(dataFilesPostRequest.ResponseBody, &qixDataFile); err != nil {
+		actionState.AddErrors(err)
+		return
 	}
 
 	sessionState.Wait(actionState)

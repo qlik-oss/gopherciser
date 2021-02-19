@@ -107,3 +107,32 @@ func (state *State) FetchQixDataFiles(actionState *action.State, host, connectio
 	}
 	return dataFiles, nil
 }
+
+// FetchQixDataFile with a specific name, for a provided data connection ID.
+// Returns:
+//   - nil and no error if file does not exist
+//   - error if more than one datafile with the same name exist
+//   - error if filename of returned data file is incorrect
+func (state *State) FetchQixDataFile(actionState *action.State, host, connectionID string, fileName string) (*elasticstructs.QixDataFile, error) {
+	requestURL := fmt.Sprintf("%s/api/v1/qix-datafiles?connectionId=%s&name=%s", host, connectionID, fileName)
+	req, err := state.Rest.GetSync(requestURL, actionState, state.LogEntry, nil)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	dataFiles := make([]*elasticstructs.QixDataFile, 0)
+	if err := jsonit.Unmarshal(req.ResponseBody, &dataFiles); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	switch nbrDataFiles := len(dataFiles); nbrDataFiles {
+	case 0:
+		return nil, nil
+	case 1:
+		dataFile := dataFiles[0]
+		if dataFile.Name != fileName {
+			return nil, errors.Errorf("requested file with name<%s> but got file with name<%s>", fileName, dataFile.Name)
+		}
+		return dataFile, nil
+	default:
+		return nil, errors.Errorf("recieved %d datafiles when requesting<%s> 1 datafile", nbrDataFiles, requestURL)
+	}
+}
