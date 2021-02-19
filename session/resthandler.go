@@ -97,6 +97,8 @@ const (
 	DELETE
 	// PUT RestMethod
 	PUT
+	// PATCH RestMethod
+	PATCH
 )
 
 var (
@@ -105,6 +107,7 @@ var (
 		"post":   int(POST),
 		"delete": int(DELETE),
 		"put":    int(PUT),
+		"patch":  int(PATCH),
 	})
 
 	defaultReqOptions = ReqOptions{
@@ -312,24 +315,58 @@ func (handler *RestHandler) getAsyncWithCallback(url string, actionState *action
 	return &getRequest
 }
 
+// PutAsync send async PUT request with options, using options=nil default options are used
+func (handler *RestHandler) PutAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
+	return handler.PutAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+}
+
+// PutWithHeadersAsync send async PUT request with options and headers, using options=nil default options are used
+func (handler *RestHandler) PutWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions) *RestRequest {
+	return handler.PutAsyncWithCallback(url, actionState, logEntry, content, headers, options, nil)
+}
+
+// PutAsyncWithCallback send async PUT request with options and callback, using options=nil default options are used
+func (handler *RestHandler) PutAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(PUT, url, actionState, logEntry, content, headers, options, callback)
+}
+
+// PatchAsync send async PATCH request with options, using options=nil default options are used
+func (handler *RestHandler) PatchAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
+	return handler.PatchAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+}
+
+// PatchWithHeadersAsync send async PATCH request with options and headers, using options=nil default options are used
+func (handler *RestHandler) PatchWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions) *RestRequest {
+	return handler.PatchAsyncWithCallback(url, actionState, logEntry, content, headers, options, nil)
+}
+
+// PatchAsyncWithCallback send async PATCH request with options and callback, using options=nil default options are used
+func (handler *RestHandler) PatchAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(PATCH, url, actionState, logEntry, content, headers, options, callback)
+}
+
 // PostAsync send async POST request with options, using options=nil default options are used
 func (handler *RestHandler) PostAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
 }
 
-// PostWithHeaderAsync send async POST request with options and headers, using options=nil default options are used
+// PostWithHeadersAsync send async POST request with options and headers, using options=nil default options are used
 func (handler *RestHandler) PostWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions) *RestRequest {
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, headers, options, nil)
 }
 
-// PostAsync send async POST request with options and callback, using options=nil default options are used
+// PostAsyncWithCallback send async POST request with options and callback, using options=nil default options are used
 func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(POST, url, actionState, logEntry, content, headers, options, callback)
+}
+
+func (handler *RestHandler) sendAsyncWithCallback(method RestMethod, url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	if options == nil {
 		options = &defaultReqOptions
 	}
 
-	postRequest := RestRequest{
-		Method:         POST,
+	sendRequest := RestRequest{
+		Method:         method,
 		ContentType:    options.ContentType,
 		Content:        content,
 		Destination:    url,
@@ -337,9 +374,9 @@ func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *actio
 		ExtraHeaders:   headers,
 	}
 
-	handler.QueueRequestWithCallback(actionState, options.FailOnError, &postRequest, logEntry, createStatusCallback(actionState, logEntry, &postRequest, options, callback))
+	handler.QueueRequestWithCallback(actionState, options.FailOnError, &sendRequest, logEntry, createStatusCallback(actionState, logEntry, &sendRequest, options, callback))
 
-	return &postRequest
+	return &sendRequest
 }
 
 func createStatusCallback(actionState *action.State, logEntry *logger.LogEntry, request *RestRequest, options *ReqOptions, callback func(err error, req *RestRequest)) func(err error, req *RestRequest) {
@@ -526,6 +563,11 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
+	case PATCH:
+		req, err = http.NewRequest(http.MethodPatch, destination, bytes.NewReader(request.Content))
+		if err != nil {
+			return errors.Wrap(err, "Failed to create HTTP request")
+		}
 	default:
 		return errors.Errorf("Unsupported REST method<%v>", request.Method)
 	}
@@ -561,6 +603,8 @@ func (handler *RestHandler) postWithReader(ctx context.Context, request *RestReq
 		method = http.MethodPost
 	case PUT:
 		method = http.MethodPut
+	case PATCH:
+		method = http.MethodPatch
 	default:
 		return errors.Errorf("Can only send io.Reader payload with a POST or PUT request. Method<%v>", request.Method)
 	}
