@@ -97,6 +97,8 @@ const (
 	DELETE
 	// PUT RestMethod
 	PUT
+	// PATCH RestMethod
+	PATCH
 )
 
 var (
@@ -105,6 +107,7 @@ var (
 		"post":   int(POST),
 		"delete": int(DELETE),
 		"put":    int(PUT),
+		"patch":  int(PATCH),
 	})
 
 	defaultReqOptions = ReqOptions{
@@ -526,6 +529,11 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
+	case PATCH:
+		req, err = http.NewRequest(http.MethodPatch, destination, bytes.NewReader(request.Content))
+		if err != nil {
+			return errors.Wrap(err, "Failed to create HTTP request")
+		}
 	default:
 		return errors.Errorf("Unsupported REST method<%v>", request.Method)
 	}
@@ -561,6 +569,8 @@ func (handler *RestHandler) postWithReader(ctx context.Context, request *RestReq
 		method = http.MethodPost
 	case PUT:
 		method = http.MethodPut
+	case PATCH:
+		method = http.MethodPatch
 	default:
 		return errors.Errorf("Can only send io.Reader payload with a POST or PUT request. Method<%v>", request.Method)
 	}
