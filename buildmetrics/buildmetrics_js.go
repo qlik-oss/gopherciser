@@ -24,7 +24,7 @@ func getLabel(action string, label string) string {
 }
 
 // ReportApiResult reports the duration for a specific API path and response code
-func ReportApiResult(path string, responseCode int, duration time.Duration) {
+func ReportApiResult(action, label, path, method string, responseCode int, duration time.Duration) {
 	return
 }
 
