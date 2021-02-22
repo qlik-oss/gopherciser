@@ -3,13 +3,12 @@ package scenario
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 
+	"github.com/eventials/go-tus"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -38,6 +37,65 @@ const (
 	// refererPath              = "%s/explore/spaces/%s/data"
 	tempContentFilesEndpoint = "api/v1/temp-contents/files"
 )
+
+type tempFile struct {
+	ID  string
+	URL string
+}
+
+func uploadTempContentFromFile(sessionState *session.State, connection *connection.ConnectionSettings, file *os.File) (*tempFile, error) {
+	const tempContentFilesEndpoint = "api/v1/temp-contents/files"
+	restURL, err := connection.GetRestUrl()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	host, err := connection.GetHost()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// upload file using tus chunked uploads protocol
+	chunkSize := defaultChunkSize
+	tusConfig := tus.DefaultConfig()
+	tusConfig.ChunkSize = chunkSize
+	tusConfig.Header = sessionState.HeaderJar.GetHeader(host)
+	tusConfig.HttpClient = sessionState.Rest.Client
+
+	// upload to temporary storage
+	client, err := tus.NewClient(fmt.Sprintf("%s/%s", restURL, tempContentFilesEndpoint), tusConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tus client")
+	}
+	upload, err := tus.NewUploadFromFile(file)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tus upload from file")
+	}
+	uploader, err := client.CreateUpload(upload)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tus uploader")
+	}
+
+	for err == nil {
+		err = uploader.UploadChunck()
+		// TODO pass context
+		if sessionState.IsAbortTriggered() {
+			return nil, errors.Wrap(err, "tus upload aborted")
+		}
+	}
+
+	if err.Error() != "EOF" {
+		return nil, errors.Wrap(err, "failed to upload using tus")
+	}
+
+	tempFile := &tempFile{}
+	tempFile.URL = uploader.Url()
+	tempLocationURL, err := url.Parse(tempFile.URL)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse temp content location")
+	}
+	tempFile.ID = path.Base(tempLocationURL.Path)
+	return tempFile, nil
+}
 
 // UnmarshalJSON unmarshals upload data settings from JSON
 func (settings *UploadDataSettings) UnmarshalJSON(arg []byte) error {
@@ -92,6 +150,7 @@ func (settings UploadDataSettings) Execute(
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
+	sessionState.LogEntry.LogDebugf("existingFile %+v\n", existingFile)
 
 	if existingFile != nil && !settings.Replace {
 		sessionState.LogEntry.Logf(
@@ -101,64 +160,34 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	fileContent, err := ioutil.ReadFile(settings.Filename)
+	file, err := os.Open(settings.Filename)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to open file <%s>", settings.Filename))
 		return
 	}
-	fileSize := len(fileContent)
 
-	tempContentPostRequest := sessionState.Rest.PostWithHeadersAsync(
-		fmt.Sprintf("%s/%s", host, tempContentFilesEndpoint),
-		actionState, sessionState.LogEntry, nil, map[string]string{
-			"upload-length": strconv.Itoa(fileSize),
-			"tus-resumable": "1.0.0",
-		}, &session.ReqOptions{
-			ExpectedStatusCode: []int{200, 201},
-			FailOnError:        true,
-		},
-	)
-
-	if sessionState.Wait(actionState) {
-		return
-	}
-
-	tempLocation := tempContentPostRequest.ResponseHeaders.Get("location")
-	if tempLocation == "" {
-		actionState.AddErrors(errors.New("temp-content did not return a storage location"))
-		return
-	}
-
-	tempLocationURL, err := url.Parse(tempLocation)
+	tempFile, err := uploadTempContentFromFile(sessionState, connection, file)
 	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to parse temp content location"))
+		actionState.AddErrors(errors.Wrap(err, "failed to upload temp content from file"))
 		return
 	}
 
-	tempContentFileID := path.Base(tempLocationURL.Path)
-
-	_ = sessionState.Rest.PatchWithHeadersAsync(
-		fmt.Sprintf("%s/%s/%s", host, tempContentFilesEndpoint, tempContentFileID),
-		actionState, sessionState.LogEntry, fileContent,
-		map[string]string{
-			"tus-resumable": "1.0.0",
-			"upload-offset": "0",
-		},
-		&session.ReqOptions{
-			ExpectedStatusCode: []int{200, 204},
-			FailOnError:        true,
-			ContentType:        "application/offset+octet-stream",
-		},
-	)
-
-	reqParams := fmt.Sprintf("connectionId=%s&name=%s&tempContentFileId=%s", dataConnectionID, fileName, tempContentFileID)
+	reqURL := fmt.Sprintf("%s/%s", host, datafileEndpoint)
+	httpMethodFunc := sessionState.Rest.PostAsync
+	reqParams := fmt.Sprintf("connectionId=%s&name=%s&tempContentFileId=%s", dataConnectionID, fileName, tempFile.ID)
+	if existingFile != nil {
+		reqURL += "/" + existingFile.ID
+		httpMethodFunc = sessionState.Rest.PutAsync
+	}
 
 	if sessionState.Wait(actionState) {
 		return
 	}
 
-	dataFilesPostRequest := sessionState.Rest.PostAsync(
-		fmt.Sprintf("%s/%s?%s", host, datafileEndpoint, reqParams), actionState, sessionState.LogEntry, nil, &session.ReqOptions{
+	dataFilesPostRequest := httpMethodFunc(
+		fmt.Sprintf("%s?%s", reqURL, reqParams),
+		actionState, sessionState.LogEntry, nil,
+		&session.ReqOptions{
 			ExpectedStatusCode: []int{200, 201},
 			FailOnError:        true,
 		},
