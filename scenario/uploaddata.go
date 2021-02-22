@@ -34,8 +34,6 @@ type (
 
 const (
 	datafileEndpoint = "api/v1/qix-datafiles"
-	// refererPath              = "%s/explore/spaces/%s/data"
-	tempContentFilesEndpoint = "api/v1/temp-contents/files"
 )
 
 type tempFile struct {
