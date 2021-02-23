@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -37,7 +38,7 @@ func (idMap *DataConnectionIDs) GetDataConnectionID(space string) (string, bool)
 }
 
 // FillDataConnectionIDs fill DataConnectionIDs with space/data connection ID  mapping
-func (idMap *DataConnectionIDs) FillDataConnectionIDs(data []elasticstructs.DataFilesRespData) {
+func (idMap *DataConnectionIDs) FillDataConnectionIDs(data ...elasticstructs.DataFilesRespData) {
 	idMap.updateLock.Lock()
 	defer idMap.updateLock.Unlock()
 
@@ -53,40 +54,44 @@ func (idMap *DataConnectionIDs) FillDataConnectionIDs(data []elasticstructs.Data
 }
 
 // FetchDataConnectionID fetch connection id for space, use empty space for personal space
-func (state *State) FetchDataConnectionID(actionState *action.State, host, space string) (string, error) {
-	endpoint := fmt.Sprintf("%s/api/v1/dc-dataconnections?alldatafiles=true&allspaces=true&personal=true&owner=default&extended=true", host)
-	opts := DefaultReqOptions()
-	opts.FailOnError = false
-
-	dataConnectionID, found := state.DataConnectionIDs.GetDataConnectionID(space)
-
-	if found && dataConnectionID != "" {
+func (state *State) FetchDataConnectionID(actionState *action.State, host, spaceID string) (string, error) {
+	if dataConnectionID, found := state.DataConnectionIDs.GetDataConnectionID(spaceID); found && dataConnectionID != "" {
 		return dataConnectionID, nil
 	}
+	requestURL, err := url.Parse(host)
+	if err != nil {
+		return "", errors.Wrapf(err, "faulty url<%s>", host)
+	}
+	requestURL.Path = "/api/v1/dc-dataconnections/DataFiles"
+	query := requestURL.Query()
+	if spaceID != "" {
+		query.Set("space", spaceID)
+	}
+	query.Set("type", "connectionname")
+	requestURL.RawQuery = query.Encode()
+	requestURLString := requestURL.String()
 
-	var requestError error
-	_, _ = state.Rest.GetSyncWithCallback(endpoint, actionState, state.LogEntry, opts, func(err error, req *RestRequest) {
-		if err != nil {
-			requestError = err
-			return
-		}
-		var datafilesResp elasticstructs.DataFilesResp
-
-		if err := jsonit.Unmarshal(req.ResponseBody, &datafilesResp); err != nil {
-			requestError = errors.Wrap(err, "failed unmarshaling dataconnections data")
-			return
-		}
-
-		state.DataConnectionIDs.FillDataConnectionIDs(datafilesResp.Data)
-	})
-
-	if requestError != nil {
-		return "", errors.WithStack(requestError)
+	opts := DefaultReqOptions()
+	opts.FailOnError = false
+	req, err := state.Rest.GetSync(requestURLString, actionState, state.LogEntry, opts)
+	if err != nil {
+		return "", errors.WithStack(err)
 	}
 
-	dataConnectionID, found = state.DataConnectionIDs.GetDataConnectionID(space)
+	var datafilesRespData elasticstructs.DataFilesRespData
+	if err := jsonit.Unmarshal(req.ResponseBody, &datafilesRespData); err != nil {
+		return "", errors.Wrap(err, "failed unmarshaling dataconnections data")
+	}
+
+	if datafilesRespData.ID == "" {
+		return "", errors.Errorf(`data connection id from "%s" is empty`, requestURL.Path)
+	}
+
+	state.DataConnectionIDs.FillDataConnectionIDs(datafilesRespData)
+
+	dataConnectionID, found := state.DataConnectionIDs.GetDataConnectionID(spaceID)
 	if !found || dataConnectionID == "" {
-		return "", DataConnectionIDNotFoundError(space)
+		return "", DataConnectionIDNotFoundError(spaceID)
 	}
 
 	return dataConnectionID, nil
