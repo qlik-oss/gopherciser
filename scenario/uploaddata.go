@@ -1,17 +1,11 @@
 package scenario
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
-	"time"
 
-	"github.com/eventials/go-tus"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -19,6 +13,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/tempcontent"
 )
 
 type (
@@ -38,95 +33,6 @@ type (
 const (
 	datafileEndpoint = "api/v1/qix-datafiles"
 )
-
-type (
-	TempFile struct {
-		ID  string
-		URL string
-	}
-
-	TempFileClient struct {
-		tusClient  *tus.Client
-		maxRetries int
-	}
-)
-
-func NewTempFileTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*TempFileClient, error) {
-	const tempContentFilesEndpoint = "api/v1/temp-contents/files"
-	if maxRetries < 0 {
-		maxRetries = 0
-	}
-	restURL, err := connection.GetRestUrl()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	host, err := connection.GetHost()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	// upload file using tus chunked uploads protocol
-	tusConfig := tus.DefaultConfig()
-	if chunkSize > 0 {
-		tusConfig.ChunkSize = chunkSize
-	}
-	tusConfig.Header = sessionState.HeaderJar.GetHeader(host)
-	tusConfig.HttpClient = sessionState.Rest.Client
-
-	// upload to temporary storage
-	client, err := tus.NewClient(fmt.Sprintf("%s/%s", restURL, tempContentFilesEndpoint), tusConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create tus client")
-	}
-	return &TempFileClient{
-		tusClient:  client,
-		maxRetries: maxRetries,
-	}, nil
-}
-
-func (client TempFileClient) UploadTempContentFromFile(ctx context.Context, file *os.File) (*TempFile, error) {
-	upload, err := tus.NewUploadFromFile(file)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create tus upload from file")
-	}
-	uploader, err := client.tusClient.CreateUpload(upload)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create tus uploader")
-	}
-
-	retries := 0
-	retryWithBackoff := func() bool {
-		if retries < client.maxRetries {
-			helpers.WaitFor(ctx, time.Second*time.Duration(retries))
-			retries++
-			return true
-		}
-		return false
-	}
-
-	for err == nil || err != io.EOF && retryWithBackoff() {
-		select {
-		case <-ctx.Done():
-			return nil, errors.Wrap(ctx.Err(), "tus upload aborted")
-		default:
-			err = uploader.UploadChunck()
-		}
-	}
-
-	if err != io.EOF {
-		return nil, errors.Wrap(err, "failed tus upload")
-	}
-
-	tempFile := &TempFile{
-		URL: uploader.Url(),
-	}
-	tempLocationURL, err := url.Parse(tempFile.URL)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse temp content location")
-	}
-	tempFile.ID = path.Base(tempLocationURL.Path)
-	return tempFile, nil
-}
 
 // UnmarshalJSON unmarshals upload data settings from JSON
 func (settings *UploadDataSettings) UnmarshalJSON(arg []byte) error {
@@ -197,12 +103,12 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	tempFileClient, err := NewTempFileTUSClient(sessionState, connection, defaultChunkSize, 5)
+	tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, defaultChunkSize, 5)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
-	tempFile, err := tempFileClient.UploadTempContentFromFile(sessionState.BaseContext(), file)
+	tempFile, err := tempFileClient.UploadFromFile(sessionState.BaseContext(), file)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to upload temp content from file"))
 		return

@@ -15,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/tempcontent"
 )
 
 type (
@@ -125,12 +126,13 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		if settings.ChunkSize > 0 {
 			chunkSize = settings.ChunkSize
 		}
-		tempFileClient, err := NewTempFileTUSClient(sessionState, connection, chunkSize, settings.MaxRetries)
+
+		tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, chunkSize, settings.MaxRetries)
 		if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
 		}
-		tempFile, err := tempFileClient.UploadTempContentFromFile(sessionState.BaseContext(), file)
+		tempFile, err := tempFileClient.UploadFromFile(sessionState.BaseContext(), file)
 		if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
