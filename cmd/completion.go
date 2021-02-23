@@ -15,43 +15,42 @@ var completionCmd = &cobra.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",
 	Short: "Generate command line completion script",
 	Long: `To load completions:
+  Bash:
+    $ source <(gopherciser completion bash)
 
-Bash:
+    # To load completions for each session, execute once:
+    Linux:
+      $ gopherciser completion bash > /etc/bash_completion.d/gopherciser
+    MacOS:
+      $ gopherciser_osx completion bash > /usr/local/etc/bash_completion.d/gopherciser_osx
 
-$ source <(gopherciser completion bash)
+  Zsh:
+    # If shell completion is not already enabled in your environment you will
+    # need to enable it. You can execute the following once:
 
-# To load completions for each session, execute once:
-Linux:
-  $ gopherciser completion bash > /etc/bash_completion.d/gopherciser
-MacOS:
-  $ gopherciser_osx completion bash > /usr/local/etc/bash_completion.d/gopherciser_osx
+    $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
-Zsh:
+    # To load completions for each session, execute once:
+    $ gopherciser completion zsh > "${fpath[1]}/_gopherciser"
 
-# If shell completion is not already enabled in your environment you will need
-# to enable it.  You can execute the following once:
+    # You might want to put the completion script (_gopherciser) at another
+    # path within the fpath. To view the fpath, execute:
+    $ echo $fpath
 
-$ echo "autoload -U compinit; compinit" >> ~/.zshrc
+    # You will need to start a new shell for this setup to take effect.
 
-# To load completions for each session, execute once:
-$ gopherciser completion zsh > "${fpath[1]}/_gopherciser"
+  Fish:
+    $ gopherciser completion fish | source
 
-# You will need to start a new shell for this setup to take effect.
+    # To load completions for each session, execute once:
+    $ gopherciser completion fish > ~/.config/fish/completions/gopherciser.fish
 
-Fish:
+  Powershell:
+    PS> gopherciser.exe completion powershell | Out-String | Invoke-Expression
 
-$ gopherciser completion fish | source
-
-# To load completions for each session, execute once:
-$ gopherciser completion fish > ~/.config/fish/completions/gopherciser.fish
-
-Powershell:
-
-PS> gopherciser.exe completion powershell | Out-String | Invoke-Expression
-
-# To load completions for every new session, run:
-PS> gopherciser completion powershell > gopherciser.ps1
-# and source this file from your powershell profile.
+    # To load completions for every new session, run:
+    PS> gopherciser completion powershell > gopherciser.ps1
+    # and source this file from your powershell profile.
 `,
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
