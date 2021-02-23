@@ -14,17 +14,17 @@ func init() {
 var completionCmd = &cobra.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",
 	Short: "Generate command line completion script",
-	Long: fmt.Sprintf(`To load completions:
+	Long: `To load completions:
 
 Bash:
 
-$ source <(%[1]s completion bash)
+$ source <(gopherciser completion bash)
 
 # To load completions for each session, execute once:
 Linux:
-  $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
+  $ gopherciser completion bash > /etc/bash_completion.d/gopherciser
 MacOS:
-  $ %[1]s_osx completion bash > /usr/local/etc/bash_completion.d/%[1]s_osx
+  $ gopherciser_osx completion bash > /usr/local/etc/bash_completion.d/gopherciser_osx
 
 Zsh:
 
@@ -34,25 +34,25 @@ Zsh:
 $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
 # To load completions for each session, execute once:
-$ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
+$ gopherciser completion zsh > "${fpath[1]}/_gopherciser"
 
 # You will need to start a new shell for this setup to take effect.
 
 Fish:
 
-$ %[1]s completion fish | source
+$ gopherciser completion fish | source
 
 # To load completions for each session, execute once:
-$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
+$ gopherciser completion fish > ~/.config/fish/completions/gopherciser.fish
 
 Powershell:
 
-PS> %[1]s.exe completion powershell | Out-String | Invoke-Expression
+PS> gopherciser.exe completion powershell | Out-String | Invoke-Expression
 
 # To load completions for every new session, run:
-PS> %[1]s completion powershell > %[1]s.ps1
+PS> gopherciser completion powershell > gopherciser.ps1
 # and source this file from your powershell profile.
-`, RootCmd.Name()),
+`,
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 	Args:                  cobra.ExactValidArgs(1),
