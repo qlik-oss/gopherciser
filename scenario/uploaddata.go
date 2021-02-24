@@ -115,7 +115,7 @@ func (settings UploadDataSettings) Execute(
 	}
 
 	uploadCtx := sessionState.BaseContext()
-	if settings.TimeOut >= 0 {
+	if settings.TimeOut > 0 {
 		ctx, cancel := context.WithTimeout(uploadCtx, time.Duration(settings.TimeOut))
 		uploadCtx = ctx
 		defer cancel()
