@@ -219,6 +219,7 @@ Apply a bookmark in the current app.
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
+* `selectionsonly`: *Missing documentation*
 
 ### Example
 
@@ -1940,8 +1941,9 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 
 Upload an app to a QSEoK deployment.
 
-* `chunksize`: (optional) Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
-* `retries`: (optional) Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
+* `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
+* `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
+* `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
 * `mode`: Upload mode. Defaults to `tus`, if omitted.
     * `tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.
     * `legacy`: Upload the file using a single POST payload (legacy file upload mode).
@@ -1981,6 +1983,9 @@ Upload a data file to data sources.
 * `filename`: Name of the local file to send as payload.
 * `spaceid`: (optional) Space ID of space where to upload the data. Leave blank to upload to personal space.
 * `replace`: Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced.
+* `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
+* `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
+* `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
 
 ### Example
 
