@@ -80,7 +80,6 @@ jobs:
       - image: circleci/golang:<< parameters.version >>
     steps:
       - checkout
-      - setup_remote_docker
       - run:
           name: Setup working directory
           command: |
