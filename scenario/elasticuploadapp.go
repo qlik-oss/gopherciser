@@ -1,15 +1,14 @@
 package scenario
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/eventials/go-tus"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -18,6 +17,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/tempcontent"
 )
 
 type (
@@ -25,10 +25,11 @@ type (
 
 	// ElasticUploadAppSettings specify app to upload
 	ElasticUploadAppSettings struct {
-		ChunkSize  int64      `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"elasticuploadapp.chunksize"`
-		MaxRetries int        `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"elasticuploadapp.retries"`
-		Mode       UploadMode `json:"mode" displayname:"Upload mode" doc-key:"elasticuploadapp.mode"`
-		Filename   string     `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"elasticuploadapp.filename"`
+		ChunkSize  int64                `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"tus.chunksize"`
+		MaxRetries int                  `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"tus.retries"`
+		TimeOut    helpers.TimeDuration `json:"timeout" displayname:"Timeout upload after this duration" doc-key:"tus.timeout"`
+		Mode       UploadMode           `json:"mode" displayname:"Upload mode" doc-key:"elasticuploadapp.mode"`
+		Filename   string               `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"elasticuploadapp.filename"`
 		// Deprecated: This property will be removed. DestinationSpace should be used instead, keeping entry here for some time to make sure scripts get validation error
 		SpaceID string `json:"spaceid" displayname:"Space ID" doc-key:"elasticuploadapp.spaceid"`
 		DestinationSpace
@@ -78,9 +79,6 @@ func (value UploadMode) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-// Current client default: 300 mb
-const defaultChunkSize int64 = 300 * 1024 * 1024
-
 // Validate action (Implements ActionSettings interface)
 func (settings ElasticUploadAppSettings) Validate() error {
 	if _, err := os.Stat(settings.Filename); os.IsNotExist(err) {
@@ -124,71 +122,22 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 	var postApp session.RestRequest
 	switch settings.Mode {
 	case Tus:
-		host, err := connection.GetHost()
+		tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, settings.ChunkSize, settings.MaxRetries)
 		if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
 		}
-
-		// upload file using tus chunked uploads protocol
-		chunkSize := defaultChunkSize
-		if settings.ChunkSize > 0 {
-			chunkSize = settings.ChunkSize
+		uploadCtx := sessionState.BaseContext()
+		if settings.TimeOut > 0 {
+			ctx, cancel := context.WithTimeout(uploadCtx, time.Duration(settings.TimeOut))
+			uploadCtx = ctx
+			defer cancel()
 		}
-		tusConfig := tus.DefaultConfig()
-		tusConfig.ChunkSize = chunkSize
-		tusConfig.Header = sessionState.HeaderJar.GetHeader(host)
-		tusConfig.HttpClient = sessionState.Rest.Client
-
-		// upload to temporary storage
-		client, err := tus.NewClient(fmt.Sprintf("%v/api/v1/temp-contents/files", restUrl), tusConfig)
+		tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
 		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed to create tus client"))
+			actionState.AddErrors(errors.WithStack(err))
 			return
 		}
-		upload, err := tus.NewUploadFromFile(file)
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed to create tus upload from file"))
-			return
-		}
-		uploader, err := client.CreateUpload(upload)
-		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed to create tus uploader"))
-			return
-		}
-
-		err = nil
-		retries := 0
-		retryWithBackoff := func() bool {
-			if retries < settings.MaxRetries {
-				helpers.WaitFor(sessionState.BaseContext(), time.Second*time.Duration(retries))
-				retries++
-				return true
-			} else {
-				return false
-			}
-		}
-
-		for err == nil || (err.Error() != "EOF" && retryWithBackoff()) {
-			err = uploader.UploadChunck()
-			if sessionState.IsAbortTriggered() {
-				return
-			}
-		}
-
-		if err.Error() != "EOF" {
-			actionState.AddErrors(errors.Wrap(err, "failed to upload using tus"))
-			return
-		}
-
-		// get url to the uploaded temporary file
-		fileUrl := uploader.Url()
-		fileUrlSplit := strings.Split(fileUrl, "/")
-		if len(fileUrlSplit) < 1 {
-			actionState.AddErrors(errors.Errorf("empty file url"))
-			return
-		}
-		fileId := fileUrlSplit[len(fileUrlSplit)-1]
 
 		query := url.Values{}
 		query.Add("fallbackname", filepath.Base(settings.Filename))
@@ -200,7 +149,7 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 		postApp = session.RestRequest{
 			Method:      session.POST,
 			ContentType: "application/json",
-			Destination: fmt.Sprintf("%v/api/v1/apps/import?fileId=%v&%v%v", restUrl, fileId, query.Encode(), parameters),
+			Destination: fmt.Sprintf("%v/api/v1/apps/import?fileId=%v&%v%v", restUrl, tempFile.ID, query.Encode(), parameters),
 		}
 	case Legacy:
 		parameters := ""
