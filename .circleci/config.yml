@@ -1,10 +1,10 @@
-# Golang CircleCI 2.0 configuration file
+# Golang CircleCI 2.1 configuration file
+version: 2.1
+
 defaults: &defaults
   working_directory: /go/src/github.com/qlik-oss/gopherciser/
   environment:
     DOCKER_REPO: docker.pkg.github.com/qlik-oss/gopherciser/gopherciser
-
-version: 2
 
 jobs:
   build:
@@ -70,10 +70,14 @@ jobs:
             - Dockerfile
             - artifacts
 
-  build-go-1.13:
+  build-go:
     <<: *defaults
+    parameters:
+      version:
+        type: string
+        default: "1.15"
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:<< parameters.version >>
     steps:
       - checkout
       - setup_remote_docker
@@ -83,7 +87,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.13{{ checksum "go.sum" }}
+          key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -93,34 +97,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.13{{ checksum "go.sum" }}
-          paths:
-            - "/go/pkg/mod"
-
-  build-go-1.14:
-    <<: *defaults
-    docker:
-      - image: circleci/golang:1.14
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Setup working directory
-          command: |
-            set -x
-            mkdir -p build
-      - restore_cache:
-          key: dependency-cache-1.14{{ checksum "go.sum" }}
-      - run:
-          name: Run Golang tests
-          command: |
-            make alltests
-      - run:
-          name: Build gopherciser for Linux, Darwin and Windows (amd64)
-          command: |
-            make build
-      - save_cache:
-          key: dependency-cache-1.14{{ checksum "go.sum" }}
+          key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
 
@@ -194,8 +171,12 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
-      - build-go-1.13
-      - build-go-1.14
+      - build-go:
+          version: "1.13"
+      - build-go:
+          version: "1.14"
+      - build-go:
+          version: "1.16"
       - publish-github:
           requires:
             - build
