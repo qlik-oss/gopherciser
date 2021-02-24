@@ -167,16 +167,18 @@ workflows:
   version: 2
   build-publish:
     jobs:
-      - build:
+      - build:      
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - test-go-version:
-          name: "Build with Go 1.13"
+          name: "Test Go 1.13"
           version: "1.13"
       - test-go-version:
+          name: "Test Go 1.14"
           version: "1.14"
       - test-go-version:
+          name: "Test Go 1.16"
           version: "1.16"
       - publish-github:
           requires:
