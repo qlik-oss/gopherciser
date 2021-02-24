@@ -70,7 +70,7 @@ jobs:
             - Dockerfile
             - artifacts
 
-  build-go:
+  test-go-version:
     <<: *defaults
     parameters:
       version:
@@ -171,11 +171,12 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
-      - build-go:
+      - test-go-version:
+          name: "Build with Go 1.13"
           version: "1.13"
-      - build-go:
+      - test-go-version:
           version: "1.14"
-      - build-go:
+      - test-go-version:
           version: "1.16"
       - publish-github:
           requires:
