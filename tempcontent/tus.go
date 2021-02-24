@@ -16,6 +16,12 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
+// Current client default: 300 mb
+const (
+	defaultChunkSize         int64 = 300 * 1024 * 1024
+	tempContentFilesEndpoint       = "api/v1/temp-contents/files"
+)
+
 type (
 	RemoteFile struct {
 		ID  string
@@ -29,7 +35,6 @@ type (
 )
 
 func NewTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*TUSClient, error) {
-	const tempContentFilesEndpoint = "api/v1/temp-contents/files"
 	if maxRetries < 0 {
 		maxRetries = 0
 	}
@@ -44,6 +49,7 @@ func NewTUSClient(sessionState *session.State, connection *connection.Connection
 
 	// upload file using tus chunked uploads protocol
 	tusConfig := tus.DefaultConfig()
+	tusConfig.ChunkSize = defaultChunkSize
 	if chunkSize > 0 {
 		tusConfig.ChunkSize = chunkSize
 	}

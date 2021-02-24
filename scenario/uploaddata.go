@@ -1,10 +1,12 @@
 package scenario
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -19,9 +21,12 @@ import (
 type (
 	// UploadDataSettingsCore core parameters used in UnMarshalJSON interface
 	UploadDataSettingsCore struct {
-		Filename string `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
-		SpaceID  string `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
-		Replace  bool   `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
+		Filename   string               `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
+		SpaceID    string               `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
+		Replace    bool                 `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
+		TimeOut    helpers.TimeDuration `json:"timeout" displayname:"Timeout upload after this duration" doc-key:"tus.timeout"`
+		ChunkSize  int64                `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"tus.chunksize"`
+		MaxRetries int                  `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"tus.retries"`
 	}
 
 	// UploadDataSettings specify data file to upload
@@ -103,12 +108,19 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, defaultChunkSize, 5)
+	tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, settings.ChunkSize, settings.MaxRetries)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
-	tempFile, err := tempFileClient.UploadFromFile(sessionState.BaseContext(), file)
+
+	uploadCtx := sessionState.BaseContext()
+	if settings.TimeOut >= 0 {
+		ctx, cancel := context.WithTimeout(uploadCtx, time.Duration(settings.TimeOut))
+		uploadCtx = ctx
+		defer cancel()
+	}
+	tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to upload temp content from file"))
 		return

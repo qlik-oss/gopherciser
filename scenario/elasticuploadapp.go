@@ -1,6 +1,7 @@
 package scenario
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/tempcontent"
@@ -23,10 +25,11 @@ type (
 
 	// ElasticUploadAppSettings specify app to upload
 	ElasticUploadAppSettings struct {
-		ChunkSize  int64      `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"elasticuploadapp.chunksize"`
-		MaxRetries int        `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"elasticuploadapp.retries"`
-		Mode       UploadMode `json:"mode" displayname:"Upload mode" doc-key:"elasticuploadapp.mode"`
-		Filename   string     `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"elasticuploadapp.filename"`
+		ChunkSize  int64                `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"tus.chunksize"`
+		MaxRetries int                  `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"tus.retries"`
+		TimeOut    helpers.TimeDuration `json:"timeout" displayname:"Timeout upload after this duration" doc-key:"tus.timeout"`
+		Mode       UploadMode           `json:"mode" displayname:"Upload mode" doc-key:"elasticuploadapp.mode"`
+		Filename   string               `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"elasticuploadapp.filename"`
 		// Deprecated: This property will be removed. DestinationSpace should be used instead, keeping entry here for some time to make sure scripts get validation error
 		SpaceID string `json:"spaceid" displayname:"Space ID" doc-key:"elasticuploadapp.spaceid"`
 		DestinationSpace
@@ -76,9 +79,6 @@ func (value UploadMode) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-// Current client default: 300 mb
-const defaultChunkSize int64 = 300 * 1024 * 1024
-
 // Validate action (Implements ActionSettings interface)
 func (settings ElasticUploadAppSettings) Validate() error {
 	if _, err := os.Stat(settings.Filename); os.IsNotExist(err) {
@@ -122,17 +122,18 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 	var postApp session.RestRequest
 	switch settings.Mode {
 	case Tus:
-		chunkSize := defaultChunkSize
-		if settings.ChunkSize > 0 {
-			chunkSize = settings.ChunkSize
-		}
-
-		tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, chunkSize, settings.MaxRetries)
+		tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, settings.ChunkSize, settings.MaxRetries)
 		if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
 		}
-		tempFile, err := tempFileClient.UploadFromFile(sessionState.BaseContext(), file)
+		uploadCtx := sessionState.BaseContext()
+		if settings.TimeOut >= 0 {
+			ctx, cancel := context.WithTimeout(uploadCtx, time.Duration(settings.TimeOut))
+			uploadCtx = ctx
+			defer cancel()
+		}
+		tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
 		if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
