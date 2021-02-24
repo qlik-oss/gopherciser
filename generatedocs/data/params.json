@@ -8,6 +8,9 @@
     "destinationspace.destinationspacename": [
         "Specify destination space by name."
     ],
+    "applybookmark.selectionsonly": [
+        "Apply selections only."
+    ],
     "appselection.appmode": [
         "App selection mode",
         "`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.",

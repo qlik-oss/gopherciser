@@ -219,7 +219,7 @@ Apply a bookmark in the current app.
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
-* `selectionsonly`: *Missing documentation*
+* `selectionsonly`: Apply selections only.
 
 ### Example
 
