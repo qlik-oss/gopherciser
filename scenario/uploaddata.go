@@ -119,12 +119,12 @@ func (settings UploadDataSettings) Execute(
 		actionState.AddErrors(errors.Wrapf(err, "failed to open file <%s>", settings.Filename))
 		return
 	}
+	defer file.Close()
 	tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to upload temp content from file"))
 		return
 	}
-	_ = file.Close()
 
 	reqURL := fmt.Sprintf("%s/%s", host, datafileEndpoint)
 	httpMethodFunc := sessionState.Rest.PostAsync
