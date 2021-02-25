@@ -102,12 +102,6 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	file, err := os.Open(settings.Filename)
-	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed to open file <%s>", settings.Filename))
-		return
-	}
-
 	tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, settings.ChunkSize, settings.MaxRetries)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
@@ -120,6 +114,12 @@ func (settings UploadDataSettings) Execute(
 		uploadCtx = ctx
 		defer cancel()
 	}
+	file, err := os.Open(settings.Filename)
+	if err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "failed to open file <%s>", settings.Filename))
+		return
+	}
+	defer file.Close()
 	tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to upload temp content from file"))
