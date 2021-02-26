@@ -251,25 +251,7 @@ func (settings ElasticDeleteAppSettings) getItemsQuery(host string, url string, 
 }
 
 func (settings ElasticDeleteAppSettings) deleteAppByGuid(host string, deleteGuid string, sessionState *session.State, actionState *action.State) error {
-	restHandler := sessionState.Rest
-
-	// Look up the database ID for the app GUID
-	getItems := session.RestRequest{
-		Method:      session.GET,
-		Destination: fmt.Sprintf("%v/%v?resourceId=%v&resourceType=app,qvapp", host, getAppsEndpoint, deleteGuid),
-	}
-	restHandler.QueueRequest(actionState, true, &getItems, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return errors.New("failed during get items")
-	}
-	var item *elasticstructs.GetItems
-	if err := jsonit.Unmarshal(getItems.ResponseBody, &item); err != nil {
-		return errors.Wrap(err, "failed to unmarshal getitems")
-	}
-	if len(item.Data) != 1 {
-		return errors.Errorf("expected 1 item looking up GUID <%s>, but got %v", deleteGuid, len(item.Data))
-	}
-	dbId := item.Data[0].ID
+	// DELETE	https://perf4.us.qlik-stage.com/api/v1/apps/ca3b2b3d-074b-44c3-97a7-07dc9522b94f
 
 	// First delete the app fromn engine using the app guid
 	deleteEngineItem := session.RestRequest{
@@ -277,10 +259,11 @@ func (settings ElasticDeleteAppSettings) deleteAppByGuid(host string, deleteGuid
 		ContentType: "application/json",
 		Destination: fmt.Sprintf("%v/%v/%v", host, deleteAppEngineEndpoint, deleteGuid),
 	}
-	restHandler.QueueRequest(actionState, true, &deleteEngineItem, sessionState.LogEntry)
+	sessionState.Rest.QueueRequest(actionState, true, &deleteEngineItem, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
 		return errors.New("failed during delete item from engine")
 	}
+
 	if deleteEngineItem.ResponseStatusCode != http.StatusOK {
 		if deleteEngineItem.ResponseStatusCode == http.StatusNotFound {
 			sessionState.LogEntry.LogError(errors.Errorf("** continue execution for client compliance ** failed to delete app from engine: DELETE %s returns 404", deleteAppEngineEndpoint))
@@ -289,18 +272,8 @@ func (settings ElasticDeleteAppSettings) deleteAppByGuid(host string, deleteGuid
 		}
 	}
 
-	// Construct the Delete request with the database ID
-	deleteItem := session.RestRequest{
-		Method:      session.DELETE,
-		ContentType: "application/json",
-		Destination: fmt.Sprintf("%v/%v/%v", host, deleteAppEndpoint, dbId),
-	}
-	restHandler.QueueRequest(actionState, true, &deleteItem, sessionState.LogEntry)
 	if sessionState.Wait(actionState) {
 		return errors.New("failed during delete item from collection service")
-	}
-	if deleteItem.ResponseStatusCode != http.StatusNoContent {
-		return errors.New(fmt.Sprintf("failed to delete app from collection service: %d %s", deleteItem.ResponseStatusCode, deleteItem.ResponseBody))
 	}
 
 	sessionState.ArtifactMap.DeleteApp(deleteGuid)
