@@ -360,6 +360,21 @@ func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *actio
 	return handler.sendAsyncWithCallback(POST, url, actionState, logEntry, content, headers, options, callback)
 }
 
+// DeleteAsyncWithCallback send async DELETE request with options and callback, using options=nil default options are used
+func (handler *RestHandler) DeleteAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(DELETE, url, actionState, logEntry, nil, headers, options, callback)
+}
+
+// DeleteAsyncWithHeaders send async DELETE request with options and headers, using options=nil default options are used
+func (handler *RestHandler) DeleteAsyncWithHeaders(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions) *RestRequest {
+	return handler.DeleteAsyncWithCallback(url, actionState, logEntry, headers, options, nil)
+}
+
+// DeleteAsync send async DELETE request with options, using options=nil default options are used
+func (handler *RestHandler) DeleteAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
+	return handler.DeleteAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
 func (handler *RestHandler) sendAsyncWithCallback(method RestMethod, url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	if options == nil {
 		options = &defaultReqOptions

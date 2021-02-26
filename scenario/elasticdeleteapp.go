@@ -104,9 +104,7 @@ func (value DeletionModeEnum) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-const getAppsEndpoint = "api/v1/items"
 const deleteAppEngineEndpoint = "api/v1/apps"
-const deleteAppEndpoint = "api/v1/items"
 const getCollectionEndpoint = "api/v1/collections"
 
 // Validate EfeDeleteApp action (Implements ActionSettings interface)
@@ -251,29 +249,16 @@ func (settings ElasticDeleteAppSettings) getItemsQuery(host string, url string, 
 }
 
 func (settings ElasticDeleteAppSettings) deleteAppByGuid(host string, deleteGuid string, sessionState *session.State, actionState *action.State) error {
-	// DELETE	https://perf4.us.qlik-stage.com/api/v1/apps/ca3b2b3d-074b-44c3-97a7-07dc9522b94f
-
-	// First delete the app fromn engine using the app guid
-	deleteEngineItem := session.RestRequest{
-		Method:      session.DELETE,
-		ContentType: "application/json",
-		Destination: fmt.Sprintf("%v/%v/%v", host, deleteAppEngineEndpoint, deleteGuid),
-	}
-	sessionState.Rest.QueueRequest(actionState, true, &deleteEngineItem, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return errors.New("failed during delete item from engine")
-	}
-
-	if deleteEngineItem.ResponseStatusCode != http.StatusOK {
-		if deleteEngineItem.ResponseStatusCode == http.StatusNotFound {
-			sessionState.LogEntry.LogError(errors.Errorf("** continue execution for client compliance ** failed to delete app from engine: DELETE %s returns 404", deleteAppEngineEndpoint))
-		} else {
-			return errors.New(fmt.Sprintf("failed to delete app from engine: %d %s", deleteEngineItem.ResponseStatusCode, deleteEngineItem.ResponseBody))
-		}
-	}
+	options := session.DefaultReqOptions()
+	options.ExpectedStatusCode = []int{http.StatusOK, http.StatusNotFound}
+	deleteAppRequest := sessionState.Rest.DeleteAsync(fmt.Sprintf("%v/%v/%v", host, deleteAppEngineEndpoint, deleteGuid), actionState, sessionState.LogEntry, nil)
 
 	if sessionState.Wait(actionState) {
 		return errors.New("failed during delete item from collection service")
+	}
+
+	if deleteAppRequest.ResponseStatusCode == http.StatusNotFound {
+		sessionState.LogEntry.LogError(errors.Errorf("** continue execution for client compliance ** failed to delete app from engine: DELETE %s returns 404", deleteAppEngineEndpoint))
 	}
 
 	sessionState.ArtifactMap.DeleteApp(deleteGuid)
