@@ -28,7 +28,7 @@ type (
 		URL string
 	}
 
-	TUSClient struct {
+	tusClient struct {
 		tusClient  *tus.Client
 		maxRetries int
 	}
@@ -48,18 +48,18 @@ func UploadTempContentFromFile(ctx context.Context, sessionState *session.State,
 	if chunkSize <= 0 && fileSize < defaultChunkSize {
 		chunkSize = (chunkSize/1024 + 1) * 1024
 	}
-	tempFileClient, err := NewTUSClient(sessionState, connection, chunkSize, maxRetries)
+	tempFileClient, err := newTUSClient(sessionState, connection, chunkSize, maxRetries)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	tempFile, err := tempFileClient.UploadFromFile(ctx, file)
+	tempFile, err := tempFileClient.uploadFromFile(ctx, file)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upload temp content from file")
 	}
 	return tempFile, nil
 }
 
-func NewTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*TUSClient, error) {
+func newTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*tusClient, error) {
 	if maxRetries < 0 {
 		maxRetries = 0
 	}
@@ -86,13 +86,13 @@ func NewTUSClient(sessionState *session.State, connection *connection.Connection
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tus client")
 	}
-	return &TUSClient{
+	return &tusClient{
 		tusClient:  client,
 		maxRetries: maxRetries,
 	}, nil
 }
 
-func (client TUSClient) UploadFromFile(ctx context.Context, file *os.File) (*RemoteFile, error) {
+func (client tusClient) uploadFromFile(ctx context.Context, file *os.File) (*RemoteFile, error) {
 	upload, err := tus.NewUploadFromFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tus upload from file")
