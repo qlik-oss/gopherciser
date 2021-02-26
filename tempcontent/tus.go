@@ -28,13 +28,39 @@ type (
 		URL string
 	}
 
-	TUSClient struct {
+	tusClient struct {
 		tusClient  *tus.Client
 		maxRetries int
 	}
 )
 
-func NewTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*TUSClient, error) {
+// UploadTempContentFromFile uploads a tempfile with smart selection of
+// chunksize. If chunksize is not set (<=0) and file size is smaller than
+// default chunksize, the chunksize it will be set to the file size roofed to
+// closest 1024 bytes.
+func UploadTempContentFromFile(ctx context.Context, sessionState *session.State, connection *connection.ConnectionSettings,
+	file *os.File, chunkSize int64, maxRetries int) (*RemoteFile, error) {
+
+	fileStat, err := file.Stat()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	fileSize := fileStat.Size()
+	if chunkSize <= 0 && fileSize < defaultChunkSize {
+		chunkSize = (chunkSize/1024 + 1) * 1024
+	}
+	tempFileClient, err := newTUSClient(sessionState, connection, chunkSize, maxRetries)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	tempFile, err := tempFileClient.uploadFromFile(ctx, file)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upload temp content from file")
+	}
+	return tempFile, nil
+}
+
+func newTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*tusClient, error) {
 	if maxRetries < 0 {
 		maxRetries = 0
 	}
@@ -61,13 +87,13 @@ func NewTUSClient(sessionState *session.State, connection *connection.Connection
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tus client")
 	}
-	return &TUSClient{
+	return &tusClient{
 		tusClient:  client,
 		maxRetries: maxRetries,
 	}, nil
 }
 
-func (client TUSClient) UploadFromFile(ctx context.Context, file *os.File) (*RemoteFile, error) {
+func (client tusClient) uploadFromFile(ctx context.Context, file *os.File) (*RemoteFile, error) {
 	upload, err := tus.NewUploadFromFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tus upload from file")
