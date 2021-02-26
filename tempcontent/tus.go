@@ -35,8 +35,9 @@ type (
 )
 
 // UploadTempContentFromFile uploads a tempfile with smart selection of
-// chunksize. If chunksize is not set (<=0) it will be set to the file size
-// roofed to closest 1024 bytes.
+// chunksize. If chunksize is not set (<=0) and file size is smaller than
+// default chunksize, the chunksize it will be set to the file size roofed to
+// closest 1024 bytes.
 func UploadTempContentFromFile(ctx context.Context, sessionState *session.State, connection *connection.ConnectionSettings,
 	file *os.File, chunkSize int64, maxRetries int) (*RemoteFile, error) {
 
