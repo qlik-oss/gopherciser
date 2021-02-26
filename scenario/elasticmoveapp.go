@@ -123,6 +123,10 @@ func (settings NavigateToSpaceSettings) NavigateToSpace(sessionState *session.St
 		fmt.Sprintf("%s/api/v1/items?sort=-updatedAt&limit=24&spaceId=%s&resourceType=app,qvapp,qlikview,genericlink,sharingservicetask", host, spaceID),
 		actionState, sessionState.LogEntry, nil,
 	)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed during navigate to space"))
+		return
+	}
 	fillAppMapFromItemRequest(sessionState, actionState, itemsReq, false)
 }
 
