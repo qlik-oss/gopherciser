@@ -102,12 +102,6 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 
-	tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, settings.ChunkSize, settings.MaxRetries)
-	if err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		return
-	}
-
 	uploadCtx := sessionState.BaseContext()
 	if settings.TimeOut > 0 {
 		ctx, cancel := context.WithTimeout(uploadCtx, time.Duration(settings.TimeOut))
@@ -120,9 +114,11 @@ func (settings UploadDataSettings) Execute(
 		return
 	}
 	defer file.Close()
-	tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
+
+	tempFile, err := tempcontent.UploadTempContentFromFile(uploadCtx, sessionState,
+		connection, file, settings.ChunkSize, settings.MaxRetries)
 	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to upload temp content from file"))
+		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 

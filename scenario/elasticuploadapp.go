@@ -122,18 +122,14 @@ func (settings ElasticUploadAppSettings) Execute(sessionState *session.State, ac
 	var postApp session.RestRequest
 	switch settings.Mode {
 	case Tus:
-		tempFileClient, err := tempcontent.NewTUSClient(sessionState, connection, settings.ChunkSize, settings.MaxRetries)
-		if err != nil {
-			actionState.AddErrors(errors.WithStack(err))
-			return
-		}
 		uploadCtx := sessionState.BaseContext()
 		if settings.TimeOut > 0 {
 			ctx, cancel := context.WithTimeout(uploadCtx, time.Duration(settings.TimeOut))
 			uploadCtx = ctx
 			defer cancel()
 		}
-		tempFile, err := tempFileClient.UploadFromFile(uploadCtx, file)
+		tempFile, err := tempcontent.UploadTempContentFromFile(uploadCtx, sessionState,
+			connection, file, settings.ChunkSize, settings.MaxRetries)
 		if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return

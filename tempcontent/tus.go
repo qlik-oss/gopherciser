@@ -34,6 +34,31 @@ type (
 	}
 )
 
+// UploadTempContentFromFile uploads a tempfile with smart selection of
+// chunksize. If chunksize is not set (<=0) it will be set to the file size
+// roofed to closest 1024 bytes.
+func UploadTempContentFromFile(ctx context.Context, sessionState *session.State, connection *connection.ConnectionSettings,
+	file *os.File, chunkSize int64, maxRetries int) (*RemoteFile, error) {
+
+	fileStat, err := file.Stat()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	fileSize := fileStat.Size()
+	if chunkSize <= 0 && fileSize < defaultChunkSize {
+		chunkSize = (chunkSize/1024 + 1) * 1024
+	}
+	tempFileClient, err := NewTUSClient(sessionState, connection, chunkSize, maxRetries)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	tempFile, err := tempFileClient.UploadFromFile(ctx, file)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upload temp content from file")
+	}
+	return tempFile, nil
+}
+
 func NewTUSClient(sessionState *session.State, connection *connection.ConnectionSettings, chunkSize int64, maxRetries int) (*TUSClient, error) {
 	if maxRetries < 0 {
 		maxRetries = 0
