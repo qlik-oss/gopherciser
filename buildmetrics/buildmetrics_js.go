@@ -4,6 +4,7 @@ package buildmetrics
 
 import (
 	"context"
+	"time"
 )
 
 var (
@@ -20,6 +21,11 @@ func getLabel(action string, label string) string {
 		return label
 	}
 	return action
+}
+
+// ReportApiResult reports the duration for a specific API path and response code
+func ReportApiResult(action, label, path, method string, responseCode int, duration time.Duration) {
+	return
 }
 
 // ReportSuccess shall never report Prometheus metrics for WASM/JS builds as it is not supported nor wanted, hence "return"

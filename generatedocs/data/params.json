@@ -8,6 +8,9 @@
     "destinationspace.destinationspacename": [
         "Specify destination space by name."
     ],
+    "applybookmark.selectionsonly": [
+        "Apply selections only."
+    ],
     "appselection.appmode": [
         "App selection mode",
         "`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.",
@@ -409,12 +412,6 @@
     "elasticreload.log": [
         "DEPRECATED"
     ],
-    "elasticuploadapp.chunksize": [
-        "(optional) Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero."
-    ],
-    "elasticuploadapp.retries": [
-        "(optional) Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on."
-    ],
     "elasticuploadapp.mode": [
         "Upload mode. Defaults to `tus`, if omitted.",
         "`tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.",
@@ -591,6 +588,15 @@
     ],
     "thinktime.dev": [
         "Deviation (seconds) from `mean` value, used with type `uniform`."
+    ],
+    "tus.chunksize": [
+        "Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero."
+    ],
+    "tus.retries": [
+        "Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on."
+    ],
+    "tus.timeout": [
+        "Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`."
     ],
     "unpublishsheet.mode": [
         "",
