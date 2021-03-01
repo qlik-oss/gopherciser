@@ -96,8 +96,8 @@ func (err SummaryTypeError) Error() string {
 var executeCmd = &cobra.Command{
 	Use:     "execute",
 	Aliases: []string{"x"},
-	Short:   "execute exerciser scenario towards a sense installation",
-	Long:    `execute exerciser scenario towards a sense installation`,
+	Short:   "Execute gopherciser scenario towards a sense environment",
+	Long:    `Execute gopherciser scenario towards a sense environment.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		defer func() {
 			var panicErr error = nil
