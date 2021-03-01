@@ -47,7 +47,7 @@ func UploadTempContentFromFile(ctx context.Context, sessionState *session.State,
 	}
 	fileSize := fileStat.Size()
 	if chunkSize <= 0 && fileSize < defaultChunkSize {
-		chunkSize = (chunkSize/1024 + 1) * 1024
+		chunkSize = (fileSize/1024 + 1) * 1024
 	}
 	tempFileClient, err := newTUSClient(sessionState, connection, chunkSize, maxRetries)
 	if err != nil {
