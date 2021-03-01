@@ -1,6 +1,7 @@
 package scenario
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -15,6 +17,7 @@ type (
 	// ElasticCreateAppSettings specify app to create
 	ElasticCreateAppSettings struct {
 		CanAddToCollection
+		IgnoreEvents bool `json:"ignoreevents" displayname:"Do not send http requests triggered by web socket events." doc-key:"elasticcreateapp.ignoreevents"`
 	}
 )
 
@@ -32,6 +35,24 @@ func (settings ElasticCreateAppSettings) Execute(sessionState *session.State, ac
 	if err != nil {
 		actionState.AddErrors(err)
 		return
+	}
+
+	if !settings.IgnoreEvents {
+		events := sessionState.EventWebsocket()
+		if events == nil {
+			actionState.AddErrors(errors.New("Could not get events websocket"))
+			return
+		}
+
+		ctx, cancel := context.WithCancel(sessionState.BaseContext())
+		defer cancel()
+		events.RegisterFuncUntilCtxDone(ctx, []string{eventws.OperationUpdated, eventws.OperationCreated}, true,
+			func(event eventws.Event) {
+				if event.ResourceType == eventws.ResourceTypeItems {
+					_ = sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/v1/items/%s", host, event.ResourceID), actionState, sessionState.LogEntry, nil)
+				}
+			},
+		)
 	}
 
 	postAppPayload := make(map[string]interface{})
@@ -80,4 +101,6 @@ func (settings ElasticCreateAppSettings) Execute(sessionState *session.State, ac
 	if err != nil {
 		actionState.AddErrors(err)
 	}
+
+	sessionState.Wait(actionState)
 }
