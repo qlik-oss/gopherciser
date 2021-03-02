@@ -91,7 +91,7 @@ func (handler *EventHandler) RegisterFunc(operation string, f func(event Event),
 }
 
 // RegisterFuncUntilCtxDone to be executed on event triggering. The function is
-// deregestered when context is done.
+// deregistered when context is done.
 // replay: triggers the latest events from buffer upon creation
 func (handler *EventHandler) RegisterFuncUntilCtxDone(ctx context.Context, operations []string, replay bool, f func(event Event)) {
 	for _, op := range operations {
