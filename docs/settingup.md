@@ -1407,6 +1407,7 @@ Create an app in a QSEoK deployment. The app will be private to the user who cre
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
+* `ignoreevents`: Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects.
 
 ### Example
 
