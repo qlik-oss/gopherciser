@@ -38,6 +38,9 @@ func allTrue(bools ...bool) bool {
 	return true
 }
 
+// waitForEvents sends nil on the returned channel when all `conditions` are
+// fullfileed by at least one event. An error is sent on the channel if context
+// is done before all condition are fullfilled.
 func waitForEvents(ctx context.Context, events <-chan *eventws.Event, conditions ...func(*eventws.Event) bool) <-chan error {
 	errChan := make(chan error, 1)
 	go func() {
