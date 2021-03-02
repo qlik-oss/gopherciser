@@ -44,7 +44,8 @@ func (settings ElasticCreateAppSettings) Execute(sessionState *session.State, ac
 			return
 		}
 
-		ctx, cancel := context.WithCancel(sessionState.BaseContext())
+		reqCtx, _, _ := sessionState.ReqContext()
+		ctx, cancel := context.WithCancel(reqCtx)
 		defer cancel()
 		events.RegisterFuncUntilCtxDone(ctx, []string{eventws.OperationUpdated, eventws.OperationCreated}, true,
 			func(event eventws.Event) {
