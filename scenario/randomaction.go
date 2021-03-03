@@ -306,7 +306,8 @@ func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers
 		if err != nil {
 			continue
 		}
-		if objectDef.Select != nil && objectDef.Select.Type != senseobjdef.SelectTypeUnknown {
+		if objectDef.Select != nil && objectDef.Select.Type != senseobjdef.SelectTypeUnknown && // has select definition
+			obj.HyperCube() != nil && len(obj.HyperCube().DimensionInfo) > 0 { // has at least one dimension
 			selectableObjects = append(selectableObjects, obj)
 		}
 	}
