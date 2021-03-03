@@ -322,6 +322,8 @@ var (
 		"elastichubsearch.queryfile":                      {"(optional) File from which to read a query (in case of `fromfile` as source)."},
 		"elastichubsearch.querysource":                    {"", "`string`: The query is provided as a string specified by `query`.", "`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."},
 		"elastichubsearch.searchfor":                      {"", "`collections`: Search for collections only.", "`apps`: Search for apps only.", "`both`: Search for both collections and apps."},
+		"elasticmoveapp.donotnavigatetospace":             {"Do not navigate to target space after moving app. Defaults to `false`."},
+		"elasticmoveapp.keepcurrent":                      {"Keep the current artifact map when moving to target space at the end of `elasticmoveapp`. Defaults to `false`. Current artifact map is always kept when `donotnavigatetospace` is set."},
 		"elasticpublishapp.cleartags":                     {"Publish the app without its original tags."},
 		"elasticreload.log":                               {"DEPRECATED"},
 		"elasticreload.pollingoff":                        {"DEPRECATED"},

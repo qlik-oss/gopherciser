@@ -1810,6 +1810,8 @@ Move an app from its existing space into the specified destination space.
 * `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
 * `destinationspaceid`: Specify destination space by ID.
 * `destinationspacename`: Specify destination space by name.
+* `keepcurrent`: Keep the current artifact map when moving to target space at the end of `elasticmoveapp`. Defaults to `false`. Current artifact map is always kept when `donotnavigatetospace` is set.
+* `donotnavigatetospace`: Do not navigate to target space after moving app. Defaults to `false`.
 
 ### Example
 
