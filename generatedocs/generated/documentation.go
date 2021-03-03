@@ -296,6 +296,7 @@ var (
 		"duplicatesheet.cloneid":                          {"(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."},
 		"duplicatesheet.id":                               {"ID of the sheet to clone."},
 		"duplicatesheet.save":                             {"Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted."},
+		"elasticcreateapp.ignoreevents":                   {"Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects."},
 		"elasticcreatecollection.description":             {"(optional) Description of the collection to create."},
 		"elasticcreatecollection.name":                    {"Name of the collection to create (supports the use of [session variables](#session_variables))."},
 		"elasticcreatecollection.private":                 {"", "`true`: Private collection", "`false`: Public collection"},

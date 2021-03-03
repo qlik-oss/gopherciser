@@ -22,6 +22,7 @@ const (
 	OperationAttributesUpdated = "attributes.updated"
 	OperationResult            = "result"
 	OperationUpdated           = "updated"
+	OperationCreated           = "created"
 )
 
 // Constants for known ResourceType

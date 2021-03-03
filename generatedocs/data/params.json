@@ -303,6 +303,9 @@
     "duplicatesheet.cloneid": [
         "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."
     ],
+    "elasticcreateapp.ignoreevents": [
+        "Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects."
+    ],
     "elasticcreatecollection.name": [
         "Name of the collection to create (supports the use of [session variables](#session_variables))."
     ],
