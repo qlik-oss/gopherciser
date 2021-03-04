@@ -23,6 +23,11 @@ type (
 	FeatureFlagNotFoundError string
 )
 
+var (
+	// FeatureFlagsLogged Global setting if feature flags has been logged
+	FeatureFlagsLogged bool
+)
+
 func (err FeatureAllocationError) Error() string {
 	return "features map not allocated"
 }
@@ -50,7 +55,10 @@ func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actio
 		return
 	}
 
-	logEntry.LogInfo("FeatureFlags", fmt.Sprintf("%v", features.m))
+	if !FeatureFlagsLogged {
+		FeatureFlagsLogged = true
+		logEntry.LogInfo("FeatureFlags", fmt.Sprintf("%v", features.m))
+	}
 }
 
 // IsFeatureEnabled check if feature flag is enabled
