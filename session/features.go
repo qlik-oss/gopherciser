@@ -24,8 +24,8 @@ type (
 )
 
 var (
-	// FeatureFlagsLogged Global setting if feature flags has been logged
-	FeatureFlagsLogged bool
+	// LogFeatureFlags logs feature flags unless previously logged
+	LogFeatureFlags = &sync.Once{}
 )
 
 func (err FeatureAllocationError) Error() string {
@@ -55,10 +55,9 @@ func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actio
 		return
 	}
 
-	if !FeatureFlagsLogged {
-		FeatureFlagsLogged = true
+	LogFeatureFlags.Do(func() {
 		logEntry.LogInfo("FeatureFlags", fmt.Sprintf("%v", features.m))
-	}
+	})
 }
 
 // IsFeatureEnabled check if feature flag is enabled
