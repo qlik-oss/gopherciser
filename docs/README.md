@@ -36,10 +36,17 @@ Commands:
 * `objdef` (or `od`): Export and validate object definitions files.
 * `script` (or `s`): Execute script command.
 * `version` (or `ver`): Show the version information.
+* `completion` : Generate command line completion script.
 
 Flags:
 
 * `-h`, `--help`: Show the help for a command (`gopherciser [command] --help`).
+
+#### Completion command
+`gopherciser completion [bash|zsh|fish|powershell]`
+
+Run `gopherciser completion --help` and follow the instructions to install command line completion for your shell.
+
 
 #### Execute command
 
@@ -292,7 +299,8 @@ These are the current limitations in Gopherciser:
 * Map: 
   * Selections can only be made in the first layer (that is, layer 0)
 * Visualization bundle:
-  * Selections are not fully supported in the Heatmap chart
+  * Selections are not fully supported in the Heatmap chart.
+  * Selections not supported in Grid chart.
 * Dashboard bundle:
   * Changing variables using variable input not supported.
   * Selections done by animator not supported.

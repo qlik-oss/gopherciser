@@ -474,20 +474,14 @@ func getPossible(obj *enigmahandlers.Object, dataDefType senseobjdef.DataDefType
 		}
 
 		switch hypercube.Mode {
-		case constant.HyperCubeDataModePivot:
-			fallthrough
-		case constant.HyperCubeDataModePivotL:
+		case constant.HyperCubeDataModePivot, constant.HyperCubeDataModePivotL:
 			return nil, nil, errors.Errorf("Hypercube Pivot mode not supported")
-		case constant.HyperCubeDataModePivotStack:
-			fallthrough
-		case constant.HyperCubeDataModePivotStackL:
+		case constant.HyperCubeDataModePivotStack, constant.HyperCubeDataModePivotStackL:
 			if selectionType.IsExcludedOrDeselect() {
 				return nil, nil, errors.Errorf("selection type<%s> not supported for stacked/pivot hyper cube", selectionType.String())
 			}
 			possible, err = getPossibleFromStackedHyperCube(obj.ID, hypercube, dim)
-		case constant.HyperCubeDataModeStraight:
-			fallthrough
-		case constant.HyperCubeDataModeStraightL:
+		case constant.HyperCubeDataModeStraight, constant.HyperCubeDataModeStraightL:
 			if hypercube.Binned {
 				if selectionType.IsExcludedOrDeselect() {
 					return nil, nil, errors.Errorf("selection type<%s> not supported for binned hyper cube", selectionType.String())
@@ -497,9 +491,7 @@ func getPossible(obj *enigmahandlers.Object, dataDefType senseobjdef.DataDefType
 			} else {
 				possible, err = getPossibleFromStraightHyperCube(obj.ID, hypercube, dim, columns, selectionType)
 			}
-		case constant.HyperCubeDataModeTree:
-			fallthrough
-		case constant.HyperCubeDataModeTreeL:
+		case constant.HyperCubeDataModeTree, constant.HyperCubeDataModeTreeL:
 			return nil, nil, errors.Errorf("Hypercube tree mode not supported")
 		default:
 			return nil, nil, errors.Errorf("Hypercube mode<%d> not supported", dataDefType)

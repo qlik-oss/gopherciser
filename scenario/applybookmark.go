@@ -15,7 +15,7 @@ type (
 	//ApplyBookmarkSettings apply bookmark settings
 	ApplyBookmarkSettings struct {
 		BookMarkSettings
-		SelectionsOnly bool `json:"selectionsonly"`
+		SelectionsOnly bool `json:"selectionsonly" displayname:"Apply selections only" doc-key:"applybookmark.selectionsonly"`
 	}
 
 	bmSearchTerm int

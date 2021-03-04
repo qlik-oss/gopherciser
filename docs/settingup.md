@@ -219,6 +219,7 @@ Apply a bookmark in the current app.
 
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
+* `selectionsonly`: Apply selections only.
 
 ### Example
 
@@ -1406,6 +1407,7 @@ Create an app in a QSEoK deployment. The app will be private to the user who cre
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
 * `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
 * `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
+* `ignoreevents`: Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects.
 
 ### Example
 
@@ -1808,6 +1810,8 @@ Move an app from its existing space into the specified destination space.
 * `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
 * `destinationspaceid`: Specify destination space by ID.
 * `destinationspacename`: Specify destination space by name.
+* `keepcurrent`: Keep the current artifact map when moving to target space at the end of `elasticmoveapp`. Defaults to `false`. Current artifact map is always kept when `donotnavigatetospace` is set.
+* `donotnavigatetospace`: Do not navigate to target space after moving app. Defaults to `false`.
 
 ### Example
 
@@ -1940,8 +1944,9 @@ Reload an app by simulating selecting **Reload** in the app context menu in the 
 
 Upload an app to a QSEoK deployment.
 
-* `chunksize`: (optional) Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
-* `retries`: (optional) Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
+* `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
+* `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
+* `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
 * `mode`: Upload mode. Defaults to `tus`, if omitted.
     * `tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.
     * `legacy`: Upload the file using a single POST payload (legacy file upload mode).
@@ -1981,6 +1986,9 @@ Upload a data file to data sources.
 * `filename`: Name of the local file to send as payload.
 * `spaceid`: (optional) Space ID of space where to upload the data. Leave blank to upload to personal space.
 * `replace`: Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced.
+* `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
+* `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
+* `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
 
 ### Example
 

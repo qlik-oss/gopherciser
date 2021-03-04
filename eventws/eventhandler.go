@@ -1,6 +1,7 @@
 package eventws
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -87,6 +88,19 @@ func (handler *EventHandler) RegisterFunc(operation string, f func(event Event),
 	}
 
 	return eventFunc
+}
+
+// RegisterFuncUntilCtxDone to be executed on event triggering. The function is
+// deregistered when context is done.
+// replay: triggers the latest events from buffer upon creation
+func (handler *EventHandler) RegisterFuncUntilCtxDone(ctx context.Context, operations []string, replay bool, f func(event Event)) {
+	for _, op := range operations {
+		eventFunc := handler.RegisterFunc(op, f, replay)
+		go func() {
+			<-ctx.Done()
+			handler.DeRegisterFunc(eventFunc)
+		}()
+	}
 }
 
 func (handler *EventHandler) replayEvents(operation string, f func(event Event)) {

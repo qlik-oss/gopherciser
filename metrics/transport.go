@@ -18,6 +18,8 @@ import (
 )
 
 func setupMetrics(actions []string) error {
+	prometheus.MustRegister(ApiCallDuration)
+	prometheus.MustRegister(ApiCallDurationQuantile)
 	prometheus.MustRegister(GopherActions)
 	prometheus.MustRegister(GopherWarnings)
 	prometheus.MustRegister(GopherErrors)
@@ -27,7 +29,15 @@ func setupMetrics(actions []string) error {
 	prometheus.MustRegister(GopherActionLatencyHist)
 	prometheus.MustRegister(BuildInfo)
 
-	err := gopherRegistry.Register(GopherActions)
+	err := gopherRegistry.Register(ApiCallDuration)
+	if err != nil {
+		return err
+	}
+	err = gopherRegistry.Register(ApiCallDurationQuantile)
+	if err != nil {
+		return err
+	}
+	err = gopherRegistry.Register(GopherActions)
 	if err != nil {
 		return err
 	}
