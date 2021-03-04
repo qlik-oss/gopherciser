@@ -164,10 +164,11 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		return
 	}
 
-	timeoutChan := make(<-chan time.Time) // Dummy channel in case no timeout defined
-	if settings.Timeout > 0 {
-		timeoutChan = time.After(time.Duration(settings.Timeout))
+	timeout := time.Duration(settings.Timeout)
+	if timeout < time.Second {
+		timeout = time.Hour
 	}
+	timeoutChan := time.After(timeout)
 
 	reloadID := postReloadResponse.ID
 forLoop:
