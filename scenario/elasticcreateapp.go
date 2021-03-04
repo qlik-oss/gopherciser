@@ -10,6 +10,7 @@ import (
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/eventws"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -159,7 +160,7 @@ func (settings ElasticCreateAppSettings) Execute(sessionState *session.State, ac
 				return e.Operation == eventws.OperationCreated && e.ResourceID == appItemID
 			},
 		)
-		if err != nil {
+		if err != nil && !helpers.IsContextTriggered(sessionState.BaseContext()) {
 			actionState.AddErrors(errors.Wrapf(err,
 				"did not recieve created and updated items events for app<%s> with item id<%s>",
 				appName, appItemID,
