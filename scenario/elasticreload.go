@@ -174,6 +174,17 @@ forLoop:
 	for {
 		select {
 		case <-timeoutChan:
+			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
+			if err != nil {
+				actionState.AddErrors(errors.New("timeout waiting on reload result event and failed to get ongoing status"))
+				return
+			}
+
+			if !ongoing {
+				actionState.AddErrors(errors.New("timeout waiting on reload result event, but reload no longer ongoing"))
+				return
+			}
+
 			actionState.AddErrors(errors.New("timeout waiting on reload result event"))
 			return
 		case <-sessionState.BaseContext().Done():
