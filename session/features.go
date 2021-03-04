@@ -49,6 +49,8 @@ func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actio
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
+
+	logEntry.LogInfo("FeatureFlags", fmt.Sprintf("%v", features.m))
 }
 
 // IsFeatureEnabled check if feature flag is enabled
