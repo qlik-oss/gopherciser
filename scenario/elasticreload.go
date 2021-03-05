@@ -19,7 +19,7 @@ import (
 type (
 	// ElasticReloadSettingsCore elasticreload specific settings
 	ElasticReloadSettingsCore struct {
-		Timeout helpers.TimeDuration `json:"timeout"`
+		Timeout helpers.TimeDuration `json:"timeout" displayname:"Timeout waiting for reload after this duration"  doc-key:"elasticreload.timeout"`
 	}
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
