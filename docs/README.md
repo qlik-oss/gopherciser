@@ -82,6 +82,7 @@ Flags:
   * `6` or `mutex`: Mutex
   * `7` or `trace`: Trace
   * `8` or `mem`: Mem
+* `--regression`: Log data needed to run regression analysis. **Note:** Do not log regression data when testing performance.
 * `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.
 * `--summary string`: Set the type of summary to display after the test run. Defaults to `simple` for minimal performance impact.
   * `0` or `undefined`: Simple, single-row summary
