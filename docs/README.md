@@ -279,6 +279,28 @@ The contents of the log file differ depending on the type of logging selected. E
 
 The test results (that is, log files) can be analyzed using the [Scalability Results Analyzer](https://community.qlik.com/t5/Qlik-Scalability/Scalability-Results-Analyzer/gpm-p/1493648).
 
+## Regression Analysis
+
+Gopherciser is able to produce regression logs consumed by the regression
+analyzer in Qlik Senese Enterprise Scalability Tools (QSEST). Enable
+Regression logging with the `--regression` flag or in the script settings
+(see `settings.logs.regression` in [settingup.md](./settingup.md)).
+Regression logs are written to a separate file with a `.regression` filename
+extension, in the same directory and with the same base name as the test
+results.
+
+The regression log contains a snapshot of the subscribed Qlik Sense objects
+after each action in the scenario. The regression analyzer in QSEST can then
+compare these snapshots to find any differences. Typically you run the same
+script with regession logging enabled, towards two versions of the same app.
+Then you use regression analyzer in QSEST to gain insight in how the app has
+changed.
+
+**Note** Do not enable regression logging when running performance tests. The
+regression logging introduces a delay after each action in the executed
+scenario.
+
+
 ## Complementary manual measurements
 
 To capture the full end user experience, manual measurements are needed. A web browser in combination with an optional measurement method can be used to get a snapshot of the full response times including rendering of visualizations etc. 
