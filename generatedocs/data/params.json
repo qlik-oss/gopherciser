@@ -409,14 +409,8 @@
     "elasticmoveapp.donotnavigatetospace": [
         "Do not navigate to target space after moving app. Defaults to `false`."
     ],
-    "elasticreload.pollingoff": [
-        "DEPRECATED"
-    ],
-    "elasticreload.pollinterval": [
-        "DEPRECATED"
-    ],
-    "elasticreload.log": [
-        "DEPRECATED"
+    "elasticreload.timeout" : [
+        "Timeout waiting for reload after this duration. Defaults to `1h`."
     ],
     "elasticuploadapp.mode": [
         "Upload mode. Defaults to `tus`, if omitted.",
