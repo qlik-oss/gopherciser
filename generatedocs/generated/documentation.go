@@ -22,6 +22,10 @@ var (
 			Description: "## ClearAll action\n\nClear all selections in an app.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"clearall\",\n    \"label\": \"Clear all selections (1)\"\n}\n```\n",
 		},
+		"clearfield": {
+			Description: "## ClearField action\n\nClear selections in a field.\n",
+			Examples:    "### Example\n\n```json\n{\n    \"action\": \"clearfield\",\n    \"label\": \"Clear selections in Alpha\",\n    \"settings\" : {\n        \"name\": \"Alpha\"\n    }\n}\n```\n",
+		},
 		"clickactionbutton": {
 			Description: "## ClickActionButton action\n\nA `ClickActionButton`-action simulates clicking an _action-button_. An _action-button_ is a sheet item which, when clicked, executes a series of actions. The series of actions contained by an action-button begins with any number _generic button-actions_ and ends with an optional _navigation button-action_.\n\n### Supported button-actions\n#### Generic button-actions\n- Apply bookmark\n- Move backward in all selections\n- Move forward in all selections\n- Lock all selections\n- Clear all selections\n- Lock field\n- Unlock field\n- Select all in field\n- Select alternatives in field\n- Select excluded in field\n- Select possible in field\n- Select values matching search criteria in field\n- Clear selection in field\n- Toggle selection in field\n- Set value of variable\n\n#### Navigation button-actions\n- Change to first sheet\n- Change to last sheet\n- Change to previous sheet\n- Change sheet by name\n- Change sheet by ID",
 			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"ClickActionButton\",\n     \"action\": \"ClickActionButton\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\"\n     }\n}\n```\n",
@@ -222,6 +226,7 @@ var (
 		"bookmark.title":                                  {"Name of the bookmark (supports the use of [variables](#session_variables))."},
 		"canaddtocollection.groups":                       {"DEPRECATED"},
 		"changesheet.id":                                  {"GUID of the sheet to change to."},
+		"clearfield.name":                                 {"Name of field to clear."},
 		"clickactionbutton.id":                            {"ID of the action-button to click."},
 		"config.connectionSettings.allowuntrusted":        {"Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."},
 		"config.connectionSettings.appext":                {"Replace `app` in the connect URL for the `openapp` action. Defaults to `app`, if omitted."},
@@ -417,7 +422,7 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "changesheet", "clearall", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "staticselect", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "staticselect", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",

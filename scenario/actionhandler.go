@@ -153,6 +153,7 @@ const (
 	ActionClickActionButton       = "clickactionbutton"
 	ActionContainerTab            = "containertab"
 	ActionDoSave                  = "dosave"
+	ActionClearField              = "clearfield"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -276,6 +277,7 @@ func ResetDefaultActions() {
 		ActionClickActionButton:       ClickActionButtonSettings{},
 		ActionContainerTab:            ContainerTabSettings{},
 		ActionDoSave:                  DoSaveSettings{},
+		ActionClearField:              ClearFieldSettings{},
 	}
 }
 
