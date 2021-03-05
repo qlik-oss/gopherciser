@@ -17,9 +17,14 @@ import (
 )
 
 type (
+	// ElasticReloadSettingsCore elasticreload specific settings
+	ElasticReloadSettingsCore struct {
+		Timeout helpers.TimeDuration `json:"timeout"`
+	}
 	//ElasticReloadSettings specify app to reload
 	ElasticReloadSettings struct {
 		session.AppSelection
+		ElasticReloadSettingsCore
 	}
 )
 
@@ -28,7 +33,7 @@ const (
 	getReloadEndpoint  = "api/v1/reloads"
 	getItemsEndpoint   = "api/v1/items"
 
-	// Delay time between re-connect of event websocket and checking status page if reload is still not done
+	// StatusCheckDelay Delay time between re-connect of event websocket and checking status page if reload is still not done
 	StatusCheckDelay = 30 * time.Second
 )
 
@@ -52,11 +57,14 @@ func (settings *ElasticReloadSettings) UnmarshalJSON(arg []byte) error {
 		return errors.Errorf("%s %s, please remove from script", ActionElasticReload, err.Error())
 	}
 
-	var appSelection session.AppSelection
-	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
+	if err := jsonit.Unmarshal(arg, &settings.AppSelection); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
 	}
-	*settings = ElasticReloadSettings{appSelection}
+
+	if err := jsonit.Unmarshal(arg, &settings.ElasticReloadSettingsCore); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticReload)
+	}
+
 	return nil
 }
 
@@ -84,13 +92,11 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		return
 	}
 
-	reloadGuid := entry.ID
-
 	postReload := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "application/json",
 		Destination: fmt.Sprintf("%s/%s", host, postReloadEndpoint),
-		Content:     []byte(fmt.Sprintf("{\"AppID\":\"%s\"}", reloadGuid)),
+		Content:     []byte(fmt.Sprintf("{\"AppID\":\"%s\"}", entry.ID)),
 	}
 
 	sessionState.Rest.QueueRequest(actionState, true, &postReload, sessionState.LogEntry)
@@ -158,10 +164,30 @@ func (settings ElasticReloadSettings) execute(sessionState *session.State, actio
 		return
 	}
 
+	timeout := time.Duration(settings.Timeout)
+	if timeout < time.Second {
+		timeout = time.Hour
+	}
+	timeoutChan := time.After(timeout)
+
 	reloadID := postReloadResponse.ID
 forLoop:
 	for {
 		select {
+		case <-timeoutChan:
+			ongoing, err := checkStatusOngoing(sessionState, actionState, host, reloadID)
+			if err != nil {
+				actionState.AddErrors(errors.New("timeout waiting on reload result event and failed to get ongoing status"))
+				return
+			}
+
+			if !ongoing {
+				actionState.AddErrors(errors.New("timeout waiting on reload result event, but reload no longer ongoing"))
+				return
+			}
+
+			actionState.AddErrors(errors.New("timeout waiting on reload result event"))
+			return
 		case <-sessionState.BaseContext().Done():
 			return
 		case event, ok := <-reloadEventChan:
