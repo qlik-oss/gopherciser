@@ -36,6 +36,9 @@
     "appselection.filename": [
         "Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."
     ],
+    "clearfield.name" : [
+        "Name of field to clear."
+    ],
     "clickactionbutton.id": [
         "ID of the action-button to click."
     ],
