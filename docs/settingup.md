@@ -302,6 +302,30 @@ Clear all selections in an app.
 </details>
 
 <details>
+<summary>clearfield</summary>
+
+## ClearField action
+
+Clear selections in a field.
+
+* `name`: Name of field to clear.
+
+### Example
+
+```json
+{
+    "action": "clearfield",
+    "label": "Clear selections in Alpha",
+    "settings" : {
+        "name": "Alpha"
+    }
+}
+```
+
+---
+</details>
+
+<details>
 <summary>clickactionbutton</summary>
 
 ## ClickActionButton action

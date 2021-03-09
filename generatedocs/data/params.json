@@ -39,6 +39,9 @@
     "canaddtocollection.groups": [
         "DEPRECATED"
     ],
+    "clearfield.name" : [
+        "Name of field to clear."
+    ],
     "clickactionbutton.id": [
         "ID of the action-button to click."
     ],
