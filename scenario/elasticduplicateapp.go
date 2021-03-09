@@ -3,12 +3,12 @@ package scenario
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -17,34 +17,24 @@ type (
 	ElasticDuplicateAppSettingsCore struct {
 		SpaceID string `json:"spaceid" displayname:"Space ID" doc-key:"elasticduplicateapp.spaceid"`
 	}
-	// ElasticUploadAppSettings specify app to upload
+	// ElasticDuplicateAppSettings specify app to duplicate
 	ElasticDuplicateAppSettings struct {
 		session.AppSelection
 		CanAddToCollection
 		ElasticDuplicateAppSettingsCore
 	}
-
-	deprecatedElasticDuplicateAppSettings struct {
-		AppName string `json:"appname"`
-		AppGUID string `json:"appguid"`
-	}
 )
 
 // UnmarshalJSON unmarshals duplicate app settings from JSON
 func (settings *ElasticDuplicateAppSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedElasticDuplicateAppSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 2)
-		if deprecated.AppGUID != "" {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.AppName != "" {
-			hasSettings = append(hasSettings, "appname")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used", ActionElasticDuplicateApp, strings.Join(hasSettings, ","))
-		}
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/appguid",
+		"/appname",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionElasticDuplicateApp, err.Error())
 	}
+
 	var core ElasticDuplicateAppSettingsCore
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticDuplicateApp)
@@ -72,7 +62,6 @@ func (settings ElasticDuplicateAppSettings) Validate() error {
 	if err := settings.AppSelection.Validate(); err != nil {
 		return err
 	}
-	// todo validate deprecated parameters
 	return nil
 }
 

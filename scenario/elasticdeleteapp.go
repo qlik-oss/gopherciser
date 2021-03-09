@@ -11,6 +11,7 @@ import (
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -19,7 +20,7 @@ type (
 	//DeletionModeEnum defines what apps to remove
 	DeletionModeEnum int
 
-	// ElasticDeleteAppCoreSettings
+	// ElasticDeleteAppCoreSettings settings core used by Unmarshal interface
 	ElasticDeleteAppCoreSettings struct {
 		DeletionMode   DeletionModeEnum `json:"mode" displayname:"Deletion mode" doc-key:"elasticdeleteapp.mode"`
 		CollectionName string           `json:"collectionname" displayname:"Collection name" doc-key:"elasticdeleteapp.collectionname"`
@@ -29,11 +30,6 @@ type (
 	ElasticDeleteAppSettings struct {
 		session.AppSelection
 		ElasticDeleteAppCoreSettings
-	}
-
-	deprecatedElasticDeleteAppSettings struct {
-		AppGUID string `json:"appguid"`
-		AppName string `json:"appname"`
 	}
 )
 
@@ -54,19 +50,14 @@ var deletionModeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 
 // UnmarshalJSON unmarshals delete app settings from JSON
 func (settings *ElasticDeleteAppSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedElasticDeleteAppSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 2)
-		if deprecated.AppGUID != "" {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.AppName != "" {
-			hasSettings = append(hasSettings, "appname")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used", ActionElasticDeleteApp, strings.Join(hasSettings, ","))
-		}
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/appguid",
+		"/appname",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionDeleteData, err.Error())
 	}
+
 	var actionCore ElasticDeleteAppCoreSettings
 	if err := jsonit.Unmarshal(arg, &actionCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticDeleteApp)
@@ -80,6 +71,7 @@ func (settings *ElasticDeleteAppSettings) UnmarshalJSON(arg []byte) error {
 	return nil
 }
 
+// GetEnumMap return enum map to gui
 func (value DeletionModeEnum) GetEnumMap() *enummap.EnumMap {
 	return deletionModeEnumMap
 }

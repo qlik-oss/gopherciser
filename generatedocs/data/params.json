@@ -36,9 +36,6 @@
     "appselection.filename": [
         "Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."
     ],
-    "canaddtocollection.groups": [
-        "DEPRECATED"
-    ],
     "clickactionbutton.id": [
         "ID of the action-button to click."
     ],
@@ -416,9 +413,6 @@
     ],
     "elasticuploadapp.filename": [
         "Local file to send as payload."
-    ],
-    "elasticuploadapp.spaceid": [
-        "DEPRECATED"
     ],
     "elasticuploadapp.title": [
         "Name of the app to upload (supports the use of [session variables](#session_variables))."
