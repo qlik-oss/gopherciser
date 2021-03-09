@@ -242,23 +242,6 @@ func (handler *RestHandler) SetClient(client *http.Client) {
 	handler.Client = client
 }
 
-// FireOffGet request
-// Deprecated: Replace with GetAsync or QueueRequest
-func (handler *RestHandler) FireOffGet(url string, actionState *action.State, failOnError bool) *RestRequest {
-	return handler.FireOffGetWithCallback(url, actionState, failOnError, nil)
-}
-
-// FireOffGet request with callback
-// Deprecated: Replace with GetAsyncWithCallback or QueueRequestWithCallback
-func (handler *RestHandler) FireOffGetWithCallback(url string, actionState *action.State, failOnError bool, callback func(err error, req *RestRequest)) *RestRequest {
-	getRequest := RestRequest{
-		Method:      GET,
-		Destination: url,
-	}
-	handler.QueueRequestWithCallback(actionState, failOnError, &getRequest, &logger.LogEntry{}, callback)
-	return &getRequest
-}
-
 // GetSync sends synchronous GET request with options, using options=nil default options are used
 func (handler *RestHandler) GetSync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
 	return handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)

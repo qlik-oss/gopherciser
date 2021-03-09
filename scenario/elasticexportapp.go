@@ -108,12 +108,9 @@ func (settings ElasticExportAppSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	downloadReq := sessionState.Rest.FireOffGet(fmt.Sprintf("%s%s", host, tempContent), actionState, false)
-	if sessionState.Wait(actionState) {
-		return // we had an error
-	}
-	if err := session.CheckResponseStatus(downloadReq, []int{200}); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to download app"))
+	downloadReq, err := sessionState.Rest.GetSync(fmt.Sprintf("%s%s", host, tempContent), actionState, sessionState.LogEntry, nil)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 
