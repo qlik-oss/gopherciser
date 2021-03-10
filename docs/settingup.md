@@ -1165,69 +1165,6 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 </details>
 
 <details>
-<summary>staticselect</summary>
-
-## StaticSelect action
-
-Select values statically.
-
-The action supports:
-
-* HyperCube: Normal hypercube
-* ListObject: Normal listbox
-
-* `id`: ID of the object in which to select values.
-* `path`: Path to the hypercube or listobject (differs depending on object type).
-* `rows`: Element values to select in the dimension / column.
-* `cols`: Dimension / column in which to select.
-* `type`: Selection type
-    * `hypercubecells`: Select in hypercube.
-    * `listobjectvalues`: Select in listbox.
-* `accept`: Accept or abort selection after selection (only used with `wrap`) (`true` / `false`).
-* `wrap`: Wrap selection with Begin / End selection requests (`true` / `false`).
-
-### Examples
-
-#### StaticSelect Barchart
-
-```json
-{ 
-"label": "Chart Profit per year",
-     "action": "StaticSelect",
-     "settings": {
-         "id": "FERdyN",
-	 "path": "/qHyperCubeDef",
-         "type": "hypercubecells",
-         "accept": true,
-         "wrap": false,
-         "rows": [2],
-	 "cols": [0]
-     }
-}
-```
-
-#### StaticSelect Listbox
-
-```json
-{		
-"label": "ListBox Territory",
-     "action": "StaticSelect",
-     "settings": {
-         "id": "qpxmZm",
-         "path": "/qListObjectDef",
-         "type": "listobjectvalues",
-         "accept": true,
-         "wrap": false,
-         "rows": [19,8],
-	 "cols": [0]
-     }
-}
-```
-
----
-</details>
-
-<details>
 <summary>subscribeobjects</summary>
 
 ## Subscribeobjects action

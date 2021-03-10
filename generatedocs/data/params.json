@@ -538,29 +538,6 @@
     "setscript.script": [
         "Load script for the app (written as a string)."
     ],
-    "staticselect.id": [
-        "ID of the object in which to select values."
-    ],
-    "staticselect.path": [
-        "Path to the hypercube or listobject (differs depending on object type)."
-    ],
-    "staticselect.rows": [
-        "Element values to select in the dimension / column."
-    ],
-    "staticselect.cols": [
-        "Dimension / column in which to select."
-    ],
-    "staticselect.type": [
-        "Selection type",
-        "`hypercubecells`: Select in hypercube.",
-        "`listobjectvalues`: Select in listbox."
-    ],
-    "staticselect.accept": [
-        "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
-    ],
-    "staticselect.wrap": [
-        "Wrap selection with Begin / End selection requests (`true` / `false`)."
-    ],
     "subscribeobjects.clear" : [
         "Remove any previously subscribed objects from the subscription list."
     ],

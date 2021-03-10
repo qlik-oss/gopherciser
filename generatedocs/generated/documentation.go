@@ -186,10 +186,6 @@ var (
 			Description: "## SheetChanger action\n\nCreate and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\"\n},\n{\n    \"label\" : \"Sheetchanger cached\",\n    \"action\": \"sheetchanger\"\n}\n```\n",
 		},
-		"staticselect": {
-			Description: "## StaticSelect action\n\nSelect values statically.\n\nThe action supports:\n\n* HyperCube: Normal hypercube\n* ListObject: Normal listbox\n",
-			Examples: "### Examples\n\n#### StaticSelect Barchart\n\n```json\n{ \n\"label\": \"Chart Profit per year\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"FERdyN\",\n	 \"path\": \"/qHyperCubeDef\",\n         \"type\": \"hypercubecells\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [2],\n	 \"cols\": [0]\n     }\n}\n```\n\n#### StaticSelect Listbox\n\n```json\n{		\n\"label\": \"ListBox Territory\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"qpxmZm\",\n         \"path\": \"/qListObjectDef\",\n         \"type\": \"listobjectvalues\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [19,8],\n	 \"cols\": [0]\n     }\n}\n```\n",
-		},
 		"subscribeobjects": {
 			Description: "## Subscribeobjects action\n\nSubscribe to any object in the currently active app.\n",
 			Examples:    "### Example\n\nSubscribe to two objects in the currently active app and remove any previous subscriptions. \n\n```json\n{\n    \"action\" : \"subscribeobjects\",\n    \"label\" : \"clear subscriptions and subscribe to mBshXB and f2a50cb3-a7e1-40ac-a015-bc4378773312\",\n     \"disabled\": false,\n    \"settings\" : {\n        \"clear\" : true,\n        \"ids\" : [\"mBshXB\", \"f2a50cb3-a7e1-40ac-a015-bc4378773312\"]\n    }\n}\n```\n\nSubscribe to an additional single object (or a list of objects) in the currently active app, adding the new subscription to any previous subscriptions.\n\n```json\n{\n    \"action\" : \"subscribeobjects\",\n    \"label\" : \"add c430d8e2-0f05-49f1-aa6f-7234e325dc35 to currently subscribed objects\",\n     \"disabled\": false,\n    \"settings\" : {\n        \"clear\" : false,\n        \"ids\" : [\"c430d8e2-0f05-49f1-aa6f-7234e325dc35\"]\n    }\n}\n```",
@@ -365,13 +361,6 @@ var (
 		"select.values":                                   {"Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user."},
 		"select.wrap":                                     {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"setscript.script":                                {"Load script for the app (written as a string)."},
-		"staticselect.accept":                             {"Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."},
-		"staticselect.cols":                               {"Dimension / column in which to select."},
-		"staticselect.id":                                 {"ID of the object in which to select values."},
-		"staticselect.path":                               {"Path to the hypercube or listobject (differs depending on object type)."},
-		"staticselect.rows":                               {"Element values to select in the dimension / column."},
-		"staticselect.type":                               {"Selection type", "`hypercubecells`: Select in hypercube.", "`listobjectvalues`: Select in listbox."},
-		"staticselect.wrap":                               {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},
@@ -421,7 +410,7 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "staticselect", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",

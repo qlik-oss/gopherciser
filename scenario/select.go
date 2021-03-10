@@ -116,7 +116,7 @@ func (value SelectionType) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-// String representation of StaticSelectionType
+// String representation of SelectionType
 func (value SelectionType) String() string {
 	sType, err := value.GetEnumMap().String(int(value))
 	if err != nil {

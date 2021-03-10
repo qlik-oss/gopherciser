@@ -130,7 +130,6 @@ const (
 	ActionApplyBookmark           = "applybookmark"
 	ActionSetScript               = "setscript"
 	ActionChangeSheet             = "changesheet"
-	ActionStaticSelect            = "staticselect"
 	ActionSelect                  = "select"
 	ActionClearAll                = "clearall"
 	ActionIterated                = "iterated"
@@ -254,7 +253,6 @@ func ResetDefaultActions() {
 		ActionApplyBookmark:           ApplyBookmarkSettings{},
 		ActionSetScript:               SetScriptSettings{},
 		ActionChangeSheet:             ChangeSheetSettings{},
-		ActionStaticSelect:            StaticSelectSettings{},
 		ActionSelect:                  SelectionSettings{},
 		ActionClearAll:                ClearAllSettings{},
 		ActionIterated:                IteratedSettings{},
