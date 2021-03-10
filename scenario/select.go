@@ -39,6 +39,8 @@ type (
 		Max int `json:"max" displayname:"Maximum amount of values to select" doc-key:"select.max"`
 		// Dimension in which dimension to select (defaults to 0)
 		Dimension int `json:"dim" displayname:"Dimension to select in" doc-key:"select.dim"`
+		// Values element values to selection (using select type "values")
+		Values []int `json:"values" displayname:"Element values to select" doc-key:"select.values"`
 	}
 
 	selectStates int
@@ -53,6 +55,8 @@ const (
 	RandomFromExcluded
 	// RandomDeselect random deselect from selected values
 	RandomDeselect
+	// Values select specific element values
+	Values
 )
 
 const (
@@ -71,8 +75,10 @@ var selectionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"randomfromenabled":  int(RandomFromEnabled),
 	"randomfromexcluded": int(RandomFromExcluded),
 	"randomdeselect":     int(RandomDeselect),
+	"values":             int(Values),
 })
 
+// GetEnumMap returns selection type enum map to GUI
 func (value SelectionType) GetEnumMap() *enummap.EnumMap {
 	return selectionTypeEnumMap
 }
@@ -139,6 +145,14 @@ func (settings SelectionSettings) Validate() error {
 
 	if settings.Dimension < 0 {
 		return errors.Errorf("Illegal dimension<%d>", settings.Dimension)
+	}
+
+	// check values but not min max for "values" type selection
+	if settings.Type == Values {
+		if len(settings.Values) < 1 {
+			return errors.New("No element values defined for selection type values")
+		}
+		return nil
 	}
 
 	if settings.Min < 1 {
@@ -220,7 +234,7 @@ func (settings SelectionSettings) Execute(sessionState *session.State, actionSta
 	switch t := gob.EnigmaObject.(type) {
 	case *enigma.GenericObject:
 		genObj := gob.EnigmaObject.(*enigma.GenericObject)
-		DoSelect(sessionState, actionState, genObj, gob, settings.WrapSelections, settings.Accept, settings.Dimension, settings.Min, settings.Max, settings.Type)
+		doSelect(sessionState, actionState, genObj, gob, settings.WrapSelections, settings.Accept, settings.Dimension, settings.Min, settings.Max, settings.Type, settings.Values)
 	default:
 		actionState.AddErrors(errors.Errorf("Unknown object type<%T>", t))
 		return
@@ -809,7 +823,7 @@ func convertBinToSelectInfo(bin string) (*enigma.NxMultiRangeSelectInfo, error) 
 	return &selectInfo, nil
 }
 
-func DoSelect(sessionState *session.State, actionState *action.State, genObj *enigma.GenericObject, gob *enigmahandlers.Object, wrap, accept bool, dimension, min, max int, selectionType SelectionType) {
+func doSelect(sessionState *session.State, actionState *action.State, genObj *enigma.GenericObject, gob *enigmahandlers.Object, wrap, accept bool, dimension, min, max int, selectionType SelectionType, values []int) {
 	objInstance := sessionState.GetObjectHandlerInstance(genObj.GenericId, genObj.GenericType)
 
 	selectPath, selectType, dataDefType, err := objInstance.GetObjectDefinition(genObj.GenericType)
@@ -858,11 +872,7 @@ func DoSelect(sessionState *session.State, actionState *action.State, genObj *en
 		var fillErr error
 		selectPos, fillErr = fillSelectPosFromAll(min, max, cardinal, rnd)
 		actionState.AddErrors(fillErr)
-	case RandomFromExcluded:
-		fallthrough // handled within getPossible
-	case RandomDeselect:
-		fallthrough
-	case RandomFromEnabled:
+	case RandomFromExcluded, RandomDeselect, RandomFromEnabled:
 		columns := false
 		switch selectType {
 		case senseobjdef.SelectTypeHypercubeColumnValues:
@@ -882,6 +892,8 @@ func DoSelect(sessionState *session.State, actionState *action.State, genObj *en
 			selectPos, fillErr = fillSelectPosFromPossible(min, max, possible, rnd)
 			actionState.AddErrors(fillErr)
 		}
+	case Values:
+		selectPos = values
 	default:
 		actionState.AddErrors(errors.Errorf("Unknown select type<%s>", selectionType.String()))
 	}
@@ -907,9 +919,7 @@ func DoSelect(sessionState *session.State, actionState *action.State, genObj *en
 		selectFunc = func(ctx context.Context) (bool, error) {
 			return genObj.SelectListObjectValues(ctx, selectPath, selectPos, true, false)
 		}
-	case senseobjdef.SelectTypeHypercubeColumnValues:
-		fallthrough
-	case senseobjdef.SelectTypeHypercubeValues:
+	case senseobjdef.SelectTypeHypercubeColumnValues, senseobjdef.SelectTypeHypercubeValues:
 		if len(selectBins) > 0 {
 			selectInfo, convertErr := convertBinsToSelectInfo(selectBins)
 			if convertErr != nil {
