@@ -89,7 +89,7 @@ func TestSelectMarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	validateString(t, "json", string(raw), `{"action":"select","label":"select from enabled","disabled":false,"settings":{"id":"","type":"randomfromenabled","accept":false,"wrap":true,"min":4,"max":6,"dim":1}}`)
+	validateString(t, "json", string(raw), `{"action":"select","label":"select from enabled","disabled":false,"settings":{"id":"","type":"randomfromenabled","accept":false,"wrap":true,"min":4,"max":6,"dim":1,"values":null}}`)
 }
 
 func TestValidate(t *testing.T) {

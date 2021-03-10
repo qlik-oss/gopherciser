@@ -1031,16 +1031,19 @@ See the [Limitations](README.md#limitations) section in the README.md file for l
     * `randomfromenabled`: Randomly select within the white and light grey values on the first data page.
     * `randomfromexcluded`: Randomly select within the dark grey values on the first data page.
     * `randomdeselect`: Randomly deselect values on the first data page.
+    * `values`: Select specific element values, defined by `values` array.
 * `accept`: Accept or abort selection after selection (only used with `wrap`) (`true` / `false`).
 * `wrap`: Wrap selection with Begin / End selection requests (`true` / `false`).
 * `min`: Minimum number of selections to make.
 * `max`: Maximum number of selections to make.
 * `dim`: Dimension / column in which to select.
+* `values`: Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user.
 
 ### Example
 
+Randomly select among all the values in object `RZmvzbF`.
+
 ```json
-//Select Listbox RandomFromAll
 {
      "label": "ListBox Year",
      "action": "Select",
@@ -1051,6 +1054,61 @@ See the [Limitations](README.md#limitations) section in the README.md file for l
          "wrap": false,
          "min": 1,
          "max": 3,
+         "dim": 0
+     }
+}
+```
+
+Randomly select among all the enabled values (a.k.a "white" values) in object `RZmvzbF`.
+
+```json
+{
+     "label": "ListBox Year",
+     "action": "Select",
+     "settings": {
+         "id": "RZmvzbF",
+         "type": "RandomFromEnabled",
+         "accept": true,
+         "wrap": false,
+         "min": 1,
+         "max": 3,
+         "dim": 0
+     }
+}
+```
+
+#### Statically selecting specific values
+
+This example selects specific element values in object `RZmvzbF`. These are the values which can be seen in a selection when e.g. inspecting traffic, it is not the data values presented to the user. E.g. when loading a table in the following order by a Sense loadscript:
+
+```
+Beta
+Alpha
+Gamma
+```
+
+which might be presented to the user sorted as
+
+```
+Alpha
+Beta
+Gamma
+```
+
+The element values will be Beta=0, Alpha=1 and Gamma=2.
+
+To statically select "Gamma" in this case:
+
+```json
+{
+     "label": "Select Gammma",
+     "action": "Select",
+     "settings": {
+         "id": "RZmvzbF",
+         "type": "values",
+         "accept": true,
+         "wrap": false,
+         "values" : [2],
          "dim": 0
      }
 }
@@ -1100,69 +1158,6 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 {
     "label" : "Sheetchanger cached",
     "action": "sheetchanger"
-}
-```
-
----
-</details>
-
-<details>
-<summary>staticselect</summary>
-
-## StaticSelect action
-
-Select values statically.
-
-The action supports:
-
-* HyperCube: Normal hypercube
-* ListObject: Normal listbox
-
-* `id`: ID of the object in which to select values.
-* `path`: Path to the hypercube or listobject (differs depending on object type).
-* `rows`: Element values to select in the dimension / column.
-* `cols`: Dimension / column in which to select.
-* `type`: Selection type
-    * `hypercubecells`: Select in hypercube.
-    * `listobjectvalues`: Select in listbox.
-* `accept`: Accept or abort selection after selection (only used with `wrap`) (`true` / `false`).
-* `wrap`: Wrap selection with Begin / End selection requests (`true` / `false`).
-
-### Examples
-
-#### StaticSelect Barchart
-
-```json
-{ 
-"label": "Chart Profit per year",
-     "action": "StaticSelect",
-     "settings": {
-         "id": "FERdyN",
-	 "path": "/qHyperCubeDef",
-         "type": "hypercubecells",
-         "accept": true,
-         "wrap": false,
-         "rows": [2],
-	 "cols": [0]
-     }
-}
-```
-
-#### StaticSelect Listbox
-
-```json
-{		
-"label": "ListBox Territory",
-     "action": "StaticSelect",
-     "settings": {
-         "id": "qpxmZm",
-         "path": "/qListObjectDef",
-         "type": "listobjectvalues",
-         "accept": true,
-         "wrap": false,
-         "rows": [19,8],
-	 "cols": [0]
-     }
 }
 ```
 

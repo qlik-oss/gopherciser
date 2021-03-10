@@ -50,29 +50,21 @@
             }
         },
         {
-            "label": "Select in combochart",
-            "action" : "StaticSelect",
+            "label": "Select enabled values in combochart",
+            "action" : "select",
             "settings" : {
                 "id" : "2e378138-07ff-467e-96c2-dbda12e922f4",
-                "type" : "HyperCubeCells",
-                "path" : "/qHyperCubeDef",
-                "rows" : [4,5],
-                "cols" : [0],
+                "type" : "RandomFromEnabled",
                 "accept" : true,
-                "wrap" : false
+                "wrap" : false,
+                "min": 1,
+                "max": 10,
+                "dim": 0
             }
         },
         {
-            "label": "Select in listbox",
-            "action" : "StaticSelect",
-            "settings" : {
-                "id" : "c37dcd68-2199-497b-892c-82358eba5556",
-                "type" : "ListObjectValues",
-                "path" : "/qListObjectDef",
-                "rows" : [2],
-                "accept" : true,
-                "wrap" : false
-            }
+            "label": "clear selections",
+            "action" : "clearall"
         },
         {
             "label": "Select in combochart",

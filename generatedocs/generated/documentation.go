@@ -176,7 +176,7 @@ var (
 		},
 		"select": {
 			Description: "## Select action\n\nSelect random values in an object.\n\nSee the [Limitations](README.md#limitations) section in the README.md file for limitations related to this action.\n ",
-			Examples:    "### Example\n\n```json\n//Select Listbox RandomFromAll\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromAll\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n",
+			Examples:    "### Example\n\nRandomly select among all the values in object `RZmvzbF`.\n\n```json\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromAll\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n\nRandomly select among all the enabled values (a.k.a \"white\" values) in object `RZmvzbF`.\n\n```json\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromEnabled\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n\n#### Statically selecting specific values\n\nThis example selects specific element values in object `RZmvzbF`. These are the values which can be seen in a selection when e.g. inspecting traffic, it is not the data values presented to the user. E.g. when loading a table in the following order by a Sense loadscript:\n\n```\nBeta\nAlpha\nGamma\n```\n\nwhich might be presented to the user sorted as\n\n```\nAlpha\nBeta\nGamma\n```\n\nThe element values will be Beta=0, Alpha=1 and Gamma=2.\n\nTo statically select \"Gamma\" in this case:\n\n```json\n{\n     \"label\": \"Select Gammma\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"values\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"values\" : [2],\n         \"dim\": 0\n     }\n}\n```\n",
 		},
 		"setscript": {
 			Description: "## SetScript action\n\nSet the load script for the current app. To load the data from the script, use the `reload` action after the `setscript` action.\n",
@@ -185,10 +185,6 @@ var (
 		"sheetchanger": {
 			Description: "## SheetChanger action\n\nCreate and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\"\n},\n{\n    \"label\" : \"Sheetchanger cached\",\n    \"action\": \"sheetchanger\"\n}\n```\n",
-		},
-		"staticselect": {
-			Description: "## StaticSelect action\n\nSelect values statically.\n\nThe action supports:\n\n* HyperCube: Normal hypercube\n* ListObject: Normal listbox\n",
-			Examples: "### Examples\n\n#### StaticSelect Barchart\n\n```json\n{ \n\"label\": \"Chart Profit per year\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"FERdyN\",\n	 \"path\": \"/qHyperCubeDef\",\n         \"type\": \"hypercubecells\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [2],\n	 \"cols\": [0]\n     }\n}\n```\n\n#### StaticSelect Listbox\n\n```json\n{		\n\"label\": \"ListBox Territory\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"qpxmZm\",\n         \"path\": \"/qListObjectDef\",\n         \"type\": \"listobjectvalues\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [19,8],\n	 \"cols\": [0]\n     }\n}\n```\n",
 		},
 		"subscribeobjects": {
 			Description: "## Subscribeobjects action\n\nSubscribe to any object in the currently active app.\n",
@@ -361,16 +357,10 @@ var (
 		"select.id":                                       {"ID of the object in which to select values."},
 		"select.max":                                      {"Maximum number of selections to make."},
 		"select.min":                                      {"Minimum number of selections to make."},
-		"select.type":                                     {"Selection type", "`randomfromall`: Randomly select within all values of the symbol table.", "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.", "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.", "`randomdeselect`: Randomly deselect values on the first data page."},
+		"select.type":                                     {"Selection type", "`randomfromall`: Randomly select within all values of the symbol table.", "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.", "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.", "`randomdeselect`: Randomly deselect values on the first data page.", "`values`: Select specific element values, defined by `values` array."},
+		"select.values":                                   {"Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user."},
 		"select.wrap":                                     {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"setscript.script":                                {"Load script for the app (written as a string)."},
-		"staticselect.accept":                             {"Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."},
-		"staticselect.cols":                               {"Dimension / column in which to select."},
-		"staticselect.id":                                 {"ID of the object in which to select values."},
-		"staticselect.path":                               {"Path to the hypercube or listobject (differs depending on object type)."},
-		"staticselect.rows":                               {"Element values to select in the dimension / column."},
-		"staticselect.type":                               {"Selection type", "`hypercubecells`: Select in hypercube.", "`listobjectvalues`: Select in listbox."},
-		"staticselect.wrap":                               {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},
@@ -420,7 +410,7 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "staticselect", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",

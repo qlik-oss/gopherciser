@@ -514,7 +514,8 @@
         "`randomfromall`: Randomly select within all values of the symbol table.",
         "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.",
         "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.",
-        "`randomdeselect`: Randomly deselect values on the first data page."
+        "`randomdeselect`: Randomly deselect values on the first data page.",
+        "`values`: Select specific element values, defined by `values` array."
     ],
     "select.accept": [
         "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
@@ -531,31 +532,11 @@
     "select.dim": [
         "Dimension / column in which to select."
     ],
+    "select.values": [
+        "Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user."
+    ],
     "setscript.script": [
         "Load script for the app (written as a string)."
-    ],
-    "staticselect.id": [
-        "ID of the object in which to select values."
-    ],
-    "staticselect.path": [
-        "Path to the hypercube or listobject (differs depending on object type)."
-    ],
-    "staticselect.rows": [
-        "Element values to select in the dimension / column."
-    ],
-    "staticselect.cols": [
-        "Dimension / column in which to select."
-    ],
-    "staticselect.type": [
-        "Selection type",
-        "`hypercubecells`: Select in hypercube.",
-        "`listobjectvalues`: Select in listbox."
-    ],
-    "staticselect.accept": [
-        "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
-    ],
-    "staticselect.wrap": [
-        "Wrap selection with Begin / End selection requests (`true` / `false`)."
     ],
     "subscribeobjects.clear" : [
         "Remove any previously subscribed objects from the subscription list."
