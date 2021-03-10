@@ -23,19 +23,23 @@ import (
 type (
 	UploadMode int
 
-	// ElasticUploadAppSettings specify app to upload
-	ElasticUploadAppSettings struct {
+	// ElasticUploadAppSettingsCore settings used in unmarshal interface
+	ElasticUploadAppSettingsCore struct {
 		ChunkSize  int64                `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"tus.chunksize"`
 		MaxRetries int                  `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"tus.retries"`
 		TimeOut    helpers.TimeDuration `json:"timeout" displayname:"Timeout upload after this duration" doc-key:"tus.timeout"`
 		Mode       UploadMode           `json:"mode" displayname:"Upload mode" doc-key:"elasticuploadapp.mode"`
 		Filename   string               `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"elasticuploadapp.filename"`
-		// Deprecated: This property will be removed. DestinationSpace should be used instead, keeping entry here for some time to make sure scripts get validation error
-		SpaceID string `json:"spaceid" displayname:"Space ID" doc-key:"elasticuploadapp.spaceid"`
+	}
+
+	// ElasticUploadAppSettings specify app to upload
+	ElasticUploadAppSettings struct {
+		ElasticUploadAppSettingsCore
 		DestinationSpace
 		CanAddToCollection
 	}
 
+	// CanAddToCollection common collection settings
 	CanAddToCollection struct {
 		Title      session.SyncedTemplate `json:"title" displayname:"Title" doc-key:"elasticuploadapp.title"`
 		Stream     session.SyncedTemplate `json:"stream" displayname:"Stream name" doc-key:"elasticuploadapp.stream"`
@@ -79,6 +83,30 @@ func (value UploadMode) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
+// UnmarshalJSON unmarshals ElasticUploadAppSettings
+func (settings *ElasticUploadAppSettings) UnmarshalJSON(arg []byte) error {
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/spaceid",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionElasticUploadApp, err.Error())
+	}
+
+	if err := jsonit.Unmarshal(arg, &settings.ElasticUploadAppSettingsCore); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticUploadApp)
+	}
+
+	if err := jsonit.Unmarshal(arg, &settings.DestinationSpace); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticUploadApp)
+	}
+
+	if err := jsonit.Unmarshal(arg, &settings.CanAddToCollection); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticUploadApp)
+	}
+
+	return nil
+}
+
 // Validate action (Implements ActionSettings interface)
 func (settings ElasticUploadAppSettings) Validate() error {
 	if _, err := os.Stat(settings.Filename); os.IsNotExist(err) {
@@ -86,9 +114,6 @@ func (settings ElasticUploadAppSettings) Validate() error {
 	}
 	if settings.Title.String() == "" {
 		return errors.New("No Title specified")
-	}
-	if settings.SpaceID != "" {
-		return errors.New("elasticuploadapp action no longer utilizes SpaceID, please use DestinationSpaceID to specify a space")
 	}
 	if settings.ChunkSize < 0 {
 		return errors.New("ChunkSize must be a positive value")

@@ -1976,7 +1976,6 @@ Upload an app to a QSEoK deployment.
     * `tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.
     * `legacy`: Upload the file using a single POST payload (legacy file upload mode).
 * `filename`: Local file to send as payload.
-* `spaceid`: DEPRECATED
 * `destinationspaceid`: Specify destination space by ID.
 * `destinationspacename`: Specify destination space by name.
 * `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).

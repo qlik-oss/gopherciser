@@ -3,13 +3,13 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -22,41 +22,21 @@ type (
 	connectWsSettings struct {
 		ConnectFunc func() (string, error)
 	}
-
-	// Older settings no longer used, if exist in JSON, an error will be thrown
-	deprecatedOpenAppSettings struct {
-		AppGUID        string      `json:"appguid"`
-		AppName        string      `json:"appname"`
-		RandomGUIDs    []string    `json:"randomguids"`
-		RandomApps     []string    `json:"randomapps"`
-		ConnectionMode interface{} `json:"mode"`
-	}
 )
 
 // UnmarshalJSON unmarshals open app settings from JSON
 func (openApp *OpenAppSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedOpenAppSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 5)
-		if deprecated.AppGUID != "" {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.AppName != "" {
-			hasSettings = append(hasSettings, "appname")
-		}
-		if len(deprecated.RandomGUIDs) > 0 {
-			hasSettings = append(hasSettings, "randomguids")
-		}
-		if len(deprecated.RandomApps) > 0 {
-			hasSettings = append(hasSettings, "randomapps")
-		}
-		if deprecated.ConnectionMode != nil {
-			hasSettings = append(hasSettings, "mode")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used", ActionOpenApp, strings.Join(hasSettings, ","))
-		}
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/appguid",
+		"/appname",
+		"/randomguids",
+		"/randomapps",
+		"/mode",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionOpenApp, err.Error())
 	}
+
 	var appSelection session.AppSelection
 	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)

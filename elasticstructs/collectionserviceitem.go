@@ -4,15 +4,13 @@ import "time"
 
 type (
 	CollectionServiceResourceAttributes struct {
-		ID             string `json:"id"`
-		Name           string `json:"name"`
-		Description    string `json:"description"`
-		Thumbnail      string `json:"thumbnail"`
-		LastReloadTime string `json:"lastReloadTime"`
-		CreatedDate    string `json:"createdDate"`
-		ModifiedDate   string `json:"modifiedDate"`
-		// Deprecated: use ownerID
-		Owner            string `json:"owner"`
+		ID               string `json:"id"`
+		Name             string `json:"name"`
+		Description      string `json:"description"`
+		Thumbnail        string `json:"thumbnail"`
+		LastReloadTime   string `json:"lastReloadTime"`
+		CreatedDate      string `json:"createdDate"`
+		ModifiedDate     string `json:"modifiedDate"`
 		OwnerID          string `json:"ownerId"`
 		DynamicColor     string `json:"dynamicColor"`
 		Published        bool   `json:"published"`

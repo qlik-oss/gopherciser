@@ -12,35 +12,26 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
+	// ElasticOpenHubSettings action simulating user opening the hub in a elastic environment
 	ElasticOpenHubSettings struct{}
 )
 
 // UnmarshalJSON unmarshal ElasticOpenHubSettings
 func (openHub *ElasticOpenHubSettings) UnmarshalJSON(arg []byte) error {
-	deprecatedSettings := struct {
-		StreamMode interface{} `json:"streams"`
-		StreamList []string    `json:"streamlist"`
-	}{}
-
-	if err := json.Unmarshal(arg, &deprecatedSettings); err == nil {
-		if deprecatedSettings.StreamMode != nil {
-			if mode, ok := deprecatedSettings.StreamMode.(string); !ok || mode != "default" {
-				return errors.Errorf("action<%s> no longer supports streams, use %s", ActionElasticOpenHub, ActionElasticExplore)
-			}
-		}
-		if len(deprecatedSettings.StreamList) > 0 {
-			return errors.Errorf("action<%s> no longer supports streamlist, use %s", ActionElasticOpenHub, ActionElasticExplore)
-		}
-	} else {
-		return err
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/streams",
+		"/streamlist",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionElasticOpenHub, err.Error())
 	}
 
-	*openHub = ElasticOpenHubSettings{}
 	return nil
 }
 

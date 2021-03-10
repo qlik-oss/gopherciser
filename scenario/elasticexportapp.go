@@ -10,43 +10,35 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
-	// ElasticExportAppSettingsCore Currently used ElasticExportAppSettings (as opposed to deprecated settings)
+	// ElasticExportAppSettingsCore settings core used in Unmarshal interface
 	ElasticExportAppSettingsCore struct {
 		NoData     bool                   `json:"nodata" displayname:"Export without data" doc-key:"elasticexportapp.nodata"`
 		FileName   session.SyncedTemplate `json:"exportname" displayname:"Export filename" displayelement:"savefile" doc-key:"elasticexportapp.filename"`
 		SaveToFile bool                   `json:"savetofile" displayname:"Save to file" doc-key:"elasticexportapp.savetofile"`
 	}
-	// ElasticExportAppSettings
+
+	// ElasticExportAppSettings action to duplicate elastic app
 	ElasticExportAppSettings struct {
 		session.AppSelection
 		ElasticExportAppSettingsCore
-	}
-
-	deprecatedElasticExportAppSettings struct {
-		Title   string `json:"title"`
-		AppGUID string `json:"appguid"`
 	}
 )
 
 // UnmarshalJSON unmarshals export app settings from JSON
 func (settings *ElasticExportAppSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedElasticExportAppSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 2)
-		if deprecated.AppGUID != "" {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.Title != "" {
-			hasSettings = append(hasSettings, "title")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used", ActionElasticExportApp, strings.Join(hasSettings, ","))
-		}
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/title",
+		"/appguid",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionElasticExportApp, err.Error())
 	}
+
 	var core ElasticExportAppSettingsCore
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionElasticExportApp)
@@ -116,12 +108,9 @@ func (settings ElasticExportAppSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	downloadReq := sessionState.Rest.FireOffGet(fmt.Sprintf("%s%s", host, tempContent), actionState, false)
-	if sessionState.Wait(actionState) {
-		return // we had an error
-	}
-	if err := session.CheckResponseStatus(downloadReq, []int{200}); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to download app"))
+	downloadReq, err := sessionState.Rest.GetSync(fmt.Sprintf("%s%s", host, tempContent), actionState, sessionState.LogEntry, nil)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 
