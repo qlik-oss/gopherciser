@@ -12,6 +12,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httputil"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -282,20 +283,7 @@ func (handler *RestHandler) GetAsyncWithCallback(url string, actionState *action
 }
 
 func (handler *RestHandler) getAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
-	if options == nil {
-		options = &defaultReqOptions
-	}
-
-	getRequest := RestRequest{
-		Method:       GET,
-		Destination:  url,
-		ContentType:  options.ContentType,
-		ExtraHeaders: headers,
-	}
-
-	handler.QueueRequestWithCallback(actionState, options.FailOnError, &getRequest, logEntry, createStatusCallback(actionState, logEntry, &getRequest, options, callback))
-
-	return &getRequest
+	return handler.sendAsyncWithCallback(GET, url, actionState, logEntry, nil, headers, options, callback)
 }
 
 // PutAsync send async PUT request with options, using options=nil default options are used
@@ -421,14 +409,6 @@ func getHost(fullURL string) (string, error) {
 	return strings.Split(host, ":")[0], nil
 }
 
-func getUrlObj(fullURL string) (*url.URL, error) {
-	urlObj, err := url.Parse(fullURL)
-	if err != nil {
-		return nil, err
-	}
-	return urlObj, nil
-}
-
 // QueueRequest Async request
 func (handler *RestHandler) QueueRequest(actionState *action.State, failOnError bool,
 	request *RestRequest, logEntry *logger.LogEntry) {
@@ -522,19 +502,24 @@ func ReadAll(r io.Reader) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+func prependURLPath(aURL, pathToPrepend string) (string, error) {
+	urlObj, err := url.Parse(aURL)
+	if err != nil {
+		return aURL, errors.WithStack(err)
+	}
+	urlObj.Path = path.Join(pathToPrepend, urlObj.Path)
+
+	return urlObj.String(), nil
+}
+
 func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
 
 	destination := request.Destination
 	if handler.virtualProxy != "" && !request.NoVirtualProxy {
-		host, err := getHost(request.Destination)
-		if err != nil {
-			return err
+		var err error
+		if destination, err = prependURLPath(destination, handler.virtualProxy); err != nil {
+			return errors.Wrapf(err, "failed to prepend virtual proxy<%s> to url<%s>", destination, handler.virtualProxy)
 		}
-		urlObj, err := getUrlObj(request.Destination)
-		if err != nil {
-			return err
-		}
-		destination = fmt.Sprintf("%s://%s/%s%s", urlObj.Scheme, host, handler.virtualProxy, urlObj.Path)
 	}
 
 	var req *http.Request
