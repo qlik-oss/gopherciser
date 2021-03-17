@@ -2008,6 +2008,7 @@ Upload a data file to data sources.
 * `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
 * `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
 * `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
+* `title`: (optional) Set custom title of file on upload. Defaults to file name (excluding extension). (supports the use of [session variables](#session_variables))
 
 ### Example
 
