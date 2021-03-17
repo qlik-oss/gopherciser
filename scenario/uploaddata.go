@@ -21,12 +21,13 @@ import (
 type (
 	// UploadDataSettingsCore core parameters used in UnMarshalJSON interface
 	UploadDataSettingsCore struct {
-		Filename   string               `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
-		SpaceID    string               `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
-		Replace    bool                 `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
-		TimeOut    helpers.TimeDuration `json:"timeout" displayname:"Timeout upload after this duration" doc-key:"tus.timeout"`
-		ChunkSize  int64                `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"tus.chunksize"`
-		MaxRetries int                  `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"tus.retries"`
+		Filename   string                 `json:"filename" displayname:"Filename" displayelement:"file" doc-key:"uploaddata.filename"`
+		SpaceID    string                 `json:"spaceid" displayname:"Space ID" doc-key:"uploaddata.spaceid"`
+		Replace    bool                   `json:"replace" displayname:"Replace file" doc-key:"uploaddata.replace"`
+		TimeOut    helpers.TimeDuration   `json:"timeout" displayname:"Timeout upload after this duration" doc-key:"tus.timeout"`
+		ChunkSize  int64                  `json:"chunksize" displayname:"Chunk size (bytes)" doc-key:"tus.chunksize"`
+		MaxRetries int                    `json:"retries" displayname:"Number of retries on failed chunk upload" doc-key:"tus.retries"`
+		Title      session.SyncedTemplate `json:"title" displayname:"Title (optional)" doc-key:"uploaddata.title"`
 	}
 
 	// UploadDataSettings specify data file to upload
@@ -124,7 +125,16 @@ func (settings UploadDataSettings) Execute(
 
 	reqURL := fmt.Sprintf("%s/%s", host, datafileEndpoint)
 	httpMethodFunc := sessionState.Rest.PostAsync
-	reqParams := fmt.Sprintf("connectionId=%s&name=%s&tempContentFileId=%s", dataConnectionID, fileName, tempFile.ID)
+	title := fileName
+	if settings.Title.String() != "" {
+		title, err = sessionState.ReplaceSessionVariables(&settings.Title)
+		if err != nil {
+			sessionState.LogEntry.Log(logger.WarningLevel, fmt.Sprintf("failed to resolve title<%s> using title<%s>", &settings.Title, fileName))
+			title = fileName
+		}
+	}
+
+	reqParams := fmt.Sprintf("connectionId=%s&name=%s&tempContentFileId=%s", dataConnectionID, title, tempFile.ID)
 	if existingFile != nil {
 		reqURL += "/" + existingFile.ID
 		httpMethodFunc = sessionState.Rest.PutAsync
