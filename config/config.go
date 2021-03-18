@@ -106,6 +106,12 @@ type (
 		CustomLoggers []*logger.Logger `json:"-"`
 		// Counters
 		Counters statistics.ExecutionCounters `json:"-"`
+
+		// Options alter the behavior of unmarshal and validate
+		Options struct {
+			// AcceptNoScheduler produces no error scheduler does not exist in json
+			AcceptNoScheduler bool
+		} `json:"-"`
 	}
 
 	//SummaryEntry title, value and color combo for summary printout
@@ -284,7 +290,7 @@ func NewExampleConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		&cfgCore{
+		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
 				Mode:           connection.WS,
 				WsSettings:     nil,
@@ -313,7 +319,7 @@ func NewExampleConfig() (*Config, error) {
 				selectAction,
 			},
 		},
-		&scheduler.SimpleScheduler{
+		Scheduler: &scheduler.SimpleScheduler{
 			Scheduler: scheduler.Scheduler{
 				SchedType: scheduler.SchedSimple,
 				TimeBuf: scheduler.TimeBuffer{
@@ -330,8 +336,8 @@ func NewExampleConfig() (*Config, error) {
 				ReuseUsers:      false,
 			},
 		},
-		nil,
-		statistics.ExecutionCounters{},
+		CustomLoggers: nil,
+		Counters:      statistics.ExecutionCounters{},
 	}
 
 	return cfg, nil
@@ -346,7 +352,7 @@ func NewEmptyConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		&cfgCore{
+		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
 				Mode:           connection.WS,
 				WsSettings:     nil,
@@ -365,7 +371,7 @@ func NewEmptyConfig() (*Config, error) {
 			},
 			Scenario: []scenario.Action{},
 		},
-		&scheduler.SimpleScheduler{
+		Scheduler: &scheduler.SimpleScheduler{
 			Scheduler: scheduler.Scheduler{
 				SchedType: scheduler.SchedSimple,
 				TimeBuf: scheduler.TimeBuffer{
@@ -382,23 +388,29 @@ func NewEmptyConfig() (*Config, error) {
 				ReuseUsers:      false,
 			},
 		},
-		nil,
-		statistics.ExecutionCounters{},
+		CustomLoggers: nil,
+		Counters:      statistics.ExecutionCounters{},
 	}
 
 	return cfg, nil
 }
 
-// UnmarshalJSON unmarshal config
+// UnmarshalJSON unmarshal Config. Only unmarshals scheduler if scheduler is nil.
 func (cfg *Config) UnmarshalJSON(arg []byte) error {
 	var core cfgCore
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrap(err, "Failed unmarshaling config")
 	}
 	cfg.cfgCore = &core
+	if cfg.Settings.LogSettings.Regression {
+		cfg.Options.AcceptNoScheduler = true
+	}
 
 	rawsched, _, _, err := jsonparser.Get(arg, "scheduler")
 	if err != nil {
+		if cfg.Options.AcceptNoScheduler {
+			return nil
+		}
 		return errors.Wrap(err, "no scheduler in config")
 	}
 
@@ -406,6 +418,7 @@ func (cfg *Config) UnmarshalJSON(arg []byte) error {
 	if err != nil {
 		return errors.Wrap(err, "failed unmarhaling scheduler")
 	}
+
 	return nil
 }
 
@@ -432,16 +445,18 @@ func (cfg *Config) SetRegressionLogging() {
 // Validate scenario
 func (cfg *Config) Validate() error {
 	if cfg.Scheduler == nil {
-		return errors.Errorf("No scheduler defined")
-	}
+		if !cfg.Options.AcceptNoScheduler {
+			return errors.Errorf("No scheduler defined")
+		}
+	} else {
+		if err := cfg.Scheduler.Validate(); err != nil {
+			return errors.Wrap(err, "Scheduler settings validation failed")
+		}
 
-	if err := cfg.Scheduler.Validate(); err != nil {
-		return errors.Wrap(err, "Scheduler settings validation failed")
-	}
-
-	if cfg.Scheduler.RequireScenario() {
-		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
-			return errors.Errorf("No scenario items defined")
+		if cfg.Scheduler.RequireScenario() {
+			if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
+				return errors.Errorf("No scenario items defined")
+			}
 		}
 	}
 

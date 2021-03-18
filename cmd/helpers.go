@@ -29,7 +29,6 @@ var (
 	traffic        bool
 	trafficMetrics bool
 	debug          bool
-	regression     bool
 	logFormat      string
 	summaryType    string
 
@@ -56,7 +55,6 @@ func AddOverrideParameters(cmd *cobra.Command) {
 // AddLoggingParameters add logging parameters to command
 func AddLoggingParameters(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&traffic, "traffic", "t", false, "Log traffic. Logging traffic is heavy and should only be done for debugging purposes.")
-	cmd.Flags().BoolVar(&regression, "regression", false, "Log data needed to run regression analysis.")
 	cmd.Flags().BoolVarP(&trafficMetrics, "trafficmetrics", "m", false, "Log traffic metrics.")
 	cmd.Flags().BoolVar(&debug, "debug", false, "Log debug info.")
 	cmd.Flags().StringVar(&logFormat, "logformat", "", getLogFormatHelpString())
@@ -97,6 +95,9 @@ func unmarshalConfigFile() (*config.Config, error) {
 	}
 
 	var cfg config.Config
+	if regression {
+		cfg.Options.AcceptNoScheduler = true
+	}
 	if err = jsonit.Unmarshal(cfgJSON, &cfg); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal config from json")
 	}
