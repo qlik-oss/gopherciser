@@ -15,7 +15,7 @@ type (
 )
 
 // GetConnectFunc get ws connect function
-func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID string, header http.Header) func() (string, error) {
+func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID string, headers, customHeaders http.Header) func() (string, error) {
 	return func() (string, error) {
 		if sessionState == nil {
 			return appGUID, errors.New("Session state is nil")
@@ -47,7 +47,16 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 		ctx, cancel := sessionState.ContextWithTimeout(sessionState.BaseContext())
 		defer cancel()
 
-		if err := sense.Connect(ctx, url, header, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout); err != nil {
+		// combine headers for connection
+		connectHeaders := make(http.Header)
+		for k, v := range headers {
+			connectHeaders[k] = v
+		}
+		for k, v := range customHeaders {
+			connectHeaders[k] = v
+		}
+
+		if err := sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout); err != nil {
 			return appGUID, errors.Wrap(err, "Failed connecting to sense server")
 		}
 

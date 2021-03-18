@@ -25,7 +25,7 @@ func (openHub OpenHubSettings) Validate() error {
 func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, setHubStart func()) {
 	actionState.Details = "SenseEfW"
 
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "")
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "", nil)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to get connect function"))
 		return
