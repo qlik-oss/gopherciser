@@ -12,12 +12,12 @@ import (
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -93,8 +93,8 @@ func GenerateOdag(sessionState *session.State, settings GenerateOdagSettings, ac
 	if err != nil {
 		return errors.Wrap(err, "failed to get current sheet")
 	}
-	postObject := elasticstructs.OdagPostRequest{
-		IOdagPostRequest: elasticstructs.IOdagPostRequest{
+	postObject := structs.OdagPostRequest{
+		IOdagPostRequest: structs.IOdagPostRequest{
 			SelectionApp: connection.CurrentApp.GUID,
 		},
 		Sheetname: currentSheet.ID,
@@ -103,7 +103,7 @@ func GenerateOdag(sessionState *session.State, settings GenerateOdagSettings, ac
 	return MakeOdagRequest(sessionState, actionState, odagLinkBindings, host, odagEndpoint, odagLink.ID, postObject.IOdagPostRequest, connection)
 }
 
-func MakeOdagRequest(sessionState *session.State, actionState *action.State, odagLinkBindings []elasticstructs.OdagLinkBinding, host string, odagEndpoint OdagEndpointConfiguration, odagLinkId string, postObject elasticstructs.IOdagPostRequest, connection *enigmahandlers.SenseUplink) error {
+func MakeOdagRequest(sessionState *session.State, actionState *action.State, odagLinkBindings []structs.OdagLinkBinding, host string, odagEndpoint OdagEndpointConfiguration, odagLinkId string, postObject structs.IOdagPostRequest, connection *enigmahandlers.SenseUplink) error {
 	var currentSelections *senseobjects.CurrentSelections
 	var err error
 	if currentSelections, err = connection.CurrentApp.GetCurrentSelections(sessionState, actionState); err != nil {
@@ -112,16 +112,16 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 
 	// iterate through selections and gather data on what values all the fields with bindings currently have
 	selections := currentSelections.Layout().SelectionObject.Selections
-	postObject.BindSelectionState = []elasticstructs.OdagPostRequestSelectionState{}
-	postObject.SelectionState = []elasticstructs.OdagPostRequestSelectionState{}
+	postObject.BindSelectionState = []structs.OdagPostRequestSelectionState{}
+	postObject.SelectionState = []structs.OdagPostRequestSelectionState{}
 	for _, selection := range selections {
 		// for each selection, create an object specifying that selection
-		selectionState := elasticstructs.OdagPostRequestSelectionState{
+		selectionState := structs.OdagPostRequestSelectionState{
 			SelectionAppParamName: selection.Field,
 			SelectionAppParamType: "Field",
-			Values:                []elasticstructs.OdagPostRequestSelectionValue{},
+			Values:                []structs.OdagPostRequestSelectionValue{},
 		}
-		selectionValue := elasticstructs.OdagPostRequestSelectionValue{
+		selectionValue := structs.OdagPostRequestSelectionValue{
 			SelStatus: "S", // S - value explicitly selected
 		}
 		if selection.IsNum {
@@ -176,7 +176,7 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 	if postRequest.ResponseStatusCode != http.StatusCreated && postRequest.ResponseStatusCode != http.StatusOK {
 		return errors.Errorf("failed to POST ODAG request: unexpected response code %d <%s>", postRequest.ResponseStatusCode, postRequest.ResponseBody)
 	}
-	var odagPostResponse elasticstructs.OdagPostRequestResponse
+	var odagPostResponse structs.OdagPostRequestResponse
 	if err := jsonit.Unmarshal(postRequest.ResponseBody, &odagPostResponse); err != nil {
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG request POST response: %s", postRequest.ResponseBody)))
 	}
@@ -201,12 +201,12 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 		if odagRequests.ResponseStatusCode != http.StatusOK {
 			return errors.Errorf("failed to get ODAG requests: %s", odagRequests.ResponseBody)
 		}
-		var odagGetRequests elasticstructs.OdagGetRequests
+		var odagGetRequests structs.OdagGetRequests
 		if err := jsonit.Unmarshal(odagRequests.ResponseBody, &odagGetRequests); err != nil {
 			return errors.Wrapf(err, "failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody)
 		}
 
-		var myRequestStatus elasticstructs.OdagGetRequest
+		var myRequestStatus structs.OdagGetRequest
 		for _, odagRequest := range odagGetRequests {
 			if odagRequest.ID == odagPostResponse.ID {
 				myRequestStatus = odagRequest
@@ -224,12 +224,12 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 }
 
 // getSelectionStateFromBinding this function gets the selection state from the specified binding field
-func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessionState *session.State,
-	uplink *enigmahandlers.SenseUplink, actionState *action.State) (*elasticstructs.OdagPostRequestSelectionState, error) {
-	bindSelectionState := elasticstructs.OdagPostRequestSelectionState{
+func getSelectionStateFromBinding(binding structs.OdagLinkBinding, sessionState *session.State,
+	uplink *enigmahandlers.SenseUplink, actionState *action.State) (*structs.OdagPostRequestSelectionState, error) {
+	bindSelectionState := structs.OdagPostRequestSelectionState{
 		SelectionAppParamName: binding.SelectAppParamName,
 		SelectionAppParamType: binding.SelectAppParamType,
-		Values:                []elasticstructs.OdagPostRequestSelectionValue{},
+		Values:                []structs.OdagPostRequestSelectionValue{},
 	}
 
 	// create a odag-toolbar-navpoint session object for the binding field
@@ -273,7 +273,7 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 				return nil, errors.Errorf("unknown SelectionStates: <%s>", binding.SelectionStates)
 			}
 
-			value := elasticstructs.OdagPostRequestSelectionValue{}
+			value := structs.OdagPostRequestSelectionValue{}
 			value.StrValue = listObjectValue[0].Text
 			if math.IsNaN(float64(listObjectValue[0].Num)) {
 				value.NumValue = "NaN"
@@ -311,7 +311,7 @@ func getSelectionStateFromBinding(binding elasticstructs.OdagLinkBinding, sessio
 
 // getOdagLinkByName returns the ODAG link by the specified name
 func getOdagLinkByName(name string, host string, sessionState *session.State,
-	actionState *action.State, odagEndpoint string, selectionAppId string) (*elasticstructs.OdagGetLink, error) {
+	actionState *action.State, odagEndpoint string, selectionAppId string) (*structs.OdagGetLink, error) {
 	var destination string
 	if selectionAppId != "" {
 		destination = fmt.Sprintf("%s/%s?selectionAppID=%s", host, odagEndpoint, selectionAppId)
@@ -330,11 +330,11 @@ func getOdagLinkByName(name string, host string, sessionState *session.State,
 	if odagLinks.ResponseStatusCode != http.StatusOK {
 		return nil, errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagLinks.ResponseBody))
 	}
-	var odagGetLinksResponse elasticstructs.OdagGetLinks
+	var odagGetLinksResponse structs.OdagGetLinks
 	if err := jsonit.Unmarshal(odagLinks.ResponseBody, &odagGetLinksResponse); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG links GET reponse: %s", odagLinks.ResponseBody))
 	}
-	odagLink := elasticstructs.OdagGetLink{}
+	odagLink := structs.OdagGetLink{}
 	for _, maybeOdagLink := range odagGetLinksResponse {
 		if maybeOdagLink.Name == name {
 			odagLink = maybeOdagLink
@@ -349,7 +349,7 @@ func getOdagLinkByName(name string, host string, sessionState *session.State,
 
 // GetOdagSelectionBindings gets information about the ODAG link, including bindings
 func GetOdagSelectionBindings(host string, odagLinkId string, sessionState *session.State,
-	actionState *action.State, odagEndpoint string) ([]elasticstructs.OdagLinkBinding, error) {
+	actionState *action.State, odagEndpoint string) ([]structs.OdagLinkBinding, error) {
 	odagLinkInfo := session.RestRequest{
 		Method:      session.GET,
 		ContentType: "application/json",
@@ -362,7 +362,7 @@ func GetOdagSelectionBindings(host string, odagLinkId string, sessionState *sess
 	if odagLinkInfo.ResponseStatusCode != http.StatusOK {
 		return nil, errors.New(fmt.Sprintf("failed to get ODAG link info: %s", odagLinkInfo.ResponseBody))
 	}
-	var odagLinkInfoStruct elasticstructs.OdagGetLinkInfo
+	var odagLinkInfoStruct structs.OdagGetLinkInfo
 	if err := jsonit.Unmarshal(odagLinkInfo.ResponseBody, &odagLinkInfoStruct); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG links info GET reponse: %s", odagLinkInfo.ResponseBody))
 	}

@@ -1,4 +1,4 @@
-package elasticstructs
+package structs
 
 type CollectionItems struct {
 	Data  []CollectionItem `json:"data"`

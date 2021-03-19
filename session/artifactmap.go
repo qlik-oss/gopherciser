@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -107,8 +107,8 @@ func (entry *ArtifactEntry) Copy() *ArtifactEntry {
 }
 
 // DataAsSpace return artifact entry Data as space
-func (entry *ArtifactEntry) DataAsSpace() (*elasticstructs.Space, error) {
-	space, ok := entry.Data.(*elasticstructs.Space)
+func (entry *ArtifactEntry) DataAsSpace() (*structs.Space, error) {
+	space, ok := entry.Data.(*structs.Space)
 	if !ok {
 		if space == nil {
 			return nil, errors.Errorf("no space data saved to artifact map for space name<%s> id<%s>", entry.Name, entry.ID)
@@ -231,7 +231,7 @@ func (am *ArtifactMap) allocateResourceType(resourceType string, len int) {
 }
 
 // FillStreams fills the stream map with the streams from the given list
-func (am *ArtifactMap) FillStreams(streamList []elasticstructs.Collection) {
+func (am *ArtifactMap) FillStreams(streamList []structs.Collection) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
@@ -241,7 +241,7 @@ func (am *ArtifactMap) FillStreams(streamList []elasticstructs.Collection) {
 }
 
 // FillSpaces fills the spaces map with the spaces from the given list
-func (am *ArtifactMap) FillSpaces(spaces []elasticstructs.Space) {
+func (am *ArtifactMap) FillSpaces(spaces []structs.Space) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
@@ -252,7 +252,7 @@ func (am *ArtifactMap) FillSpaces(spaces []elasticstructs.Space) {
 }
 
 // AddSpace to artifact map
-func (am *ArtifactMap) AddSpace(space elasticstructs.Space) {
+func (am *ArtifactMap) AddSpace(space structs.Space) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
@@ -309,7 +309,7 @@ func (am *ArtifactMap) GetSpaceID(spaceName string) (string, error) {
 }
 
 // GetSpaceByName return first found space with given name
-func (am *ArtifactMap) GetSpaceByName(spaceName string) (*elasticstructs.Space, error) {
+func (am *ArtifactMap) GetSpaceByName(spaceName string) (*structs.Space, error) {
 	entry, err := am.lookup(ResourceTypeSpace, spaceName, false)
 	if err != nil {
 		return nil, SpaceNameNotFoundError(spaceName)
@@ -324,7 +324,7 @@ func (am *ArtifactMap) GetSpaceByName(spaceName string) (*elasticstructs.Space, 
 }
 
 // GetSpaceByID returns the space given space ID
-func (am *ArtifactMap) GetSpaceByID(spaceID string) (*elasticstructs.Space, error) {
+func (am *ArtifactMap) GetSpaceByID(spaceID string) (*structs.Space, error) {
 	entry, err := am.lookup(ResourceTypeSpace, spaceID, true)
 	if err != nil {
 		return nil, SpaceIDNotFoundError(spaceID)

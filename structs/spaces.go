@@ -1,4 +1,4 @@
-package elasticstructs
+package structs
 
 type (
 	Href struct {
@@ -46,6 +46,6 @@ type (
 	}
 
 	SpaceReference struct {
-		SpaceID      string `json:"spaceId"`
+		SpaceID string `json:"spaceId"`
 	}
 )

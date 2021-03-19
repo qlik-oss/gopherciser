@@ -1,4 +1,4 @@
-package elasticstructs
+package structs
 
 type DataFilesResp struct {
 	Data  []DataFilesRespData `json:"data"`

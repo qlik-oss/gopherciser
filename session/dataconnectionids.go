@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -38,7 +38,7 @@ func (idMap *DataConnectionIDs) GetDataConnectionID(space string) (string, bool)
 }
 
 // FillDataConnectionIDs fill DataConnectionIDs with space/data connection ID  mapping
-func (idMap *DataConnectionIDs) FillDataConnectionIDs(data ...elasticstructs.DataFilesRespData) {
+func (idMap *DataConnectionIDs) FillDataConnectionIDs(data ...structs.DataFilesRespData) {
 	idMap.updateLock.Lock()
 	defer idMap.updateLock.Unlock()
 
@@ -78,7 +78,7 @@ func (state *State) FetchDataConnectionID(actionState *action.State, host, space
 		return "", errors.WithStack(err)
 	}
 
-	var datafilesRespData elasticstructs.DataFilesRespData
+	var datafilesRespData structs.DataFilesRespData
 	if err := jsonit.Unmarshal(req.ResponseBody, &datafilesRespData); err != nil {
 		return "", errors.Wrap(err, "failed unmarshaling dataconnections data")
 	}
@@ -98,12 +98,12 @@ func (state *State) FetchDataConnectionID(actionState *action.State, host, space
 }
 
 // FetchQixDataFiles for provided data connection ID
-func (state *State) FetchQixDataFiles(actionState *action.State, host, connectionID string) ([]elasticstructs.QixDataFile, error) {
+func (state *State) FetchQixDataFiles(actionState *action.State, host, connectionID string) ([]structs.QixDataFile, error) {
 	req, err := state.Rest.GetSync(
 		fmt.Sprintf("%s/api/v1/qix-datafiles?top=10000&connectionId=%s", host, connectionID), actionState,
 		state.LogEntry, nil,
 	)
-	dataFiles := make([]elasticstructs.QixDataFile, 0)
+	dataFiles := make([]structs.QixDataFile, 0)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -118,13 +118,13 @@ func (state *State) FetchQixDataFiles(actionState *action.State, host, connectio
 //   - nil and no error if file does not exist
 //   - error if more than one datafile with the same name exist
 //   - error if filename of returned data file is incorrect
-func (state *State) FetchQixDataFile(actionState *action.State, host, connectionID string, fileName string) (*elasticstructs.QixDataFile, error) {
+func (state *State) FetchQixDataFile(actionState *action.State, host, connectionID string, fileName string) (*structs.QixDataFile, error) {
 	requestURL := fmt.Sprintf("%s/api/v1/qix-datafiles?connectionId=%s&name=%s", host, connectionID, fileName)
 	req, err := state.Rest.GetSync(requestURL, actionState, state.LogEntry, nil)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	dataFiles := make([]*elasticstructs.QixDataFile, 0)
+	dataFiles := make([]*structs.QixDataFile, 0)
 	if err := jsonit.Unmarshal(req.ResponseBody, &dataFiles); err != nil {
 		return nil, errors.WithStack(err)
 	}

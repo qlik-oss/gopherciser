@@ -1,4 +1,4 @@
-package elasticstructs
+package structs
 
 import "time"
 

@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -69,7 +69,7 @@ func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 	if odagRequests.ResponseStatusCode != http.StatusOK {
 		return errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagRequests.ResponseBody))
 	}
-	var odagRequestsByLink elasticstructs.OdagRequestsByLink
+	var odagRequestsByLink structs.OdagRequestsByLink
 	if err := jsonit.Unmarshal(odagRequests.ResponseBody, &odagRequestsByLink); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody))
 	}

@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
-	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/eventws"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -23,6 +22,7 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/structs"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/wsdialer"
 )
@@ -74,7 +74,7 @@ type (
 		User              *users.User
 		OutputsDir        string
 		CurrentApp        *ArtifactEntry
-		CurrentUser       *elasticstructs.User
+		CurrentUser       *structs.User
 		Counters          *statistics.ExecutionCounters
 		DataConnectionIDs DataConnectionIDs
 		// CurrentActionState will contain the state of the latest action to be started
