@@ -328,12 +328,16 @@ func imageNameFromTemplate(sessionState *session.State, aTemplate *session.Synce
 }
 
 func (settings *hubAdvisorRequestSettings) resolveImageName(sessionState *session.State, actionState *action.State, imageNameFromHeader string) string {
+	app := app{}
+	if settings.query.App != nil {
+		app = *settings.query.App
+	}
 	aLocalData := localData{
 		ImageCount:     savedImagesCount.Inc(),
 		ServerFileName: imageNameFromHeader,
 		Query:          settings.query.Text,
-		AppName:        settings.query.App.Name,
-		AppID:          settings.query.App.ID,
+		AppName:        app.Name,
+		AppID:          app.ID,
 	}
 
 	for _, f := range []func() string{
