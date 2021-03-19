@@ -107,8 +107,6 @@ const (
 	ActionOpenHub            = "openhub"
 	ActionGenerateOdag       = "generateodag"
 	ActionDeleteOdag         = "deleteodag"
-	ActionUploadData         = "uploaddata"
-	ActionDeleteData         = "deletedata"
 	ActionCreateSheet        = "createsheet"
 	ActionCreateBookmark     = "createbookmark"
 	ActionDeleteBookmark     = "deletebookmark"
@@ -215,8 +213,6 @@ func ResetDefaultActions() {
 		ActionOpenHub:            OpenHubSettings{},
 		ActionGenerateOdag:       GenerateOdagSettings{},
 		ActionDeleteOdag:         DeleteOdagSettings{},
-		ActionUploadData:         UploadDataSettings{},
-		ActionDeleteData:         DeleteDataSettings{},
 		ActionCreateSheet:        CreateSheetSettings{},
 		ActionCreateBookmark:     CreateBookmarkSettings{},
 		ActionDeleteBookmark:     DeleteBookmarkSettings{},

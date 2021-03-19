@@ -23,6 +23,8 @@ const (
 	ActionElasticExplore          = "elasticexplore"
 	ActionElasticMoveApp          = "elasticmoveapp"
 	ActionElasticPublishApp       = "elasticpublishapp"
+	ActionUploadData              = "uploaddata"
+	ActionDeleteData              = "deletedata"
 )
 
 var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -45,6 +47,8 @@ func init() {
 			ActionElasticExplore:          ElasticExploreSettings{},
 			ActionElasticMoveApp:          ElasticMoveAppSettings{},
 			ActionElasticPublishApp:       ElasticPublishAppSettings{},
+			ActionUploadData:              UploadDataSettings{},
+			ActionDeleteData:              DeleteDataSettings{},
 		})
 	if err != nil {
 		panic(fmt.Sprintf("failed to register actions:\n %+v", err))
