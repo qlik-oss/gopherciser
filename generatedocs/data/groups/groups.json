@@ -4,6 +4,7 @@
         "title": "Common actions",
         "actions": [
             "applybookmark",
+            "askhubadvisor",
             "changesheet",
             "clearall",
             "clearfield",
