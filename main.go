@@ -3,8 +3,6 @@ package main
 import (
 	_ "net/http/pprof"
 
-	_ "github.com/qlik-oss/gopherciser/elastic"
-
 	"github.com/qlik-oss/gopherciser/cmd"
 )
 
