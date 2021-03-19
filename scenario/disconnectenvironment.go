@@ -8,19 +8,19 @@ import (
 )
 
 type (
-	// DisconnectElastic environment, use after actions in an elastic environment and before connecting to an windows environment,
-	// or custom actions towards other types of environments. The action will disconnect open websockets, including towards sense, and thus
+	// DisconnectEnvironment use after actions in an environment and before connecting to a different environment,
+	//The action will disconnect open websockets, including towards sense and event listeners, and thus
 	// doesn't need to be combined with a disconnectapp action.
-	DisconnectElastic struct{}
+	DisconnectEnvironment struct{}
 )
 
-// Validate DisconnectElastic action (Implements ActionSettings interface)
-func (settings DisconnectElastic) Validate() error {
+// Validate DisconnectEnvironment action (Implements ActionSettings interface)
+func (settings DisconnectEnvironment) Validate() error {
 	return nil
 }
 
-// Execute DisconnectElastic action (Implements ActionSettings interface)
-func (settings DisconnectElastic) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+// Execute DisconnectEnvironment action (Implements ActionSettings interface)
+func (settings DisconnectEnvironment) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection != nil {
 		if err := sessionState.Connection.Disconnect(); err != nil {
 			sessionState.LogEntry.Logf(logger.WarningLevel, "error disconnecting: %v", err)
@@ -46,7 +46,7 @@ func (settings DisconnectElastic) Execute(sessionState *session.State, actionSta
 // sessionState.CurrentApp. A list of sub actions to be evaluated can also be included.
 // AppStructureAction returns if this action should be included when getting app structure
 // and any additional sub actions which should also be included.
-func (settings *DisconnectElastic) AppStructureAction() (*AppStructureInfo, []Action) {
+func (settings *DisconnectEnvironment) AppStructureAction() (*AppStructureInfo, []Action) {
 	return &AppStructureInfo{
 		IsAppAction: false,
 		Include:     true,

@@ -566,6 +566,28 @@ Disconnect from an already connected app.
 </details>
 
 <details>
+<summary>disconnectenvironment</summary>
+
+## DisconnectEnvirnment action
+
+Disconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environmentsor uses custom actions towards external environment, it should be used directly after the last action towards the environment.
+
+Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
+
+
+### Example
+
+```json
+{
+    "label": "Disconnect from environment",
+    "action" : "disconnectenvironment"
+}
+```
+
+---
+</details>
+
+<details>
 <summary>dosave</summary>
 
 ## DoSave action
@@ -1364,39 +1386,6 @@ Unsubscribe from all currently subscribed objects.
     }
 }
 ```
----
-</details>
-
----
-</details>
-
-<details>
-<summary>Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions</summary>
-
-## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions
-
-These actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.
-
-
-<details>
-<summary>disconnectelastic</summary>
-
-## DisconnectElastic action
-
-Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
-
-Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
-
-
-### Example
-
-```json
-{
-    "label": "Disconnect from elastic environment",
-    "action" : "disconnectelastic"
-}
-```
-
 ---
 </details>
 

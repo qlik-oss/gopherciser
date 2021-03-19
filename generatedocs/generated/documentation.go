@@ -46,10 +46,6 @@ var (
 			Description: "## DeleteBookmark action\n\nDelete one or more bookmarks in the current app.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"deletebookmark\",\n    \"settings\": {\n        \"mode\": \"single\",\n        \"title\": \"My bookmark\"\n    }\n}\n```\n",
 		},
-		"deletedata": {
-			Description: "## DeleteData action\n\nDelete a data file from data sources.\n",
-			Examples:    "### Example\n\nDelete data from personal space.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\"\n     }\n}\n```\n\nDelete data from space with ID `25180576-755b-46e1-8683-12062584e52c`.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\",\n         \"spaceid\" : \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
-		},
 		"deleteodag": {
 			Description: "## DeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"DeleteOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
@@ -62,9 +58,9 @@ var (
 			Description: "## DisconnectApp action\n\nDisconnect from an already connected app.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from server\",\n    \"action\" : \"disconnectapp\"\n}\n```\n",
 		},
-		"disconnectelastic": {
-			Description: "## DisconnectElastic action\n\nDisconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes \"elastic\" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from elastic environment\",\n    \"action\" : \"disconnectelastic\"\n}\n```\n",
+		"disconnectenvironment": {
+			Description: "## DisconnectEnvirnment action\n\nDisconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environmentsor uses custom actions towards external environment, it should be used directly after the last action towards the environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
+			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from environment\",\n    \"action\" : \"disconnectenvironment\"\n}\n```\n",
 		},
 		"dosave": {
 			Description: "## DoSave action\n\n`DoSave` issues a command to engine to save the currently open app. If the simulated user does not have permission to save the app it will result in an error.",
@@ -73,66 +69,6 @@ var (
 		"duplicatesheet": {
 			Description: "## DuplicateSheet action\n\nDuplicate a sheet, including all objects.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"duplicatesheet\",\n    \"label\": \"Duplicate sheet1\",\n    \"settings\":{\n        \"id\" : \"mBshXB\",\n        \"save\": true,\n        \"changesheet\": true\n    }\n}\n```\n",
-		},
-		"elasticcreateapp": {
-			Description: "## ElasticCreateApp action\n\nCreate an app in a QSEoK deployment. The app will be private to the user who creates it.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"ElasticCreateApp\",\n     \"label\": \"Create new app\",\n     \"settings\": {\n         \"title\": \"Created by script\",\n         \"stream\": \"Everyone\",\n         \"groups\": [\"Everyone\", \"cool kids\"]\n     }\n}\n```\n",
-		},
-		"elasticcreatecollection": {
-			Description: "## ElasticCreateCollection action\n\nCreate a collection in a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n   \"action\": \"ElasticCreateCollection\",\n   \"label\": \"Create collection\",\n   \"settings\": {\n       \"name\": \"Collection {{.Session}}\",\n       \"private\": false\n   }\n}\n```\n",
-		},
-		"elasticdeleteapp": {
-			Description: "## ElasticDeleteApp action\n\nDelete an app from a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"ElasticDeleteApp\",\n     \"label\": \"delete app myapp\",\n     \"settings\": {\n         \"mode\": \"single\",\n         \"appmode\": \"name\",\n         \"app\": \"myapp\"\n     }\n}\n```\n",
-		},
-		"elasticdeletecollection": {
-			Description: "## ElasticDeleteCollection action\n\nDelete a collection in a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n   \"action\": \"ElasticDeleteCollection\",\n   \"label\": \"Delete collection\",\n   \"settings\": {\n       \"name\": \"MyCollection\",\n       \"deletecontents\": true\n   }\n}\n```\n",
-		},
-		"elasticdeleteodag": {
-			Description: "## ElasticDeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"ElasticDeleteOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
-		},
-		"elasticduplicateapp": {
-			Description: "## ElasticDuplicateApp action\n\nDuplicate an app in a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"ElasticDuplicateApp\",\n    \"settings\": {\n        \"appmode\": \"name\",\n        \"app\": \"myapp\",\n        \"title\": \"duplicated app {{.Session}}\"\n    }\n}\n```\n",
-		},
-		"elasticexplore": {
-			Description: "## ElasticExplore action\n\nExplore the hub for apps and fill the artifact map with apps to be used by other actions in the script (for example, the `openapp` action with `appmode` set to `random` or `round`).\n",
-			Examples: "### Examples\n\nThe following example shows how to clear the artifact map and fill it with apps having the tag \"mytag\" from the first page in the hub.\n\n```json\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": false,\n		\"tags\": [\"mytag\"]\n	}\n}\n```\n\nThe following example shows how to clear the artifact map, fill it with all apps from the space \"myspace\" and then add all apps from the space \"circles\".\n\n```json\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": false,\n		\"space\": \"myspace\",\n		\"paging\": true\n	}\n},\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": true,\n		\"space\": \"circles\",\n		\"paging\": true\n	}\n}\n```\n\nThe following example shows how to clear the artifact map and fill it with the apps from the first page of the space \"spaceX\". The apps must have the tag \"tag\" or \"team\" or a tag with id \"15172f9c-4a5f-4ee9-ae35-34c1edd78f8d\", but not be created by the simulated user. In addition, the apps are sorted by the time of modification.\n\n```json\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": false,\n		\"space\": \"spaceX\",\n		\"tags\": [\"tag\", \"team\"],\n		\"tagids\": [\"15172f9c-4a5f-4ee9-ae35-34c1edd78f8d\"],\n		\"owner\": \"others\",\n		\"sorting\": \"updated\",\n		\"paging\": false\n	}\n}\n```\n",
-		},
-		"elasticexportapp": {
-			Description: "## ElasticExportApp action\n\nExport an app and, optionally, save it to file.\n",
-			Examples: "### Example\n\n```json\n{\n	\"action\": \"elasticexportapp\",\n	\"label\": \"Export My App\",\n	\"settings\": {\n		\"appmode\": \"name\",\n		\"app\": \"My App\",\n		\"nodata\": false,\n		\"savetofile\": false\n	}\n}\n```\n",
-		},
-		"elasticgenerateodag": {
-			Description: "## ElasticGenerateOdag action\n\nGenerate an on-demand app from an existing On-Demand App Generation (ODAG) link.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"ElasticGenerateOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
-		},
-		"elastichubsearch": {
-			Description: "## ElasticHubSearch action\n\nSearch the hub in a QSEoK deployment.\n",
-			Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticHubSearch\",\n	\"settings\": {\n		\"searchfor\": \"apps\",\n		\"querysource\": \"fromfile\",\n		\"queryfile\": \"/MyQueries/Queries.txt\"\n	}\n}\n```\n",
-		},
-		"elasticmoveapp": {
-			Description: "## ElasticMoveApp action\n\nMove an app from its existing space into the specified destination space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"elasticmoveapp\",\n    \"settings\": {\n        \"app\": \"AppForEveryone\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"everyone\"\n    }\n}\n```\n",
-		},
-		"elasticopenhub": {
-			Description: "## ElasticOpenHub action\n\nOpen the hub in a QSEoK deployment.\n",
-			Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticOpenHub\",\n	\"label\": \"Open cloud hub with YourCollection and MyCollection\"\n}\n```\n",
-		},
-		"elasticpublishapp": {
-			Description: "## ElasticPublishApp action\n\nPublish an app to a managed space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"elasticpublishapp\",\n    \"settings\": {\n        \"app\": \"Sales\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"Finance\",\n        \"cleartags\": false\n    }\n}\n```\n",
-		},
-		"elasticreload": {
-			Description: "## ElasticReload action\n\nReload an app by simulating selecting **Reload** in the app context menu in the hub.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Reload MyApp\",\n    \"action\": \"elasticreload\",\n    \"settings\": {\n        \"appmode\": \"name\",\n        \"app\": \"MyApp\"\n    }\n}\n```\n",
-		},
-		"elasticuploadapp": {
-			Description: "## ElasticUploadApp action\n\nUpload an app to a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"ElasticUploadApp\",\n     \"label\": \"Upload myapp.qvf\",\n     \"settings\": {\n         \"title\": \"coolapp\",\n         \"filename\": \"/home/root/myapp.qvf\",\n         \"stream\": \"Everyone\",\n         \"spaceid\": \"2342798aaefcb23\",\n     }\n}\n```\n",
 		},
 		"generateodag": {
 			Description: "## GenerateOdag action\n\nGenerate an on-demand app from an existing On-Demand App Generation (ODAG) link.\n",
@@ -205,10 +141,6 @@ var (
 		"unsubscribeobjects": {
 			Description: "## Unsubscribeobjects action\n\nUnsubscribe to any currently subscribed object.\n",
 			Examples:    "### Example\n\nUnsubscribe from a single object (or a list of objects).\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from object maVjt and its children\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"ids\" : [\"maVjt\"]\n    }\n}\n```\n\nUnsubscribe from all currently subscribed objects.\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from all objects\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"clear\": true\n    }\n}\n```",
-		},
-		"uploaddata": {
-			Description: "## UploadData action\n\nUpload a data file to data sources.\n",
-			Examples:    "### Example\n\nUpload data to personal space.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\"\n     }\n}\n```\n\nUpload data to personal space, replacing existing file.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"replace\": true\n     }\n}\n```\n\nUpload data to space with space ID 25180576-755b-46e1-8683-12062584e52c.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"spaceid\": \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
 		},
 	}
 
@@ -411,18 +343,9 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
-				Examples:    "",
-			},
-		},
-		{
-			Name:    "qseokActions",
-			Title:   "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-			Actions: []string{"deletedata", "elasticcreateapp", "elasticcreatecollection", "elasticdeleteapp", "elasticdeletecollection", "elasticdeleteodag", "elasticduplicateapp", "elasticexplore", "elasticexportapp", "elasticgenerateodag", "elastichubsearch", "elasticmoveapp", "elasticopenhub", "elasticpublishapp", "elasticreload", "elasticuploadapp", "uploaddata", "disconnectelastic"},
-			DocEntry: common.DocEntry{
-				Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
 				Examples:    "",
 			},
 		},
