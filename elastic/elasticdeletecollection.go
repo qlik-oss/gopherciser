@@ -1,4 +1,4 @@
-package scenario
+package elastic
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -40,20 +41,20 @@ func (settings ElasticDeleteCollectionSettings) Execute(sessionState *session.St
 		if label != "" {
 			deleteAppLabel = fmt.Sprintf("%s - DA", label)
 		}
-		deleteApp := Action{
-			ActionCore{
+		deleteApp := scenario.Action{
+			ActionCore: scenario.ActionCore{
 				Type:  ActionElasticDeleteApp,
 				Label: deleteAppLabel,
 			},
-			&ElasticDeleteAppSettings{
-				session.AppSelection{},
-				ElasticDeleteAppCoreSettings{
+			Settings: &ElasticDeleteAppSettings{
+				AppSelection: session.AppSelection{},
+				ElasticDeleteAppCoreSettings: ElasticDeleteAppCoreSettings{
 					DeletionMode:   ClearCollection,
 					CollectionName: settings.CollectionName,
 				},
 			},
 		}
-		if isAborted, err := CheckActionError(deleteApp.Execute(sessionState, connection)); isAborted {
+		if isAborted, err := scenario.CheckActionError(deleteApp.Execute(sessionState, connection)); isAborted {
 			return // action is aborted, we should not continue
 		} else if err != nil {
 			actionState.AddErrors(errors.Wrap(err, "failed to clear collection"))

@@ -102,57 +102,42 @@ type (
 )
 
 const (
-	ActionConnectWs               = "connectws"
-	ActionOpenApp                 = "openapp"
-	ActionOpenHub                 = "openhub"
-	ActionElasticOpenHub          = "elasticopenhub"
-	ActionElasticReload           = "elasticreload"
-	ActionElasticUploadApp        = "elasticuploadapp"
-	ActionElasticCreateCollection = "elasticcreatecollection"
-	ActionElasticDeleteCollection = "elasticdeletecollection"
-	ActionElasticHubSearch        = "elastichubsearch"
-	ActionElasticDeleteApp        = "elasticdeleteapp"
-	ActionElasticCreateApp        = "elasticcreateapp"
-	ActionElasticExportApp        = "elasticexportapp"
-	ActionElasticGenerateOdag     = "elasticgenerateodag"
-	ActionElasticDeleteOdag       = "elasticdeleteodag"
-	ActionElasticDuplicateApp     = "elasticduplicateapp"
-	ActionElasticExplore          = "elasticexplore"
-	ActionElasticMoveApp          = "elasticmoveapp"
-	ActionElasticPublishApp       = "elasticpublishapp"
-	ActionGenerateOdag            = "generateodag"
-	ActionDeleteOdag              = "deleteodag"
-	ActionUploadData              = "uploaddata"
-	ActionDeleteData              = "deletedata"
-	ActionCreateSheet             = "createsheet"
-	ActionCreateBookmark          = "createbookmark"
-	ActionDeleteBookmark          = "deletebookmark"
-	ActionApplyBookmark           = "applybookmark"
-	ActionSetScript               = "setscript"
-	ActionChangeSheet             = "changesheet"
-	ActionSelect                  = "select"
-	ActionClearAll                = "clearall"
-	ActionIterated                = "iterated"
-	ActionThinkTime               = "thinktime"
-	ActionRandom                  = "randomaction"
-	ActionSheetChanger            = "sheetchanger"
-	ActionDuplicateSheet          = "duplicatesheet"
-	ActionReload                  = "reload"
-	ActionProductVersion          = "productversion"
-	ActionPublishSheet            = "publishsheet"
-	ActionUnPublishSheet          = "unpublishsheet"
-	ActionDisconnectApp           = "disconnectapp"
-	ActionDeleteSheet             = "deletesheet"
-	ActionPublishBookmark         = "publishbookmark"
-	ActionUnPublishBookmark       = "unpublishbookmark"
-	ActionSubscribeObjects        = "subscribeobjects"
-	ActionUnsubscribeObjects      = "unsubscribeobjects"
-	ActionListBoxSelect           = "listboxselect"
-	ActionDisconnectElastic       = "disconnectelastic"
-	ActionClickActionButton       = "clickactionbutton"
-	ActionContainerTab            = "containertab"
-	ActionDoSave                  = "dosave"
-	ActionClearField              = "clearfield"
+	ActionConnectWs          = "connectws"
+	ActionOpenApp            = "openapp"
+	ActionOpenHub            = "openhub"
+	ActionGenerateOdag       = "generateodag"
+	ActionDeleteOdag         = "deleteodag"
+	ActionUploadData         = "uploaddata"
+	ActionDeleteData         = "deletedata"
+	ActionCreateSheet        = "createsheet"
+	ActionCreateBookmark     = "createbookmark"
+	ActionDeleteBookmark     = "deletebookmark"
+	ActionApplyBookmark      = "applybookmark"
+	ActionSetScript          = "setscript"
+	ActionChangeSheet        = "changesheet"
+	ActionSelect             = "select"
+	ActionClearAll           = "clearall"
+	ActionIterated           = "iterated"
+	ActionThinkTime          = "thinktime"
+	ActionRandom             = "randomaction"
+	ActionSheetChanger       = "sheetchanger"
+	ActionDuplicateSheet     = "duplicatesheet"
+	ActionReload             = "reload"
+	ActionProductVersion     = "productversion"
+	ActionPublishSheet       = "publishsheet"
+	ActionUnPublishSheet     = "unpublishsheet"
+	ActionDisconnectApp      = "disconnectapp"
+	ActionDeleteSheet        = "deletesheet"
+	ActionPublishBookmark    = "publishbookmark"
+	ActionUnPublishBookmark  = "unpublishbookmark"
+	ActionSubscribeObjects   = "subscribeobjects"
+	ActionUnsubscribeObjects = "unsubscribeobjects"
+	ActionListBoxSelect      = "listboxselect"
+	ActionDisconnectElastic  = "disconnectelastic"
+	ActionClickActionButton  = "clickactionbutton"
+	ActionContainerTab       = "containertab"
+	ActionDoSave             = "dosave"
+	ActionClearField         = "clearfield"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -225,57 +210,42 @@ func registerAction(override bool, act string, settings ActionSettings) error {
 // ResetDefaultActions reset action list to default list. Used e.g. for tests overriding default actions
 func ResetDefaultActions() {
 	actionHandler = map[string]ActionSettings{
-		ActionConnectWs:               nil,
-		ActionOpenApp:                 OpenAppSettings{},
-		ActionOpenHub:                 OpenHubSettings{},
-		ActionElasticOpenHub:          ElasticOpenHubSettings{},
-		ActionElasticReload:           ElasticReloadSettings{},
-		ActionElasticUploadApp:        ElasticUploadAppSettings{},
-		ActionElasticCreateCollection: ElasticCreateCollectionSettings{},
-		ActionElasticDeleteCollection: ElasticDeleteCollectionSettings{},
-		ActionElasticHubSearch:        ElasticHubSearchSettings{},
-		ActionElasticDeleteApp:        ElasticDeleteAppSettings{},
-		ActionElasticCreateApp:        ElasticCreateAppSettings{},
-		ActionElasticExportApp:        ElasticExportAppSettings{},
-		ActionElasticGenerateOdag:     ElasticGenerateOdagSettings{},
-		ActionElasticDeleteOdag:       ElasticDeleteOdagSettings{},
-		ActionElasticDuplicateApp:     ElasticDuplicateAppSettings{},
-		ActionElasticExplore:          ElasticExploreSettings{},
-		ActionElasticMoveApp:          ElasticMoveAppSettings{},
-		ActionElasticPublishApp:       ElasticPublishAppSettings{},
-		ActionGenerateOdag:            GenerateOdagSettings{},
-		ActionDeleteOdag:              DeleteOdagSettings{},
-		ActionUploadData:              UploadDataSettings{},
-		ActionDeleteData:              DeleteDataSettings{},
-		ActionCreateSheet:             CreateSheetSettings{},
-		ActionCreateBookmark:          CreateBookmarkSettings{},
-		ActionDeleteBookmark:          DeleteBookmarkSettings{},
-		ActionApplyBookmark:           ApplyBookmarkSettings{},
-		ActionSetScript:               SetScriptSettings{},
-		ActionChangeSheet:             ChangeSheetSettings{},
-		ActionSelect:                  SelectionSettings{},
-		ActionClearAll:                ClearAllSettings{},
-		ActionIterated:                IteratedSettings{},
-		ActionThinkTime:               ThinkTimeSettings{},
-		ActionRandom:                  RandomActionSettings{},
-		ActionSheetChanger:            SheetChangerSettings{},
-		ActionDuplicateSheet:          DuplicateSheetSettings{},
-		ActionReload:                  ReloadSettings{},
-		ActionProductVersion:          ProductVersionSettings{},
-		ActionPublishSheet:            PublishSheetSettings{},
-		ActionUnPublishSheet:          UnPublishSheetSettings{},
-		ActionDisconnectApp:           DisconnectAppSettings{},
-		ActionDeleteSheet:             DeleteSheetSettings{},
-		ActionPublishBookmark:         PublishBookmarkSettings{},
-		ActionUnPublishBookmark:       UnPublishBookmarkSettings{},
-		ActionSubscribeObjects:        SubscribeObjectsSettings{},
-		ActionUnsubscribeObjects:      UnsubscribeObjects{},
-		ActionListBoxSelect:           ListBoxSelectSettings{},
-		ActionDisconnectElastic:       DisconnectElastic{},
-		ActionClickActionButton:       ClickActionButtonSettings{},
-		ActionContainerTab:            ContainerTabSettings{},
-		ActionDoSave:                  DoSaveSettings{},
-		ActionClearField:              ClearFieldSettings{},
+		ActionConnectWs:          nil,
+		ActionOpenApp:            OpenAppSettings{},
+		ActionOpenHub:            OpenHubSettings{},
+		ActionGenerateOdag:       GenerateOdagSettings{},
+		ActionDeleteOdag:         DeleteOdagSettings{},
+		ActionUploadData:         UploadDataSettings{},
+		ActionDeleteData:         DeleteDataSettings{},
+		ActionCreateSheet:        CreateSheetSettings{},
+		ActionCreateBookmark:     CreateBookmarkSettings{},
+		ActionDeleteBookmark:     DeleteBookmarkSettings{},
+		ActionApplyBookmark:      ApplyBookmarkSettings{},
+		ActionSetScript:          SetScriptSettings{},
+		ActionChangeSheet:        ChangeSheetSettings{},
+		ActionSelect:             SelectionSettings{},
+		ActionClearAll:           ClearAllSettings{},
+		ActionIterated:           IteratedSettings{},
+		ActionThinkTime:          ThinkTimeSettings{},
+		ActionRandom:             RandomActionSettings{},
+		ActionSheetChanger:       SheetChangerSettings{},
+		ActionDuplicateSheet:     DuplicateSheetSettings{},
+		ActionReload:             ReloadSettings{},
+		ActionProductVersion:     ProductVersionSettings{},
+		ActionPublishSheet:       PublishSheetSettings{},
+		ActionUnPublishSheet:     UnPublishSheetSettings{},
+		ActionDisconnectApp:      DisconnectAppSettings{},
+		ActionDeleteSheet:        DeleteSheetSettings{},
+		ActionPublishBookmark:    PublishBookmarkSettings{},
+		ActionUnPublishBookmark:  UnPublishBookmarkSettings{},
+		ActionSubscribeObjects:   SubscribeObjectsSettings{},
+		ActionUnsubscribeObjects: UnsubscribeObjects{},
+		ActionListBoxSelect:      ListBoxSelectSettings{},
+		ActionDisconnectElastic:  DisconnectElastic{},
+		ActionClickActionButton:  ClickActionButtonSettings{},
+		ActionContainerTab:       ContainerTabSettings{},
+		ActionDoSave:             DoSaveSettings{},
+		ActionClearField:         ClearFieldSettings{},
 	}
 }
 

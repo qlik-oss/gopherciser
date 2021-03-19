@@ -1,4 +1,4 @@
-package scenario
+package elastic
 
 import (
 	"fmt"
@@ -55,7 +55,7 @@ func (settings *ElasticDeleteAppSettings) UnmarshalJSON(arg []byte) error {
 		"/appguid",
 		"/appname",
 	}); err != nil {
-		return errors.Errorf("%s %s, please remove from script", ActionDeleteData, err.Error())
+		return errors.Errorf("%s %s, please remove from script", ActionElasticDeleteApp, err.Error())
 	}
 
 	var actionCore ElasticDeleteAppCoreSettings

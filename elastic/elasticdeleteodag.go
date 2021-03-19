@@ -1,15 +1,16 @@
-package scenario
+package elastic
 
 import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
 	//ElasticDeleteOdagSettings settings for ElasticDeleteOdag
 	ElasticDeleteOdagSettings struct {
-		DeleteOdagSettings
+		scenario.DeleteOdagSettings
 	}
 )
 
@@ -22,7 +23,7 @@ func (settings ElasticDeleteOdagSettings) Validate() error {
 func (settings ElasticDeleteOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := ElasticOdagEndpointConfiguration
-	err := deleteOdag(sessionState, settings.DeleteOdagSettings, actionState, connectionSettings, odagEndpoint)
+	err := scenario.DeleteOdag(sessionState, settings.DeleteOdagSettings, actionState, connectionSettings, odagEndpoint)
 	if err != nil {
 		actionState.AddErrors(err)
 	}

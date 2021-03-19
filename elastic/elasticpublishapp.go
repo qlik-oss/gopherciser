@@ -1,4 +1,4 @@
-package scenario
+package elastic
 
 import (
 	"encoding/json"

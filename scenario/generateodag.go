@@ -45,12 +45,6 @@ var WindowsOdagEndpointConfiguration = OdagEndpointConfiguration{
 	EnabledEndpoint: "api/odag/v1/isodagavailable",
 }
 
-var ElasticOdagEndpointConfiguration = OdagEndpointConfiguration{
-	Main:            "api/v1/odaglinks",
-	Requests:        "api/v1/odagrequests",
-	EnabledEndpoint: "api/v1/odagisavailable",
-}
-
 // Validate GenerateOdagSettings action (Implements ActionSettings interface)
 func (settings GenerateOdagSettings) Validate() error {
 	if settings.Name.String() == "" {
@@ -63,13 +57,14 @@ func (settings GenerateOdagSettings) Validate() error {
 func (settings GenerateOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration
-	err := generateOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint, "")
+	err := GenerateOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint, "")
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
-func generateOdag(sessionState *session.State, settings GenerateOdagSettings, actionState *action.State,
+// GenerateOdag generate ODAG app
+func GenerateOdag(sessionState *session.State, settings GenerateOdagSettings, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration, selectionAppId string) error {
 	odagLinkName, err := sessionState.ReplaceSessionVariables(&settings.Name)
 	if err != nil {

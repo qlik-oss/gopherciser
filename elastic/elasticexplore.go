@@ -1,4 +1,4 @@
-package scenario
+package elastic
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -271,8 +272,8 @@ func (settings ElasticExploreSettings) Execute(sessionState *session.State, acti
 }
 
 // AppStructureAction implements AppStructureAction interface
-func (settings ElasticExploreSettings) AppStructureAction() (*AppStructureInfo, []Action) {
-	return &AppStructureInfo{
+func (settings ElasticExploreSettings) AppStructureAction() (*scenario.AppStructureInfo, []scenario.Action) {
+	return &scenario.AppStructureInfo{
 		IsAppAction: false,
 		Include:     true,
 	}, nil

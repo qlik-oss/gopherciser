@@ -1,7 +1,9 @@
-package scenario
+package elastic
 
 import (
 	"testing"
+
+	"github.com/qlik-oss/gopherciser/scenario"
 )
 
 func TestElasticDeleteAppSettings(t *testing.T) {
@@ -13,7 +15,7 @@ func TestElasticDeleteAppSettings(t *testing.T) {
 				"collectionname" : "mycollectioname"
 			}
 }`)
-	var item Action
+	var item scenario.Action
 
 	if err := jsonit.Unmarshal(raw, &item); err != nil {
 		t.Fatal(err)
@@ -60,7 +62,7 @@ func TestElasticDeleteAppSettingsDeprecated(t *testing.T) {
 				"appguid" : "myguid"
 			}
 }`)
-	var item Action
+	var item scenario.Action
 	if err := jsonit.Unmarshal(raw, &item); err == nil {
 		t.Error("Expected unmarshal error when using appguid setting")
 	}

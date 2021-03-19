@@ -1,4 +1,4 @@
-package scenario
+package elastic
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/qlik-oss/gopherciser/elasticstructs"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -378,8 +379,8 @@ func (openHub ElasticOpenHubSettings) Validate() (err error) {
 }
 
 // AppStructureAction implements AppStructureAction interface
-func (openHub ElasticOpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action) {
-	return &AppStructureInfo{
+func (openHub ElasticOpenHubSettings) AppStructureAction() (*scenario.AppStructureInfo, []scenario.Action) {
+	return &scenario.AppStructureInfo{
 		IsAppAction: false,
 		Include:     true,
 	}, nil

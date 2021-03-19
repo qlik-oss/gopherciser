@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/qlik-oss/gopherciser/elasticstructs"
-	"github.com/qlik-oss/gopherciser/logger"
-
 	"github.com/pkg/errors"
-
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/elasticstructs"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -34,13 +32,14 @@ func (settings DeleteOdagSettings) Validate() error {
 func (settings DeleteOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration
-	err := deleteOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
+	err := DeleteOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
-func deleteOdag(sessionState *session.State, settings DeleteOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
+// DeleteOdag delete ODAG app
+func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
 	odagLinkName, err := sessionState.ReplaceSessionVariables(&settings.Name)
 	if err != nil {
 		return err
