@@ -300,6 +300,9 @@ changed.
 regression logging introduces a delay after each action in the executed
 scenario.
 
+**Note** With regression logging enabled, the the scheduler is implicitly set
+to execute the scenario as one user for one iteration.
+
 
 ## Complementary manual measurements
 
