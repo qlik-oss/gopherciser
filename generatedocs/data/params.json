@@ -486,6 +486,9 @@
     "listboxselect.accept": [
         "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
     ],
+    "openapp.unique" : [
+        "Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."
+    ],
     "productversion.log": [
         "Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."
     ],
