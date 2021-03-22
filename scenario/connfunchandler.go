@@ -42,7 +42,7 @@ func GetConnTestFuncs() []func(*connection.ConnectionSettings, *session.State, *
 }
 
 func defaultGuidWsConnectTest(connectionSettings *connection.ConnectionSettings, sessionState *session.State, actionState *action.State) error {
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "00000000-0000-0000-0000-000000000000")
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "00000000-0000-0000-0000-000000000000", nil)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get connect function")
 	}

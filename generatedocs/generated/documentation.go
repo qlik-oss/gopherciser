@@ -250,6 +250,7 @@ var (
 		"listboxselect.id":                                {"ID of the listbox in which to select values."},
 		"listboxselect.type":                              {"Selection type.", "`all`: Select all values.", "`alternative`: Select alternative values.", "`excluded`: Select excluded values.", "`possible`: Select possible values."},
 		"listboxselect.wrap":                              {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
+		"openapp.unique":                                  {"Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."},
 		"productversion.log":                              {"Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."},
 		"publishsheet.mode":                               {"", "`allsheets`: Publish all sheets in the app.", "`sheetids`: Only publish the sheets specified by the `sheetIds` array."},
 		"publishsheet.sheetIds":                           {"(optional) Array of sheet IDs for the `sheetids` mode."},
