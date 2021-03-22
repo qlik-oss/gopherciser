@@ -136,6 +136,7 @@ const (
 	ActionContainerTab          = "containertab"
 	ActionDoSave                = "dosave"
 	ActionClearField            = "clearfield"
+	ActionAskHubAdvisor         = "askhubadvisor"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -242,6 +243,7 @@ func ResetDefaultActions() {
 		ActionContainerTab:          ContainerTabSettings{},
 		ActionDoSave:                DoSaveSettings{},
 		ActionClearField:            ClearFieldSettings{},
+		ActionAskHubAdvisor:         AskHubAdvisorSettings{},
 	}
 }
 

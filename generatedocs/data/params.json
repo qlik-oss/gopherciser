@@ -33,6 +33,41 @@
     "appselection.filename": [
         "Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."
     ],
+    "askhubadvisor.app": [
+        "Optional name of app to pick in followup queries. If not set, a random app is picked."
+    ],
+    "askhubadvisor.querysource": [
+        "The source from which queries will be randomly picked.",
+        "`file`: Read queries from file defined by `file`.",
+        "`querylist`: Read queries from list defined by `querylist`."
+    ],
+    "askhubadvisor.querylist": [
+        "A list of queries. Plain strings are supported and will get a weight of `1`."
+    ],
+    "askhubadvisor.querylist.weight": [
+        "A weight to set probablility of query being peformed."
+    ],
+    "askhubadvisor.querylist.query": [
+        "A query sentence."
+    ],
+    "askhubadvisor.lang": [
+        "Query language."
+    ],
+    "askhubadvisor.maxfollowup": [
+        "The maximum depth of followup queries asked. A value of `0` means that a query from querysource is performed without followup queries."
+    ],
+    "askhubadvisor.file": [
+        "Path to query file."
+    ],
+    "askhubadvisor.thinktime": [
+        "Settings for the `thinktime` action, which is automatically inserted before each followup."
+    ],
+    "askhubadvisor.saveimages": [
+        "Save images of charts to file."
+    ],
+    "askhubadvisor.saveimagefile": [
+        "File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables)."
+    ],
     "clearfield.name" : [
         "Name of field to clear."
     ],
