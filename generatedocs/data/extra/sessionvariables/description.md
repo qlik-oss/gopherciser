@@ -26,35 +26,24 @@ The following functions are supported:
 * `uuid`: Generate an uuid.
 
 ### Example
+
 ```json
 {
-    "action": "ElasticCreateApp",
-    "label": "Create new app",
+    "label" : "Create bookmark",
+    "action": "createbookmark",
     "settings": {
-        "title": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "stream": "mystream",
-        "groups": [
-            "mygroup"
-        ]
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
+        "description": "This bookmark contains some interesting selections"
     }
 },
 {
-    "label": "OpenApp",
-    "action": "OpenApp",
-    "settings": {
-        "appname": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})"
-    }
-},
-{
-    "action": "elasticexportapp",
-    "label": "Export app",
-    "settings": {
-        "appmode" : "name",
-        "app" : "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "savetofile": true,
-        "exportname": "Exported app {{.Thread}}-{{.Session}} {{now.UTC}}"
+    "label" : "Publish created bookmark",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
     }
 }
-
 ```
+
 </details>

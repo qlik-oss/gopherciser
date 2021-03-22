@@ -27,7 +27,6 @@ type (
 	}
 )
 
-// odagWindowsEndpoint - Windows, odagElasticEndpoint - elastic
 const odagPollingInterval = 3 * time.Second
 const odagStatusPending = "pending"
 const odagStatusLoading = "loading"
@@ -53,7 +52,7 @@ func (settings GenerateOdagSettings) Validate() error {
 	return nil
 }
 
-// Execute ElasticDeleteCollectionSettings action (Implements ActionSettings interface)
+// Execute GenerateOdagSettings action (Implements ActionSettings interface)
 func (settings GenerateOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration

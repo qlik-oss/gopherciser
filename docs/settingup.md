@@ -721,13 +721,13 @@ Perform list object specific selectiontypes in listbox.
 
 Open an app.
 
-**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`, `elasticopenhub` or `elasticexplore`.
+**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.
 
 * `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
+    * `current`: (default) Use the current app, selected by an app selection in a previous action
     * `guid`: Use the app GUID specified by the `app` parameter.
     * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
+    * `random`: Select a random app from the artifact map, which is filled by e.g. `openhub`
     * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
     * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
     * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
@@ -1497,37 +1497,26 @@ The following functions are supported:
 * `uuid`: Generate an uuid.
 
 ### Example
+
 ```json
 {
-    "action": "ElasticCreateApp",
-    "label": "Create new app",
+    "label" : "Create bookmark",
+    "action": "createbookmark",
     "settings": {
-        "title": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "stream": "mystream",
-        "groups": [
-            "mygroup"
-        ]
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
+        "description": "This bookmark contains some interesting selections"
     }
 },
 {
-    "label": "OpenApp",
-    "action": "OpenApp",
-    "settings": {
-        "appname": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})"
-    }
-},
-{
-    "action": "elasticexportapp",
-    "label": "Export app",
-    "settings": {
-        "appmode" : "name",
-        "app" : "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "savetofile": true,
-        "exportname": "Exported app {{.Thread}}-{{.Session}} {{now.UTC}}"
+    "label" : "Publish created bookmark",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
     }
 }
-
 ```
+
 </details>
 
 
