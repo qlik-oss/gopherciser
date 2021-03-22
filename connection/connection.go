@@ -120,16 +120,16 @@ func (connectionSettings *ConnectionSettings) Validate() error {
 }
 
 // GetConnectFunc Get function for connecting to sense
-func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID string) (func() (string, error), error) {
+func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID string, customHeaders http.Header) (func() (string, error), error) {
 	header, err := connectionSettings.GetHeaders(state)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	switch connectionSettings.Mode {
 	case JWT:
-		return connectionSettings.JwtSettings.GetConnectFunc(state, connectionSettings, appGUID, header), nil
+		return connectionSettings.JwtSettings.GetConnectFunc(state, connectionSettings, appGUID, header, customHeaders), nil
 	case WS:
-		return connectionSettings.WsSettings.GetConnectFunc(state, connectionSettings, appGUID, header), nil
+		return connectionSettings.WsSettings.GetConnectFunc(state, connectionSettings, appGUID, header, customHeaders), nil
 	default:
 		return nil, errors.Errorf("Unknown connection mode <%d>", connectionSettings.Mode)
 	}

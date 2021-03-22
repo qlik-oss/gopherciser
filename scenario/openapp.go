@@ -3,7 +3,9 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
@@ -14,9 +16,13 @@ import (
 )
 
 type (
+	OpenAppSettingsCore struct {
+		UniqueSession bool `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
+	}
 	// OpenAppSettings app and server settings
 	OpenAppSettings struct {
 		session.AppSelection
+		OpenAppSettingsCore
 	}
 
 	connectWsSettings struct {
@@ -37,11 +43,13 @@ func (openApp *OpenAppSettings) UnmarshalJSON(arg []byte) error {
 		return errors.Errorf("%s %s, please remove from script", ActionOpenApp, err.Error())
 	}
 
-	var appSelection session.AppSelection
-	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
+	if err := jsonit.Unmarshal(arg, &openApp.OpenAppSettingsCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
 	}
-	*openApp = OpenAppSettings{appSelection}
+
+	if err := jsonit.Unmarshal(arg, &openApp.AppSelection); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
+	}
 	return nil
 }
 
@@ -54,8 +62,12 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}
 
 	actionState.Details = sessionState.LogEntry.Session.AppName
-
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID)
+	var headers http.Header
+	if openApp.UniqueSession {
+		headers = make(http.Header, 1)
+		headers.Add("X-Qlik-Session", uuid.NewString())
+	}
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID, headers)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to get connect function"))
 		return
