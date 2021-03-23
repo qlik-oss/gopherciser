@@ -30,13 +30,22 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
-	// Try one request first to minimize amount of errors when connection fails.
-	_, _ = sessionState.Rest.GetSync(fmt.Sprintf("%s/api/v1/users/me", host), actionState, sessionState.LogEntry, nil)
+	// Try one request sync first to minimize amount of errors when connection fails.
+	_, _ = sessionState.Rest.GetSync(fmt.Sprintf("%s/api/about/v1/language", host), actionState, sessionState.LogEntry, nil)
 	if actionState.Failed {
 		return
 	}
 
-	// TODO - A lot!
+	// TODO save feature flags and values
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/capability/v1/list", host), actionState, sessionState.LogEntry, nil)
+
+	// TODO log versions?
+	// GET api/hub/about
+
+	// TODO Save provileges and values?
+	// GET api/hub/v1/privileges
+
+	// GET api/hub/v1/user/info
 
 	sessionState.Wait(actionState)
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
