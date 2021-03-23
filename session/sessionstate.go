@@ -64,19 +64,18 @@ type (
 
 	// State for user
 	State struct {
-		Cookies           http.CookieJar
-		VirtualProxy      string
-		Connection        IConnection
-		ArtifactMap       *ArtifactMap
-		IDMap             IDMap
-		HeaderJar         *HeaderJar
-		Timeout           time.Duration
-		User              *users.User
-		OutputsDir        string
-		CurrentApp        *ArtifactEntry
-		CurrentUser       *structs.User
-		Counters          *statistics.ExecutionCounters
-		DataConnectionIDs DataConnectionIDs
+		Cookies      http.CookieJar
+		VirtualProxy string
+		Connection   IConnection
+		ArtifactMap  *ArtifactMap
+		IDMap        IDMap
+		HeaderJar    *HeaderJar
+		Timeout      time.Duration
+		User         *users.User
+		OutputsDir   string
+		CurrentApp   *ArtifactEntry
+		CurrentUser  *structs.User
+		Counters     *statistics.ExecutionCounters
 		// CurrentActionState will contain the state of the latest action to be started
 		CurrentActionState *action.State
 		LogEntry           *logger.LogEntry
@@ -102,6 +101,10 @@ type (
 
 		eventWs     *eventws.EventWebsocket
 		eventWsLock sync.Mutex
+
+		// customStates are used to register custom states when using gopherciser as a library
+		customStates     map[string]interface{}
+		customStatesLock sync.Mutex
 	}
 
 	// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
@@ -198,6 +201,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		Pending:        pending.NewHandler(32),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		Counters:       counters,
+		customStates:   make(map[string]interface{}),
 
 		ctx:       sessionCtx,
 		ctxCancel: cancel,
@@ -987,4 +991,21 @@ func (state *State) ClearSubscribedObjects(IDs []string) error {
 // UpdateFeatureMap request features from server and updates feature map
 func (state *State) UpdateFeatureMap(host string, actionState *action.State) {
 	state.Features.UpdateFeatureMap(state.Rest, host, actionState, state.LogEntry)
+}
+
+// AddCustomState add custom data handler to state object
+func (state *State) AddCustomState(key string, value interface{}) {
+	state.customStatesLock.Lock()
+	defer state.customStatesLock.Unlock()
+
+	state.customStates[key] = value
+}
+
+// GetCustomState data handler from state object
+func (state *State) GetCustomState(key string) (interface{}, bool) {
+	state.customStatesLock.Lock()
+	defer state.customStatesLock.Unlock()
+
+	value, exist := state.customStates[key]
+	return value, exist
 }
