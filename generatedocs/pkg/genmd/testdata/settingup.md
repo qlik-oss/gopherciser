@@ -2073,17 +2073,12 @@ The following functions are supported:
 
 ```json
 {
-    "action": "ElasticCreateApp",
-    "label": "Create new app",
-    "settings": {
-        "title": "{{env \"TITLE\"}}",
-        "stream": "mystream",
-        "groups": [
-            "mygroup"
-        ]
-    }
+  "action": "createbookmark",
+  "settings": {
+    "title": "{{env \"TITLE\"}}",
+    "description": "This bookmark contains some interesting selections"
+  }
 }
-
 ```
 </details>
 
