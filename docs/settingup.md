@@ -2347,6 +2347,7 @@ The following functions are supported:
 * `hostname`: Hostname of the local machine.
 * `timestamp`: Timestamp in `yyyyMMddhhmmss` format.
 * `uuid`: Generate an uuid.
+* `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 
 ### Example
 ```json
@@ -2376,6 +2377,21 @@ The following functions are supported:
         "app" : "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
         "savetofile": true,
         "exportname": "Exported app {{.Thread}}-{{.Session}} {{now.UTC}}"
+    }
+}
+
+```
+
+```json
+{
+    "action": "ElasticCreateApp",
+    "label": "Create new app",
+    "settings": {
+        "title": "{{env \"TITLE\"}}",
+        "stream": "mystream",
+        "groups": [
+            "mygroup"
+        ]
     }
 }
 
