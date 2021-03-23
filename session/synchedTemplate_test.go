@@ -2,6 +2,7 @@ package session
 
 import (
 	"bytes"
+	"os"
 	"testing"
 )
 
@@ -46,8 +47,10 @@ func TestTemplate(t *testing.T) {
 		Param1 SyncedTemplate `json:"param1"`
 	}
 
+	_ = os.Setenv("test-env", "val2")
+
 	jsn := `{
-	"param1" : "val1 is {{.Val1}}"
+	"param1" : "val1 is {{.Val1}} and val2 is {{env \"test-env\"}}"
 }`
 
 	if err := jsonit.Unmarshal([]byte(jsn), &myStruct); err != nil {
@@ -59,7 +62,7 @@ func TestTemplate(t *testing.T) {
 		t.Fatal("failed to execute template:", err)
 	}
 
-	expected := "val1 is val1"
+	expected := "val1 is val1 and val2 is val2"
 	result := buf.String()
 	if expected != result {
 		t.Errorf("unexpected template result<%s> expected<%s>", result, expected)

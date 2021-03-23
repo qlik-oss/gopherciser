@@ -2347,6 +2347,7 @@ The following functions are supported:
 * `hostname`: Hostname of the local machine.
 * `timestamp`: Timestamp in `yyyyMMddhhmmss` format.
 * `uuid`: Generate an uuid.
+* `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 
 ### Example
 ```json
@@ -2379,6 +2380,16 @@ The following functions are supported:
     }
 }
 
+```
+
+```json
+{
+  "action": "createbookmark",
+  "settings": {
+    "title": "{{env \"TITLE\"}}",
+    "description": "This bookmark contains some interesting selections"
+  }
+}
 ```
 </details>
 
