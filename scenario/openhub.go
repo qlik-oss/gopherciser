@@ -39,13 +39,32 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	// TODO save feature flags and values
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/capability/v1/list", host), actionState, sessionState.LogEntry, nil)
 
-	// TODO log versions?
-	// GET api/hub/about
+	// TODO log versions from about request?
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)
 
-	// TODO Save provileges and values?
-	// GET api/hub/v1/privileges
+	// TODO Save privileges and values?
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil)
 
-	// GET api/hub/v1/user/info
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil)
+
+	// TODO fill artifactmap
+	// GET api/hub/v1/streams
+	// <- {"data":[{"type":"Stream","id":"aaec8d41-5201-43ab-809f-3063750dfafd","attributes":{"name":"Everyone","modifiedDate":"2021-03-03T16:22:04.588Z","privileges":["read","publish"]},"relationships":{"owner":{"data":{"type":"User","id":"93b3d9d6-4f00-42a7-8252-5b6cfbfac224"}}}}],"included":[{"type":"User","id":"93b3d9d6-4f00-42a7-8252-5b6cfbfac224","attributes":{"name":"sa_repository","userId":"sa_repository","userDirectory":"INTERNAL","privileges":null}}]}
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		// TODO will there be more with more streams?
+		// aaec8d41-5201-43ab-809f-3063750dfafd is Everyone stream
+		// GET api/hub/v1/apps/stream/aaec8d41-5201-43ab-809f-3063750dfafd
+	})
+
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/hub/qrsData?reloadUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, nil)
 
 	sessionState.Wait(actionState)
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
