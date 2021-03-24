@@ -37,53 +37,14 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
-	// TODO save feature flags and values
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/capability/v1/list", host), actionState, sessionState.LogEntry, nil)
-
-	// TODO log versions from about request?
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)
-
-	// TODO Save privileges and values?
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil)
-
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/capability/v1/list", host), actionState, sessionState.LogEntry, nil) // TODO save feature flags and values
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)          // TODO log versions from about request?
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil)  // TODO Save privileges and values?
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil)
 
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-		if err != nil {
-			return
-		}
-		var streams structs.Streams
-		if err := jsonit.Unmarshal(req.ResponseBody, &streams); err != nil {
-			actionState.AddErrors(err)
-			return
-		}
-
-		for _, data := range streams.Data {
-			if data.Type != structs.StreamsTypeStream {
-				continue
-			}
-
-			if data.Attributes.Name == structs.StreamNameEveryone { // TODO probably should do this for more
-				sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-					if err != nil {
-						return
-					}
-					var stream structs.Stream
-					if err = jsonit.Unmarshal(req.ResponseBody, &stream); err != nil {
-						actionState.AddErrors(err)
-						return
-					}
-
-					if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
-						actionState.AddErrors(err)
-						return
-					}
-				})
-			}
-		}
-	})
+	fillArtifactsFromStreams(sessionState, actionState, host)
 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
@@ -105,4 +66,39 @@ func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action
 		IsAppAction: false,
 		Include:     true,
 	}, nil
+}
+
+func fillArtifactsFromStreams(sessionState *session.State, actionState *action.State, host string) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil {
+			return
+		}
+		var streams structs.Streams
+		if err := jsonit.Unmarshal(req.ResponseBody, &streams); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+
+		for _, data := range streams.Data {
+			if data.Type != structs.StreamsTypeStream {
+				continue
+			}
+
+			sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+				if err != nil {
+					return
+				}
+				var stream structs.Stream
+				if err = jsonit.Unmarshal(req.ResponseBody, &stream); err != nil {
+					actionState.AddErrors(err)
+					return
+				}
+
+				if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
+					actionState.AddErrors(err)
+					return
+				}
+			})
+		}
+	})
 }

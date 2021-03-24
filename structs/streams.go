@@ -6,9 +6,6 @@ import (
 
 const (
 	StreamsTypeStream = "Stream"
-
-	StreamNameEveryone = "Everyone"
-	StreamNamePrivate  = "privatestream"
 )
 
 type Streams struct {
