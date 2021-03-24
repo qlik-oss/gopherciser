@@ -37,9 +37,9 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/capability/v1/list", host), actionState, sessionState.LogEntry, nil) // TODO save feature flags and values
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)          // TODO log versions from about request?
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil)  // TODO Save privileges and values?
+	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)         // TODO log versions from about request?
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil) // TODO Save privileges and values?
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil)
