@@ -15,8 +15,8 @@ type (
 )
 
 // Validate DisconnectEnvironment action (Implements ActionSettings interface)
-func (settings DisconnectEnvironment) Validate() error {
-	return nil
+func (settings DisconnectEnvironment) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute DisconnectEnvironment action (Implements ActionSettings interface)

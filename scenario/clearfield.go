@@ -17,11 +17,11 @@ type (
 )
 
 // Validate ClearField action settings
-func (settings ClearFieldSettings) Validate() error {
+func (settings ClearFieldSettings) Validate() ([]string, error) {
 	if settings.Name == "" {
-		return errors.New("no name defined for clear field action")
+		return nil, errors.New("no name defined for clear field action")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute ClearField action

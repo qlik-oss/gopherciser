@@ -179,12 +179,12 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 }
 
 // Validate open app scenario item
-func (openApp OpenAppSettings) Validate() error {
+func (openApp OpenAppSettings) Validate() ([]string, error) {
 	if err := openApp.AppSelection.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
 func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID string) error {
@@ -230,8 +230,8 @@ func (connectWs connectWsSettings) Execute(sessionState *session.State, actionSt
 	}
 }
 
-func (connectWs connectWsSettings) Validate() error {
-	return nil
+func (connectWs connectWsSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface

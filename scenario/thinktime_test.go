@@ -57,23 +57,23 @@ func TestNegative(t *testing.T) {
 	_, err = jsonit.Marshal(settings)
 	validateError(t, err, "scenario.ThinkTimeSettings.DistributionSettings: Type: Unknown DistributionType<300>")
 
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "distribution type<300> not supported")
 
 	settings.Type = helpers.StaticDistribution
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "Illegal static distribution value")
 
 	settings.Type = helpers.UniformDistribution
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "uniform distribution requires a (positive) mean value defined")
 
 	settings.Mean = 1.0
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "uniform distribution requires a (positive) deviation defined")
 
 	settings.Deviation = 2.0
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "uniform distribution requires a mean value<1.000000> greater than the deviation<2.000000>")
 }
 

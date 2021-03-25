@@ -15,8 +15,8 @@ type (
 )
 
 // Validate DoSaveSettings action (Implements ActionSettings interface)
-func (settings DoSaveSettings) Validate() error {
-	return nil
+func (settings DoSaveSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute DoSaveSettings action (Implements ActionSettings interface)

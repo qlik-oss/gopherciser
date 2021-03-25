@@ -65,8 +65,8 @@ func (value ReloadModeEnum) MarshalJSON() ([]byte, error) {
 }
 
 // Validate implements ActionSettings interface
-func (settings ReloadSettings) Validate() error {
-	return nil
+func (settings ReloadSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface

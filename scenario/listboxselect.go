@@ -81,12 +81,12 @@ func (value ListBoxSelectType) String() string {
 }
 
 // Validate filter pane select action
-func (settings ListBoxSelectSettings) Validate() error {
+func (settings ListBoxSelectSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
-		return errors.Errorf("Empty object ID")
+		return nil, errors.Errorf("Empty object ID")
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Execute filter pane select action

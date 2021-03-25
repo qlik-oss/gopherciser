@@ -111,7 +111,7 @@ var validateCmd = &cobra.Command{
 			return
 		}
 
-		if err = cfg.Validate(); err != nil {
+		if err := validateConfigAndPrintWarnings(cfg); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			return
 		}
@@ -180,4 +180,25 @@ Will save one .structure file per app in script in the folder defined by output 
 			os.Exit(ExitCodeAppStructure)
 		}
 	},
+}
+
+func validateConfigAndPrintWarnings(cfg *config.Config) error {
+	warnings, err := cfg.Validate()
+	if err != nil {
+		return err
+	}
+
+	warningsCount := len(warnings)
+	if warningsCount < 1 {
+		return nil
+	}
+
+	_, _ = fmt.Fprintf(os.Stderr, "%d script validation warnings:\n", warningsCount)
+	for i, warning := range warnings {
+		_, _ = fmt.Fprintf(os.Stderr, "%d. %s\n", i+1, warning)
+		if i == 9 {
+			_, _ = fmt.Fprintf(os.Stderr, "...(%d) additional warnings\n", warningsCount-i+1)
+		}
+	}
+	return nil
 }

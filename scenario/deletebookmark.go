@@ -3,10 +3,10 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
@@ -64,26 +64,26 @@ func (value BookmarkDeletionModeEnum) MarshalJSON() ([]byte, error) {
 }
 
 // Validate DeleteBookmarkSettings action (Implements ActionSettings interface)
-func (settings DeleteBookmarkSettings) Validate() error {
+func (settings DeleteBookmarkSettings) Validate() ([]string, error) {
 	if settings.DeletionMode == SingleBookmark {
 		if settings.Title.String() == "" && settings.ID == "" {
-			return errors.New("either specify bookmark title or bookmark id")
+			return nil, errors.New("either specify bookmark title or bookmark id")
 		}
 	}
 	if settings.DeletionMode == MatchingBookmarks {
 		if settings.Title.String() == "" {
-			return errors.New("please specify bookmark title")
+			return nil, errors.New("please specify bookmark title")
 		}
 	}
 	if settings.DeletionMode == AllBookmarks {
 		if settings.Title.String() != "" || settings.ID != "" {
-			return errors.New("neither bookmark title nor id cannot be specified when deleting all bookmarks")
+			return nil, errors.New("neither bookmark title nor id cannot be specified when deleting all bookmarks")
 		}
 	}
 	if settings.Title.String() != "" && settings.ID != "" {
-		return errors.New("specify only one of the following - bookmark title and bookmark id")
+		return nil, errors.New("specify only one of the following - bookmark title and bookmark id")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute DeleteBookmarkSettings action (Implements ActionSettings interface)

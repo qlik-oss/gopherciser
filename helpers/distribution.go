@@ -2,10 +2,11 @@ package helpers
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/qlik-oss/gopherciser/enummap"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/enummap"
 )
 
 type (
@@ -62,31 +63,31 @@ func (value DistributionType) MarshalJSON() ([]byte, error) {
 }
 
 // Validate DistributionSettings
-func (settings DistributionSettings) Validate() error {
+func (settings DistributionSettings) Validate() ([]string, error) {
 	switch settings.Type {
 	case StaticDistribution:
 		if settings.Delay <= 0.001 {
-			return errors.New("Illegal static distribution value")
+			return nil, errors.New("Illegal static distribution value")
 		}
 	case UniformDistribution:
 		base := "uniform distribution requires"
 		if settings.Mean <= 0.001 {
-			return errors.Errorf("%s a (positive) mean value defined", base)
+			return nil, errors.Errorf("%s a (positive) mean value defined", base)
 		}
 		if settings.Deviation <= 0.001 {
-			return errors.Errorf("%s a (positive) deviation defined", base)
+			return nil, errors.Errorf("%s a (positive) deviation defined", base)
 		}
 		if settings.Mean <= settings.Deviation {
-			return errors.Errorf("%s a mean value<%f> greater than the deviation<%f>", base, settings.Mean, settings.Deviation)
+			return nil, errors.Errorf("%s a mean value<%f> greater than the deviation<%f>", base, settings.Mean, settings.Deviation)
 		}
 	default:
 		typ, err := settings.Type.GetEnumMap().String(int(settings.Type))
 		if err != nil {
-			return errors.Errorf("distribution type<%d> not supported", settings.Type)
+			return nil, errors.Errorf("distribution type<%d> not supported", settings.Type)
 		}
-		return errors.Errorf("distribution type<%s> not supported", typ)
+		return nil, errors.Errorf("distribution type<%s> not supported", typ)
 	}
-	return nil
+	return nil, nil
 }
 
 // RandDuration returns a random duration

@@ -45,11 +45,11 @@ var WindowsOdagEndpointConfiguration = OdagEndpointConfiguration{
 }
 
 // Validate GenerateOdagSettings action (Implements ActionSettings interface)
-func (settings GenerateOdagSettings) Validate() error {
+func (settings GenerateOdagSettings) Validate() ([]string, error) {
 	if settings.Name.String() == "" {
-		return errors.New("no ODAG link name specified")
+		return nil, errors.New("no ODAG link name specified")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute GenerateOdagSettings action (Implements ActionSettings interface)

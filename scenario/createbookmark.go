@@ -2,12 +2,12 @@ package scenario
 
 import (
 	"context"
-	"github.com/qlik-oss/enigma-go"
-	"github.com/qlik-oss/gopherciser/appstructure"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/creation"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
@@ -25,8 +25,8 @@ type (
 )
 
 // Validate CreateBookmarkSettings action (Implements ActionSettings interface)
-func (settings CreateBookmarkSettings) Validate() error {
-	return nil
+func (settings CreateBookmarkSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute CreateBookmarkSettings action (Implements ActionSettings interface)

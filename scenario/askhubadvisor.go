@@ -211,33 +211,33 @@ func (value AdvisorQuerySourceEnum) MarshalJSON() ([]byte, error) {
 func (settings *AskHubAdvisorSettings) IsContainerAction() {}
 
 // Implements ActionSettings
-func (settings AskHubAdvisorSettings) Validate() error {
+func (settings AskHubAdvisorSettings) Validate() ([]string, error) {
 	switch settings.QuerySource {
 	case QueryList:
 		if len(settings.QueryList) == 0 {
-			return errors.Errorf(`no items in querylist`)
+			return nil, errors.Errorf(`no items in querylist`)
 		}
 	case QueryFromFile:
 		if settings.FileName == "" {
-			return errors.Errorf(`no filename specified`)
+			return nil, errors.Errorf(`no filename specified`)
 		}
 		if len(settings.QueryList) == 0 {
-			return errors.Errorf(`no items in file<%s>`, settings.FileName)
+			return nil, errors.Errorf(`no items in file<%s>`, settings.FileName)
 		}
 	default:
-		return errors.Errorf(`unsupported querysource<%d>`, settings.QuerySource)
+		return nil, errors.Errorf(`unsupported querysource<%d>`, settings.QuerySource)
 	}
 
 	for _, q := range settings.QueryList {
 		if q.Query == "" {
-			return errors.New("empty query")
+			return nil, errors.New("empty query")
 		}
 		if q.Weight < 0 {
-			return errors.New("negative weight")
+			return nil, errors.New("negative weight")
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 type HubAdvisorOption func(*hubAdvisorQuery)
@@ -418,8 +418,8 @@ func (settings *hubAdvisorRequestSettings) Execute(sessionState *session.State, 
 }
 
 // Validate implements ActionSettings
-func (settings *hubAdvisorRequestSettings) Validate() error {
-	return nil
+func (settings *hubAdvisorRequestSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 func downloadImage(sessionState *session.State, actionState *action.State, url string) (imageName string, image []byte, err error) {

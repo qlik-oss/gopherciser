@@ -82,7 +82,7 @@ func TestRandomactionUnmarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := item.Validate(); err != nil {
+	if _, err := item.Validate(); err != nil {
 		t.Error(err)
 	}
 
@@ -110,19 +110,19 @@ func TestRandomactionMarshal(t *testing.T) {
 func TestRandomActionValidate(t *testing.T) {
 	settings := someRandomActionSettings
 
-	err := settings.Validate()
+	_, err := settings.Validate()
 	assert.NoError(t, err)
 
 	settings.ActionTypes[0].Weight = 9001
-	err = settings.Validate()
+	_, err = settings.Validate()
 	assert.NoError(t, err)
 
 	settings.ActionTypes[0].Weight = -1
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "Action weight (p=-1) should be at least 1")
 
 	settings.ActionTypes = nil
-	err = settings.Validate()
+	_, err = settings.Validate()
 	assert.NoError(t, err, "Empty ActionTypes should be allowed")
 }
 

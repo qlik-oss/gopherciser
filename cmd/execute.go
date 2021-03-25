@@ -187,7 +187,7 @@ func execute() error {
 		return JSONParseError(errUnmarshal.Error())
 	}
 
-	if err := cfg.Validate(); err != nil {
+	if err := validateConfigAndPrintWarnings(cfg); err != nil {
 		return JSONValidateError(err.Error())
 	}
 

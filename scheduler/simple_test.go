@@ -59,8 +59,8 @@ type resultCollectorAction struct {
 	Result []int
 }
 
-func (settings resultCollectorAction) Validate() error {
-	return nil
+func (settings resultCollectorAction) Validate() ([]string, error) {
+	return nil, nil
 }
 func (settings *resultCollectorAction) Execute(sessionState *session.State,
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {

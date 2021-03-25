@@ -138,36 +138,36 @@ func (value SelectionType) IsExcludedOrDeselect() bool {
 }
 
 // Validate select action
-func (settings SelectionSettings) Validate() error {
+func (settings SelectionSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
-		return errors.Errorf("Empty object ID")
+		return nil, errors.Errorf("Empty object ID")
 	}
 
 	if settings.Dimension < 0 {
-		return errors.Errorf("Illegal dimension<%d>", settings.Dimension)
+		return nil, errors.Errorf("Illegal dimension<%d>", settings.Dimension)
 	}
 
 	// check values but not min max for "values" type selection
 	if settings.Type == Values {
 		if len(settings.Values) < 1 {
-			return errors.New("No element values defined for selection type values")
+			return nil, errors.New("No element values defined for selection type values")
 		}
-		return nil
+		return nil, nil
 	}
 
 	if settings.Min < 1 {
-		return errors.Errorf("min<%d> selections must be >1", settings.Min)
+		return nil, errors.Errorf("min<%d> selections must be >1", settings.Min)
 	}
 
 	if settings.Max < 1 {
-		return errors.Errorf("max<%d> selections must be >1", settings.Max)
+		return nil, errors.Errorf("max<%d> selections must be >1", settings.Max)
 	}
 
 	if settings.Min > settings.Max {
-		return errors.Errorf("min<%d> must be less than max<%d>", settings.Min, settings.Max)
+		return nil, errors.Errorf("min<%d> must be less than max<%d>", settings.Min, settings.Max)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (state selectStates) isEnabled(binned bool) bool {

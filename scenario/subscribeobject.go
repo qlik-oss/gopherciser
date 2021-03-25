@@ -18,17 +18,17 @@ type (
 )
 
 // Validate implements ActionSettings interface
-func (settings SubscribeObjectsSettings) Validate() error {
+func (settings SubscribeObjectsSettings) Validate() ([]string, error) {
 	if len(settings.IDs) < 1 {
-		return errors.New("no ID defined to subscribe to")
+		return nil, errors.New("no ID defined to subscribe to")
 	}
 
 	for i, id := range settings.IDs {
 		if id == "" {
-			return errors.Errorf("id in array position %d is empty", i)
+			return nil, errors.Errorf("id in array position %d is empty", i)
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface

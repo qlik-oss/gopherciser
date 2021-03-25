@@ -18,18 +18,18 @@ type (
 
 func (c customActionSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 }
-func (c customActionSettings) Validate() error {
-	return nil
+func (c customActionSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 func (c customActionSettings2) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 }
-func (c customActionSettings2) Validate() error {
-	return nil
+func (c customActionSettings2) Validate() ([]string, error) {
+	return nil, nil
 }
 func (s selectOverride) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 }
-func (s selectOverride) Validate() error {
-	return nil
+func (s selectOverride) Validate() ([]string, error) {
+	return nil, nil
 }
 
 func TestActionhandler(t *testing.T) {
@@ -128,7 +128,7 @@ func TestDisabledInvalid(t *testing.T) {
 		t.Fatal("Unmarshal thinktime with invalid settings failed, err:", err)
 	}
 
-	if err := act.Validate(); err != nil {
+	if _, err := act.Validate(); err != nil {
 		t.Fatal("Validation failed even though action is disabled, err:", err)
 	}
 }

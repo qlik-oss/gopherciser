@@ -100,11 +100,11 @@ const (
 func (settings ClickActionButtonSettings) IsContainerAction() {}
 
 // Validate filter pane select action
-func (settings ClickActionButtonSettings) Validate() error {
+func (settings ClickActionButtonSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
-		return errors.Errorf("empty object ID")
+		return nil, errors.Errorf("empty object ID")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute button-actions contained by sense action-button
@@ -213,7 +213,7 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 func executeSubAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
 	actionType string, label string, settings ActionSettings) error {
 
-	if err := settings.Validate(); err != nil {
+	if _, err := settings.Validate(); err != nil {
 		return errors.Wrapf(err, "%s settings not valid", actionType)
 	}
 
@@ -236,11 +236,11 @@ func (req sendRequestSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Wait(actionState)
 }
 
-func (req sendRequestSettings) Validate() error {
+func (req sendRequestSettings) Validate() ([]string, error) {
 	if req == nil {
-		return errors.New("request function is nil")
+		return nil, errors.New("request function is nil")
 	}
-	return nil
+	return nil, nil
 }
 
 // execute one action contained by a Sense action-button

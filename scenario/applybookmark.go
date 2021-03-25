@@ -27,11 +27,11 @@ const (
 )
 
 // Validate ApplyBookmarkSettings action (Implements ActionSettings interface)
-func (settings ApplyBookmarkSettings) Validate() error {
+func (settings ApplyBookmarkSettings) Validate() ([]string, error) {
 	if (settings.Title.String() == "") == (settings.ID == "") {
-		return errors.New("specify exactly one of the following - bookmark title or bookmark id")
+		return nil, errors.New("specify exactly one of the following - bookmark title or bookmark id")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute ApplyBookmarkSettings action (Implements ActionSettings interface)
