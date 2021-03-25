@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -180,6 +181,16 @@ func (am *ArtifactMap) ClearArtifactMap() {
 func (am *ArtifactMap) FillAppsUsingDocListEntries(docListEntries []*enigma.DocListEntry) error {
 	for _, docListEntry := range docListEntries {
 		am.Append(ResourceTypeApp, &ArtifactEntry{docListEntry.DocName, docListEntry.DocId, "" /* QSEoW does not have item ID */, ResourceTypeApp, nil})
+	}
+	return nil
+}
+
+// FillAppsUsingStream
+func (am *ArtifactMap) FillAppsUsingStream(stream structs.Stream) error {
+	for _, streamData := range stream.Data {
+		if streamData.Type == structs.StreamTypeApp {
+			am.Append(ResourceTypeApp, &ArtifactEntry{streamData.Attributes.Name, streamData.ID, "", ResourceTypeApp, nil})
+		}
 	}
 	return nil
 }

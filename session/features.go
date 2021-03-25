@@ -16,6 +16,13 @@ type (
 		mu sync.Mutex
 	}
 
+	capabilites []struct {
+		ContentHash       string `json:"contentHash"`
+		Enabled           bool   `json:"enabled"`
+		Flag              string `json:"flag"`
+		OriginalClassName string `json:"originalClassName"`
+	}
+
 	// FeatureAllocationError returned when feature map is expected to be allocated but is not
 	FeatureAllocationError struct{}
 
@@ -38,26 +45,61 @@ func (err FeatureFlagNotFoundError) Error() string {
 
 // UpdateFeatureMap request features from server and updates feature map
 func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actionState *action.State, logEntry *logger.LogEntry) {
+	err := features.updatefeaturemap(func() error {
+		req, err := rest.GetSync(fmt.Sprintf("%s/api/v1/features", host), actionState, logEntry, nil)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if err := jsonit.Unmarshal(req.ResponseBody, &features.m); err != nil {
+			actionState.AddErrors(errors.WithStack(err))
+			return errors.WithStack(err)
+		}
+		return nil
+	}, logEntry)
+	actionState.AddErrors(err)
+}
+
+// UpdateCapabilities request capabilities from server and updates feature map
+func (features *Features) UpdateCapabilities(rest *RestHandler, host string, actionState *action.State, logEntry *logger.LogEntry) {
+	err := features.updatefeaturemap(func() error {
+		req, err := rest.GetSync(fmt.Sprintf("%s/api/capability/v1/list", host), actionState, logEntry, nil)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		var capabilityList capabilites
+		if err := jsonit.Unmarshal(req.ResponseBody, &capabilityList); err != nil {
+			actionState.AddErrors(errors.WithStack(err))
+			return errors.WithStack(err)
+		}
+
+		for _, feature := range capabilityList {
+			features.m[feature.Flag] = feature.Enabled
+		}
+
+		return nil
+	}, logEntry)
+	actionState.AddErrors(err)
+}
+
+func (features *Features) updatefeaturemap(updateMap func() error, logEntry *logger.LogEntry) error {
 	features.mu.Lock()
 	defer features.mu.Unlock()
-
-	req, err := rest.GetSync(fmt.Sprintf("%s/api/v1/features", host), actionState, logEntry, nil)
-	if err != nil {
-		return
-	}
 
 	if features.m == nil {
 		features.m = make(map[string]bool)
 	}
 
-	if err := jsonit.Unmarshal(req.ResponseBody, &features.m); err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		return
+	if err := updateMap(); err != nil {
+		return errors.WithStack(err)
 	}
 
 	LogFeatureFlags.Do(func() {
 		logEntry.LogInfo("FeatureFlags", fmt.Sprintf("%v", features.m))
 	})
+
+	return nil
 }
 
 // IsFeatureEnabled check if feature flag is enabled

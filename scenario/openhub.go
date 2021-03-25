@@ -1,14 +1,13 @@
 package scenario
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -23,65 +22,37 @@ func (openHub OpenHubSettings) Validate() error {
 
 // Execute execute the action
 func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, setHubStart func()) {
-	actionState.Details = "SenseEfW"
+	// New hub connection, clear any existing apps.
+	sessionState.ArtifactMap = session.NewArtifactMap()
 
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "", nil)
+	host, err := connectionSettings.GetRestUrl()
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "failed to get connect function"))
+		actionState.AddErrors(err)
 		return
 	}
 
-	var wslabel string
-	if label != "" {
-		wslabel = fmt.Sprintf("%s - WS", label)
-	}
-
-	connectWs := Action{
-		ActionCore{
-			Type:  ActionConnectWs,
-			Label: wslabel,
-		},
-		connectWsSettings{
-			ConnectFunc: connectFunc,
-		},
-	}
-
-	//Connect websocket and logs as separate action
-	actionState.NoResults = true // temporary set to not report while doing sub action.
-	if isAborted, err := CheckActionError(connectWs.Execute(sessionState, connectionSettings)); isAborted {
-		return // action is aborted, we should not continue
-	} else if err != nil {
-		actionState.AddErrors(errors.WithStack(err))
+	// Try one request sync first to minimize amount of errors when connection fails.
+	_, _ = sessionState.Rest.GetSync(fmt.Sprintf("%s/api/about/v1/language", host), actionState, sessionState.LogEntry, nil)
+	if actionState.Failed {
 		return
 	}
 
-	setHubStart()
-	actionState.NoResults = false // make sure to report results for main action
+	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)
+	getPrivilegesAsync(sessionState, actionState, host)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil)
+	fillArtifactsFromStreamsAsync(sessionState, actionState, host)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/hub/qrsData?reloadUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, nil)
 
-	upLink := sessionState.Connection.Sense()
-	defer func() {
-		upLink.Disconnect()
-		sessionState.Connection = nil
-	}()
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		docList, err := upLink.Global.GetDocList(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get DocList")
-		}
-		if err = sessionState.ArtifactMap.FillAppsUsingDocListEntries(docList); err != nil {
-			return errors.Wrap(err, "failed to populate app list")
-		}
-		if _, err := upLink.Global.GetStreamList(ctx); err != nil {
-			return errors.Wrap(err, "failed to get stream list")
-		}
-		return nil
-	}, actionState, true, "failed to get DocList object")
 	sessionState.Wait(actionState)
-
-	// setup re-connect function
-	sessionState.SetReconnectFunc(connectFunc)
-
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, err)
 	}
@@ -93,4 +64,52 @@ func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action
 		IsAppAction: false,
 		Include:     true,
 	}, nil
+}
+
+func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *action.State, host string) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil {
+			return
+		}
+		var streams structs.Streams
+		if err := jsonit.Unmarshal(req.ResponseBody, &streams); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+
+		for _, data := range streams.Data {
+			if data.Type != structs.StreamsTypeStream {
+				continue
+			}
+
+			sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+				if err != nil {
+					return
+				}
+				var stream structs.Stream
+				if err = jsonit.Unmarshal(req.ResponseBody, &stream); err != nil {
+					actionState.AddErrors(err)
+					return
+				}
+
+				if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
+					actionState.AddErrors(err)
+					return
+				}
+			})
+		}
+	})
+}
+
+func getPrivilegesAsync(sessionState *session.State, actionState *action.State, host string) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil || !sessionState.LogEntry.ShouldLogDebug() {
+			return
+		}
+		var privileges structs.Privileges
+		if err := jsonit.Unmarshal(req.ResponseBody, &privileges); err != nil {
+			sessionState.LogEntry.Logf(logger.WarningLevel, "failed to unmarshal privileges response: %s", err)
+		}
+		sessionState.LogEntry.LogDebugf("privileges: %v", privileges)
+	})
 }
