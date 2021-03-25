@@ -48,9 +48,9 @@ Handlers for Prometheus data.
 
 Stub structs used when creating objects. 
 
-### elasticstructs
+### structs
 
-Structs used for tests towards Qlik Sense Enterprise on Kubernetes (QSEoK) and Qlik Sense Enterprise on Cloud Services (QCS) environments.
+Collection of data structs used by multiple actions.
 
 ### enigmahandlers
 

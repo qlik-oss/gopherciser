@@ -24,37 +24,37 @@ The following functions are supported:
 * `hostname`: Hostname of the local machine.
 * `timestamp`: Timestamp in `yyyyMMddhhmmss` format.
 * `uuid`: Generate an uuid.
+* `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 
 ### Example
+
 ```json
 {
-    "action": "ElasticCreateApp",
-    "label": "Create new app",
+    "label" : "Create bookmark",
+    "action": "createbookmark",
     "settings": {
-        "title": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "stream": "mystream",
-        "groups": [
-            "mygroup"
-        ]
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
+        "description": "This bookmark contains some interesting selections"
     }
 },
 {
-    "label": "OpenApp",
-    "action": "OpenApp",
-    "settings": {
-        "appname": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})"
-    }
-},
-{
-    "action": "elasticexportapp",
-    "label": "Export app",
-    "settings": {
-        "appmode" : "name",
-        "app" : "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "savetofile": true,
-        "exportname": "Exported app {{.Thread}}-{{.Session}} {{now.UTC}}"
+    "label" : "Publish created bookmark",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
     }
 }
 
+```
+
+```json
+{
+  "action": "createbookmark",
+  "settings": {
+    "title": "{{env \"TITLE\"}}",
+    "description": "This bookmark contains some interesting selections"
+  }
+}
 ```
 </details>

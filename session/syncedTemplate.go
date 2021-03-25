@@ -36,6 +36,7 @@ var (
 		"hostname":  os.Hostname,
 		"timestamp": timestamp,
 		"uuid":      uuid.New,
+		"env":       os.Getenv,
 	}
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )

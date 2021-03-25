@@ -203,7 +203,7 @@ All actions follow the same basic structure:
 
 # Common actions
 
-These actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.
+These actions are applicable for most types of Qlik Sense deployments.
 
 **Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).
 
@@ -734,6 +734,28 @@ Disconnect from an already connected app.
 </details>
 
 <details>
+<summary>disconnectenvironment</summary>
+
+## DisconnectEnvironment action
+
+Disconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environmentsor uses custom actions towards external environment, it should be used directly after the last action towards the environment.
+
+Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
+
+
+### Example
+
+```json
+{
+    "label": "Disconnect from environment",
+    "action" : "disconnectenvironment"
+}
+```
+
+---
+</details>
+
+<details>
 <summary>dosave</summary>
 
 ## DoSave action
@@ -867,13 +889,13 @@ Perform list object specific selectiontypes in listbox.
 
 Open an app.
 
-**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`, `elasticopenhub` or `elasticexplore`.
+**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.
 
 * `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
+    * `current`: (default) Use the current app, selected by an app selection in a previous action
     * `guid`: Use the app GUID specified by the `app` parameter.
     * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
+    * `random`: Select a random app from the artifact map, which is filled by e.g. `openhub`
     * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
     * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
     * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
@@ -1540,711 +1562,6 @@ Unsubscribe from all currently subscribed objects.
 </details>
 
 <details>
-<summary>Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions</summary>
-
-## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions
-
-These actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.
-
-
-<details>
-<summary>deletedata</summary>
-
-## DeleteData action
-
-Delete a data file from data sources.
-
-* `filename`: Name of the file to delete.
-* `spaceid`: (optional) space ID of space from where to delete the data. Leave blank to delete from personal space.
-
-### Example
-
-Delete data from personal space.
-
-```json
-{
-     "action": "DeleteData",
-     "settings": {
-         "filename": "data.csv"
-     }
-}
-```
-
-Delete data from space with ID `25180576-755b-46e1-8683-12062584e52c`.
-
-```json
-{
-     "action": "DeleteData",
-     "settings": {
-         "filename": "data.csv",
-         "spaceid" : "25180576-755b-46e1-8683-12062584e52c"
-     }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticcreateapp</summary>
-
-## ElasticCreateApp action
-
-Create an app in a QSEoK deployment. The app will be private to the user who creates it.
-
-* `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
-* `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
-* `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `ignoreevents`: Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects.
-
-### Example
-
-```json
-{
-     "action": "ElasticCreateApp",
-     "label": "Create new app",
-     "settings": {
-         "title": "Created by script",
-         "stream": "Everyone",
-         "groups": ["Everyone", "cool kids"]
-     }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticcreatecollection</summary>
-
-## ElasticCreateCollection action
-
-Create a collection in a QSEoK deployment.
-
-* `name`: Name of the collection to create (supports the use of [session variables](#session_variables)).
-* `description`: (optional) Description of the collection to create.
-* `private`: 
-    * `true`: Private collection
-    * `false`: Public collection
-
-### Example
-
-```json
-{
-   "action": "ElasticCreateCollection",
-   "label": "Create collection",
-   "settings": {
-       "name": "Collection {{.Session}}",
-       "private": false
-   }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticdeleteapp</summary>
-
-## ElasticDeleteApp action
-
-Delete an app from a QSEoK deployment.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `mode`: 
-    * `single`: Delete the app specified explicitly by app GUID or app name.
-    * `everything`: Delete all apps currently in the application context, as determined by the `elasticopenhub` action. **Note:** Use with care.
-    * `clearcollection`: Delete all apps in the collection specified by `collectionname`.
-* `collectionname`: Name of the collection in which to delete apps.
-
-### Example
-
-```json
-{
-     "action": "ElasticDeleteApp",
-     "label": "delete app myapp",
-     "settings": {
-         "mode": "single",
-         "appmode": "name",
-         "app": "myapp"
-     }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticdeletecollection</summary>
-
-## ElasticDeleteCollection action
-
-Delete a collection in a QSEoK deployment.
-
-* `name`: Name of the collection to delete.
-* `deletecontents`: 
-    * `true`: Delete all apps in the collection before deleting the collection.
-    * `false`: Delete the collection without doing anything to the apps in the collection.
-
-### Example
-
-```json
-{
-   "action": "ElasticDeleteCollection",
-   "label": "Delete collection",
-   "settings": {
-       "name": "MyCollection",
-       "deletecontents": true
-   }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticdeleteodag</summary>
-
-## ElasticDeleteOdag action
-
-Delete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.
-
-* `linkname`: Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
-
-### Example
-
-```json
-{
-    "action": "ElasticDeleteOdag",
-    "settings": {
-        "linkname": "Drill to Template App"
-    }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticduplicateapp</summary>
-
-## ElasticDuplicateApp action
-
-Duplicate an app in a QSEoK deployment.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
-* `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
-* `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-* `spaceid`: (optional) GUID of the shared space in which to publish the app.
-
-### Example
-
-```json
-{
-    "action": "ElasticDuplicateApp",
-    "settings": {
-        "appmode": "name",
-        "app": "myapp",
-        "title": "duplicated app {{.Session}}"
-    }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticexplore</summary>
-
-## ElasticExplore action
-
-Explore the hub for apps and fill the artifact map with apps to be used by other actions in the script (for example, the `openapp` action with `appmode` set to `random` or `round`).
-
-* `keepcurrent`: Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted.
-* `paging`: Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted.
-* `sorting`: Simulate selecting sort order in the drop-down menu in the hub
-    * `default`: Default sort order (`created`).
-    * `created`: Sort by the time of creation.
-    * `updated`: Sort by the time of modification.
-    * `name`: Sort by name.
-* `owner`: Filter apps by owner
-    * `all`: Apps owned by anyone.
-    * `me`: Apps owned by the simulated user.
-    * `others`: Apps not owned by the simulated user.
-* `space`: Filter apps by space name (supports the use of [session variables](#session_variables)). **Note:** This filter cannot be used together with `spaceid`.
-* `spaceid`: Filter apps by space GUID. **Note:** This filter cannot be used together with `space`.
-* `tagids`: Filter apps by tag ids. This filter can be used together with `tags`.
-* `tags`: Filter apps by tag names. This filter can be used together with `tagids`.
-
-### Examples
-
-The following example shows how to clear the artifact map and fill it with apps having the tag "mytag" from the first page in the hub.
-
-```json
-{
-	"action": "ElasticExplore",
-	"label": "",
-	"settings": {
-		"keepcurrent": false,
-		"tags": ["mytag"]
-	}
-}
-```
-
-The following example shows how to clear the artifact map, fill it with all apps from the space "myspace" and then add all apps from the space "circles".
-
-```json
-{
-	"action": "ElasticExplore",
-	"label": "",
-	"settings": {
-		"keepcurrent": false,
-		"space": "myspace",
-		"paging": true
-	}
-},
-{
-	"action": "ElasticExplore",
-	"label": "",
-	"settings": {
-		"keepcurrent": true,
-		"space": "circles",
-		"paging": true
-	}
-}
-```
-
-The following example shows how to clear the artifact map and fill it with the apps from the first page of the space "spaceX". The apps must have the tag "tag" or "team" or a tag with id "15172f9c-4a5f-4ee9-ae35-34c1edd78f8d", but not be created by the simulated user. In addition, the apps are sorted by the time of modification.
-
-```json
-{
-	"action": "ElasticExplore",
-	"label": "",
-	"settings": {
-		"keepcurrent": false,
-		"space": "spaceX",
-		"tags": ["tag", "team"],
-		"tagids": ["15172f9c-4a5f-4ee9-ae35-34c1edd78f8d"],
-		"owner": "others",
-		"sorting": "updated",
-		"paging": false
-	}
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticexportapp</summary>
-
-## ElasticExportApp action
-
-Export an app and, optionally, save it to file.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `nodata`: Export the app without data (`true`/`false`). Defaults to `false` (that is, export with data), if omitted.
-* `exportname`: Pattern for the filename when saving the exported app to a file, defaults to app title or app GUID. Supports the use of [session variables](#session_variables) and additionally `.Local.Title` can be used as a variable to add the title of the exported app.
-* `savetofile`: Save the exported file in the specified directory (`true`/`false`). Defaults to `false`, if omitted.
-
-### Example
-
-```json
-{
-	"action": "elasticexportapp",
-	"label": "Export My App",
-	"settings": {
-		"appmode": "name",
-		"app": "My App",
-		"nodata": false,
-		"savetofile": false
-	}
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticgenerateodag</summary>
-
-## ElasticGenerateOdag action
-
-Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
-
-* `linkname`: Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
-
-### Example
-
-```json
-{
-    "action": "ElasticGenerateOdag",
-    "settings": {
-        "linkname": "Drill to Template App"
-    }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elastichubsearch</summary>
-
-## ElasticHubSearch action
-
-Search the hub in a QSEoK deployment.
-
-* `searchfor`: 
-    * `collections`: Search for collections only.
-    * `apps`: Search for apps only.
-    * `both`: Search for both collections and apps.
-* `querysource`: 
-    * `string`: The query is provided as a string specified by `query`.
-    * `fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query.
-* `query`: (optional) Query string (in case of `querystring` as source).
-* `queryfile`: (optional) File from which to read a query (in case of `fromfile` as source).
-
-### Example
-
-```json
-{
-	"action": "ElasticHubSearch",
-	"settings": {
-		"searchfor": "apps",
-		"querysource": "fromfile",
-		"queryfile": "/MyQueries/Queries.txt"
-	}
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticmoveapp</summary>
-
-## ElasticMoveApp action
-
-Move an app from its existing space into the specified destination space.
-
-**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `destinationspaceid`: Specify destination space by ID.
-* `destinationspacename`: Specify destination space by name.
-* `keepcurrent`: Keep the current artifact map when moving to target space at the end of `elasticmoveapp`. Defaults to `false`. Current artifact map is always kept when `donotnavigatetospace` is set.
-* `donotnavigatetospace`: Do not navigate to target space after moving app. Defaults to `false`.
-
-### Example
-
-```json
-{
-    "action": "elasticmoveapp",
-    "settings": {
-        "app": "AppForEveryone",
-        "appmode": "name",
-        "destinationspacename": "everyone"
-    }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticopenhub</summary>
-
-## ElasticOpenHub action
-
-Open the hub in a QSEoK deployment.
-
-
-### Example
-
-```json
-{
-	"action": "ElasticOpenHub",
-	"label": "Open cloud hub with YourCollection and MyCollection"
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticpublishapp</summary>
-
-## ElasticPublishApp action
-
-Publish an app to a managed space.
-
-**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `destinationspaceid`: Specify destination space by ID.
-* `destinationspacename`: Specify destination space by name.
-* `cleartags`: Publish the app without its original tags.
-
-### Example
-
-```json
-{
-    "action": "elasticpublishapp",
-    "settings": {
-        "app": "Sales",
-        "appmode": "name",
-        "destinationspacename": "Finance",
-        "cleartags": false
-    }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticreload</summary>
-
-## ElasticReload action
-
-Reload an app by simulating selecting **Reload** in the app context menu in the hub.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `timeout`: Timeout waiting for reload after this duration. Defaults to `1h`.
-
-### Example
-
-```json
-{
-    "label": "Reload MyApp",
-    "action": "elasticreload",
-    "settings": {
-        "appmode": "name",
-        "app": "MyApp"
-    }
-}
-```
-
----
-</details>
-
-<details>
-<summary>elasticuploadapp</summary>
-
-## ElasticUploadApp action
-
-Upload an app to a QSEoK deployment.
-
-* `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
-* `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
-* `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
-* `mode`: Upload mode. Defaults to `tus`, if omitted.
-    * `tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.
-    * `legacy`: Upload the file using a single POST payload (legacy file upload mode).
-* `filename`: Local file to send as payload.
-* `destinationspaceid`: Specify destination space by ID.
-* `destinationspacename`: Specify destination space by name.
-* `title`: Name of the app to upload (supports the use of [session variables](#session_variables)).
-* `stream`: (optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables)).
-* `streamguid`: (optional) GUID of the private collection or public tag under which to publish the app.
-
-### Example
-
-```json
-{
-     "action": "ElasticUploadApp",
-     "label": "Upload myapp.qvf",
-     "settings": {
-         "title": "coolapp",
-         "filename": "/home/root/myapp.qvf",
-         "stream": "Everyone",
-         "spaceid": "2342798aaefcb23",
-     }
-}
-```
-
----
-</details>
-
-<details>
-<summary>uploaddata</summary>
-
-## UploadData action
-
-Upload a data file to data sources.
-
-* `filename`: Name of the local file to send as payload.
-* `spaceid`: (optional) Space ID of space where to upload the data. Leave blank to upload to personal space.
-* `replace`: Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced.
-* `timeout`: Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`.
-* `chunksize`: Upload chunk size (in bytes). Defaults to 300 MiB, if omitted or zero.
-* `retries`: Number of consecutive retries, if a chunk fails to upload. Defaults to 0 (no retries), if omitted. The first retry is issued instantly, the second with a one second back-off period, the third with a two second back-off period, and so on.
-* `title`: (optional) Set custom title of file on upload. Defaults to file name (excluding extension). (supports the use of [session variables](#session_variables))
-
-### Example
-
-Upload data to personal space.
-
-```json
-{
-     "action": "UploadData",
-     "settings": {
-         "filename": "/home/root/data.csv"
-     }
-}
-```
-
-Upload data to personal space, replacing existing file.
-
-```json
-{
-     "action": "UploadData",
-     "settings": {
-         "filename": "/home/root/data.csv",
-         "replace": true
-     }
-}
-```
-
-Upload data to space with space ID 25180576-755b-46e1-8683-12062584e52c.
-
-```json
-{
-     "action": "UploadData",
-     "settings": {
-         "filename": "/home/root/data.csv",
-         "spaceid": "25180576-755b-46e1-8683-12062584e52c"
-     }
-}
-```
-
----
-</details>
-
-<details>
-<summary>disconnectelastic</summary>
-
-## DisconnectElastic action
-
-Disconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes "elastic" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.
-
-Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
-
-
-### Example
-
-```json
-{
-    "label": "Disconnect from elastic environment",
-    "action" : "disconnectelastic"
-}
-```
-
----
-</details>
-
----
-</details>
-
-<details>
 <summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>
 
 ## Qlik Sense Enterprise on Windows (QSEoW) actions
@@ -2347,38 +1664,38 @@ The following functions are supported:
 * `hostname`: Hostname of the local machine.
 * `timestamp`: Timestamp in `yyyyMMddhhmmss` format.
 * `uuid`: Generate an uuid.
+* `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 
 ### Example
+
 ```json
 {
-    "action": "ElasticCreateApp",
-    "label": "Create new app",
+    "label" : "Create bookmark",
+    "action": "createbookmark",
     "settings": {
-        "title": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "stream": "mystream",
-        "groups": [
-            "mygroup"
-        ]
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
+        "description": "This bookmark contains some interesting selections"
     }
 },
 {
-    "label": "OpenApp",
-    "action": "OpenApp",
-    "settings": {
-        "appname": "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})"
-    }
-},
-{
-    "action": "elasticexportapp",
-    "label": "Export app",
-    "settings": {
-        "appmode" : "name",
-        "app" : "CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})",
-        "savetofile": true,
-        "exportname": "Exported app {{.Thread}}-{{.Session}} {{now.UTC}}"
+    "label" : "Publish created bookmark",
+    "action": "publishbookmark",
+    "disabled" : false,
+    "settings" : {
+        "title": "my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})",
     }
 }
 
+```
+
+```json
+{
+  "action": "createbookmark",
+  "settings": {
+    "title": "{{env \"TITLE\"}}",
+    "description": "This bookmark contains some interesting selections"
+  }
+}
 ```
 </details>
 

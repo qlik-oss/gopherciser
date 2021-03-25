@@ -112,30 +112,36 @@ In the code for each parameter there is a `doc-key` tag that connects the parame
 
 ### Documenting enums
 
-As enums cannot be reflected, they are documented as lists. The entries in the `params.json` file are set to an array of strings, where the first string is the description of the parameter and the subsequent strings are sub items to the parameter. The following example shows the `doc-key` for the `owner` parameter in the `elasticexplore` action:
+As enums cannot be reflected, they are documented as lists. The entries in the `params.json` file are set to an array of strings, where the first string is the description of the parameter and the subsequent strings are sub items to the parameter. The following example shows the `doc-key` for the `type` parameter in the `select` action:
 
 ```golang
-Owner OwnerMode `json:"owner" displayname:"Owner mode" doc-key:"elasticexplore.owner"`
+Type SelectionType `json:"type" displayname:"Selection type" doc-key:"select.type"`
 ```
 
 The `doc-key` connects to the following entry in the `params.json` file:
 
 ```json
 {
-	"elasticexplore.owner" : ["Filter apps by owner",
-		"`all`: Apps owned by anyone.",
-		"`me`: Apps owned by the simulated user.",
-		"`others`: Apps not owned by the simulated user."]
+    "select.type": [
+        "Selection type",
+        "`randomfromall`: Randomly select within all values of the symbol table.",
+        "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.",
+        "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.",
+        "`randomdeselect`: Randomly deselect values on the first data page.",
+        "`values`: Select specific element values, defined by `values` array."
+    ]
 }
 ```
 
 The entry above renders the following markdown result:
 
 ```markdown
-* `owner`: Filter apps by owner
-	* `all`: Apps owned by anyone.
-	* `me`: Apps owned by the simulated user.
-	* `others`: Apps not owned by the simulated user.
+* `type`: Selection type
+    * `randomfromall`: Randomly select within all values of the symbol table.
+    * `randomfromenabled`: Randomly select within the white and light grey values on the first data page.
+    * `randomfromexcluded`: Randomly select within the dark grey values on the first data page.
+    * `randomdeselect`: Randomly deselect values on the first data page.
+    * `values`: Select specific element values, defined by `values` array.
 ```
 
 ### Groups of actions
