@@ -16,6 +16,13 @@ type (
 		mu sync.Mutex
 	}
 
+	capabilites []struct {
+		ContentHash       string `json:"contentHash"`
+		Enabled           bool   `json:"enabled"`
+		Flag              string `json:"flag"`
+		OriginalClassName string `json:"originalClassName"`
+	}
+
 	// FeatureAllocationError returned when feature map is expected to be allocated but is not
 	FeatureAllocationError struct{}
 
@@ -51,13 +58,6 @@ func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actio
 		return nil
 	}, logEntry)
 	actionState.AddErrors(err)
-}
-
-type capabilites []struct {
-	ContentHash       string `json:"contentHash"`
-	Enabled           bool   `json:"enabled"`
-	Flag              string `json:"flag"`
-	OriginalClassName string `json:"originalClassName"`
 }
 
 // UpdateCapabilities request capabilities from server and updates feature map
