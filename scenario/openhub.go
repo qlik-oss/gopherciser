@@ -38,14 +38,12 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	}
 
 	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)         // TODO log versions from about request?
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil) // TODO Save privileges and values?
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)
+	getPrivilegesAsync(sessionState, actionState, host)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil)
-
-	fillArtifactsFromStreams(sessionState, actionState, host)
-
+	fillArtifactsFromStreamsAsync(sessionState, actionState, host)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
@@ -68,7 +66,7 @@ func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action
 	}, nil
 }
 
-func fillArtifactsFromStreams(sessionState *session.State, actionState *action.State, host string) {
+func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *action.State, host string) {
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
@@ -100,5 +98,18 @@ func fillArtifactsFromStreams(sessionState *session.State, actionState *action.S
 				}
 			})
 		}
+	})
+}
+
+func getPrivilegesAsync(sessionState *session.State, actionState *action.State, host string) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil || !sessionState.LogEntry.ShouldLogDebug() {
+			return
+		}
+		var privileges structs.Privileges
+		if err := jsonit.Unmarshal(req.ResponseBody, &privileges); err != nil {
+			sessionState.LogEntry.Logf(logger.WarningLevel, "failed to unmarshal privileges response: %s", err)
+		}
+		sessionState.LogEntry.LogDebugf("privileges: %v", privileges)
 	})
 }
