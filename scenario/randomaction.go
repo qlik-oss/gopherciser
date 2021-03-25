@@ -117,7 +117,7 @@ func (settings *RandomActionSettings) UnmarshalJSON(arg []byte) error {
 	core := RandomActionSettingsCore{}
 	err := jsonit.Unmarshal(arg, &core)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal ElasticHubSearchSettingsCore")
+		return errors.Wrap(err, "Failed to unmarshal RandomActionSettings")
 	}
 	settings.RandomActionSettingsCore = core
 

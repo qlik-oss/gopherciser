@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"sort"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
@@ -122,13 +123,17 @@ func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
 	return buf.Bytes()
 }
 
-func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, actionSettigns map[string]interface{}) {
+func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, actionSettings map[string]interface{}) {
 	for _, action := range actions {
 		compiledEntry, ok := compiledDocs.Actions[action]
 		if !ok {
 			compiledEntry.Description = "*Missing description*\n"
 		}
-		actionParams := actionSettigns[action]
+		actionParams := actionSettings[action]
+		if actionParams == nil {
+			os.Stderr.WriteString(fmt.Sprintf("%s gives nil actionparams, skipping...\n", action))
+			continue
+		}
 		actionEntry := &DocEntryWithParams{
 			DocEntry: DocEntry(compiledEntry),
 			Params:   MarkdownParams(actionParams, compiledDocs.Params),
