@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/logger"
-	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -52,13 +51,6 @@ const (
 	ResourceTypeGenericLink = "genericlink"
 	ResourceTypeDataset     = "dataset"
 	ResourceTypeDataAsset   = "dataasset"
-
-	// none Sense "resource types"
-	ResourceTypeStream = "stream"
-)
-
-var (
-	defaultNonEphemeralResourceTypes = []string{ResourceTypeStream}
 )
 
 func (d *ArtifactList) Len() int {
@@ -84,7 +76,7 @@ func (d ArtifactList) MarshalJSON() ([]byte, error) {
 // NewArtifactMap returns an empty ArtifactMap
 func NewArtifactMap() *ArtifactMap {
 	return &ArtifactMap{
-		NonEphemeralResourceTypes: defaultNonEphemeralResourceTypes,
+		NonEphemeralResourceTypes: []string{},
 		resourceMap:               make(map[string]*ArtifactList),
 	}
 }
@@ -168,11 +160,6 @@ func (am *ArtifactMap) DeleteItem(resourceType, lookfor string, id bool) {
 	}
 }
 
-// DeleteStream deletes a stream from the ArtifactMap
-func (am *ArtifactMap) DeleteStream(streamName string) {
-	am.DeleteItem(ResourceTypeStream, streamName, false)
-}
-
 // ClearArtifactMap Empty Apps from ArtifactMap
 func (am *ArtifactMap) ClearArtifactMap() {
 	am.mu.Lock()
@@ -208,13 +195,6 @@ func (am *ArtifactMap) allocateResourceType(resourceType string, len int) {
 	}
 }
 
-// FillStreams fills the stream map with the streams from the given list
-func (am *ArtifactMap) FillStreams(streamList []structs.Collection) {
-	for _, stream := range streamList {
-		am.Append(ResourceTypeStream, &ArtifactEntry{Name: stream.Name, ID: stream.ID, ResourceType: ResourceTypeStream})
-	}
-}
-
 // GetAppID returns the app ID given the app Title. When multiple apps
 // have the same Title, this will return the ID of the last app in the order
 // of the struct passed to the Fill function.
@@ -243,16 +223,6 @@ func (am *ArtifactMap) getAppEntry(appName string) (*ArtifactEntry, error) {
 		return nil, errors.WithStack(err)
 	}
 	return entry, nil
-}
-
-// GetStreamID returns the app ID given the stream
-func (am *ArtifactMap) GetStreamID(streamName string) (string, error) {
-	entry, err := am.Lookup(ResourceTypeStream, streamName, false)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return entry.ID, nil
 }
 
 // GetRandomApp returns a random app for the map, chosen by a uniform distribution
