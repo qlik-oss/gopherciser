@@ -429,8 +429,11 @@ func (cfg *Config) Validate() ([]string, error) {
 		return nil, errors.Errorf("No scheduler defined")
 	}
 
-	if err := cfg.Scheduler.Validate(); err != nil {
+	warnings := make([]string, 0)
+	if w, err := cfg.Scheduler.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Scheduler settings validation failed")
+	} else if len(w) > 0 {
+		warnings = append(warnings, w...)
 	}
 
 	if cfg.Scheduler.RequireScenario() {
@@ -454,7 +457,6 @@ func (cfg *Config) Validate() ([]string, error) {
 	}
 
 	// Validate all actions before executing
-	warnings := make([]string, 0)
 	for _, v := range cfg.Scenario {
 		if w, err := v.Validate(); err != nil {
 			return nil, errors.WithStack(err)

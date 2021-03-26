@@ -25,7 +25,7 @@ type (
 	Type int
 	// IScheduler interface of scheduler
 	IScheduler interface {
-		Validate() error
+		Validate() ([]string, error)
 		Execute(
 			context.Context,
 			*logger.Log,

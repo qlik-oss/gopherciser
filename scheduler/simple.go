@@ -2,9 +2,10 @@ package scheduler
 
 import (
 	"context"
-	"github.com/qlik-oss/gopherciser/statistics"
 	"sync"
 	"time"
+
+	"github.com/qlik-oss/gopherciser/statistics"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -34,26 +35,26 @@ type (
 )
 
 // Validate schedule
-func (sched SimpleScheduler) Validate() error {
+func (sched SimpleScheduler) Validate() ([]string, error) {
 	// validate inherited settings
 	if err := sched.Scheduler.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
 	errorMsg := "Invalid simple scheduler setting: "
 	if sched.Settings.ExecutionTime < 1 && sched.Settings.ExecutionTime != -1 {
-		return errors.Errorf("%s ExecutionTime<%d>", errorMsg, sched.Settings.ExecutionTime)
+		return nil, errors.Errorf("%s ExecutionTime<%d>", errorMsg, sched.Settings.ExecutionTime)
 	}
 	if sched.Settings.Iterations == 0 {
-		return errors.Errorf("%s Iterations<%d>", errorMsg, sched.Settings.Iterations)
+		return nil, errors.Errorf("%s Iterations<%d>", errorMsg, sched.Settings.Iterations)
 	}
 	if sched.Settings.RampupDelay <= 0 {
-		return errors.Errorf("%s RampupDelay<%f>", errorMsg, sched.Settings.RampupDelay)
+		return nil, errors.Errorf("%s RampupDelay<%f>", errorMsg, sched.Settings.RampupDelay)
 	}
 	if sched.Settings.ConcurrentUsers < 1 && sched.Settings.ConcurrentUsers != -1 {
-		return errors.Errorf("%s ConcurrentUsers<%d>", errorMsg, sched.Settings.ConcurrentUsers)
+		return nil, errors.Errorf("%s ConcurrentUsers<%d>", errorMsg, sched.Settings.ConcurrentUsers)
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute execute schedule
