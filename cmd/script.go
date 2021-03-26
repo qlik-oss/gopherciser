@@ -198,6 +198,7 @@ func validateConfigAndPrintWarnings(cfg *config.Config) error {
 		_, _ = fmt.Fprintf(os.Stderr, "%d. %s\n", i+1, warning)
 		if i == 9 {
 			_, _ = fmt.Fprintf(os.Stderr, "...(%d) additional warnings\n", warningsCount-i+1)
+			return nil
 		}
 	}
 	return nil
