@@ -3,10 +3,10 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/appstructure"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/senseobjects"
@@ -64,15 +64,15 @@ func (value SheetDeletionModeEnum) MarshalJSON() ([]byte, error) {
 }
 
 // Validate DeleteSheetSettings action (Implements ActionSettings interface)
-func (settings DeleteSheetSettings) Validate() error {
+func (settings DeleteSheetSettings) Validate() ([]string, error) {
 	if settings.DeletionMode == SingleSheet || settings.DeletionMode == MatchingSheets {
 		if (settings.Title == "") == (settings.ID == "") {
-			return errors.New("either specify sheet name or sheet id")
+			return nil, errors.New("either specify sheet name or sheet id")
 		}
 	} else if settings.Title != "" || settings.ID != "" {
-		return errors.Errorf("sheet name or id cannot be specified in mode <%v>", settings.DeletionMode)
+		return nil, errors.Errorf("sheet name or id cannot be specified in mode <%v>", settings.DeletionMode)
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute DeleteSheetSettings action (Implements ActionSettings interface)

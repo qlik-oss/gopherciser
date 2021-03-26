@@ -21,11 +21,11 @@ type (
 )
 
 // Validate DeleteOdagSettings action (Implements ActionSettings interface)
-func (settings DeleteOdagSettings) Validate() error {
+func (settings DeleteOdagSettings) Validate() ([]string, error) {
 	if settings.Name.String() == "" {
-		return errors.New("no ODAG link name specified")
+		return nil, errors.New("no ODAG link name specified")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute DeleteOdagSettings action (Implements ActionSettings interface)

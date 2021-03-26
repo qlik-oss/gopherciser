@@ -14,8 +14,8 @@ type (
 )
 
 // Validate PublishBookmarkSettings action (Implements ActionSettings interface)
-func (settings UnPublishBookmarkSettings) Validate() error {
-	return nil
+func (settings UnPublishBookmarkSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute CreateBookmarkSettings action (Implements ActionSettings interface)

@@ -16,8 +16,8 @@ type (
 )
 
 // Validate open app scenario item
-func (openHub OpenHubSettings) Validate() error {
-	return nil
+func (openHub OpenHubSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute execute the action

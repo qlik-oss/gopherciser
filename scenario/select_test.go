@@ -37,7 +37,7 @@ func TestSelectUnmarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := item.Validate(); err != nil {
+	if _, err := item.Validate(); err != nil {
 		t.Error(err)
 	}
 
@@ -97,28 +97,28 @@ func TestValidate(t *testing.T) {
 
 	settings := &SelectionSettings{}
 
-	err := settings.Validate()
+	_, err := settings.Validate()
 	validateError(t, err, "Empty object ID")
 	settings.ID = "obj1"
 	settings.Dimension = -1
 
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "Illegal dimension<-1>")
 	settings.Dimension = 0
 
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "min<0> selections must be >1")
 	settings.Min = 2
 
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "max<0> selections must be >1")
 	settings.Max = 1
 
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "min<2> must be less than max<1>")
 	settings.Max = 3
 
-	err = settings.Validate()
+	_, err = settings.Validate()
 	validateError(t, err, "")
 }
 

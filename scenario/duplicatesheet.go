@@ -3,14 +3,14 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/appstructure"
-	"github.com/qlik-oss/gopherciser/senseobjects"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -122,12 +122,12 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 }
 
 // Validate clone object settings
-func (settings DuplicateSheetSettings) Validate() error {
+func (settings DuplicateSheetSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
-		return errors.New("Duplicate sheet needs an id of a sheet to duplicate")
+		return nil, errors.New("Duplicate sheet needs an id of a sheet to duplicate")
 	}
 
-	return nil
+	return nil, nil
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface

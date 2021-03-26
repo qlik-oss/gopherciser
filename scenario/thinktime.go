@@ -56,7 +56,7 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 }
 
 // Validate think time settings
-func (settings ThinkTimeSettings) Validate() error {
+func (settings ThinkTimeSettings) Validate() ([]string, error) {
 	return settings.DistributionSettings.Validate()
 }
 

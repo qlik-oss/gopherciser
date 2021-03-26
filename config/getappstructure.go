@@ -23,8 +23,8 @@ type (
 )
 
 // Validate implements ActionSettings interface
-func (settings *getAppStructureSettings) Validate() error {
-	return nil
+func (settings *getAppStructureSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface

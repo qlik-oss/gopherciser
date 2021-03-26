@@ -21,11 +21,11 @@ type (
 )
 
 // Validate implements ActionSettings interface
-func (settings CreateSheetSettings) Validate() error {
+func (settings CreateSheetSettings) Validate() ([]string, error) {
 	if settings.Title == "" {
-		return errors.New("title must not be empty")
+		return nil, errors.New("title must not be empty")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface

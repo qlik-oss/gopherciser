@@ -22,8 +22,8 @@ type (
 
 var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func (settings PanicActionSettings) Validate() error {
-	return nil
+func (settings PanicActionSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface

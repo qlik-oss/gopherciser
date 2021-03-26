@@ -21,11 +21,11 @@ type (
 )
 
 // Validate change sheet action
-func (settings ChangeSheetSettings) Validate() error {
+func (settings ChangeSheetSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
-		return errors.Errorf("Change sheet ID is blank")
+		return nil, errors.Errorf("Change sheet ID is blank")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute change sheet action

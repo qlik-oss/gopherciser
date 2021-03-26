@@ -369,11 +369,11 @@ func overrideSettings(originalSettings ActionSettings, overrideSettings map[stri
 }
 
 // Validate random action settings. Implements ActionSetting interface
-func (settings RandomActionSettings) Validate() error {
+func (settings RandomActionSettings) Validate() ([]string, error) {
 	for _, actionTypeSettings := range settings.ActionTypes {
 		probability := actionTypeSettings.Weight
 		if probability <= 0 {
-			return errors.Errorf("Action weight (p=%d) should be at least 1", probability)
+			return nil, errors.Errorf("Action weight (p=%d) should be at least 1", probability)
 		}
 	}
 	totalProbability := 0
@@ -381,8 +381,8 @@ func (settings RandomActionSettings) Validate() error {
 		probability := actionTypeSettings.Weight
 		totalProbability += probability
 		if totalProbability < 0 {
-			return errors.Errorf("Summing the weights caused integer overflow!")
+			return nil, errors.Errorf("Summing the weights caused integer overflow!")
 		}
 	}
-	return nil
+	return nil, nil
 }

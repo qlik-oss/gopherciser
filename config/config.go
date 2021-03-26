@@ -103,8 +103,10 @@ type (
 
 		// CustomLoggers list of custom loggers.
 		CustomLoggers []*logger.Logger `json:"-"`
-		// Counters
+		// Counters statistics for execution
 		Counters statistics.ExecutionCounters `json:"-"`
+		// ValidationWarnings list of script validation warnings
+		ValidationWarnings []string `json:"-"`
 	}
 
 	//SummaryEntry title, value and color combo for summary printout
@@ -331,6 +333,7 @@ func NewExampleConfig() (*Config, error) {
 		},
 		nil,
 		statistics.ExecutionCounters{},
+		nil,
 	}
 
 	return cfg, nil
@@ -383,6 +386,7 @@ func NewEmptyConfig() (*Config, error) {
 		},
 		nil,
 		statistics.ExecutionCounters{},
+		nil,
 	}
 
 	return cfg, nil
@@ -429,8 +433,11 @@ func (cfg *Config) Validate() error {
 		return errors.Errorf("No scheduler defined")
 	}
 
-	if err := cfg.Scheduler.Validate(); err != nil {
+	cfg.ValidationWarnings = make([]string, 0)
+	if w, err := cfg.Scheduler.Validate(); err != nil {
 		return errors.Wrap(err, "Scheduler settings validation failed")
+	} else if len(w) > 0 {
+		cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 	}
 
 	if cfg.Scheduler.RequireScenario() {
@@ -455,8 +462,10 @@ func (cfg *Config) Validate() error {
 
 	// Validate all actions before executing
 	for _, v := range cfg.Scenario {
-		if err := v.Validate(); err != nil {
+		if w, err := v.Validate(); err != nil {
 			return errors.WithStack(err)
+		} else if len(w) > 0 {
+			cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 		}
 	}
 
@@ -540,6 +549,11 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log version information at the start of the log
 	entry := logger.NewLogEntry(log)
 	entry.LogInfo("GopherciserVersion", version.Version)
+
+	// Log script validation warnings
+	for _, warning := range cfg.ValidationWarnings {
+		entry.LogInfo("ScriptValidationWarning", warning)
+	}
 
 	// Log script to be executed
 	script, err := jsonit.Marshal(cfg)

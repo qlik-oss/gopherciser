@@ -15,8 +15,8 @@ type (
 )
 
 // Validate ClearAll action (Implements ActionSettings interface)
-func (settings ClearAllSettings) Validate() error {
-	return nil
+func (settings ClearAllSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute ClearAll action (Implements ActionSettings interface)

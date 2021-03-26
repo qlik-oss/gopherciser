@@ -28,8 +28,8 @@ type (
 	ActionSettings interface {
 		// Execute action
 		Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string /* Label */, reset func() /* reset action start */)
-		// Validate action
-		Validate() error
+		// Validate action []string are validation warnings to be reported to user
+		Validate() ([]string, error)
 	}
 
 	// ContainerAction Implement this interface on action settings to mark an action as a
@@ -317,15 +317,15 @@ func (act *Action) UnmarshalJSON(arg []byte) error {
 }
 
 // Validate scenario action
-func (act *Action) Validate() error {
+func (act *Action) Validate() ([]string, error) {
 	if act.Disabled {
-		return nil // skip validating disabled actions
+		return nil, nil // skip validating disabled actions
 	}
 	s, ok := act.Settings.(ActionSettings)
 	if !ok {
-		return errors.Errorf("Failed to convert action settings to ActionSettings")
+		return nil, errors.Errorf("Failed to convert action settings to ActionSettings")
 	}
-	return errors.WithStack(s.Validate())
+	return s.Validate()
 }
 
 // Execute scenario action

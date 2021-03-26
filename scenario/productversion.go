@@ -18,8 +18,8 @@ type (
 )
 
 // Validate ProductVersion action (Implements ActionSettings interface)
-func (settings ProductVersionSettings) Validate() error {
-	return nil
+func (settings ProductVersionSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute ProductVersion action (Implements ActionSettings interface)

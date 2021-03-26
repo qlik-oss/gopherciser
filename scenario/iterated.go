@@ -43,19 +43,23 @@ func (action IteratedSettings) Execute(sessionState *session.State, actionState 
 }
 
 // Validate iterated actions
-func (action IteratedSettings) Validate() error {
+func (action IteratedSettings) Validate() ([]string, error) {
 
 	if action.Iterations < 1 && action.Iterations != -1 {
-		return errors.Errorf("illegal iterations count<%d>", action.Iterations)
+		return nil, errors.Errorf("illegal iterations count<%d>", action.Iterations)
 	}
 
+	warnings := make([]string, 0)
 	// Validate all actions before executing
 	for _, v := range action.Actions {
-		if err := v.Validate(); err != nil {
-			return errors.WithStack(err)
+		if w, err := v.Validate(); err != nil {
+			return nil, errors.WithStack(err)
+		} else if len(w) > 0 {
+			warnings = append(warnings, w...)
 		}
 	}
-	return nil
+
+	return warnings, nil
 }
 
 // IsContainerAction implements ContainerAction interface

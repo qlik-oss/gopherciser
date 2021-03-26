@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -16,8 +17,8 @@ type (
 )
 
 // Validate implements ActionSettings interface
-func (settings SetScriptSettings) Validate() error {
-	return nil
+func (settings SetScriptSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface
