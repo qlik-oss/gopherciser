@@ -113,7 +113,7 @@ func TestConfig(t *testing.T) {
 		t.Errorf("Timout mismatch, expexted<300>, got<%d>", cfg.Settings.Timeout)
 	}
 
-	_, err = cfg.Validate()
+	err = cfg.Validate()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -630,7 +630,7 @@ func setupConfig(script string) (*config.Config, error) {
 	if err := jsonit.Unmarshal([]byte(script), &cfg); err != nil {
 		return nil, err
 	}
-	if _, err := cfg.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 	return &cfg, nil

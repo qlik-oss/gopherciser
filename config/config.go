@@ -103,8 +103,10 @@ type (
 
 		// CustomLoggers list of custom loggers.
 		CustomLoggers []*logger.Logger `json:"-"`
-		// Counters
+		// Counters statistics for execution
 		Counters statistics.ExecutionCounters `json:"-"`
+		// ValidationWarnings list of script validation warnings
+		ValidationWarnings []string `json:"-"`
 	}
 
 	//SummaryEntry title, value and color combo for summary printout
@@ -331,6 +333,7 @@ func NewExampleConfig() (*Config, error) {
 		},
 		nil,
 		statistics.ExecutionCounters{},
+		nil,
 	}
 
 	return cfg, nil
@@ -383,6 +386,7 @@ func NewEmptyConfig() (*Config, error) {
 		},
 		nil,
 		statistics.ExecutionCounters{},
+		nil,
 	}
 
 	return cfg, nil
@@ -424,48 +428,48 @@ func (cfg *Config) SetDebugLogging() {
 }
 
 // Validate scenario
-func (cfg *Config) Validate() ([]string, error) {
+func (cfg *Config) Validate() error {
 	if cfg.Scheduler == nil {
-		return nil, errors.Errorf("No scheduler defined")
+		return errors.Errorf("No scheduler defined")
 	}
 
-	warnings := make([]string, 0)
+	cfg.ValidationWarnings = make([]string, 0)
 	if w, err := cfg.Scheduler.Validate(); err != nil {
-		return nil, errors.Wrap(err, "Scheduler settings validation failed")
+		return errors.Wrap(err, "Scheduler settings validation failed")
 	} else if len(w) > 0 {
-		warnings = append(warnings, w...)
+		cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 	}
 
 	if cfg.Scheduler.RequireScenario() {
 		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
-			return nil, errors.Errorf("No scenario items defined")
+			return errors.Errorf("No scenario items defined")
 		}
 	}
 
 	if cfg.LoginSettings.Settings == nil {
-		return nil, errors.Errorf("No LoginSettings defined")
+		return errors.Errorf("No LoginSettings defined")
 	}
 	if err := cfg.LoginSettings.Settings.Validate(); err != nil {
-		return nil, errors.Wrap(err, "LoginSettings validation failed")
+		return errors.Wrap(err, "LoginSettings validation failed")
 	}
 
 	if cfg.ConnectionSettings.Server == "" {
-		return nil, errors.Errorf("Empty server name, server name is required")
+		return errors.Errorf("Empty server name, server name is required")
 	}
 	if err := cfg.ConnectionSettings.Validate(); err != nil {
-		return nil, errors.Wrap(err, "ConnectionSettings validation failed")
+		return errors.Wrap(err, "ConnectionSettings validation failed")
 	}
 
 	// Validate all actions before executing
 	for _, v := range cfg.Scenario {
 		if w, err := v.Validate(); err != nil {
-			return nil, errors.WithStack(err)
+			return errors.WithStack(err)
 		} else if len(w) > 0 {
-			warnings = append(warnings, w...)
+			cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 		}
 	}
 
-	return warnings, nil
+	return nil
 }
 
 func (cfg *Config) TestConnection(ctx context.Context) error {

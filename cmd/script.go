@@ -183,18 +183,18 @@ Will save one .structure file per app in script in the folder defined by output 
 }
 
 func validateConfigAndPrintWarnings(cfg *config.Config) error {
-	warnings, err := cfg.Validate()
+	err := cfg.Validate()
 	if err != nil {
 		return err
 	}
 
-	warningsCount := len(warnings)
+	warningsCount := len(cfg.ValidationWarnings)
 	if warningsCount < 1 {
 		return nil
 	}
 
 	_, _ = fmt.Fprintf(os.Stderr, "%d script validation warnings:\n", warningsCount)
-	for i, warning := range warnings {
+	for i, warning := range cfg.ValidationWarnings {
 		_, _ = fmt.Fprintf(os.Stderr, "%d. %s\n", i+1, warning)
 		if i == 9 {
 			_, _ = fmt.Fprintf(os.Stderr, "...(%d) additional warnings\n", warningsCount-i+1)

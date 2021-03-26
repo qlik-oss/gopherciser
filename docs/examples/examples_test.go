@@ -40,7 +40,7 @@ func testFile(filename string) error {
 		return errors.Wrapf(err, "Failed to unmarshal file <%s>", filename)
 	}
 
-	if _, err := cfg.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return errors.Wrapf(err, "Failed to validate file <%s>", filename)
 	}
 	return nil
