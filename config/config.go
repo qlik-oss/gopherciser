@@ -550,6 +550,11 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	entry := logger.NewLogEntry(log)
 	entry.LogInfo("GopherciserVersion", version.Version)
 
+	// Log script validation warnings
+	for _, warning := range cfg.ValidationWarnings {
+		entry.LogInfo("ScriptValidationWarning", warning)
+	}
+
 	// Log script to be executed
 	script, err := jsonit.Marshal(cfg)
 	if err != nil {
