@@ -5,11 +5,11 @@ var regressionSchedulerSingleton IScheduler
 func Regression() IScheduler {
 	if regressionSchedulerSingleton == nil {
 		regressionSchedulerSingleton = &SimpleScheduler{
-			Scheduler: Scheduler{
+			Scheduler{
 				SchedType:      SchedSimple,
 				InstanceNumber: 0,
 			},
-			Settings: SimpleSchedSettings{
+			SimpleSchedSettings{
 				ExecutionTime:   -1,
 				Iterations:      1,
 				ConcurrentUsers: 1,
