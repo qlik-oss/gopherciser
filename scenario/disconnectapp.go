@@ -12,8 +12,8 @@ type (
 )
 
 // Validate
-func (settings DisconnectAppSettings) Validate() error {
-	return nil
+func (settings DisconnectAppSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute

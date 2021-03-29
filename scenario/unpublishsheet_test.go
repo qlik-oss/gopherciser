@@ -18,7 +18,7 @@ func TestValidateUnPublishSheetSettings(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		err := tc.input.Validate()
+		_, err := tc.input.Validate()
 		if tc.isValid && err != nil {
 			t.Errorf("Settings <%v> should be valid, but it's not <%v>", tc.input, err)
 		} else if !tc.isValid && err == nil {

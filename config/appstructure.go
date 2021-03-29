@@ -188,7 +188,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 		},
 	}
 
-	if err := cfg.Scheduler.Validate(); err != nil {
+	if _, err := cfg.Scheduler.Validate(); err != nil {
 		return errors.WithStack(err)
 	}
 

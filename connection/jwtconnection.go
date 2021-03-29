@@ -51,7 +51,7 @@ type (
 )
 
 // GetConnectFunc which establishes a connection to Qlik Sense
-func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connection *ConnectionSettings, appGUID string, headers http.Header) func() (string, error) {
+func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connection *ConnectionSettings, appGUID string, headers, customHeaders http.Header) func() (string, error) {
 	connectFunc := func() (string, error) {
 		url, err := connection.GetURL(appGUID)
 
@@ -80,7 +80,16 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 				return appGUID, errors.Wrap(err, "failed creating cookie jar")
 			}
 		}
-		if err = sense.Connect(ctx, url, headers, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout); err != nil {
+
+		// combine headers for connection
+		connectHeaders := make(http.Header)
+		for k, v := range headers {
+			connectHeaders[k] = v
+		}
+		for k, v := range customHeaders {
+			connectHeaders[k] = v
+		}
+		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
 

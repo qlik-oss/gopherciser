@@ -104,9 +104,10 @@ type (
 
 		// CustomLoggers list of custom loggers.
 		CustomLoggers []*logger.Logger `json:"-"`
-		// Counters
+		// Counters statistics for execution
 		Counters statistics.ExecutionCounters `json:"-"`
-
+		// ValidationWarnings list of script validation warnings
+		ValidationWarnings []string `json:"-"`
 		// Options alter the behavior of unmarshal and validate
 		Options struct {
 			// AcceptNoScheduler produces no error scheduler does not exist in json
@@ -336,8 +337,9 @@ func NewExampleConfig() (*Config, error) {
 				ReuseUsers:      false,
 			},
 		},
-		CustomLoggers: nil,
-		Counters:      statistics.ExecutionCounters{},
+		CustomLoggers:      nil,
+		Counters:           statistics.ExecutionCounters{},
+		ValidationWarnings: nil,
 	}
 
 	return cfg, nil
@@ -388,8 +390,9 @@ func NewEmptyConfig() (*Config, error) {
 				ReuseUsers:      false,
 			},
 		},
-		CustomLoggers: nil,
-		Counters:      statistics.ExecutionCounters{},
+		CustomLoggers:      nil,
+		Counters:           statistics.ExecutionCounters{},
+		ValidationWarnings: nil,
 	}
 
 	return cfg, nil
@@ -442,22 +445,34 @@ func (cfg *Config) SetRegressionLogging() {
 	cfg.Settings.LogSettings.Regression = true
 }
 
-// Validate scenario
-func (cfg *Config) Validate() error {
+func (cfg *Config) validateScheduler() error {
 	if cfg.Scheduler == nil {
-		if !cfg.Options.AcceptNoScheduler {
+		if cfg.Options.AcceptNoScheduler {
+			return nil
+		} else {
 			return errors.Errorf("No scheduler defined")
 		}
-	} else {
-		if err := cfg.Scheduler.Validate(); err != nil {
-			return errors.Wrap(err, "Scheduler settings validation failed")
-		}
+	}
 
-		if cfg.Scheduler.RequireScenario() {
-			if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
-				return errors.Errorf("No scenario items defined")
-			}
+	w, err := cfg.Scheduler.Validate()
+	cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
+	if err != nil {
+		return errors.Wrap(err, "Scheduler settings validation failed")
+	}
+
+	if cfg.Scheduler.RequireScenario() {
+		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
+			return errors.Errorf("No scenario items defined")
 		}
+	}
+	return nil
+}
+
+// Validate scenario
+func (cfg *Config) Validate() error {
+	cfg.ValidationWarnings = make([]string, 0)
+	if err := cfg.validateScheduler(); err != nil {
+		return err
 	}
 
 	if cfg.LoginSettings.Settings == nil {
@@ -476,8 +491,10 @@ func (cfg *Config) Validate() error {
 
 	// Validate all actions before executing
 	for _, v := range cfg.Scenario {
-		if err := v.Validate(); err != nil {
+		if w, err := v.Validate(); err != nil {
 			return errors.WithStack(err)
+		} else if len(w) > 0 {
+			cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 		}
 	}
 
@@ -561,6 +578,11 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log version information at the start of the log
 	entry := logger.NewLogEntry(log)
 	entry.LogInfo("GopherciserVersion", version.Version)
+
+	// Log script validation warnings
+	for _, warning := range cfg.ValidationWarnings {
+		entry.LogInfo("ScriptValidationWarning", warning)
+	}
 
 	// Log script to be executed
 	script, err := jsonit.Marshal(cfg)

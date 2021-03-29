@@ -29,6 +29,6 @@ func (unPublishSheetSettings UnPublishSheetSettings) Execute(sessionState *sessi
 }
 
 // Validate checks the settings of the un-publish sheet action
-func (unPublishSheetSettings UnPublishSheetSettings) Validate() error {
+func (unPublishSheetSettings UnPublishSheetSettings) Validate() ([]string, error) {
 	return validatePubUnPubSettings(unPublishSheetSettings.Mode, unPublishSheetSettings.SheetIDs)
 }

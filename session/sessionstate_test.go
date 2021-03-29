@@ -275,11 +275,3 @@ func assertEventCounter(ec *eventCounter, ech, ecl int) error {
 
 	return nil
 }
-
-func TestDataConnectionIDNotFoundError(t *testing.T) {
-	err := DataConnectionIDNotFoundError("MySpace")
-	t.Log(err) // will panic if recursive
-	if err.Error() != "data connection ID for space<MySpace> not found" {
-		t.Error("unexpected value of DataConnectionIDNotFoundError")
-	}
-}

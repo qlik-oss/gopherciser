@@ -5,14 +5,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/qlik-oss/gopherciser/elasticstructs"
-	"github.com/qlik-oss/gopherciser/logger"
-
 	"github.com/pkg/errors"
-
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/structs"
 )
 
 type (
@@ -23,24 +21,25 @@ type (
 )
 
 // Validate DeleteOdagSettings action (Implements ActionSettings interface)
-func (settings DeleteOdagSettings) Validate() error {
+func (settings DeleteOdagSettings) Validate() ([]string, error) {
 	if settings.Name.String() == "" {
-		return errors.New("no ODAG link name specified")
+		return nil, errors.New("no ODAG link name specified")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute DeleteOdagSettings action (Implements ActionSettings interface)
 func (settings DeleteOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration
-	err := deleteOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
+	err := DeleteOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
-func deleteOdag(sessionState *session.State, settings DeleteOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
+// DeleteOdag delete ODAG app
+func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
 	odagLinkName, err := sessionState.ReplaceSessionVariables(&settings.Name)
 	if err != nil {
 		return err
@@ -70,7 +69,7 @@ func deleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 	if odagRequests.ResponseStatusCode != http.StatusOK {
 		return errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagRequests.ResponseBody))
 	}
-	var odagRequestsByLink elasticstructs.OdagRequestsByLink
+	var odagRequestsByLink structs.OdagRequestsByLink
 	if err := jsonit.Unmarshal(odagRequests.ResponseBody, &odagRequestsByLink); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody))
 	}

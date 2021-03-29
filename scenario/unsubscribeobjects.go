@@ -18,15 +18,15 @@ type (
 )
 
 // Validate implements ActionSettings interface
-func (settings UnsubscribeObjects) Validate() error {
+func (settings UnsubscribeObjects) Validate() ([]string, error) {
 	haveIds := len(settings.IDs) > 0
 	if settings.Clear && haveIds {
-		return errors.New("both clear and list of ID's given")
+		return nil, errors.New("both clear and list of ID's given")
 	}
 	if !settings.Clear && !haveIds {
-		return errors.New("no ID's given and set to not clear ")
+		return nil, errors.New("no ID's given and set to not clear ")
 	}
-	return nil
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface

@@ -72,3 +72,35 @@ func TestApiCallFromPath(t *testing.T) {
 	assert.Equal(t, "", apiCallFromPath(test2))
 	assert.Equal(t, "api/v1/evaluation", apiCallFromPath(test3))
 }
+
+func TestPrependURLPath(t *testing.T) {
+	for _, tc := range []struct {
+		inputURL          string
+		inputPath         string
+		expectedOutputURL string
+	}{
+		{
+			inputURL:          "http://something.com/a/b/def",
+			inputPath:         "x",
+			expectedOutputURL: "http://something.com/x/a/b/def",
+		},
+		{
+			inputURL:          "http://something.com/a/b/def",
+			inputPath:         "/x/y/z",
+			expectedOutputURL: "http://something.com/x/y/z/a/b/def",
+		},
+		{
+			inputURL:          "http://something.com/path/to/endpoint?myVar=10&myvar2=aString",
+			inputPath:         "/myProxy/",
+			expectedOutputURL: "http://something.com/myProxy/path/to/endpoint?myVar=10&myvar2=aString",
+		},
+	} {
+		outputURL, err := prependURLPath(tc.inputURL, tc.inputPath)
+		if err != nil {
+			t.Error(err)
+		}
+		if outputURL != tc.expectedOutputURL {
+			t.Errorf(`Expeted url<%s>, but got url<%s>`, tc.expectedOutputURL, outputURL)
+		}
+	}
+}

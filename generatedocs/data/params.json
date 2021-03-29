@@ -1,7 +1,4 @@
 {
-    "elasticpublishapp.cleartags": [
-        "Publish the app without its original tags."
-    ],
     "destinationspace.destinationspaceid": [
         "Specify destination space by ID."
     ],
@@ -13,10 +10,10 @@
     ],
     "appselection.appmode": [
         "App selection mode",
-        "`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.",
+        "`current`: (default) Use the current app, selected by an app selection in a previous action",
         "`guid`: Use the app GUID specified by the `app` parameter.",
         "`name`: Use the app name specified by the `app` parameter.",
-        "`random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.",
+        "`random`: Select a random app from the artifact map, which is filled by e.g. `openhub`",
         "`randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.",
         "`randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.",
         "`randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.",
@@ -36,8 +33,43 @@
     "appselection.filename": [
         "Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."
     ],
-    "canaddtocollection.groups": [
-        "DEPRECATED"
+    "askhubadvisor.app": [
+        "Optional name of app to pick in followup queries. If not set, a random app is picked."
+    ],
+    "askhubadvisor.querysource": [
+        "The source from which queries will be randomly picked.",
+        "`file`: Read queries from file defined by `file`.",
+        "`querylist`: Read queries from list defined by `querylist`."
+    ],
+    "askhubadvisor.querylist": [
+        "A list of queries. Plain strings are supported and will get a weight of `1`."
+    ],
+    "askhubadvisor.querylist.weight": [
+        "A weight to set probablility of query being peformed."
+    ],
+    "askhubadvisor.querylist.query": [
+        "A query sentence."
+    ],
+    "askhubadvisor.lang": [
+        "Query language."
+    ],
+    "askhubadvisor.maxfollowup": [
+        "The maximum depth of followup queries asked. A value of `0` means that a query from querysource is performed without followup queries."
+    ],
+    "askhubadvisor.file": [
+        "Path to query file."
+    ],
+    "askhubadvisor.thinktime": [
+        "Settings for the `thinktime` action, which is automatically inserted before each followup."
+    ],
+    "askhubadvisor.saveimages": [
+        "Save images of charts to file."
+    ],
+    "askhubadvisor.saveimagefile": [
+        "File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables)."
+    ],
+    "clearfield.name" : [
+        "Name of field to clear."
     ],
     "clickactionbutton.id": [
         "ID of the action-button to click."
@@ -306,138 +338,6 @@
     "duplicatesheet.cloneid": [
         "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."
     ],
-    "elasticcreateapp.ignoreevents": [
-        "Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects."
-    ],
-    "elasticcreatecollection.name": [
-        "Name of the collection to create (supports the use of [session variables](#session_variables))."
-    ],
-    "elasticcreatecollection.description": [
-        "(optional) Description of the collection to create."
-    ],
-    "elasticcreatecollection.private": [
-        "",
-        "`true`: Private collection",
-        "`false`: Public collection"
-    ],
-    "elasticdeleteapp.mode": [
-        "",
-        "`single`: Delete the app specified explicitly by app GUID or app name.",
-        "`everything`: Delete all apps currently in the application context, as determined by the `elasticopenhub` action. **Note:** Use with care.",
-        "`clearcollection`: Delete all apps in the collection specified by `collectionname`."
-    ],
-    "elasticdeleteapp.collectionname": [
-        "Name of the collection in which to delete apps."
-    ],
-    "elasticdeletecollection.name": [
-        "Name of the collection to delete."
-    ],
-    "elasticdeletecollection.deletecontents": [
-        "",
-        "`true`: Delete all apps in the collection before deleting the collection.",
-        "`false`: Delete the collection without doing anything to the apps in the collection."
-    ],
-    "elasticdeleteodag.linkname": [
-        "Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
-    ],
-    "elasticduplicateapp.spaceid": [
-        "(optional) GUID of the shared space in which to publish the app."
-    ],
-    "elasticexplore.keepcurrent": [
-        "Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted."
-    ],
-    "elasticexplore.paging": [
-        "Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted."
-    ],
-    "elasticexplore.sorting": [
-        "Simulate selecting sort order in the drop-down menu in the hub",
-        "`default`: Default sort order (`created`).",
-        "`created`: Sort by the time of creation.",
-        "`updated`: Sort by the time of modification.",
-        "`name`: Sort by name."
-    ],
-    "elasticexplore.owner": [
-        "Filter apps by owner",
-        "`all`: Apps owned by anyone.",
-        "`me`: Apps owned by the simulated user.",
-        "`others`: Apps not owned by the simulated user."
-    ],
-    "elasticexplore.space": [
-        "Filter apps by space name (supports the use of [session variables](#session_variables)). **Note:** This filter cannot be used together with `spaceid`."
-    ],
-    "elasticexplore.spaceid": [
-        "Filter apps by space GUID. **Note:** This filter cannot be used together with `space`."
-    ],
-    "elasticexplore.tags": [
-        "Filter apps by tag names. This filter can be used together with `tagids`."
-    ],
-    "elasticexplore.tagids": [
-        "Filter apps by tag ids. This filter can be used together with `tags`."
-    ],
-    "elasticexportapp.nodata": [
-        "Export the app without data (`true`/`false`). Defaults to `false` (that is, export with data), if omitted."
-    ],
-    "elasticexportapp.filename": [
-        "Pattern for the filename when saving the exported app to a file, defaults to app title or app GUID. Supports the use of [session variables](#session_variables) and additionally `.Local.Title` can be used as a variable to add the title of the exported app."
-    ],
-    "elasticexportapp.savetofile": [
-        "Save the exported file in the specified directory (`true`/`false`). Defaults to `false`, if omitted."
-    ],
-    "elasticgenerateodag.linkname": [
-        "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
-    ],
-    "elastichubsearch.searchfor": [
-        "",
-        "`collections`: Search for collections only.",
-        "`apps`: Search for apps only.",
-        "`both`: Search for both collections and apps."
-    ],
-    "elastichubsearch.querysource": [
-        "",
-        "`string`: The query is provided as a string specified by `query`.",
-        "`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."
-    ],
-    "elastichubsearch.query": [
-        "(optional) Query string (in case of `querystring` as source)."
-    ],
-    "elastichubsearch.queryfile": [
-        "(optional) File from which to read a query (in case of `fromfile` as source)."
-    ],
-    "elasticmoveapp.keepcurrent": [
-        "Keep the current artifact map when moving to target space at the end of `elasticmoveapp`. Defaults to `false`. Current artifact map is always kept when `donotnavigatetospace` is set."
-    ],
-    "elasticmoveapp.donotnavigatetospace": [
-        "Do not navigate to target space after moving app. Defaults to `false`."
-    ],
-    "elasticreload.pollingoff": [
-        "DEPRECATED"
-    ],
-    "elasticreload.pollinterval": [
-        "DEPRECATED"
-    ],
-    "elasticreload.log": [
-        "DEPRECATED"
-    ],
-    "elasticuploadapp.mode": [
-        "Upload mode. Defaults to `tus`, if omitted.",
-        "`tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.",
-        "`legacy`: Upload the file using a single POST payload (legacy file upload mode)."
-    ],
-    "elasticuploadapp.filename": [
-        "Local file to send as payload."
-    ],
-    "elasticuploadapp.spaceid": [
-        "DEPRECATED"
-    ],
-    "elasticuploadapp.title": [
-        "Name of the app to upload (supports the use of [session variables](#session_variables))."
-    ],
-    "elasticuploadapp.stream": [
-        "(optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables))."
-    ],
-    "elasticuploadapp.streamguid": [
-        "(optional) GUID of the private collection or public tag under which to publish the app."
-    ],
     "generateodag.linkname": [
         "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
     ],
@@ -462,6 +362,9 @@
     ],
     "listboxselect.accept": [
         "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
+    ],
+    "openapp.unique" : [
+        "Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."
     ],
     "productversion.log": [
         "Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."
@@ -526,7 +429,8 @@
         "`randomfromall`: Randomly select within all values of the symbol table.",
         "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.",
         "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.",
-        "`randomdeselect`: Randomly deselect values on the first data page."
+        "`randomdeselect`: Randomly deselect values on the first data page.",
+        "`values`: Select specific element values, defined by `values` array."
     ],
     "select.accept": [
         "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
@@ -543,31 +447,11 @@
     "select.dim": [
         "Dimension / column in which to select."
     ],
+    "select.values": [
+        "Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user."
+    ],
     "setscript.script": [
         "Load script for the app (written as a string)."
-    ],
-    "staticselect.id": [
-        "ID of the object in which to select values."
-    ],
-    "staticselect.path": [
-        "Path to the hypercube or listobject (differs depending on object type)."
-    ],
-    "staticselect.rows": [
-        "Element values to select in the dimension / column."
-    ],
-    "staticselect.cols": [
-        "Dimension / column in which to select."
-    ],
-    "staticselect.type": [
-        "Selection type",
-        "`hypercubecells`: Select in hypercube.",
-        "`listobjectvalues`: Select in listbox."
-    ],
-    "staticselect.accept": [
-        "Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."
-    ],
-    "staticselect.wrap": [
-        "Wrap selection with Begin / End selection requests (`true` / `false`)."
     ],
     "subscribeobjects.clear" : [
         "Remove any previously subscribed objects from the subscription list."
@@ -620,5 +504,8 @@
     ],
     "uploaddata.spaceid": [
         "(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."
+    ],
+    "uploaddata.title": [
+        "(optional) Set custom title of file on upload. Defaults to file name (excluding extension). (supports the use of [session variables](#session_variables))"
     ]
 }

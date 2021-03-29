@@ -72,38 +72,38 @@ func (mode ContainerTabMode) String() string {
 }
 
 // Validate ContainerTabSettings action (Implements ActionSettings interface)
-func (settings ContainerTabSettings) Validate() error {
+func (settings ContainerTabSettings) Validate() ([]string, error) {
 	if settings.ContainerID == "" {
-		return errors.New("no container id defined")
+		return nil, errors.New("no container id defined")
 	}
 
 	switch settings.Mode {
 	case ContainerTabModeObjectID:
 		if settings.ObjectID == "" {
-			return errors.Errorf("no container activeid set for container tab mode<%s>", settings.Mode)
+			return nil, errors.Errorf("no container activeid set for container tab mode<%s>", settings.Mode)
 		}
 		if settings.Index != 0 {
-			return errors.Errorf("index<%d> will not be used with mode<%s>", settings.Index, settings.Mode)
+			return nil, errors.Errorf("index<%d> will not be used with mode<%s>", settings.Index, settings.Mode)
 		}
 	case ContainerTabModeRandom:
 		if settings.ObjectID != "" {
-			return errors.Errorf("object ID<%s> will not be used with mode<%s>", settings.ObjectID, settings.Mode)
+			return nil, errors.Errorf("object ID<%s> will not be used with mode<%s>", settings.ObjectID, settings.Mode)
 		}
 		if settings.Index != 0 {
-			return errors.Errorf("index<%d> will not be used with mode<%s>", settings.Index, settings.Mode)
+			return nil, errors.Errorf("index<%d> will not be used with mode<%s>", settings.Index, settings.Mode)
 		}
 	case ContainerTabModeIndex:
 		if settings.Index < 0 {
-			return errors.Errorf("index<%d> not valid", settings.Index)
+			return nil, errors.Errorf("index<%d> not valid", settings.Index)
 		}
 		if settings.ObjectID != "" {
-			return errors.Errorf("object ID<%s> will not be used with mode<%s>", settings.ObjectID, settings.Mode)
+			return nil, errors.Errorf("object ID<%s> will not be used with mode<%s>", settings.ObjectID, settings.Mode)
 		}
 	default:
-		return errors.Errorf("unknown container tab mode<%v>", settings.Mode)
+		return nil, errors.Errorf("unknown container tab mode<%v>", settings.Mode)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Execute ContainerTabSettings action (Implements ActionSettings interface)

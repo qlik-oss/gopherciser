@@ -142,17 +142,17 @@ func executePubUnPubAction(mode PublishSheetMode, sheetIDs []string,
 }
 
 // Validate checks the settings of the publish sheet action
-func (publishSheetSettings PublishSheetSettings) Validate() error {
+func (publishSheetSettings PublishSheetSettings) Validate() ([]string, error) {
 	return validatePubUnPubSettings(publishSheetSettings.Mode, publishSheetSettings.SheetIDs)
 }
 
 // validatePubUnPubSettings validates the publish/un-publish sheet action settings
-func validatePubUnPubSettings(mode PublishSheetMode, sheetIds []string) error {
+func validatePubUnPubSettings(mode PublishSheetMode, sheetIds []string) ([]string, error) {
 	if mode == SheetIDs && len(sheetIds) == 0 {
-		return errors.New("no sheet ids specified")
+		return nil, errors.New("no sheet ids specified")
 	}
 	if mode == AllSheets && len(sheetIds) > 0 {
-		return errors.New("sheet ids should not be specified")
+		return nil, errors.New("sheet ids should not be specified")
 	}
-	return nil
+	return nil, nil
 }

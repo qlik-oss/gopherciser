@@ -12,6 +12,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httputil"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -242,23 +243,6 @@ func (handler *RestHandler) SetClient(client *http.Client) {
 	handler.Client = client
 }
 
-// FireOffGet request
-// Deprecated: Replace with GetAsync or QueueRequest
-func (handler *RestHandler) FireOffGet(url string, actionState *action.State, failOnError bool) *RestRequest {
-	return handler.FireOffGetWithCallback(url, actionState, failOnError, nil)
-}
-
-// FireOffGet request with callback
-// Deprecated: Replace with GetAsyncWithCallback or QueueRequestWithCallback
-func (handler *RestHandler) FireOffGetWithCallback(url string, actionState *action.State, failOnError bool, callback func(err error, req *RestRequest)) *RestRequest {
-	getRequest := RestRequest{
-		Method:      GET,
-		Destination: url,
-	}
-	handler.QueueRequestWithCallback(actionState, failOnError, &getRequest, &logger.LogEntry{}, callback)
-	return &getRequest
-}
-
 // GetSync sends synchronous GET request with options, using options=nil default options are used
 func (handler *RestHandler) GetSync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
 	return handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)
@@ -299,20 +283,7 @@ func (handler *RestHandler) GetAsyncWithCallback(url string, actionState *action
 }
 
 func (handler *RestHandler) getAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
-	if options == nil {
-		options = &defaultReqOptions
-	}
-
-	getRequest := RestRequest{
-		Method:       GET,
-		Destination:  url,
-		ContentType:  options.ContentType,
-		ExtraHeaders: headers,
-	}
-
-	handler.QueueRequestWithCallback(actionState, options.FailOnError, &getRequest, logEntry, createStatusCallback(actionState, logEntry, &getRequest, options, callback))
-
-	return &getRequest
+	return handler.sendAsyncWithCallback(GET, url, actionState, logEntry, nil, headers, options, callback)
 }
 
 // PutAsync send async PUT request with options, using options=nil default options are used
@@ -438,14 +409,6 @@ func getHost(fullURL string) (string, error) {
 	return strings.Split(host, ":")[0], nil
 }
 
-func getUrlObj(fullURL string) (*url.URL, error) {
-	urlObj, err := url.Parse(fullURL)
-	if err != nil {
-		return nil, err
-	}
-	return urlObj, nil
-}
-
 // QueueRequest Async request
 func (handler *RestHandler) QueueRequest(actionState *action.State, failOnError bool,
 	request *RestRequest, logEntry *logger.LogEntry) {
@@ -489,6 +452,11 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			WarnOrError(actionState, logEntry, failOnError, errors.Wrapf(errRequest, "Failed to read REST response to %s", request.Destination))
 		}
 
+		if err := handler.addVirtualProxy(request); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+
 		if request.ContentReader == nil {
 			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
 				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
@@ -511,6 +479,20 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			request.ResponseBody, errRequest = ioutil.ReadAll(request.response.Body)
 		}
 	}()
+}
+
+func (handler *RestHandler) addVirtualProxy(request *RestRequest) error {
+	if handler.virtualProxy != "" && !request.NoVirtualProxy {
+		destination, err := prependURLPath(request.Destination, handler.virtualProxy)
+		if err != nil {
+			return errors.Wrapf(err, "failed to prepend virtual proxy<%s> to url<%s>", destination, handler.virtualProxy)
+		}
+		if destination == "" {
+			return errors.Errorf("appending virtualproxy<%s> to destination<%s> failed", handler.virtualProxy, request.Destination)
+		}
+		request.Destination = destination
+	}
+	return nil
 }
 
 func ReadAll(r io.Reader) ([]byte, error) {
@@ -539,47 +521,43 @@ func ReadAll(r io.Reader) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
-
-	destination := request.Destination
-	if handler.virtualProxy != "" && !request.NoVirtualProxy {
-		host, err := getHost(request.Destination)
-		if err != nil {
-			return err
-		}
-		urlObj, err := getUrlObj(request.Destination)
-		if err != nil {
-			return err
-		}
-		destination = fmt.Sprintf("%s://%s/%s%s", urlObj.Scheme, host, handler.virtualProxy, urlObj.Path)
+func prependURLPath(aURL, pathToPrepend string) (string, error) {
+	urlObj, err := url.Parse(aURL)
+	if err != nil {
+		return aURL, errors.WithStack(err)
 	}
+	urlObj.Path = path.Join(pathToPrepend, urlObj.Path)
 
+	return urlObj.String(), nil
+}
+
+func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
 	var req *http.Request
 	var err error
 
 	switch request.Method {
 	case GET:
-		req, err = http.NewRequest(http.MethodGet, destination, nil)
+		req, err = http.NewRequest(http.MethodGet, request.Destination, nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to create HTTP request")
 		}
 	case DELETE:
-		req, err = http.NewRequest(http.MethodDelete, destination, nil)
+		req, err = http.NewRequest(http.MethodDelete, request.Destination, nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to create HTTP request")
 		}
 	case POST:
-		req, err = http.NewRequest(http.MethodPost, destination, bytes.NewReader(request.Content))
+		req, err = http.NewRequest(http.MethodPost, request.Destination, bytes.NewReader(request.Content))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
 	case PUT:
-		req, err = http.NewRequest(http.MethodPut, destination, bytes.NewReader(request.Content))
+		req, err = http.NewRequest(http.MethodPut, request.Destination, bytes.NewReader(request.Content))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
 	case PATCH:
-		req, err = http.NewRequest(http.MethodPatch, destination, bytes.NewReader(request.Content))
+		req, err = http.NewRequest(http.MethodPatch, request.Destination, bytes.NewReader(request.Content))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}

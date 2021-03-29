@@ -4,8 +4,10 @@
         "title": "Common actions",
         "actions": [
             "applybookmark",
+            "askhubadvisor",
             "changesheet",
             "clearall",
+            "clearfield",
             "clickactionbutton",
             "containertab",
             "createbookmark",
@@ -13,6 +15,7 @@
             "deletebookmark",
             "deletesheet",
             "disconnectapp",
+            "disconnectenvironment",
             "dosave",
             "duplicatesheet",
             "iterated",
@@ -26,7 +29,6 @@
             "select",
             "setscript",
             "sheetchanger",
-            "staticselect",
             "subscribeobjects",
             "thinktime",
             "unpublishbookmark",
@@ -41,30 +43,6 @@
             "deleteodag",
             "generateodag",
             "openhub"
-        ]
-    },
-    {
-        "name": "qseokActions",
-        "title": "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-        "actions": [
-            "deletedata",
-            "elasticcreateapp",
-            "elasticcreatecollection",
-            "elasticdeleteapp",
-            "elasticdeletecollection",
-            "elasticdeleteodag",
-            "elasticduplicateapp",
-            "elasticexplore",
-            "elasticexportapp",
-            "elasticgenerateodag",
-            "elastichubsearch",
-            "elasticmoveapp",
-            "elasticopenhub",
-            "elasticpublishapp",
-            "elasticreload",
-            "elasticuploadapp",
-            "uploaddata",
-            "disconnectelastic"
         ]
     }
 ]

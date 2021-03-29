@@ -14,6 +14,10 @@ var (
 			Description: "## ApplyBookmark action\n\nApply a bookmark in the current app.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"applybookmark\",\n    \"settings\": {\n        \"title\": \"My bookmark\"\n    }\n}\n```\n",
 		},
+		"askhubadvisor": {
+			Description: "## AskHubAdvisor action\n\nPerform a query in the Qlik Sense hub insight advisor.",
+			Examples:    "### Examples\n\n#### Pick queries from file\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"file\",\n        \"file\": \"queries.txt\"\n    }\n}\n```\n\nThe file `queries.txt` contains one query and an optional weight per line. The line format is `[WEIGHT;]QUERY`.\n```txt\nshow sales per country\n5; what is the lowest price of shoes\n```\n\n#### Pick queries from list\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\"show sales per country\", \"what is the lowest price of shoes\"]\n    }\n}\n```\n\n#### Perform followup queries if possible (default: 0)\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\"show sales per country\", \"what is the lowest price of shoes\"],\n        \"maxfollowup\": 3\n    }\n}\n```\n\n#### Change lanuage (default: \"en\")\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\"show sales per country\", \"what is the lowest price of shoes\"],\n        \"lang\": \"fr\"\n    }\n}\n```\n\n#### Weights in querylist\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\n            {\n                \"query\": \"show sales per country\",\n                \"weight\": 5,\n            },\n            \"what is the lowest price of shoes\"\n        ]\n    }\n}\n```\n\n#### Thinktime before followup queries\n\nSee detailed examples of settings in the documentation for thinktime action.\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\n            \"what is the lowest price of shoes\"\n        ],\n        \"maxfollowup\": 5,\n        \"thinktime\": {\n            \"type\": \"static\",\n            \"delay\": 5\n        }\n    }\n}\n```\n\n#### Save chart images to file\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\n            \"show price per shoe type\"\n        ],\n        \"maxfollowup\": 5,\n        \"saveimages\": true\n    }\n}\n```\n\n#### Save chart images to file with custom name\n\nThe `saveimagefile` file name template setting supports\n[Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables).\nYou can apart from session variables include the following action local variables in the `saveimagefile` file name template:\n- .Local.ImageCount - _the number of images written to file_\n- .Local.ServerFileName - _the server side name of image file_\n- .Local.Query - _the query sentence_\n- .Local.AppName - _the name of app, if any app, where query is asked_\n- .Local.AppID - _the id of app, if any app, where query is asked_\n\n```json\n{\n    \"action\": \"AskHubAdvisor\",\n    \"settings\": {\n        \"querysource\": \"querylist\",\n        \"querylist\": [\n            \"show price per shoe type\"\n        ],\n        \"maxfollowup\": 5,\n        \"saveimages\": true,\n        \"saveimagefile\": \"{{.Local.Query}}--app-{{.Local.AppName}}--user-{{.UserName}}--thread-{{.Thread}}--session-{{.Session}}\"\n    }\n}\n```\n",
+		},
 		"changesheet": {
 			Description: "## ChangeSheet action\n\nChange to a new sheet, unsubscribe to the currently subscribed objects, and subscribe to all objects on the new sheet.\n\nThe action supports getting data from the following objects:\n\n* Listbox\n* Filter pane\n* Bar chart\n* Scatter plot\n* Map (only the first layer)\n* Combo chart\n* Table\n* Pivot table\n* Line chart\n* Pie chart\n* Tree map\n* Text-Image\n* KPI\n* Gauge\n* Box plot\n* Distribution plot\n* Histogram\n* Auto chart (including any support generated visualization from this list)\n* Waterfall chart\n",
 			Examples:    "### Example\n\n```json\n{\n     \"label\": \"Change Sheet Dashboard\",\n     \"action\": \"ChangeSheet\",\n     \"settings\": {\n         \"id\": \"TFJhh\"\n     }\n}\n```\n",
@@ -21,6 +25,10 @@ var (
 		"clearall": {
 			Description: "## ClearAll action\n\nClear all selections in an app.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"clearall\",\n    \"label\": \"Clear all selections (1)\"\n}\n```\n",
+		},
+		"clearfield": {
+			Description: "## ClearField action\n\nClear selections in a field.\n",
+			Examples:    "### Example\n\n```json\n{\n    \"action\": \"clearfield\",\n    \"label\": \"Clear selections in Alpha\",\n    \"settings\" : {\n        \"name\": \"Alpha\"\n    }\n}\n```\n",
 		},
 		"clickactionbutton": {
 			Description: "## ClickActionButton action\n\nA `ClickActionButton`-action simulates clicking an _action-button_. An _action-button_ is a sheet item which, when clicked, executes a series of actions. The series of actions contained by an action-button begins with any number _generic button-actions_ and ends with an optional _navigation button-action_.\n\n### Supported button-actions\n#### Generic button-actions\n- Apply bookmark\n- Move backward in all selections\n- Move forward in all selections\n- Lock all selections\n- Clear all selections\n- Lock field\n- Unlock field\n- Select all in field\n- Select alternatives in field\n- Select excluded in field\n- Select possible in field\n- Select values matching search criteria in field\n- Clear selection in field\n- Toggle selection in field\n- Set value of variable\n\n#### Navigation button-actions\n- Change to first sheet\n- Change to last sheet\n- Change to previous sheet\n- Change sheet by name\n- Change sheet by ID",
@@ -42,10 +50,6 @@ var (
 			Description: "## DeleteBookmark action\n\nDelete one or more bookmarks in the current app.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"deletebookmark\",\n    \"settings\": {\n        \"mode\": \"single\",\n        \"title\": \"My bookmark\"\n    }\n}\n```\n",
 		},
-		"deletedata": {
-			Description: "## DeleteData action\n\nDelete a data file from data sources.\n",
-			Examples:    "### Example\n\nDelete data from personal space.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\"\n     }\n}\n```\n\nDelete data from space with ID `25180576-755b-46e1-8683-12062584e52c`.\n\n```json\n{\n     \"action\": \"DeleteData\",\n     \"settings\": {\n         \"filename\": \"data.csv\",\n         \"spaceid\" : \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
-		},
 		"deleteodag": {
 			Description: "## DeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"DeleteOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
@@ -58,9 +62,9 @@ var (
 			Description: "## DisconnectApp action\n\nDisconnect from an already connected app.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from server\",\n    \"action\" : \"disconnectapp\"\n}\n```\n",
 		},
-		"disconnectelastic": {
-			Description: "## DisconnectElastic action\n\nDisconnect from a QSEoK environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes \"elastic\" environments with QSEoW or uses custom actions towards another type of environment, it should be used directly after the last action towards the elastic environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from elastic environment\",\n    \"action\" : \"disconnectelastic\"\n}\n```\n",
+		"disconnectenvironment": {
+			Description: "## DisconnectEnvironment action\n\nDisconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environmentsor uses custom actions towards external environment, it should be used directly after the last action towards the environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
+			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from environment\",\n    \"action\" : \"disconnectenvironment\"\n}\n```\n",
 		},
 		"dosave": {
 			Description: "## DoSave action\n\n`DoSave` issues a command to engine to save the currently open app. If the simulated user does not have permission to save the app it will result in an error.",
@@ -69,66 +73,6 @@ var (
 		"duplicatesheet": {
 			Description: "## DuplicateSheet action\n\nDuplicate a sheet, including all objects.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"duplicatesheet\",\n    \"label\": \"Duplicate sheet1\",\n    \"settings\":{\n        \"id\" : \"mBshXB\",\n        \"save\": true,\n        \"changesheet\": true\n    }\n}\n```\n",
-		},
-		"elasticcreateapp": {
-			Description: "## ElasticCreateApp action\n\nCreate an app in a QSEoK deployment. The app will be private to the user who creates it.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"ElasticCreateApp\",\n     \"label\": \"Create new app\",\n     \"settings\": {\n         \"title\": \"Created by script\",\n         \"stream\": \"Everyone\",\n         \"groups\": [\"Everyone\", \"cool kids\"]\n     }\n}\n```\n",
-		},
-		"elasticcreatecollection": {
-			Description: "## ElasticCreateCollection action\n\nCreate a collection in a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n   \"action\": \"ElasticCreateCollection\",\n   \"label\": \"Create collection\",\n   \"settings\": {\n       \"name\": \"Collection {{.Session}}\",\n       \"private\": false\n   }\n}\n```\n",
-		},
-		"elasticdeleteapp": {
-			Description: "## ElasticDeleteApp action\n\nDelete an app from a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"ElasticDeleteApp\",\n     \"label\": \"delete app myapp\",\n     \"settings\": {\n         \"mode\": \"single\",\n         \"appmode\": \"name\",\n         \"app\": \"myapp\"\n     }\n}\n```\n",
-		},
-		"elasticdeletecollection": {
-			Description: "## ElasticDeleteCollection action\n\nDelete a collection in a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n   \"action\": \"ElasticDeleteCollection\",\n   \"label\": \"Delete collection\",\n   \"settings\": {\n       \"name\": \"MyCollection\",\n       \"deletecontents\": true\n   }\n}\n```\n",
-		},
-		"elasticdeleteodag": {
-			Description: "## ElasticDeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"ElasticDeleteOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
-		},
-		"elasticduplicateapp": {
-			Description: "## ElasticDuplicateApp action\n\nDuplicate an app in a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"ElasticDuplicateApp\",\n    \"settings\": {\n        \"appmode\": \"name\",\n        \"app\": \"myapp\",\n        \"title\": \"duplicated app {{.Session}}\"\n    }\n}\n```\n",
-		},
-		"elasticexplore": {
-			Description: "## ElasticExplore action\n\nExplore the hub for apps and fill the artifact map with apps to be used by other actions in the script (for example, the `openapp` action with `appmode` set to `random` or `round`).\n",
-			Examples: "### Examples\n\nThe following example shows how to clear the artifact map and fill it with apps having the tag \"mytag\" from the first page in the hub.\n\n```json\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": false,\n		\"tags\": [\"mytag\"]\n	}\n}\n```\n\nThe following example shows how to clear the artifact map, fill it with all apps from the space \"myspace\" and then add all apps from the space \"circles\".\n\n```json\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": false,\n		\"space\": \"myspace\",\n		\"paging\": true\n	}\n},\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": true,\n		\"space\": \"circles\",\n		\"paging\": true\n	}\n}\n```\n\nThe following example shows how to clear the artifact map and fill it with the apps from the first page of the space \"spaceX\". The apps must have the tag \"tag\" or \"team\" or a tag with id \"15172f9c-4a5f-4ee9-ae35-34c1edd78f8d\", but not be created by the simulated user. In addition, the apps are sorted by the time of modification.\n\n```json\n{\n	\"action\": \"ElasticExplore\",\n	\"label\": \"\",\n	\"settings\": {\n		\"keepcurrent\": false,\n		\"space\": \"spaceX\",\n		\"tags\": [\"tag\", \"team\"],\n		\"tagids\": [\"15172f9c-4a5f-4ee9-ae35-34c1edd78f8d\"],\n		\"owner\": \"others\",\n		\"sorting\": \"updated\",\n		\"paging\": false\n	}\n}\n```\n",
-		},
-		"elasticexportapp": {
-			Description: "## ElasticExportApp action\n\nExport an app and, optionally, save it to file.\n",
-			Examples: "### Example\n\n```json\n{\n	\"action\": \"elasticexportapp\",\n	\"label\": \"Export My App\",\n	\"settings\": {\n		\"appmode\": \"name\",\n		\"app\": \"My App\",\n		\"nodata\": false,\n		\"savetofile\": false\n	}\n}\n```\n",
-		},
-		"elasticgenerateodag": {
-			Description: "## ElasticGenerateOdag action\n\nGenerate an on-demand app from an existing On-Demand App Generation (ODAG) link.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"ElasticGenerateOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
-		},
-		"elastichubsearch": {
-			Description: "## ElasticHubSearch action\n\nSearch the hub in a QSEoK deployment.\n",
-			Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticHubSearch\",\n	\"settings\": {\n		\"searchfor\": \"apps\",\n		\"querysource\": \"fromfile\",\n		\"queryfile\": \"/MyQueries/Queries.txt\"\n	}\n}\n```\n",
-		},
-		"elasticmoveapp": {
-			Description: "## ElasticMoveApp action\n\nMove an app from its existing space into the specified destination space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"elasticmoveapp\",\n    \"settings\": {\n        \"app\": \"AppForEveryone\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"everyone\"\n    }\n}\n```\n",
-		},
-		"elasticopenhub": {
-			Description: "## ElasticOpenHub action\n\nOpen the hub in a QSEoK deployment.\n",
-			Examples: "### Example\n\n```json\n{\n	\"action\": \"ElasticOpenHub\",\n	\"label\": \"Open cloud hub with YourCollection and MyCollection\"\n}\n```\n",
-		},
-		"elasticpublishapp": {
-			Description: "## ElasticPublishApp action\n\nPublish an app to a managed space.\n\n**Note:** Specify *either* `destinationspacename` *or* `destinationspaceid`, not both.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"action\": \"elasticpublishapp\",\n    \"settings\": {\n        \"app\": \"Sales\",\n        \"appmode\": \"name\",\n        \"destinationspacename\": \"Finance\",\n        \"cleartags\": false\n    }\n}\n```\n",
-		},
-		"elasticreload": {
-			Description: "## ElasticReload action\n\nReload an app by simulating selecting **Reload** in the app context menu in the hub.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Reload MyApp\",\n    \"action\": \"elasticreload\",\n    \"settings\": {\n        \"appmode\": \"name\",\n        \"app\": \"MyApp\"\n    }\n}\n```\n",
-		},
-		"elasticuploadapp": {
-			Description: "## ElasticUploadApp action\n\nUpload an app to a QSEoK deployment.\n",
-			Examples:    "### Example\n\n```json\n{\n     \"action\": \"ElasticUploadApp\",\n     \"label\": \"Upload myapp.qvf\",\n     \"settings\": {\n         \"title\": \"coolapp\",\n         \"filename\": \"/home/root/myapp.qvf\",\n         \"stream\": \"Everyone\",\n         \"spaceid\": \"2342798aaefcb23\",\n     }\n}\n```\n",
 		},
 		"generateodag": {
 			Description: "## GenerateOdag action\n\nGenerate an on-demand app from an existing On-Demand App Generation (ODAG) link.\n",
@@ -143,7 +87,7 @@ var (
 			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"ListBoxSelect\",\n     \"action\": \"ListBoxSelect\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\",\n         \"type\": \"all\",\n         \"wrap\": true,\n         \"accept\": true\n     }\n}\n```\n",
 		},
 		"openapp": {
-			Description: "## OpenApp action\n\nOpen an app.\n\n**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`, `elasticopenhub` or `elasticexplore`.\n",
+			Description: "## OpenApp action\n\nOpen an app.\n\n**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.\n",
 			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"guid\",\n         \"app\": \"7967af99-68b6-464a-86de-81de8937dd56\"\n     }\n}\n```\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"randomguidfromlist\",\n         \"list\": [\"7967af99-68b6-464a-86de-81de8937dd56\", \"ca1a9720-0f42-48e5-baa5-597dd11b6cad\"]\n     }\n}\n```\n",
 		},
 		"openhub": {
@@ -172,7 +116,7 @@ var (
 		},
 		"select": {
 			Description: "## Select action\n\nSelect random values in an object.\n\nSee the [Limitations](README.md#limitations) section in the README.md file for limitations related to this action.\n ",
-			Examples:    "### Example\n\n```json\n//Select Listbox RandomFromAll\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromAll\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n",
+			Examples:    "### Example\n\nRandomly select among all the values in object `RZmvzbF`.\n\n```json\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromAll\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n\nRandomly select among all the enabled values (a.k.a \"white\" values) in object `RZmvzbF`.\n\n```json\n{\n     \"label\": \"ListBox Year\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"RandomFromEnabled\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"min\": 1,\n         \"max\": 3,\n         \"dim\": 0\n     }\n}\n```\n\n#### Statically selecting specific values\n\nThis example selects specific element values in object `RZmvzbF`. These are the values which can be seen in a selection when e.g. inspecting traffic, it is not the data values presented to the user. E.g. when loading a table in the following order by a Sense loadscript:\n\n```\nBeta\nAlpha\nGamma\n```\n\nwhich might be presented to the user sorted as\n\n```\nAlpha\nBeta\nGamma\n```\n\nThe element values will be Beta=0, Alpha=1 and Gamma=2.\n\nTo statically select \"Gamma\" in this case:\n\n```json\n{\n     \"label\": \"Select Gammma\",\n     \"action\": \"Select\",\n     \"settings\": {\n         \"id\": \"RZmvzbF\",\n         \"type\": \"values\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"values\" : [2],\n         \"dim\": 0\n     }\n}\n```\n",
 		},
 		"setscript": {
 			Description: "## SetScript action\n\nSet the load script for the current app. To load the data from the script, use the `reload` action after the `setscript` action.\n",
@@ -181,10 +125,6 @@ var (
 		"sheetchanger": {
 			Description: "## SheetChanger action\n\nCreate and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\"\n},\n{\n    \"label\" : \"Sheetchanger cached\",\n    \"action\": \"sheetchanger\"\n}\n```\n",
-		},
-		"staticselect": {
-			Description: "## StaticSelect action\n\nSelect values statically.\n\nThe action supports:\n\n* HyperCube: Normal hypercube\n* ListObject: Normal listbox\n",
-			Examples: "### Examples\n\n#### StaticSelect Barchart\n\n```json\n{ \n\"label\": \"Chart Profit per year\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"FERdyN\",\n	 \"path\": \"/qHyperCubeDef\",\n         \"type\": \"hypercubecells\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [2],\n	 \"cols\": [0]\n     }\n}\n```\n\n#### StaticSelect Listbox\n\n```json\n{		\n\"label\": \"ListBox Territory\",\n     \"action\": \"StaticSelect\",\n     \"settings\": {\n         \"id\": \"qpxmZm\",\n         \"path\": \"/qListObjectDef\",\n         \"type\": \"listobjectvalues\",\n         \"accept\": true,\n         \"wrap\": false,\n         \"rows\": [19,8],\n	 \"cols\": [0]\n     }\n}\n```\n",
 		},
 		"subscribeobjects": {
 			Description: "## Subscribeobjects action\n\nSubscribe to any object in the currently active app.\n",
@@ -206,22 +146,29 @@ var (
 			Description: "## Unsubscribeobjects action\n\nUnsubscribe to any currently subscribed object.\n",
 			Examples:    "### Example\n\nUnsubscribe from a single object (or a list of objects).\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from object maVjt and its children\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"ids\" : [\"maVjt\"]\n    }\n}\n```\n\nUnsubscribe from all currently subscribed objects.\n\n```json\n{\n    \"action\" : \"unsubscribeobjects\",\n    \"label\" : \"unsubscribe from all objects\",\n    \"disabled\": false,\n    \"settings\" : {\n        \"clear\": true\n    }\n}\n```",
 		},
-		"uploaddata": {
-			Description: "## UploadData action\n\nUpload a data file to data sources.\n",
-			Examples:    "### Example\n\nUpload data to personal space.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\"\n     }\n}\n```\n\nUpload data to personal space, replacing existing file.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"replace\": true\n     }\n}\n```\n\nUpload data to space with space ID 25180576-755b-46e1-8683-12062584e52c.\n\n```json\n{\n     \"action\": \"UploadData\",\n     \"settings\": {\n         \"filename\": \"/home/root/data.csv\",\n         \"spaceid\": \"25180576-755b-46e1-8683-12062584e52c\"\n     }\n}\n```\n",
-		},
 	}
 
 	Params = map[string][]string{
 		"applybookmark.selectionsonly":                    {"Apply selections only."},
 		"appselection.app":                                {"App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`."},
-		"appselection.appmode":                            {"App selection mode", "`current`: (default) Use the current app, selected by an app selection in a previous action, or set by the `elasticcreateapp`, `elasticduplicateapp` or `elasticuploadapp` action.", "`guid`: Use the app GUID specified by the `app` parameter.", "`name`: Use the app name specified by the `app` parameter.", "`random`: Select a random app from the artifact map, which is filled by the `elasticopenhub` and/or the `elasticexplore` actions.", "`randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.", "`randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.", "`randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.", "`randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.", "`round`: Select an app from the artifact map according to the round-robin principle.", "`roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.", "`roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.", "`roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.", "`roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID."},
+		"appselection.appmode":                            {"App selection mode", "`current`: (default) Use the current app, selected by an app selection in a previous action", "`guid`: Use the app GUID specified by the `app` parameter.", "`name`: Use the app name specified by the `app` parameter.", "`random`: Select a random app from the artifact map, which is filled by e.g. `openhub`", "`randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.", "`randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.", "`randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.", "`randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.", "`round`: Select an app from the artifact map according to the round-robin principle.", "`roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.", "`roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.", "`roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.", "`roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID."},
 		"appselection.filename":                           {"Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`."},
 		"appselection.list":                               {"List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`."},
+		"askhubadvisor.app":                               {"Optional name of app to pick in followup queries. If not set, a random app is picked."},
+		"askhubadvisor.file":                              {"Path to query file."},
+		"askhubadvisor.lang":                              {"Query language."},
+		"askhubadvisor.maxfollowup":                       {"The maximum depth of followup queries asked. A value of `0` means that a query from querysource is performed without followup queries."},
+		"askhubadvisor.querylist":                         {"A list of queries. Plain strings are supported and will get a weight of `1`."},
+		"askhubadvisor.querylist.query":                   {"A query sentence."},
+		"askhubadvisor.querylist.weight":                  {"A weight to set probablility of query being peformed."},
+		"askhubadvisor.querysource":                       {"The source from which queries will be randomly picked.", "`file`: Read queries from file defined by `file`.", "`querylist`: Read queries from list defined by `querylist`."},
+		"askhubadvisor.saveimagefile":                     {"File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables)."},
+		"askhubadvisor.saveimages":                        {"Save images of charts to file."},
+		"askhubadvisor.thinktime":                         {"Settings for the `thinktime` action, which is automatically inserted before each followup."},
 		"bookmark.id":                                     {"ID of the bookmark."},
 		"bookmark.title":                                  {"Name of the bookmark (supports the use of [variables](#session_variables))."},
-		"canaddtocollection.groups":                       {"DEPRECATED"},
 		"changesheet.id":                                  {"GUID of the sheet to change to."},
+		"clearfield.name":                                 {"Name of field to clear."},
 		"clickactionbutton.id":                            {"ID of the action-button to click."},
 		"config.connectionSettings.allowuntrusted":        {"Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."},
 		"config.connectionSettings.appext":                {"Replace `app` in the connect URL for the `openapp` action. Defaults to `app`, if omitted."},
@@ -297,44 +244,6 @@ var (
 		"duplicatesheet.cloneid":                          {"(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."},
 		"duplicatesheet.id":                               {"ID of the sheet to clone."},
 		"duplicatesheet.save":                             {"Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted."},
-		"elasticcreateapp.ignoreevents":                   {"Do not send http requests triggered by web socket events. Defaults to `false`. Setting `ignoreevents` to `true` is not api compliant and is only recommended when using the action for its side effects."},
-		"elasticcreatecollection.description":             {"(optional) Description of the collection to create."},
-		"elasticcreatecollection.name":                    {"Name of the collection to create (supports the use of [session variables](#session_variables))."},
-		"elasticcreatecollection.private":                 {"", "`true`: Private collection", "`false`: Public collection"},
-		"elasticdeleteapp.collectionname":                 {"Name of the collection in which to delete apps."},
-		"elasticdeleteapp.mode":                           {"", "`single`: Delete the app specified explicitly by app GUID or app name.", "`everything`: Delete all apps currently in the application context, as determined by the `elasticopenhub` action. **Note:** Use with care.", "`clearcollection`: Delete all apps in the collection specified by `collectionname`."},
-		"elasticdeletecollection.deletecontents":          {"", "`true`: Delete all apps in the collection before deleting the collection.", "`false`: Delete the collection without doing anything to the apps in the collection."},
-		"elasticdeletecollection.name":                    {"Name of the collection to delete."},
-		"elasticdeleteodag.linkname":                      {"Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
-		"elasticduplicateapp.spaceid":                     {"(optional) GUID of the shared space in which to publish the app."},
-		"elasticexplore.keepcurrent":                      {"Keep the current artifact map and add the results from the `elasticexplore` action. Defaults to `false` (that is, empty the artifact map before adding the results from the `elasticexplore` action), if omitted."},
-		"elasticexplore.owner":                            {"Filter apps by owner", "`all`: Apps owned by anyone.", "`me`: Apps owned by the simulated user.", "`others`: Apps not owned by the simulated user."},
-		"elasticexplore.paging":                           {"Go through all app pages in the hub. Defaults to `false` (that is, only include the first 24 apps that the user can see), if omitted."},
-		"elasticexplore.sorting":                          {"Simulate selecting sort order in the drop-down menu in the hub", "`default`: Default sort order (`created`).", "`created`: Sort by the time of creation.", "`updated`: Sort by the time of modification.", "`name`: Sort by name."},
-		"elasticexplore.space":                            {"Filter apps by space name (supports the use of [session variables](#session_variables)). **Note:** This filter cannot be used together with `spaceid`."},
-		"elasticexplore.spaceid":                          {"Filter apps by space GUID. **Note:** This filter cannot be used together with `space`."},
-		"elasticexplore.tagids":                           {"Filter apps by tag ids. This filter can be used together with `tags`."},
-		"elasticexplore.tags":                             {"Filter apps by tag names. This filter can be used together with `tagids`."},
-		"elasticexportapp.filename":                       {"Pattern for the filename when saving the exported app to a file, defaults to app title or app GUID. Supports the use of [session variables](#session_variables) and additionally `.Local.Title` can be used as a variable to add the title of the exported app."},
-		"elasticexportapp.nodata":                         {"Export the app without data (`true`/`false`). Defaults to `false` (that is, export with data), if omitted."},
-		"elasticexportapp.savetofile":                     {"Save the exported file in the specified directory (`true`/`false`). Defaults to `false`, if omitted."},
-		"elasticgenerateodag.linkname":                    {"Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
-		"elastichubsearch.query":                          {"(optional) Query string (in case of `querystring` as source)."},
-		"elastichubsearch.queryfile":                      {"(optional) File from which to read a query (in case of `fromfile` as source)."},
-		"elastichubsearch.querysource":                    {"", "`string`: The query is provided as a string specified by `query`.", "`fromfile`: The queries are read from the file specified by `queryfile`, where each line represents a query."},
-		"elastichubsearch.searchfor":                      {"", "`collections`: Search for collections only.", "`apps`: Search for apps only.", "`both`: Search for both collections and apps."},
-		"elasticmoveapp.donotnavigatetospace":             {"Do not navigate to target space after moving app. Defaults to `false`."},
-		"elasticmoveapp.keepcurrent":                      {"Keep the current artifact map when moving to target space at the end of `elasticmoveapp`. Defaults to `false`. Current artifact map is always kept when `donotnavigatetospace` is set."},
-		"elasticpublishapp.cleartags":                     {"Publish the app without its original tags."},
-		"elasticreload.log":                               {"DEPRECATED"},
-		"elasticreload.pollingoff":                        {"DEPRECATED"},
-		"elasticreload.pollinterval":                      {"DEPRECATED"},
-		"elasticuploadapp.filename":                       {"Local file to send as payload."},
-		"elasticuploadapp.mode":                           {"Upload mode. Defaults to `tus`, if omitted.", "`tus`: Upload the file using the [tus](https://tus.io/) chunked upload protocol.", "`legacy`: Upload the file using a single POST payload (legacy file upload mode)."},
-		"elasticuploadapp.spaceid":                        {"DEPRECATED"},
-		"elasticuploadapp.stream":                         {"(optional) Name of the private collection or public tag under which to publish the app (supports the use of [session variables](#session_variables))."},
-		"elasticuploadapp.streamguid":                     {"(optional) GUID of the private collection or public tag under which to publish the app."},
-		"elasticuploadapp.title":                          {"Name of the app to upload (supports the use of [session variables](#session_variables))."},
 		"generateodag.linkname":                           {"Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"iterated.actions":                                {"Actions to iterate"},
 		"iterated.iterations":                             {"Number of loops."},
@@ -342,6 +251,7 @@ var (
 		"listboxselect.id":                                {"ID of the listbox in which to select values."},
 		"listboxselect.type":                              {"Selection type.", "`all`: Select all values.", "`alternative`: Select alternative values.", "`excluded`: Select excluded values.", "`possible`: Select possible values."},
 		"listboxselect.wrap":                              {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
+		"openapp.unique":                                  {"Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."},
 		"productversion.log":                              {"Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."},
 		"publishsheet.mode":                               {"", "`allsheets`: Publish all sheets in the app.", "`sheetids`: Only publish the sheets specified by the `sheetIds` array."},
 		"publishsheet.sheetIds":                           {"(optional) Array of sheet IDs for the `sheetids` mode."},
@@ -361,16 +271,10 @@ var (
 		"select.id":                                       {"ID of the object in which to select values."},
 		"select.max":                                      {"Maximum number of selections to make."},
 		"select.min":                                      {"Minimum number of selections to make."},
-		"select.type":                                     {"Selection type", "`randomfromall`: Randomly select within all values of the symbol table.", "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.", "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.", "`randomdeselect`: Randomly deselect values on the first data page."},
+		"select.type":                                     {"Selection type", "`randomfromall`: Randomly select within all values of the symbol table.", "`randomfromenabled`: Randomly select within the white and light grey values on the first data page.", "`randomfromexcluded`: Randomly select within the dark grey values on the first data page.", "`randomdeselect`: Randomly deselect values on the first data page.", "`values`: Select specific element values, defined by `values` array."},
+		"select.values":                                   {"Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user."},
 		"select.wrap":                                     {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"setscript.script":                                {"Load script for the app (written as a string)."},
-		"staticselect.accept":                             {"Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."},
-		"staticselect.cols":                               {"Dimension / column in which to select."},
-		"staticselect.id":                                 {"ID of the object in which to select values."},
-		"staticselect.path":                               {"Path to the hypercube or listobject (differs depending on object type)."},
-		"staticselect.rows":                               {"Element values to select in the dimension / column."},
-		"staticselect.type":                               {"Selection type", "`hypercubecells`: Select in hypercube.", "`listobjectvalues`: Select in listbox."},
-		"staticselect.wrap":                               {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},
@@ -387,6 +291,7 @@ var (
 		"uploaddata.filename":                             {"Name of the local file to send as payload."},
 		"uploaddata.replace":                              {"Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."},
 		"uploaddata.spaceid":                              {"(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."},
+		"uploaddata.title":                                {"(optional) Set custom title of file on upload. Defaults to file name (excluding extension). (supports the use of [session variables](#session_variables))"},
 	}
 
 	Config = map[string]common.DocEntry{
@@ -420,18 +325,9 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "changesheet", "clearall", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "staticselect", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
-				Description: "# Common actions\n\nThese actions are applicable to both Qlik Sense Enterprise for Windows (QSEoW) and Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
-				Examples:    "",
-			},
-		},
-		{
-			Name:    "qseokActions",
-			Title:   "Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions",
-			Actions: []string{"deletedata", "elasticcreateapp", "elasticcreatecollection", "elasticdeleteapp", "elasticdeletecollection", "elasticdeleteodag", "elasticduplicateapp", "elasticexplore", "elasticexportapp", "elasticgenerateodag", "elastichubsearch", "elasticmoveapp", "elasticopenhub", "elasticpublishapp", "elasticreload", "elasticuploadapp", "uploaddata", "disconnectelastic"},
-			DocEntry: common.DocEntry{
-				Description: "## Qlik Sense Enterprise on Kubernetes (QSEoK) / Elastic actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Kubernetes (QSEoK) deployments.\n",
+				Description: "# Common actions\n\nThese actions are applicable for most types of Qlik Sense deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",
 			},
 		},
@@ -448,7 +344,7 @@ var (
 
 	Extra = map[string]common.DocEntry{
 		"sessionvariables": {
-			Description: "\n## Session variables\n\nThis section describes the session variables that can be used with some of the actions.\n\n<details>\n<summary><a name=\"session_variables\"></a>Session variables</summary>\n\nSome action parameters support session variables. A session variable is defined by putting the variable, prefixed by a dot, within double curly brackets, such as `{{.UserName}}`.\n\nThe following session variables are supported in actions:\n\n* `UserName`: The simulated username. This is not the same as the authenticated user, but rather how the username was defined by [Login settings](#login_settings).  \n* `Session`: The enumeration of the currently simulated session.\n* `Thread`: The enumeration of the currently simulated \"thread\" or \"concurrent user\".\n\nThe following variable is supported in the filename of the log file:\n\n* `ConfigFile`: The filename of the config file, without file extension.\n\nThe following functions are supported:\n\n* `now`: Evaluates Golang [time.Now()](https://golang.org/pkg/time/). \n* `hostname`: Hostname of the local machine.\n* `timestamp`: Timestamp in `yyyyMMddhhmmss` format.\n* `uuid`: Generate an uuid.\n\n### Example\n```json\n{\n    \"action\": \"ElasticCreateApp\",\n    \"label\": \"Create new app\",\n    \"settings\": {\n        \"title\": \"CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})\",\n        \"stream\": \"mystream\",\n        \"groups\": [\n            \"mygroup\"\n        ]\n    }\n},\n{\n    \"label\": \"OpenApp\",\n    \"action\": \"OpenApp\",\n    \"settings\": {\n        \"appname\": \"CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})\"\n    }\n},\n{\n    \"action\": \"elasticexportapp\",\n    \"label\": \"Export app\",\n    \"settings\": {\n        \"appmode\" : \"name\",\n        \"app\" : \"CreateApp {{.Thread}}-{{.Session}} ({{.UserName}})\",\n        \"savetofile\": true,\n        \"exportname\": \"Exported app {{.Thread}}-{{.Session}} {{now.UTC}}\"\n    }\n}\n\n```\n</details>\n",
+			Description: "\n## Session variables\n\nThis section describes the session variables that can be used with some of the actions.\n\n<details>\n<summary><a name=\"session_variables\"></a>Session variables</summary>\n\nSome action parameters support session variables. A session variable is defined by putting the variable, prefixed by a dot, within double curly brackets, such as `{{.UserName}}`.\n\nThe following session variables are supported in actions:\n\n* `UserName`: The simulated username. This is not the same as the authenticated user, but rather how the username was defined by [Login settings](#login_settings).  \n* `Session`: The enumeration of the currently simulated session.\n* `Thread`: The enumeration of the currently simulated \"thread\" or \"concurrent user\".\n\nThe following variable is supported in the filename of the log file:\n\n* `ConfigFile`: The filename of the config file, without file extension.\n\nThe following functions are supported:\n\n* `now`: Evaluates Golang [time.Now()](https://golang.org/pkg/time/). \n* `hostname`: Hostname of the local machine.\n* `timestamp`: Timestamp in `yyyyMMddhhmmss` format.\n* `uuid`: Generate an uuid.\n* `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.\n\n### Example\n\n```json\n{\n    \"label\" : \"Create bookmark\",\n    \"action\": \"createbookmark\",\n    \"settings\": {\n        \"title\": \"my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})\",\n        \"description\": \"This bookmark contains some interesting selections\"\n    }\n},\n{\n    \"label\" : \"Publish created bookmark\",\n    \"action\": \"publishbookmark\",\n    \"disabled\" : false,\n    \"settings\" : {\n        \"title\": \"my bookmark {{.Thread}}-{{.Session}} ({{.UserName}})\",\n    }\n}\n\n```\n\n```json\n{\n  \"action\": \"createbookmark\",\n  \"settings\": {\n    \"title\": \"{{env \\\"TITLE\\\"}}\",\n    \"description\": \"This bookmark contains some interesting selections\"\n  }\n}\n```\n</details>\n",
 			Examples:    "",
 		},
 	}

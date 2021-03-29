@@ -117,7 +117,7 @@ func (settings *RandomActionSettings) UnmarshalJSON(arg []byte) error {
 	core := RandomActionSettingsCore{}
 	err := jsonit.Unmarshal(arg, &core)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal ElasticHubSearchSettingsCore")
+		return errors.Wrap(err, "Failed to unmarshal RandomActionSettings")
 	}
 	settings.RandomActionSettingsCore = core
 
@@ -306,7 +306,8 @@ func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers
 		if err != nil {
 			continue
 		}
-		if objectDef.Select != nil && objectDef.Select.Type != senseobjdef.SelectTypeUnknown {
+		if objectDef.Select != nil && objectDef.Select.Type != senseobjdef.SelectTypeUnknown && // has select definition
+			obj.HyperCube() != nil && len(obj.HyperCube().DimensionInfo) > 0 { // has at least one dimension
 			selectableObjects = append(selectableObjects, obj)
 		}
 	}
@@ -368,11 +369,11 @@ func overrideSettings(originalSettings ActionSettings, overrideSettings map[stri
 }
 
 // Validate random action settings. Implements ActionSetting interface
-func (settings RandomActionSettings) Validate() error {
+func (settings RandomActionSettings) Validate() ([]string, error) {
 	for _, actionTypeSettings := range settings.ActionTypes {
 		probability := actionTypeSettings.Weight
 		if probability <= 0 {
-			return errors.Errorf("Action weight (p=%d) should be at least 1", probability)
+			return nil, errors.Errorf("Action weight (p=%d) should be at least 1", probability)
 		}
 	}
 	totalProbability := 0
@@ -380,8 +381,8 @@ func (settings RandomActionSettings) Validate() error {
 		probability := actionTypeSettings.Weight
 		totalProbability += probability
 		if totalProbability < 0 {
-			return errors.Errorf("Summing the weights caused integer overflow!")
+			return nil, errors.Errorf("Summing the weights caused integer overflow!")
 		}
 	}
-	return nil
+	return nil, nil
 }

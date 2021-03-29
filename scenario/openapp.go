@@ -3,65 +3,53 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"strings"
+	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
+	OpenAppSettingsCore struct {
+		UniqueSession bool `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
+	}
 	// OpenAppSettings app and server settings
 	OpenAppSettings struct {
 		session.AppSelection
+		OpenAppSettingsCore
 	}
 
 	connectWsSettings struct {
 		ConnectFunc func() (string, error)
 	}
-
-	// Older settings no longer used, if exist in JSON, an error will be thrown
-	deprecatedOpenAppSettings struct {
-		AppGUID        string      `json:"appguid"`
-		AppName        string      `json:"appname"`
-		RandomGUIDs    []string    `json:"randomguids"`
-		RandomApps     []string    `json:"randomapps"`
-		ConnectionMode interface{} `json:"mode"`
-	}
 )
 
 // UnmarshalJSON unmarshals open app settings from JSON
 func (openApp *OpenAppSettings) UnmarshalJSON(arg []byte) error {
-	var deprecated deprecatedOpenAppSettings
-	if err := jsonit.Unmarshal(arg, &deprecated); err == nil { // skip check if error
-		hasSettings := make([]string, 0, 5)
-		if deprecated.AppGUID != "" {
-			hasSettings = append(hasSettings, "appguid")
-		}
-		if deprecated.AppName != "" {
-			hasSettings = append(hasSettings, "appname")
-		}
-		if len(deprecated.RandomGUIDs) > 0 {
-			hasSettings = append(hasSettings, "randomguids")
-		}
-		if len(deprecated.RandomApps) > 0 {
-			hasSettings = append(hasSettings, "randomapps")
-		}
-		if deprecated.ConnectionMode != nil {
-			hasSettings = append(hasSettings, "mode")
-		}
-		if len(hasSettings) > 0 {
-			return errors.Errorf("%s settings<%s> are no longer used", ActionOpenApp, strings.Join(hasSettings, ","))
-		}
+	// Check for deprecated fields
+	if err := helpers.HasDeprecatedFields(arg, []string{
+		"/appguid",
+		"/appname",
+		"/randomguids",
+		"/randomapps",
+		"/mode",
+	}); err != nil {
+		return errors.Errorf("%s %s, please remove from script", ActionOpenApp, err.Error())
 	}
-	var appSelection session.AppSelection
-	if err := jsonit.Unmarshal(arg, &appSelection); err != nil {
+
+	if err := jsonit.Unmarshal(arg, &openApp.OpenAppSettingsCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
 	}
-	*openApp = OpenAppSettings{appSelection}
+
+	if err := jsonit.Unmarshal(arg, &openApp.AppSelection); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
+	}
 	return nil
 }
 
@@ -74,8 +62,12 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}
 
 	actionState.Details = sessionState.LogEntry.Session.AppName
-
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID)
+	var headers http.Header
+	if openApp.UniqueSession {
+		headers = make(http.Header, 1)
+		headers.Add("X-Qlik-Session", uuid.NewString())
+	}
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID, headers)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to get connect function"))
 		return
@@ -187,12 +179,12 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 }
 
 // Validate open app scenario item
-func (openApp OpenAppSettings) Validate() error {
+func (openApp OpenAppSettings) Validate() ([]string, error) {
 	if err := openApp.AppSelection.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
 func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID string) error {
@@ -238,8 +230,8 @@ func (connectWs connectWsSettings) Execute(sessionState *session.State, actionSt
 	}
 }
 
-func (connectWs connectWsSettings) Validate() error {
-	return nil
+func (connectWs connectWsSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface

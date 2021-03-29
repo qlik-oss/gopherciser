@@ -78,24 +78,21 @@ func TestConfig(t *testing.T) {
 			},
 			{
 				"label" : "Select1",
-				"action" : "staticselect",
+				"action" : "select",
 				"settings" : {
 					"id" : "objid1",
-					"type" : "HyperCubeCells",
-					"path" : "/qHyperCubeDef",
-					"rows" : [4,5],
-					"cols" : [0],
+					"type" : "values",
+					"values" : [4,5],
 					"accept" : true
 				}
 			},
 			{
 				"label" : "Select2",
-				"action" : "StaticSelect",
+				"action" : "select",
 				"settings" : {
 					"id" : "objid2",
-					"type" : "ListObjectValues",
-					"path" : "/qListObjectDef",
-					"rows" : [2],
+					"type" : "values",
+					"values" : [2],
 					"accept" : false
 				}
 			}
@@ -160,15 +157,15 @@ func TestConfig(t *testing.T) {
 		t.Errorf("incorrect label, expected<Select2> got<%s>", cfg.Scenario[1].Label)
 	}
 
-	if cfg.Scenario[1].Type != scenario.ActionStaticSelect {
+	if cfg.Scenario[1].Type != scenario.ActionSelect {
 		t.Errorf("incorrect action(0), expected<Select> got<%s>", cfg.Scenario[0].Type)
 	}
 
-	if cfg.Scenario[2].Type != scenario.ActionStaticSelect {
+	if cfg.Scenario[2].Type != scenario.ActionSelect {
 		t.Errorf("incorrect action(1), expected<Select> got<%s>", cfg.Scenario[1].Type)
 	}
 
-	settings, ok := cfg.Scenario[1].Settings.(*scenario.StaticSelectSettings)
+	settings, ok := cfg.Scenario[1].Settings.(*scenario.SelectionSettings)
 	if !ok {
 		t.Fatal("Failed to cast action(0) settings to SelectSettings")
 	}
@@ -177,41 +174,28 @@ func TestConfig(t *testing.T) {
 		t.Errorf("Action(0): unexpected id<%s>, expected<objid1>", settings.ID)
 	}
 
-	if settings.Type != scenario.HyperCubeCells {
-		t.Errorf("Action(0): unexpected type <%d>, expected<%d>", settings.Type, scenario.HyperCubeCells)
-	}
-
-	if settings.Path != "/qHyperCubeDef" {
-		t.Errorf("Action(0): unexpected path <%s>, expected</qHyperCubeDef>", settings.Path)
+	if settings.Type != scenario.Values {
+		t.Errorf("Action(0): unexpected type <%d>, expected<%d>", settings.Type, scenario.Values)
 	}
 
 	if !settings.Accept {
 		t.Errorf("Action(0): unexpected accept <%v>, expected<true>", settings.Accept)
 	}
 
-	colLength := len(settings.Cols)
-	if colLength != 1 {
-		t.Fatalf("Action(0): unexpected col length<%d>, expected<1>", colLength)
+	valuesLength := len(settings.Values)
+	if valuesLength != 2 {
+		t.Fatalf("Action(0): unexpected values length<%d>, expected<2>", valuesLength)
 	}
 
-	if settings.Cols[0] != 0 {
-		t.Errorf("Action(0): unexpectedcol <%d>, expected<0>", settings.Cols[0])
+	if settings.Values[0] != 4 {
+		t.Errorf("Action(0): unexpected value1<%d>, expected<4>", settings.Values[0])
 	}
 
-	rowLength := len(settings.Rows)
-	if rowLength != 2 {
-		t.Fatalf("Action(0): unexpected row length<%d>, expected<2>", rowLength)
+	if settings.Values[1] != 5 {
+		t.Errorf("Action(0): unexpected value2<%d>, expected<5>", settings.Values[1])
 	}
 
-	if settings.Rows[0] != 4 {
-		t.Errorf("Action(0): unexpected row1<%d>, expected<4>", settings.Rows[0])
-	}
-
-	if settings.Rows[1] != 5 {
-		t.Errorf("Action(0): unexpected row2<%d>, expected<5>", settings.Rows[1])
-	}
-
-	settings, ok = cfg.Scenario[2].Settings.(*scenario.StaticSelectSettings)
+	settings, ok = cfg.Scenario[2].Settings.(*scenario.SelectionSettings)
 	if !ok {
 		t.Fatal("Failed to cast action(1) settings to SelectSettings")
 	}
@@ -220,30 +204,21 @@ func TestConfig(t *testing.T) {
 		t.Errorf("Action(1): unexpected id<%s>, expected<objid2>", settings.ID)
 	}
 
-	if settings.Type != scenario.ListObjectValues {
-		t.Errorf("Action(1): unexpected type <%d>, expected<%d>", settings.Type, scenario.ListObjectValues)
-	}
-
-	if settings.Path != "/qListObjectDef" {
-		t.Errorf("Action(1): unexpected path <%s>, expected</qListObjectDef>", settings.Path)
+	if settings.Type != scenario.Values {
+		t.Errorf("Action(1): unexpected type <%d>, expected<%d>", settings.Type, scenario.Values)
 	}
 
 	if settings.Accept {
 		t.Errorf("Action(1): unexpected accept <%v>, expected<false>", settings.Accept)
 	}
 
-	colLength = len(settings.Cols)
-	if colLength != 0 {
-		t.Fatalf("Action(1): unexpected col length<%d>, expected<0>", colLength)
+	valuesLength = len(settings.Values)
+	if valuesLength != 1 {
+		t.Fatalf("Action(1): unexpected values length<%d>, expected<1>", valuesLength)
 	}
 
-	rowLength = len(settings.Rows)
-	if rowLength != 1 {
-		t.Fatalf("Action(1): unexpected row length<%d>, expected<1>", rowLength)
-	}
-
-	if settings.Rows[0] != 2 {
-		t.Errorf("Action(1): unexpected row1<%d>, expected<2>", settings.Rows[0])
+	if settings.Values[0] != 2 {
+		t.Errorf("Action(1): unexpected value1<%d>, expected<2>", settings.Values[0])
 	}
 
 	err = settingsTest(&cfg, tmpKeyFile.Name())

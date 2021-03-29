@@ -18,8 +18,8 @@ type (
 )
 
 // Validate implements ActionSettings interface
-func (settings SheetChangerSettings) Validate() error {
-	return nil
+func (settings SheetChangerSettings) Validate() ([]string, error) {
+	return nil, nil
 }
 
 // Execute implements ActionSettings interface
