@@ -217,6 +217,9 @@
     "config.settings.logs.traffic": [
         "Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding."
     ],
+    "config.settings.logs.regression": [
+        "Log regression data (`true` / `false`). Defaults to `false`, if omitted. **Note:** Do not log regression data when testing performance. **Note** With regression logging enabled, the the scheduler is implicitly set to execute the scenario as one user for one iteration."
+    ],
     "config.settings.logs": [
         "Log settings"
     ],

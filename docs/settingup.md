@@ -1810,6 +1810,7 @@ This section of the JSON file contains timeout and logging settings for the load
   * `traffic`: Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
   * `debug`: Log debug information (`true` / `false`). Defaults to `false`, if omitted.
   * `metrics`: Log traffic metrics (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
+  * `regression`: Log regression data (`true` / `false`). Defaults to `false`, if omitted. **Note:** Do not log regression data when testing performance. **Note** With regression logging enabled, the the scheduler is implicitly set to execute the scenario as one user for one iteration.
   * `filename`: Name of the log file (supports the use of [variables](#session_variables)).
   * `format`: Log format. Defaults to `tsvfile`, if omitted.
       * `tsvfile`: Log to file in TSV format and output status to console.

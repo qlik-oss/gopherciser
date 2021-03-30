@@ -82,6 +82,7 @@ Flags:
   * `6` or `mutex`: Mutex
   * `7` or `trace`: Trace
   * `8` or `mem`: Mem
+* `--regression`: Log data needed to run regression analysis. **Note:** Do not log regression data when testing performance.
 * `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.
 * `--summary string`: Set the type of summary to display after the test run. Defaults to `simple` for minimal performance impact.
   * `0` or `undefined`: Simple, single-row summary
@@ -277,6 +278,31 @@ The contents of the log file differ depending on the type of logging selected. E
 * `error`: Information related to errors during the test execution.
 
 The test results (that is, log files) can be analyzed using the [Scalability Results Analyzer](https://community.qlik.com/t5/Qlik-Scalability/Scalability-Results-Analyzer/gpm-p/1493648).
+
+## Regression Analysis
+
+Gopherciser is able to produce regression logs consumed by the regression
+analyzer in Qlik Senese Enterprise Scalability Tools (QSEST). Enable
+Regression logging with the `--regression` flag or in the script settings
+(see `settings.logs.regression` in [settingup.md](./settingup.md)).
+Regression logs are written to a separate file with a `.regression` filename
+extension, in the same directory and with the same base name as the test
+results.
+
+The regression log contains a snapshot of the subscribed Qlik Sense objects
+after each action in the scenario. The regression analyzer in QSEST can then
+compare these snapshots to find any differences. Typically you run the same
+script with regession logging enabled, towards two versions of the same app.
+Then you use regression analyzer in QSEST to gain insight in how the app has
+changed.
+
+**Note** Do not enable regression logging when running performance tests. The
+regression logging introduces a delay after each action in the executed
+scenario.
+
+**Note** With regression logging enabled, the the scheduler is implicitly set
+to execute the scenario as one user for one iteration.
+
 
 ## Complementary manual measurements
 

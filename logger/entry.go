@@ -214,6 +214,10 @@ func (entry *LogEntry) LogDebugf(format string, args ...interface{}) {
 	entry.log(DebugLevel, fmt.Sprintf(format, args...), nil)
 }
 
+func (entry *LogEntry) LogRegression(id string, data interface{}, meta map[string]interface{}) error {
+	return entry.logger.regressionLogger.Log(id, data, meta)
+}
+
 func (entry *LogEntry) log(level LogLevel, msg string, eph *ephemeralEntry) {
 	if entry == nil {
 		return
@@ -325,4 +329,9 @@ func (entry *LogEntry) ShouldLogDebug() bool {
 		return false
 	}
 	return entry.logger.Settings.Debug
+}
+
+// ShouldLogRegression should regression data be logged
+func (entry *LogEntry) ShouldLogRegression() bool {
+	return entry != nil && entry.logger != nil && entry.logger.Settings.Regression
 }

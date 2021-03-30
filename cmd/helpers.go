@@ -95,6 +95,9 @@ func unmarshalConfigFile() (*config.Config, error) {
 	}
 
 	var cfg config.Config
+	if regression {
+		cfg.Options.AcceptNoScheduler = true
+	}
 	if err = jsonit.Unmarshal(cfgJSON, &cfg); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal config from json")
 	}
@@ -215,6 +218,10 @@ func ConfigOverrideLogSettings(cfg *config.Config) error {
 
 	if debug {
 		cfg.SetDebugLogging()
+	}
+
+	if regression {
+		cfg.SetRegressionLogging()
 	}
 
 	if logFormat != "" {

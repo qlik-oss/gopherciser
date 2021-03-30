@@ -11,10 +11,12 @@ import (
 	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -427,8 +429,63 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 		containerActionEntry = originalActionEntry
 	}
 
-	err := logResult(sessionState, actionState, actionState.Details, containerActionEntry)
+	var errs *multierror.Error
+	errs = multierror.Append(errs, logResult(sessionState, actionState, actionState.Details, containerActionEntry))
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
+	errs = multierror.Append(errs, logObjectRegressionData(sessionState))
+	return helpers.FlattenMultiError(errs)
+}
+
+// logObjectRegressionData writes the currently subscribed objects to regression
+// log if regession logging is enabled. The objects are locked and read from
+// state shared shared by actions.
+func logObjectRegressionData(sessionState *session.State) error {
+	if !sessionState.LogEntry.ShouldLogRegression() {
+		return nil
+	}
+	if sessionState.Connection == nil {
+		// some actions do not have a connetion set up
+		return nil
+	}
+	uplink := sessionState.Connection.Sense()
+	if uplink == nil {
+		return errors.New("could not log regression data: no sense connection")
+	}
+
+	// log regression analysis data for each subscribed object
+	err := uplink.Objects.ForEachWithLock(
+		func(obj *enigmahandlers.Object) error {
+			// skip sheet and app types
+			if obj.Type != enigmahandlers.ObjTypeGenericObject {
+				return nil
+			}
+			genObj, ok := obj.EnigmaObject.(*enigma.GenericObject)
+			if !ok {
+				return errors.Errorf("expected object of type %T, but got %T", genObj, obj.EnigmaObject)
+			}
+
+			err := sessionState.LogEntry.LogRegression(
+				// use unique id SESSION.ACTION.OBJECT
+				fmt.Sprintf("%d.%d.%s", sessionState.LogEntry.Session.Session, sessionState.LogEntry.Action.ActionID, obj.ID),
+				map[string]interface{}{
+					"hyperCubeDataPages":  obj.HyperCubeDataPages(),
+					"hyperCubeStackPages": obj.HyperCubeStackPages(),
+					"hyperCubePivotPages": obj.HyperPivotPages(),
+					"hyperCube":           obj.HyperCube(),
+					"listObject":          obj.ListObject(),
+					"listObjectDataPages": obj.ListObjectDataPages(),
+				},
+				map[string]interface{}{
+					"actionType":  sessionState.LogEntry.Action.Action,
+					"actionLabel": sessionState.LogEntry.Action.Label,
+					"actionID":    sessionState.LogEntry.Action.ActionID,
+					"objectID":    obj.ID,
+					"objectType":  genObj.GenericType,
+					"sessionID":   sessionState.LogEntry.Session.Session,
+				})
+			return errors.Wrap(err, "failed to log regression data")
+		},
+	)
 	return errors.WithStack(err)
 }
 

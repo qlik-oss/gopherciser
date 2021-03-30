@@ -72,6 +72,7 @@ type (
 		Traffic        bool                   `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
 		Debug          bool                   `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
 		TrafficMetrics bool                   `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression     bool                   `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
 		FileName       session.SyncedTemplate `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
 		Format         LogFormatType          `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
 		Summary        SummaryType            `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
@@ -107,6 +108,11 @@ type (
 		Counters statistics.ExecutionCounters `json:"-"`
 		// ValidationWarnings list of script validation warnings
 		ValidationWarnings []string `json:"-"`
+		// Options alter the behavior of unmarshal and validate
+		Options struct {
+			// AcceptNoScheduler produces no error scheduler does not exist in json
+			AcceptNoScheduler bool
+		} `json:"-"`
 	}
 
 	//SummaryEntry title, value and color combo for summary printout
@@ -285,7 +291,7 @@ func NewExampleConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		&cfgCore{
+		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
 				Mode:           connection.WS,
 				WsSettings:     nil,
@@ -314,7 +320,7 @@ func NewExampleConfig() (*Config, error) {
 				selectAction,
 			},
 		},
-		&scheduler.SimpleScheduler{
+		Scheduler: &scheduler.SimpleScheduler{
 			Scheduler: scheduler.Scheduler{
 				SchedType: scheduler.SchedSimple,
 				TimeBuf: scheduler.TimeBuffer{
@@ -331,9 +337,9 @@ func NewExampleConfig() (*Config, error) {
 				ReuseUsers:      false,
 			},
 		},
-		nil,
-		statistics.ExecutionCounters{},
-		nil,
+		CustomLoggers:      nil,
+		Counters:           statistics.ExecutionCounters{},
+		ValidationWarnings: nil,
 	}
 
 	return cfg, nil
@@ -348,7 +354,7 @@ func NewEmptyConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		&cfgCore{
+		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
 				Mode:           connection.WS,
 				WsSettings:     nil,
@@ -367,7 +373,7 @@ func NewEmptyConfig() (*Config, error) {
 			},
 			Scenario: []scenario.Action{},
 		},
-		&scheduler.SimpleScheduler{
+		Scheduler: &scheduler.SimpleScheduler{
 			Scheduler: scheduler.Scheduler{
 				SchedType: scheduler.SchedSimple,
 				TimeBuf: scheduler.TimeBuffer{
@@ -384,24 +390,30 @@ func NewEmptyConfig() (*Config, error) {
 				ReuseUsers:      false,
 			},
 		},
-		nil,
-		statistics.ExecutionCounters{},
-		nil,
+		CustomLoggers:      nil,
+		Counters:           statistics.ExecutionCounters{},
+		ValidationWarnings: nil,
 	}
 
 	return cfg, nil
 }
 
-// UnmarshalJSON unmarshal config
+// UnmarshalJSON unmarshal Config. Only unmarshals scheduler if scheduler is nil.
 func (cfg *Config) UnmarshalJSON(arg []byte) error {
 	var core cfgCore
 	if err := jsonit.Unmarshal(arg, &core); err != nil {
 		return errors.Wrap(err, "Failed unmarshaling config")
 	}
 	cfg.cfgCore = &core
+	if cfg.Settings.LogSettings.Regression {
+		cfg.Options.AcceptNoScheduler = true
+	}
 
 	rawsched, _, _, err := jsonparser.Get(arg, "scheduler")
 	if err != nil {
+		if cfg.Options.AcceptNoScheduler {
+			return nil
+		}
 		return errors.Wrap(err, "no scheduler in config")
 	}
 
@@ -409,6 +421,7 @@ func (cfg *Config) UnmarshalJSON(arg []byte) error {
 	if err != nil {
 		return errors.Wrap(err, "failed unmarhaling scheduler")
 	}
+
 	return nil
 }
 
@@ -427,23 +440,39 @@ func (cfg *Config) SetDebugLogging() {
 	cfg.Settings.LogSettings.Debug = true
 }
 
-// Validate scenario
-func (cfg *Config) Validate() error {
+// SetRegressionLogging override function to set regression logging
+func (cfg *Config) SetRegressionLogging() {
+	cfg.Settings.LogSettings.Regression = true
+}
+
+func (cfg *Config) validateScheduler() error {
 	if cfg.Scheduler == nil {
-		return errors.Errorf("No scheduler defined")
+		if cfg.Options.AcceptNoScheduler {
+			return nil
+		} else {
+			return errors.Errorf("No scheduler defined")
+		}
 	}
 
-	cfg.ValidationWarnings = make([]string, 0)
-	if w, err := cfg.Scheduler.Validate(); err != nil {
+	w, err := cfg.Scheduler.Validate()
+	cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
+	if err != nil {
 		return errors.Wrap(err, "Scheduler settings validation failed")
-	} else if len(w) > 0 {
-		cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 	}
 
 	if cfg.Scheduler.RequireScenario() {
 		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
 			return errors.Errorf("No scenario items defined")
 		}
+	}
+	return nil
+}
+
+// Validate scenario
+func (cfg *Config) Validate() error {
+	cfg.ValidationWarnings = make([]string, 0)
+	if err := cfg.validateScheduler(); err != nil {
+		return err
 	}
 
 	if cfg.LoginSettings.Settings == nil {
@@ -957,14 +986,22 @@ func addTSVFileLogger(log *logger.Log, filename string) error {
 
 func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*logger.Logger, templateData interface{}, counters *statistics.ExecutionCounters) (*logger.Log, error) {
 	log := logger.NewLog(logger.LogSettings{
-		Traffic: settings.Traffic,
-		Metrics: settings.TrafficMetrics,
-		Debug:   settings.Debug,
+		Traffic:    settings.Traffic,
+		Metrics:    settings.TrafficMetrics,
+		Debug:      settings.Debug,
+		Regression: settings.Regression,
 	})
 
 	filename, err := settings.FileName.ReplaceWithoutSessionVariables(templateData)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to expand session variables in filename")
+	}
+
+	if log.Settings.Regression {
+		err := log.SetRegressionLoggerFile(filename)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to set up regression logging")
+		}
 	}
 
 	switch settings.Format {

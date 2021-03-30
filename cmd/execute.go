@@ -16,6 +16,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/profile"
 	"github.com/qlik-oss/gopherciser/scenario"
+	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/spf13/cobra"
 )
@@ -46,6 +47,7 @@ var (
 	metricsGroupings []string
 	profTyp          string
 	objDefFile       string
+	regression       bool
 )
 
 // *** Custom errors ***
@@ -174,6 +176,7 @@ func init() {
 	executeCmd.Flags().StringVar(&metricsAddress, "metricsaddress", "", "If set other than empty string then Push otherwise pull, will be appended by port.")
 	executeCmd.Flags().StringVar(&metricsLabel, "metricslabel", "gopherciser", "The job label to use for push metrics")
 	executeCmd.Flags().StringSliceVarP(&metricsGroupings, "metricsgroupingkey", "g", nil, "The grouping keys (in key=value form) to use for push metrics. Specify multiple times for more grouping keys.")
+	executeCmd.Flags().BoolVar(&regression, "regression", false, "Log data needed to run regression analysis.")
 
 	// profiling
 	executeCmd.Flags().StringVar(&profTyp, "profile", "", profile.Help())
@@ -194,6 +197,10 @@ func execute() error {
 	// === logging section ===
 	if err := ConfigOverrideLogSettings(cfg); err != nil {
 		return errors.WithStack(err)
+	}
+
+	if cfg.Settings.LogSettings.Regression {
+		cfg.Scheduler = scheduler.Regression()
 	}
 
 	// === object definition section ===
