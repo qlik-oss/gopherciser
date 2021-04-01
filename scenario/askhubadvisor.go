@@ -66,10 +66,10 @@ type (
 		QueryList         []WeightedQuery        `json:"querylist" displayname:"List of queries" doc-key:"askhubadvisor.querylist"`
 		Lang              language               `json:"lang" displayname:"Query language" doc-key:"askhubadvisor.lang"`
 		FollowupDepth     uint                   `json:"maxfollowup" displayname:"Max depth of followup queries performed" doc-key:"askhubadvisor.maxfollowup"`
-		FileName          string                 `json:"file" displayname:"File with one query per line" doc-key:"askhubadvisor.file"`
+		FileName          string                 `json:"file" displayname:"File with one query per line" doc-key:"askhubadvisor.file" displayelement:"file"`
 		App               string                 `json:"app" displayname:"App name (optional)" doc-key:"askhubadvisor.app"`
 		SaveImages        bool                   `json:"saveimages" displayname:"Save images" doc-key:"askhubadvisor.saveimages"`
-		SaveImageFile     session.SyncedTemplate `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile"`
+		SaveImageFile     session.SyncedTemplate `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
 		ThinkTimeSettings *ThinkTimeSettings     `json:"thinktime,omitempty" displayname:"Think time settings" doc-key:"askhubadvisor.thinktime"`
 	}
 
