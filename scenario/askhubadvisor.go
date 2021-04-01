@@ -164,12 +164,11 @@ func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 	}
 	switch settings.QuerySource {
 	case QueryFromFile:
-
 		if settings.FileName == "" {
 			return errors.New("no file name")
 		}
 		if runtime.GOOS == "js" {
-			return errors.Errorf("can not read file with GOOS=%s", runtime.GOOS)
+			return nil
 		}
 		file, err := os.Open(settings.FileName)
 		if err != nil {
