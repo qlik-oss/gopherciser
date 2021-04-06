@@ -168,6 +168,7 @@ const (
 	ObjectLoadModel
 	ObjectAppprops
 	ObjectAlertBookmark
+	ObjectHiddenBookmark
 
 	// Objects connected to snapshots and stories
 	ObjectSnapshotList
@@ -196,6 +197,7 @@ var (
 		"slide":            int(ObjectSlide),
 		"slideitem":        int(ObjectSlideItem),
 		"alertbookmark":    int(ObjectAlertBookmark),
+		"hiddenbookmark":   int(ObjectHiddenBookmark),
 	})
 )
 

@@ -270,6 +270,8 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 		case appstructure.ObjectStory, appstructure.ObjectSlide, appstructure.ObjectSlideItem:
 			structure.handleStories(ctx, app, id, typ, includeRaw)
 			return nil
+		case appstructure.ObjectAlertBookmark, appstructure.ObjectHiddenBookmark:
+			// ignore alert and hidden bookmarks
 		default:
 			if err := structure.handleDefaultObject(ctx, app, id, typ, &obj); err != nil {
 				return errors.Wrapf(err, "id<%s> type<%s>", id, typ)
@@ -332,18 +334,6 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	genObj, err := structure.getObject(ctx, app, id, typ)
 	if err != nil {
 		return errors.WithStack(err)
-	}
-	if genObj.Handle == 0 {
-		switch typ {
-		case "alertbookmark", "hiddenbookmark":
-			// known objects without interactions
-		default:
-			// Log any other types found with warning
-			warning := fmt.Sprintf("object<%s> type<%s> ", id, typ)
-			structure.logEntry.Log(logger.WarningLevel, warning)
-			structure.report.AddWarning(warning)
-		}
-		return nil
 	}
 
 	obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
@@ -829,8 +819,8 @@ func (structure *GeneratedAppStructure) getObject(ctx context.Context, app *sens
 		return nil, errors.Wrapf(err, "id<%s> type<%s> failed to return object", id, typ)
 	}
 
-	if obj.Handle == 0 {
-		return obj, errors.Wrapf(err, "id<%s> type<%s> returned object with nil handle", id, typ)
+	if obj.Handle < 1 {
+		return obj, errors.Wrapf(err, "GetObject id<%s> type<%s> returned object with handle<%d>", id, typ, obj.Handle)
 	}
 	return obj, nil
 }
