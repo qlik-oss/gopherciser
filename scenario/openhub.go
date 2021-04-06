@@ -37,6 +37,9 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
+	reqNoError := session.DefaultReqOptions()
+	reqNoError.FailOnError = false
+
 	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)
 	getPrivilegesAsync(sessionState, actionState, host)
@@ -48,9 +51,11 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/hub/qrsData?reloadUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, nil)
+
+	// These requests will warn only instead of error in case of failure
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, reqNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, reqNoError)
 
 	sessionState.Wait(actionState)
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
