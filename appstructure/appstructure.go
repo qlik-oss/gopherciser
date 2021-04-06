@@ -105,7 +105,7 @@ type (
 		// SheetId connected sheet ID, null if none
 		SheetId *string `json:"sheetId,omitempty"`
 		// SelectionFields fields bookmark would select in
-		SelectionFields string `json:"selectionFields"`
+		SelectionFields interface{} `json:"selectionFields"`
 		// RawProperties of Bookmark object
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
