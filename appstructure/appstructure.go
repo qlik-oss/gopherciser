@@ -105,7 +105,7 @@ type (
 		// SheetId connected sheet ID, null if none
 		SheetId *string `json:"sheetId,omitempty"`
 		// SelectionFields fields bookmark would select in
-		SelectionFields string `json:"selectionFields"`
+		SelectionFields interface{} `json:"selectionFields"`
 		// RawProperties of Bookmark object
 		RawProperties json.RawMessage `json:"rawProperties,omitempty"`
 	}
@@ -168,6 +168,7 @@ const (
 	ObjectLoadModel
 	ObjectAppprops
 	ObjectAlertBookmark
+	ObjectHiddenBookmark
 
 	// Objects connected to snapshots and stories
 	ObjectSnapshotList
@@ -196,6 +197,7 @@ var (
 		"slide":            int(ObjectSlide),
 		"slideitem":        int(ObjectSlideItem),
 		"alertbookmark":    int(ObjectAlertBookmark),
+		"hiddenbookmark":   int(ObjectHiddenBookmark),
 	})
 )
 
