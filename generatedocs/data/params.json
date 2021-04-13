@@ -305,12 +305,6 @@
         "`matching`: Delete all bookmarks with the specified `title` in the current app.",
         "`all`: Delete all bookmarks in the current app."
     ],
-    "deletedata.filename": [
-        "Name of the file to delete."
-    ],
-    "deletedata.spaceid" : [
-        "(optional) space ID of space from where to delete the data. Leave blank to delete from personal space."
-    ],
     "deleteodag.linkname": [
         "Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
     ],
