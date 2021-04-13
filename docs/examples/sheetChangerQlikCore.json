@@ -14,28 +14,30 @@
 			"concurrentusers": 1
 		}
 	},
-	"loginSettings" : {
-		"type" : "none"
+	"loginSettings": {
+		"type": "none"
 	},
 	"connectionSettings": {
-		"mode" : "ws",
-		"server" : "ws://localhost",
+		"mode": "ws",
+		"server": "ws://localhost",
 		"port": 19076,
 		"appext": ""
 	},
 	"scenario": [
 		{
-			"label" : "Open qlik core",
-			"action" : "openapp",
-			"settings" : {
-				"appmode" : "guid",
-				"app" : "Ctrl00_allObj.qvf"
+			"label": "Open qlik core",
+			"action": "openapp",
+			"settings": {
+				"appmode": "guid",
+				"app": "Ctrl00_allObj.qvf"
 			}
-		}, {
+		},
+		{
 			"action": "sheetchanger"
-		}, {
+		},
+		{
 			"action": "sheetchanger",
-			"label" : "withLabel "
+			"label": "withLabel "
 		}
 	]
 }

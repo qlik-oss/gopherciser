@@ -2,13 +2,16 @@
 	"settings": {
 		"timeout": 300,
 		"logs": {
-			"traffic": false,
-			"debug": false,
 			"filename": "logs/random-qsefew.tsv"
 		}
 	},
 	"scheduler": {
 		"type": "simple",
+		"iterationtimebuffer": {
+			"mode": "onerror",
+			"duration": "10s"
+		},
+		"instance": 1,
 		"settings": {
 			"executiontime": -1,
 			"iterations": 10,
@@ -21,18 +24,17 @@
 		"mode": "jwt",
 		"virtualproxy": "jwt",
 		"security": true,
-		"mocked": false,
 		"jwtsettings": {
 			"keypath": "mock.pem",
 			"claims": "{\"user\":\"{{.UserName}}\",\"directory\":\"{{.Directory}}\"}"
 		}
 	},
-	"loginSettings" : {
-        "type": "prefix",
-        "settings": {
-		  "prefix": "gopher",
-		  "directory": "anydir"
-        }
+	"loginSettings": {
+		"type": "prefix",
+		"settings": {
+			"prefix": "gopher",
+			"directory": "<my-domain>"
+		}
 	},
 	"scenario": [
 		{
@@ -43,10 +45,13 @@
 			"label": "Open a random app",
 			"action": "OpenApp",
 			"settings": {
-				"appmode" : "randomnamefromlist",
-				"list": ["<my-app-name>"]
+				"appmode": "randomnamefromlist",
+				"list": [
+					"<my-app-name>"
+				]
 			}
-		},  {
+		},
+		{
 			"label": "randomaction",
 			"action": "RandomAction",
 			"settings": {

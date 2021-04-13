@@ -2,13 +2,16 @@
 	"settings": {
 		"timeout": 300,
 		"logs": {
-			"traffic": false,
-			"debug": false,
 			"filename": "logs/scenario.tsv"
 		}
 	},
 	"scheduler": {
 		"type": "simple",
+		"iterationtimebuffer": {
+			"mode": "onerror",
+			"duration": "10s"
+		},
+		"instance": 1,
 		"settings": {
 			"executiontime": -1,
 			"iterations": 10,
@@ -21,7 +24,6 @@
 		"mode": "jwt",
 		"virtualproxy": "jwt",
 		"security": true,
-		"mocked": true,
 		"jwtsettings": {
 			"keypath": "mock.pem",
 			"claims": "{\"user\":\"{{.UserName}}\",\"directory\":\"{{.Directory}}\"}"
@@ -33,15 +35,15 @@
 			"userlist": [
 				{
 					"username": "gopher1",
-					"password": ""
+					"directory": "mydomain1"
 				},
 				{
 					"username": "gopher2",
-					"password": ""
+					"directory": "mydomain1"
 				},
 				{
-					"username": "gopher3",
-					"password": ""
+					"username": "testuser1",
+					"directory": "mydomain2"
 				}
 			]
 		}
@@ -55,10 +57,14 @@
 			"label": "Open a random app",
 			"action": "OpenApp",
 			"settings": {
-				"appmode" : "randomnamefromlist",
-				"list": ["PT1MSSD", "Life expectancy"]
+				"appmode": "randomnamefromlist",
+				"list": [
+					"PT1MSSD",
+					"Life expectancy"
+				]
 			}
-		},  {
+		},
+		{
 			"label": "randomaction",
 			"action": "RandomAction",
 			"settings": {
