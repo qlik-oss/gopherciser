@@ -232,8 +232,6 @@ var (
 		"createsheet.id":                                  {"(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."},
 		"createsheet.title":                               {"Name of the sheet to create."},
 		"deletebookmark.mode":                             {"", "`single`: Delete one bookmark that matches the specified `title` or `id` in the current app.", "`matching`: Delete all bookmarks with the specified `title` in the current app.", "`all`: Delete all bookmarks in the current app."},
-		"deletedata.filename":                             {"Name of the file to delete."},
-		"deletedata.spaceid":                              {"(optional) space ID of space from where to delete the data. Leave blank to delete from personal space."},
 		"deleteodag.linkname":                             {"Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"deletesheet.id":                                  {"(optional) GUID of the sheet to delete."},
 		"deletesheet.mode":                                {"", "`single`: Delete one sheet that matches the specified `title` or `id` in the current app.", "`matching`: Delete all sheets with the specified `title` in the current app.", "`allunpublished`: Delete all unpublished sheets in the current app."},
