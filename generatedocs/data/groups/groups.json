@@ -28,12 +28,13 @@
             "reload",
             "select",
             "setscript",
+            "setsensevariable",
             "sheetchanger",
             "subscribeobjects",
             "thinktime",
             "unpublishbookmark",
             "unpublishsheet",
-            "unsubscribeobjects"
+            "unsubscribeobjects"            
         ]
     },
     {
