@@ -1332,6 +1332,29 @@ Set the load script for the current app. To load the data from the script, use t
 </details>
 
 <details>
+<summary>setsensevariable</summary>
+
+## SetSenseVariable action
+
+Sets a Qlik Sense variable on a sheet in the open app.
+
+* `name`: Name of the Qlik Sense variable to set.
+* `value`: Value to set the Qlik Sense variable to.
+
+### Example
+
+Set a variable to 2000
+
+```json
+{
+     "name": "vSampling",
+     "value": "2000"
+}
+```
+---
+</details>
+
+<details>
 <summary>sheetchanger</summary>
 
 ## SheetChanger action

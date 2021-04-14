@@ -122,6 +122,10 @@ var (
 			Description: "## SetScript action\n\nSet the load script for the current app. To load the data from the script, use the `reload` action after the `setscript` action.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"setscript\",\n    \"settings\": {\n        \"script\" : \"Characters:\\nLoad Chr(RecNo()+Ord('A')-1) as Alpha, RecNo() as Num autogenerate 26;\"\n    }\n}\n```\n",
 		},
+		"setsensevariable": {
+			Description: "## SetSenseVariable action\n\nSets a Qlik Sense variable on a sheet in the open app.\n",
+			Examples:    "### Example\n\nSet a variable to 2000\n\n```json\n{\n     \"name\": \"vSampling\",\n     \"value\": \"2000\"\n}\n```",
+		},
 		"sheetchanger": {
 			Description: "## SheetChanger action\n\nCreate and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\"\n},\n{\n    \"label\" : \"Sheetchanger cached\",\n    \"action\": \"sheetchanger\"\n}\n```\n",
@@ -273,6 +277,8 @@ var (
 		"select.values":                                   {"Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user."},
 		"select.wrap":                                     {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"setscript.script":                                {"Load script for the app (written as a string)."},
+		"setsensevariable.name":                           {"Name of the Qlik Sense variable to set."},
+		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to."},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},
@@ -323,7 +329,7 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "setsensevariable", "sheetchanger", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable for most types of Qlik Sense deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",
