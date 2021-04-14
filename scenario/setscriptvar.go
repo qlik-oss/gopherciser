@@ -1,6 +1,8 @@
 package scenario
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -8,15 +10,15 @@ import (
 )
 
 type (
-	// SetVarSettings action creates/sets variables value
-	SetVarSettings struct {
+	// SetScriptVarSettings action creates/sets variables value
+	SetScriptVarSettings struct {
 		Name  string                 `json:"name"`
 		Value session.SyncedTemplate `json:"value"`
 	}
 )
 
-// Validate SetVarSettings action (Implements ActionSettings interface)
-func (settings SetVarSettings) Validate() ([]string, error) {
+// Validate SetScriptVarSettings action (Implements ActionSettings interface)
+func (settings SetScriptVarSettings) Validate() ([]string, error) {
 	if settings.Name == "" {
 		return nil, errors.New("name of variable to set not defined")
 	}
@@ -26,16 +28,17 @@ func (settings SetVarSettings) Validate() ([]string, error) {
 	return nil, nil
 }
 
-// TODO parse value template
-
-// Execute SetVarSettings action (Implements ActionSettings interface)
-func (settings SetVarSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+// Execute SetScriptVarSettings action (Implements ActionSettings interface)
+func (settings SetScriptVarSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	actionState.NoResults = true // We should not log any results to log as it's not a user simulation
 
-	// TODO execute value template
-	// TODO info or debug log set value
+	value, err := sessionState.ReplaceSessionVariables(&settings.Value)
+	if err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "failed to evaluate value when trying to set variable<%s>", settings.Name))
+	}
 
-	sessionState.Wait(actionState) // Await all async requests
+	sessionState.SetVariableValue(settings.Name, value)
+	sessionState.LogEntry.LogDebug(fmt.Sprintf("setting script variable<%s> to value<%v>", settings.Name, value))
 }
 
 // AppStructureAction Implements AppStructureAction interface. It returns if this action should be included
@@ -44,7 +47,7 @@ func (settings SetVarSettings) Execute(sessionState *session.State, actionState 
 // sessionState.CurrentApp. A list of Sub action to be evaluated can also be included
 // AppStructureAction returns if this action should be included when getting app structure
 // and any additional sub actions which should also be included
-func (settings *SetVarSettings) AppStructureAction() (*AppStructureInfo, []Action) {
+func (settings *SetScriptVarSettings) AppStructureAction() (*AppStructureInfo, []Action) {
 	return &AppStructureInfo{
 		IsAppAction: false,
 		Include:     true,
