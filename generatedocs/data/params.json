@@ -68,6 +68,14 @@
     "askhubadvisor.saveimagefile": [
         "File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables)."
     ],
+    "askhubadvisor.followuptypes": [
+        "A list of followup types enabled for followup queries. If omitted, all types are enabled.",
+        "`app`: Enable followup queries which change app.",
+        "`measure`: Enable followups based on measures.",
+        "`dimension`: Enable followups based on dimensions.",
+        "`recommendation`: Enable followups based on recommendations.",
+        "`sentence`: Enable followup queries based on bare sentences."
+    ],
     "clearfield.name" : [
         "Name of field to clear."
     ],
