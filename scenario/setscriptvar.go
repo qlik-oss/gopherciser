@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -12,8 +13,9 @@ import (
 type (
 	// SetScriptVarSettings action creates/sets variables value
 	SetScriptVarSettings struct {
-		Name  string                 `json:"name"`
-		Value session.SyncedTemplate `json:"value"`
+		Name  string                          `json:"name"`
+		Type  session.SessionVariableTypeEnum `json:"type"`
+		Value session.SyncedTemplate          `json:"value"`
 	}
 )
 
@@ -25,6 +27,9 @@ func (settings SetScriptVarSettings) Validate() ([]string, error) {
 	if settings.Value.String() == "" {
 		return nil, errors.Errorf("value of variable<%s> not set", settings.Name)
 	}
+	if settings.Type == session.SessionVariableTypeUnknown {
+		return nil, errors.New("variable type definition missing")
+	}
 	return nil, nil
 }
 
@@ -35,9 +40,26 @@ func (settings SetScriptVarSettings) Execute(sessionState *session.State, action
 	value, err := sessionState.ReplaceSessionVariables(&settings.Value)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to evaluate value when trying to set variable<%s>", settings.Name))
+		return
 	}
 
-	sessionState.SetVariableValue(settings.Name, value)
+	switch settings.Type {
+	case session.SessionVariableTypeString:
+		sessionState.SetVariableValue(settings.Name, value)
+	case session.SessionVariableTypeInt:
+		i, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			actionState.AddErrors(errors.Errorf("failed to parse value<%s> to integer", value))
+			return
+		}
+		sessionState.SetVariableValue(settings.Name, i)
+	case session.SessionVariableTypeArray:
+		fallthrough
+	default:
+		actionState.AddErrors(errors.Errorf("session variable type<%s> not yet supported", settings.Type))
+		return
+	}
+
 	sessionState.LogEntry.LogDebug(fmt.Sprintf("setting script variable<%s> to value<%v>", settings.Name, value))
 }
 
