@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"sync"
 	"text/template"
 	"time"
@@ -37,6 +38,7 @@ var (
 		"timestamp": timestamp,
 		"uuid":      uuid.New,
 		"env":       os.Getenv,
+		"add":       add,
 	}
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
@@ -124,4 +126,40 @@ func (input *SyncedTemplate) ReplaceWithoutSessionVariables(data interface{}) (s
 		return "", errors.Wrap(err, "failed to execute variables template")
 	}
 	return buf.String(), nil
+}
+
+func add(iVal1 interface{}, iVal2 interface{}) (int64, error) {
+	val1, err := parseToInt64(iVal1)
+	if err != nil {
+		return 0, err
+	}
+	val2, err := parseToInt64(iVal2)
+	if err != nil {
+		return 0, err
+	}
+
+	return val1 + val2, nil
+}
+
+func parseToInt64(val interface{}) (int64, error) {
+	switch val := val.(type) {
+	case string:
+		val2, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return 0, errors.Wrapf(err, "string<%s> not parseable to integer", val)
+		}
+		return val2, nil
+	case int:
+		return int64(val), nil
+	case int8:
+		return int64(val), nil
+	case int16:
+		return int64(val), nil
+	case int32:
+		return int64(val), nil
+	case int64:
+		return val, nil
+	default:
+		return 0, errors.Errorf("type<%T> not parseable to int64", val)
+	}
 }
