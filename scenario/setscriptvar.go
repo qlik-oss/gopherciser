@@ -3,6 +3,7 @@ package scenario
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -13,11 +14,14 @@ import (
 type (
 	// SetScriptVarSettings action creates/sets variables value
 	SetScriptVarSettings struct {
-		Name  string                          `json:"name" doc-key:"setscriptvar.name" displayname:"Name"`
-		Type  session.SessionVariableTypeEnum `json:"type" doc-key:"setscriptvar.type" displayname:"Variable type"`
-		Value session.SyncedTemplate          `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
+		Name      string                          `json:"name" doc-key:"setscriptvar.name" displayname:"Name"`
+		Type      session.SessionVariableTypeEnum `json:"type" doc-key:"setscriptvar.type" displayname:"Variable type"`
+		Value     session.SyncedTemplate          `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
+		Separator string                          `json:"sep" doc-key:"setscriptvar.sep" displayname:"Array separator"`
 	}
 )
+
+const DefaultArraySeparator = ","
 
 // Validate SetScriptVarSettings action (Implements ActionSettings interface)
 func (settings SetScriptVarSettings) Validate() ([]string, error) {
@@ -29,6 +33,9 @@ func (settings SetScriptVarSettings) Validate() ([]string, error) {
 	}
 	if settings.Type == session.SessionVariableTypeUnknown {
 		return nil, errors.New("variable type definition missing")
+	}
+	if settings.Type == session.SessionVariableTypeArray && settings.Separator == "" {
+		return []string{fmt.Sprintf(`No array separator defined, using "%s"`, DefaultArraySeparator)}, nil
 	}
 	return nil, nil
 }
@@ -54,7 +61,11 @@ func (settings SetScriptVarSettings) Execute(sessionState *session.State, action
 		}
 		sessionState.SetVariableValue(settings.Name, i)
 	case session.SessionVariableTypeArray:
-		fallthrough
+		separator := DefaultArraySeparator
+		if settings.Separator != "" {
+			separator = settings.Separator
+		}
+		sessionState.SetVariableValue(settings.Name, strings.Split(value, separator))
 	default:
 		actionState.AddErrors(errors.Errorf("session variable type<%s> not yet supported", settings.Type))
 		return
