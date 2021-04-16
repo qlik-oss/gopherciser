@@ -73,7 +73,7 @@ The following functions are supported:
   "action": "createbookmark",
   "settings": {
     "title": "Bookmark no {{ add .ScriptVars.BookmarkCounter 1 }}",
-    "description": "This bookmark wil have the title Bookmark no 2"
+    "description": "This bookmark will have the title Bookmark no 2"
   }
 }
 ```
