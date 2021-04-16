@@ -513,5 +513,11 @@
     ],
     "uploaddata.title": [
         "(optional) Set custom title of file on upload. Defaults to file name (excluding extension). (supports the use of [session variables](#session_variables))"
-    ]
+    ],
+    "setsensevariable.name": [
+        "Name of the Qlik Sense variable to set."
+    ],
+    "setsensevariable.value": [
+        "Value to set the Qlik Sense variable to."
+    ]    
 }
