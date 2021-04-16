@@ -447,6 +447,18 @@
     "setscript.script": [
         "Load script for the app (written as a string)."
     ],
+    "setscriptvar.name" : [
+        "Name of variable to set. Will overwrite any existing variable with same name."
+    ],
+    "setscriptvar.type" : [
+        "Type of the variable.",
+        "`string`: Variable of type string e.g. `my var value`.",
+        "`int`: Variable of type integer e.g. `6`.",
+        "`array`: Variable of type arrat e.g. `[1, 2, 3]`."
+    ],
+    "setscriptvar.value": [
+        "Value to set to variable (supports the use of [session variables](#session_variables))."
+    ],
     "subscribeobjects.clear" : [
         "Remove any previously subscribed objects from the subscription list."
     ],

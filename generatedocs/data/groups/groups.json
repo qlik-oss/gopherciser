@@ -28,6 +28,7 @@
             "reload",
             "select",
             "setscript",
+            "setscriptvar",
             "sheetchanger",
             "subscribeobjects",
             "thinktime",

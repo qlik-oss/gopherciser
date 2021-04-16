@@ -13,9 +13,9 @@ import (
 type (
 	// SetScriptVarSettings action creates/sets variables value
 	SetScriptVarSettings struct {
-		Name  string                          `json:"name"`
-		Type  session.SessionVariableTypeEnum `json:"type"`
-		Value session.SyncedTemplate          `json:"value"`
+		Name  string                          `json:"name" doc-key:"setscriptvar.name" displayname:"Name"`
+		Type  session.SessionVariableTypeEnum `json:"type" doc-key:"setscriptvar.type" displayname:"Variable type"`
+		Value session.SyncedTemplate          `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
 	}
 )
 

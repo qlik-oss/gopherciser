@@ -1332,6 +1332,115 @@ Set the load script for the current app. To load the data from the script, use t
 </details>
 
 <details>
+<summary>setscriptvar</summary>
+
+## SetScriptVar action
+
+Sets a variable which can be used within the same session. Cannot be accessed across different simulated users.
+
+* `name`: Name of variable to set. Will overwrite any existing variable with same name.
+* `type`: Type of the variable.
+    * `string`: Variable of type string e.g. `my var value`.
+    * `int`: Variable of type integer e.g. `6`.
+    * `array`: Variable of type arrat e.g. `[1, 2, 3]`.
+* `value`: Value to set to variable (supports the use of [session variables](#session_variables)).
+
+### Example
+
+Create a variable containing a string and use it in openapp.
+
+```json
+{
+    "action": "setscriptvar",
+    "settings": {
+        "name": "mylocalvar",
+        "type": "string",
+        "value": "My app Name with number for session {{ .Session }}"
+    }
+},
+{
+    "action": "openapp",
+    "settings": {
+        "appmode": "name",
+        "app": "{{ .ScriptVars.mylocalvar }}"
+    }
+}
+```
+
+Create a variable containing an integer and use it in a loop creating bookmarks numbered 1 to 5. Then in a different loop reset variable and delete the bookmarks.
+
+```json
+{
+    "action": "setscriptvar",
+    "settings": {
+        "name": "BookmarkCounter",
+        "type": "int",
+        "value": "0"
+    }
+},
+{
+    "action": "iterated",
+    "settings": {
+        "iterations": 5,
+        "actions": [
+            {
+                "action": "setscriptvar",
+                "settings": {
+                    "name": "BookmarkCounter",
+                    "type": "int",
+                    "value": "{{ add .ScriptVars.BookmarkCounter 1 }}"
+                }
+            },
+            {
+                "action": "createbookmark",
+                "settings": {
+                    "title": "Bookmark {{ .ScriptVars.BookmarkCounter }}",
+                    "description": "This bookmark contains some interesting selections"
+                }
+            }
+            
+        ]
+    }
+},
+{
+    "action": "setscriptvar",
+    "settings": {
+        "name": "BookmarkCounter",
+        "type": "int",
+        "value": "0"
+    }
+},
+{
+    "action": "iterated",
+    "disabled": false,
+    "settings": {
+        "iterations": 5,
+        "actions": [
+            {
+                "action": "setscriptvar",
+                "settings": {
+                    "name": "BookmarkCounter",
+                    "type": "int",
+                    "value": "{{ .ScriptVars.BookmarkCounter | add 1}}"
+                }
+            },
+            {
+                "action": "deletebookmark",
+                "settings": {
+                    "mode": "single",
+                    "title": "Bookmark {{ .ScriptVars.BookmarkCounter }}"
+                }
+            }
+        ]
+    }
+}
+```
+
+
+---
+</details>
+
+<details>
 <summary>sheetchanger</summary>
 
 ## SheetChanger action
@@ -1653,6 +1762,7 @@ The following session variables are supported in actions:
 * `UserName`: The simulated username. This is not the same as the authenticated user, but rather how the username was defined by [Login settings](#login_settings).  
 * `Session`: The enumeration of the currently simulated session.
 * `Thread`: The enumeration of the currently simulated "thread" or "concurrent user".
+* `ScriptVars`: A map containing script variables added by the action `setscriptvar`.
 
 The following variable is supported in the filename of the log file:
 
@@ -1665,6 +1775,7 @@ The following functions are supported:
 * `timestamp`: Timestamp in `yyyyMMddhhmmss` format.
 * `uuid`: Generate an uuid.
 * `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
+* `add`: Adds to integer values together and outputs the sum.
 
 ### Example
 
@@ -1697,6 +1808,25 @@ The following functions are supported:
   }
 }
 ```
+
+```json
+{
+    "action": "setscriptvar",
+    "settings": {
+        "name": "BookmarkCounter",
+        "type": "int",
+        "value": "1"
+    }
+},
+{
+  "action": "createbookmark",
+  "settings": {
+    "title": "Bookmark no {{ add .ScriptVars.BookmarkCounter 1 }}",
+    "description": "This bookmark wil have the title Bookmark no 2"
+  }
+}
+```
+
 </details>
 
 
