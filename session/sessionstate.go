@@ -105,6 +105,9 @@ type (
 		// customStates are used to register custom states when using gopherciser as a library
 		customStates     map[string]interface{}
 		customStatesLock sync.Mutex
+
+		variables     map[string]interface{}
+		variablesLock sync.RWMutex
 	}
 
 	// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
@@ -124,9 +127,10 @@ type (
 	// SessionVariables is used as a data carrier for session variables.
 	SessionVariables struct {
 		users.User
-		Session uint64
-		Thread  uint64
-		Local   interface{}
+		Session    uint64
+		Thread     uint64
+		ScriptVars map[string]interface{}
+		Local      interface{}
 	}
 
 	ObjectHandlerInstance interface {
@@ -202,6 +206,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		Counters:       counters,
 		customStates:   make(map[string]interface{}),
+		variables:      make(map[string]interface{}),
 
 		ctx:       sessionCtx,
 		ctxCancel: cancel,
@@ -584,9 +589,10 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 	}
 
 	sessionVars := SessionVariables{
-		Session: session,
-		Thread:  thread,
-		Local:   localData,
+		Session:    session,
+		Thread:     thread,
+		Local:      localData,
+		ScriptVars: state.variables,
 	}
 
 	if state.User != nil {
@@ -598,6 +604,9 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 
 // ReplaceSessionVariables execute template and replace session variables, e.g. "my app ({{.UserName}})" -> "my app (user_1)"
 func (state *State) ReplaceSessionVariables(input *SyncedTemplate) (string, error) {
+	state.variablesLock.RLock() // Lock variables map while replaceing session variables
+	defer state.variablesLock.RUnlock()
+
 	return state.ReplaceSessionVariablesWithLocalData(input, nil)
 }
 
@@ -1008,4 +1017,12 @@ func (state *State) GetCustomState(key string) (interface{}, bool) {
 
 	value, exist := state.customStates[key]
 	return value, exist
+}
+
+// SetVariableValue to session variable map
+func (state *State) SetVariableValue(variable string, value interface{}) {
+	state.variablesLock.Lock()
+	defer state.variablesLock.Unlock()
+
+	state.variables[variable] = value
 }

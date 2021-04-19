@@ -140,6 +140,7 @@ const (
 	ActionClearField            = "clearfield"
 	ActionAskHubAdvisor         = "askhubadvisor"
 	ActionSetSenseVariable      = "setsensevariable"
+	ActionSetScriptVar          = "setscriptvar"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -248,6 +249,7 @@ func ResetDefaultActions() {
 		ActionClearField:            ClearFieldSettings{},
 		ActionAskHubAdvisor:         AskHubAdvisorSettings{},
 		ActionSetSenseVariable:      SetSenseVariableSettings{},
+		ActionSetScriptVar:          SetScriptVarSettings{},
 	}
 }
 
