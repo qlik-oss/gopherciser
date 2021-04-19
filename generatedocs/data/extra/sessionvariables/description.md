@@ -26,7 +26,8 @@ The following functions are supported:
 * `timestamp`: Timestamp in `yyyyMMddhhmmss` format.
 * `uuid`: Generate an uuid.
 * `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
-* `add`: Adds to integer values together and outputs the sum.
+* `add`: Adds two integer values together and outputs the sum. E.g. `{{ add 1 2 }}`.
+* `join`: Joins array elements together to a string separated by defined separator. E.g. `{{ join .ScriptVars.MyArray \",\" }}`.
 
 ### Example
 

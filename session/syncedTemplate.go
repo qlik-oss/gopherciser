@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -39,6 +40,7 @@ var (
 		"uuid":      uuid.New,
 		"env":       os.Getenv,
 		"add":       add,
+		"join":      strings.Join,
 	}
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
