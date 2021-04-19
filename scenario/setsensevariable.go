@@ -12,8 +12,8 @@ import (
 type (
 	//SetSenseVariableSettings
 	SetSenseVariableSettings struct {
-		VariableName  string `json:"name" displayname:"name of the variable" doc-key:"setsensevariable.name"`
-		VariableValue string `json:"value" displayname:"value of the variable" doc-key:"setsensevariable.value"`
+		VariableName  string                 `json:"name" displayname:"name of the variable" doc-key:"setsensevariable.name"`
+		VariableValue session.SyncedTemplate `json:"value" displayname:"value of the variable" doc-key:"setsensevariable.value"`
 	}
 )
 
@@ -22,7 +22,7 @@ func (settings SetSenseVariableSettings) Validate() ([]string, error) {
 	if settings.VariableName == "" {
 		return nil, errors.New("No Name specified")
 	}
-	if settings.VariableValue == "" {
+	if settings.VariableValue.String() == "" {
 		return nil, errors.New("No Value specified")
 	}
 	return nil, nil
@@ -42,13 +42,19 @@ func (settings SetSenseVariableSettings) Execute(sessionState *session.State, ac
 	}
 	doc := app.Doc
 
+	variableValue, err := sessionState.ReplaceSessionVariables(&settings.VariableValue)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		variable, err := varReq(doc.GetVariableByName).WithCache(&uplink.VarCache)(ctx, settings.VariableName)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 
-		if err := variable.SetStringValue(ctx, settings.VariableValue); err != nil {
+		if err := variable.SetStringValue(ctx, variableValue); err != nil {
 			return errors.WithStack(err)
 		}
 		return nil
