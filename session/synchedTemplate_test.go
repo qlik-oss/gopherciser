@@ -53,14 +53,16 @@ func TestTemplate(t *testing.T) {
 		Param1 SyncedTemplate `json:"param1"`
 		Param2 SyncedTemplate `json:"param2"`
 		Param3 SyncedTemplate `json:"param3"`
+		Param4 SyncedTemplate `json:"param4"`
 	}
 
 	_ = os.Setenv("test-env", "val2")
 
 	jsn := `{
 	"param1" : "val1 is {{.Val1}} and val2 is {{env \"test-env\"}}",
-	"param2" : "{{ join .Val2 \",\" }},elem4",
-	"param3" : "{{ add 1 \"3\" }}"
+	"param2" : "{{ add 1 \"3\" }}",
+	"param3" : "{{ join .Val2 \",\" }},elem4",
+	"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}"
 }`
 
 	if err := jsonit.Unmarshal([]byte(jsn), &myStruct); err != nil {
@@ -68,8 +70,9 @@ func TestTemplate(t *testing.T) {
 	}
 
 	testParam(t, &myStruct.Param1, "val1 is val1 and val2 is val2")
-	testParam(t, &myStruct.Param2, "elem1,elem2,elem3,elem4")
-	testParam(t, &myStruct.Param3, "4")
+	testParam(t, &myStruct.Param2, "4")
+	testParam(t, &myStruct.Param3, "elem1,elem2,elem3,elem4")
+	testParam(t, &myStruct.Param4, "elem1,elem2")
 }
 
 func testParam(t *testing.T, tmpl *SyncedTemplate, expected string) {
