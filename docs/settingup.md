@@ -1342,9 +1342,9 @@ Sets a variable which can be used within the same session. Cannot be accessed ac
 * `type`: Type of the variable.
     * `string`: Variable of type string e.g. `my var value`.
     * `int`: Variable of type integer e.g. `6`.
-    * `array`: Variable of type arrat e.g. `[1, 2, 3]`.
+    * `array`: Variable of type array e.g. `1,2,3`.
 * `value`: Value to set to variable (supports the use of [session variables](#session_variables)).
-* `sep`: *Missing documentation*
+* `sep`: Separator to use when separating string into array. Defaults to `,`.
 
 ### Example
 
