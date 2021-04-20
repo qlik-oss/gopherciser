@@ -95,8 +95,6 @@ type (
 		query         *hubAdvisorQuery
 		response      *hubAdvisorResponse
 	}
-
-	followupType  string
 	followupQuery struct {
 		typ   followupType
 		query *hubAdvisorQuery
@@ -169,33 +167,50 @@ const (
 	infoTypeDimensions     = "dimensions"
 	infoTypeApps           = "apps"
 	infoTypeRecomendations = "recommendations"
-
-	followupRecommendation followupType = "recommendation"
-	followupMeasure        followupType = "measure"
-	followupApp            followupType = "app"
-	followupDimension      followupType = "dimension"
-	followupSentence       followupType = "sentence"
 )
 
-var (
-	validFollowupTypes = map[followupType]struct{}{
-		followupRecommendation: {},
-		followupMeasure:        {},
-		followupApp:            {},
-		followupDimension:      {},
-		followupSentence:       {},
-	}
+type followupType int
+
+var followupTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"recommendation": int(followupRecommendation),
+	"measure":        int(followupMeasure),
+	"app":            int(followupApp),
+	"dimension":      int(followupDimension),
+	"sentence":       int(followupSentence),
+})
+
+const (
+	followupRecommendation followupType = iota
+	followupMeasure
+	followupApp
+	followupDimension
+	followupSentence
 )
 
-func (ft followupType) Validate() error {
-	if _, ok := validFollowupTypes[ft]; ok {
-		return nil
+func (value *followupType) GetEnumMap() *enummap.EnumMap {
+	return followupTypeEnumMap
+}
+
+func (value *followupType) UnmarshalJSON(data []byte) error {
+	ftInt, err := value.GetEnumMap().UnMarshal(data)
+
+	if err != nil {
+		return errors.Wrapf(err, "followup type has to be one of %v", value.GetEnumMap().Keys())
 	}
-	vts := make([]followupType, 0, len(validFollowupTypes))
-	for validType := range validFollowupTypes {
-		vts = append(vts, validType)
+	*value = followupType(ftInt)
+	return nil
+}
+
+func (value followupType) MarshalJSON() ([]byte, error) {
+	str, err := value.GetEnumMap().String(int(value))
+	if err != nil {
+		return nil, errors.Errorf("unknown followup type<%d>", value)
 	}
-	return fmt.Errorf("followup type<%s> is not one of the valid types %v", ft, vts)
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
+func (value followupType) String() string {
+	return value.GetEnumMap().StringDefault(int(value), "UNDEFINED")
 }
 
 func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
@@ -280,12 +295,6 @@ func (settings AskHubAdvisorSettings) Validate() ([]string, error) {
 	if settings.FollowupTypes != nil && len(settings.FollowupTypes) == 0 {
 		return nil, errors.New(
 			"empty followuptypes implies no followups, please set maxfollowup to 0 for this behaviuor")
-	}
-
-	for _, f := range settings.FollowupTypes {
-		if err := f.Validate(); err != nil {
-			return nil, err
-		}
 	}
 
 	return nil, nil
