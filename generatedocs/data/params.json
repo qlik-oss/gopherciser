@@ -521,6 +521,6 @@
         "Name of the Qlik Sense variable to set."
     ],
     "setsensevariable.value": [
-        "Value to set the Qlik Sense variable to."
+        "Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"
     ]    
 }

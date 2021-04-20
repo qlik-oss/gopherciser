@@ -1575,7 +1575,7 @@ Dissecting the first array construction action. The `join` command takes the ele
 Sets a Qlik Sense variable on a sheet in the open app.
 
 * `name`: Name of the Qlik Sense variable to set.
-* `value`: Value to set the Qlik Sense variable to.
+* `value`: Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))
 
 ### Example
 
