@@ -286,7 +286,7 @@ var (
 		"setscriptvar.type":                               {"Type of the variable.", "`string`: Variable of type string e.g. `my var value`.", "`int`: Variable of type integer e.g. `6`.", "`array`: Variable of type array e.g. `1,2,3`."},
 		"setscriptvar.value":                              {"Value to set to variable (supports the use of [session variables](#session_variables))."},
 		"setsensevariable.name":                           {"Name of the Qlik Sense variable to set."},
-		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to."},
+		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},
