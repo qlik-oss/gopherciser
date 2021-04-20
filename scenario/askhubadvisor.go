@@ -71,7 +71,7 @@ type (
 		SaveImages        bool                   `json:"saveimages" displayname:"Save images" doc-key:"askhubadvisor.saveimages"`
 		SaveImageFile     session.SyncedTemplate `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
 		ThinkTimeSettings *ThinkTimeSettings     `json:"thinktime,omitempty" displayname:"Think time settings" doc-key:"askhubadvisor.thinktime"`
-		FollowupTypes     []followupType         `json:"followuptypes,omitempty" displayname:"Followup query type priority" doc-key:"askhubadvisor.followuptypes"`
+		FollowupTypes     []followupType         `json:"followuptypes,omitempty" displayname:"Followup query types" doc-key:"askhubadvisor.followuptypes"`
 	}
 
 	WeightedQueryCore struct {
@@ -187,7 +187,7 @@ const (
 	followupSentence
 )
 
-func (value *followupType) GetEnumMap() *enummap.EnumMap {
+func (value followupType) GetEnumMap() *enummap.EnumMap {
 	return followupTypeEnumMap
 }
 
