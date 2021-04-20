@@ -180,13 +180,18 @@ var followupTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 })
 
 const (
-	followupRecommendation followupType = iota
+	followupApp followupType = iota
+	followupRecommendation
 	followupMeasure
-	followupApp
 	followupDimension
 	followupSentence
 )
 
+// implements Enum interface compiler check
+var _ Enum = followupType(0)
+var _ Enum = (*followupType)(nil)
+
+// GetEnumMap implements Enum interface
 func (value followupType) GetEnumMap() *enummap.EnumMap {
 	return followupTypeEnumMap
 }
