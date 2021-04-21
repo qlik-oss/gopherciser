@@ -25,6 +25,9 @@ const DefaultArraySeparator = ","
 
 // Validate SetScriptVarSettings action (Implements ActionSettings interface)
 func (settings SetScriptVarSettings) Validate() ([]string, error) {
+	if err := settings.Type.Validate(); err != nil {
+		return nil, err
+	}
 	if settings.Name == "" {
 		return nil, errors.New("name of variable to set not defined")
 	}
