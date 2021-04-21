@@ -293,6 +293,10 @@ func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers
 	}
 	// Determine what objects are selectable
 	selectableObjects := make([]*enigmahandlers.Object, 0, n)
+	var unselectableObjects []string
+	if sessionState.LogEntry.ShouldLogDebug() {
+		unselectableObjects = make([]string, 0, n)
+	}
 	for _, handle := range handles {
 		obj, err := uplink.Objects.GetObject(handle)
 		if err != nil {
@@ -300,16 +304,34 @@ func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers
 		}
 		enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 		if !ok {
+			if sessionState.LogEntry.ShouldLogDebug() {
+				unselectableObjects = append(unselectableObjects, enigmaObject.GenericId)
+			}
 			continue
 		}
-		objectDef, err := senseobjdef.GetObjectDef(enigmaObject.GenericType)
+
+		objInstance := sessionState.GetObjectHandlerInstance(enigmaObject.GenericId, enigmaObject.GenericType)
+		_, selectType, _, err := objInstance.GetObjectDefinition(enigmaObject.GenericType)
 		if err != nil {
+			unselectableObjects = append(unselectableObjects, enigmaObject.GenericId)
 			continue
 		}
-		if objectDef.Select != nil && objectDef.Select.Type != senseobjdef.SelectTypeUnknown && // has select definition
-			(obj.ListObject() != nil || (obj.HyperCube() != nil && len(obj.HyperCube().DimensionInfo) > 0)) { // has at least one dimension
+
+		if selectType != senseobjdef.SelectTypeUnknown && obj.HasDims() {
 			selectableObjects = append(selectableObjects, obj)
+		} else {
+			unselectableObjects = append(unselectableObjects, enigmaObject.GenericId)
 		}
+	}
+	if sessionState.LogEntry.ShouldLogDebug() {
+		sessionState.LogEntry.LogDebugf("unselectable objects %v", unselectableObjects)
+		selectableIDs := make([]string, 0, len(selectableObjects))
+		for _, obj := range selectableObjects {
+			if obj != nil {
+				selectableIDs = append(selectableIDs, obj.ID)
+			}
+		}
+		sessionState.LogEntry.LogDebugf("selectable objects %v", selectableIDs)
 	}
 	return selectableObjects, nil
 }
