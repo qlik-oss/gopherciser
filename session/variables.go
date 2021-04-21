@@ -59,7 +59,7 @@ func (typ SessionVariableTypeEnum) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-// UnmarshalJSON SessionVariableTypeEnum type
+// Validate SessionVariableTypeEnum type
 func (typ *SessionVariableTypeEnum) Validate() error {
 	if *typ == SessionVariableTypeUnknown {
 		return errors.New("session variable type not defined")
