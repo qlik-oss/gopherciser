@@ -260,6 +260,12 @@ Perform a query in the Qlik Sense hub insight advisor.
   * `delay`: Delay (seconds), used with type `static`.
   * `mean`: Mean (seconds), used with type `uniform`.
   * `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
+* `followuptypes`: A list of followup types enabled for followup queries. If omitted, all types are enabled.
+    * `app`: Enable followup queries which change app.
+    * `measure`: Enable followups based on measures.
+    * `dimension`: Enable followups based on dimensions.
+    * `recommendation`: Enable followups based on recommendations.
+    * `sentence`: Enable followup queries based on bare sentences.
 
 ### Examples
 
@@ -354,6 +360,23 @@ See detailed examples of settings in the documentation for thinktime action.
             "type": "static",
             "delay": 5
         }
+    }
+}
+```
+
+#### Ask followups only based on app selection
+
+
+```json
+{
+    "action": "AskHubAdvisor",
+    "settings": {
+        "querysource": "querylist",
+        "querylist": [
+            "what is the lowest price of shoes"
+        ],
+        "maxfollowup": 5,
+        "followuptypes": ["app"]
     }
 }
 ```

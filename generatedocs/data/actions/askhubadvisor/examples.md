@@ -95,6 +95,23 @@ See detailed examples of settings in the documentation for thinktime action.
 }
 ```
 
+#### Ask followups only based on app selection
+
+
+```json
+{
+    "action": "AskHubAdvisor",
+    "settings": {
+        "querysource": "querylist",
+        "querylist": [
+            "what is the lowest price of shoes"
+        ],
+        "maxfollowup": 5,
+        "followuptypes": ["app"]
+    }
+}
+```
+
 #### Save chart images to file
 
 ```json

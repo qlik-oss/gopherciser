@@ -71,6 +71,7 @@ type (
 		SaveImages        bool                   `json:"saveimages" displayname:"Save images" doc-key:"askhubadvisor.saveimages"`
 		SaveImageFile     session.SyncedTemplate `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
 		ThinkTimeSettings *ThinkTimeSettings     `json:"thinktime,omitempty" displayname:"Think time settings" doc-key:"askhubadvisor.thinktime"`
+		FollowupTypes     []followupType         `json:"followuptypes,omitempty" displayname:"Followup query types" doc-key:"askhubadvisor.followuptypes"`
 	}
 
 	WeightedQueryCore struct {
@@ -93,6 +94,10 @@ type (
 		saveImageFile session.SyncedTemplate
 		query         *hubAdvisorQuery
 		response      *hubAdvisorResponse
+	}
+	followupQuery struct {
+		typ   followupType
+		query *hubAdvisorQuery
 	}
 )
 
@@ -156,6 +161,62 @@ type (
 		URL            string `json:"url,omitempty"`
 	}
 )
+
+const (
+	infoTypeMeasures       = "measures"
+	infoTypeDimensions     = "dimensions"
+	infoTypeApps           = "apps"
+	infoTypeRecomendations = "recommendations"
+)
+
+type followupType int
+
+var followupTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"recommendation": int(followupRecommendation),
+	"measure":        int(followupMeasure),
+	"app":            int(followupApp),
+	"dimension":      int(followupDimension),
+	"sentence":       int(followupSentence),
+})
+
+const (
+	followupApp followupType = iota
+	followupRecommendation
+	followupMeasure
+	followupDimension
+	followupSentence
+)
+
+// implements Enum interface compiler check
+var _ Enum = followupType(0)
+var _ Enum = (*followupType)(nil)
+
+// GetEnumMap implements Enum interface
+func (value followupType) GetEnumMap() *enummap.EnumMap {
+	return followupTypeEnumMap
+}
+
+func (value *followupType) UnmarshalJSON(data []byte) error {
+	ftInt, err := value.GetEnumMap().UnMarshal(data)
+
+	if err != nil {
+		return errors.Wrapf(err, "followup type has to be one of %v", value.GetEnumMap().Keys())
+	}
+	*value = followupType(ftInt)
+	return nil
+}
+
+func (value followupType) MarshalJSON() ([]byte, error) {
+	str, err := value.GetEnumMap().String(int(value))
+	if err != nil {
+		return nil, errors.Errorf("unknown followup type<%d>", value)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
+func (value followupType) String() string {
+	return value.GetEnumMap().StringDefault(int(value), "UNDEFINED")
+}
 
 func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 	err := json.Unmarshal(bytes, &settings.AskHubAdvisorSettingsCore)
@@ -234,6 +295,11 @@ func (settings AskHubAdvisorSettings) Validate() ([]string, error) {
 		if q.Weight < 0 {
 			return nil, errors.New("negative weight")
 		}
+	}
+
+	if settings.FollowupTypes != nil && len(settings.FollowupTypes) == 0 {
+		return nil, errors.New(
+			"empty followuptypes implies no followups, please set maxfollowup to 0 for this behaviuor")
 	}
 
 	return nil, nil
@@ -523,7 +589,7 @@ func unmarshalRandomInfoValue(randomizer helpers.Randomizer, infoValues []json.R
 	return nil
 }
 
-func followupQuery(sessionState *session.State, actionState *action.State, res *responseType, convContext conversationContext, appToPick string, language language) *hubAdvisorQuery {
+func createFollowupQuery(sessionState *session.State, actionState *action.State, res *responseType, convContext conversationContext, appToPick string, language language) *followupQuery {
 	if res.FollowupSentence == "" {
 		return nil
 	}
@@ -531,15 +597,18 @@ func followupQuery(sessionState *session.State, actionState *action.State, res *
 
 	// if current app context exist and followup sentence contains no variables which need to be substituted
 	if currentApp != nil && currentApp.ID != "" && currentApp.Name != "" && !containVariable(res.FollowupSentence) {
-		return HubAdvisorQuery(res.FollowupSentence, Language(language), ConversationContext(convContext))
+		return &followupQuery{
+			typ:   followupSentence,
+			query: HubAdvisorQuery(res.FollowupSentence, Language(language), ConversationContext(convContext)),
+		}
 	}
 
 	if res.Type != "info" {
 		return nil
 	}
 
-	switch res.InfoType {
-	case "apps":
+	switch infoType := res.InfoType; infoType {
+	case infoTypeApps:
 		// if one or no app, return error an answer to query should already be computed
 		if len(res.InfoValues) < 2 {
 			actionState.AddErrors(errors.Errorf(
@@ -573,21 +642,36 @@ func followupQuery(sessionState *session.State, actionState *action.State, res *
 			}
 
 		}
-		return HubAdvisorQuery(res.FollowupSentence, Language(language), App(pickedApp))
 
-	case "measures", "dimensions":
+		return &followupQuery{
+			typ:   followupApp,
+			query: HubAdvisorQuery(res.FollowupSentence, Language(language), App(pickedApp)),
+		}
+
+	case infoTypeMeasures, infoTypeDimensions:
 		if err := validateApp(currentApp); err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return nil
+		}
+		fq := &followupQuery{}
+		if infoType == infoTypeMeasures {
+			fq.typ = followupMeasure
+		} else {
+			fq.typ = followupDimension
 		}
 		var pickedInfoValue string
 		if err := unmarshalRandomInfoValue(sessionState.Randomizer(), res.InfoValues, &pickedInfoValue); err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return nil
 		}
-		return HubAdvisorQuery(substituteVariable(res.FollowupSentence, pickedInfoValue), Language(language), ConversationContext(convContext))
+		fq.query = HubAdvisorQuery(
+			substituteVariable(res.FollowupSentence, pickedInfoValue),
+			Language(language),
+			ConversationContext(convContext),
+		)
+		return fq
 
-	case "recommendations":
+	case infoTypeRecomendations:
 		if err := validateApp(currentApp); err != nil {
 			actionState.AddErrors(err)
 			return nil
@@ -605,12 +689,15 @@ func followupQuery(sessionState *session.State, actionState *action.State, res *
 			actionState.AddErrors(errors.New("hub advisor followup recommendation has no name"))
 			return nil
 		}
-		return HubAdvisorQuery(
-			substituteVariable(res.FollowupSentence, pickedRecommendation.Name),
-			SelectedRecommendation(pickedRecommendation),
-			Language(language),
-			ConversationContext(convContext),
-		)
+		return &followupQuery{
+			typ: followupRecommendation,
+			query: HubAdvisorQuery(
+				substituteVariable(res.FollowupSentence, pickedRecommendation.Name),
+				SelectedRecommendation(pickedRecommendation),
+				Language(language),
+				ConversationContext(convContext),
+			),
+		}
 
 	default:
 		sessionState.LogEntry.LogDebugf(`unsupported hubadvisor infoType<%s>`, res.InfoType)
@@ -618,12 +705,12 @@ func followupQuery(sessionState *session.State, actionState *action.State, res *
 	}
 }
 
-// followupQueries extract new queries from a hubAdvisorResponse
-func followupQueries(sessionState *session.State, actionState *action.State, hubAdvisorResponse *hubAdvisorResponse, appToPick string, language language) []*hubAdvisorQuery {
-	followupQueries := make([]*hubAdvisorQuery, 0, len(hubAdvisorResponse.ConversationalResponse.Responses))
+// createFollowupQueries extract new queries from a hubAdvisorResponse
+func createFollowupQueries(sessionState *session.State, actionState *action.State, hubAdvisorResponse *hubAdvisorResponse, appToPick string, language language) []*followupQuery {
+	followupQueries := make([]*followupQuery, 0, len(hubAdvisorResponse.ConversationalResponse.Responses))
 	for _, res := range hubAdvisorResponse.ConversationalResponse.Responses {
 		result := &res
-		q := followupQuery(sessionState, actionState, result, hubAdvisorResponse.ConversationalResponse.ConversationContext, appToPick, language)
+		q := createFollowupQuery(sessionState, actionState, result, hubAdvisorResponse.ConversationalResponse.ConversationContext, appToPick, language)
 		if q != nil {
 			followupQueries = append(followupQueries, q)
 		}
@@ -648,9 +735,9 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 	settings.askHubAdvisorRec(sessionState, actionState, connection, query, label, 0)
 }
 
-// askHubAdvisorReq perform hubAdvisorQuery and asks followup queries in
-// response recursively until no followup queries in respinse or until
-// configured recursion depth is reached
+// askHubAdvisorRec performs a hubAdvisorQuery and asks followup queries created
+// using the response. This is done recursively until there is no followup
+// queries in response or until configured recursion depth is reached.
 func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.State, actionState *action.State,
 	connection *connection.ConnectionSettings, query *hubAdvisorQuery, label string, depth uint) {
 	if query == nil || depth == settings.FollowupDepth+1 {
@@ -695,9 +782,27 @@ func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.Sta
 		return
 	}
 
-	for _, query := range followupQueries(sessionState, actionState, request.response, settings.App, settings.Lang) {
-		settings.askHubAdvisorRec(sessionState, actionState, connection, query, label, depth+1)
+	followupQueries := createFollowupQueries(sessionState, actionState, request.response, settings.App, settings.Lang)
+	followupQueries = followupsOfType(settings.FollowupTypes, followupQueries)
+	for _, fq := range followupQueries {
+		sessionState.LogEntry.LogDebugf("has followup<%s> of type<%s>", fq.query.Text, fq.typ)
+		settings.askHubAdvisorRec(sessionState, actionState, connection, fq.query, label, depth+1)
 	}
+}
+
+func followupsOfType(types []followupType, followups []*followupQuery) []*followupQuery {
+	if types == nil {
+		return append(make([]*followupQuery, 0, len(followups)), followups...)
+	}
+	filtered := []*followupQuery{}
+	for _, typ := range types {
+		for _, f := range followups {
+			if f.typ == typ {
+				filtered = append(filtered, f)
+			}
+		}
+	}
+	return filtered
 }
 
 func thinktime(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, thinkTimeSettings *ThinkTimeSettings, label string) {
