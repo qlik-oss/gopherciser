@@ -321,6 +321,11 @@ func (obj *Object) RegisterCloseFunc(f func() error) {
 	obj.closefuncs = append(obj.closefuncs, f)
 }
 
+// HasDims returns true if object has at least one dimension
+func (obj *Object) HasDims() bool {
+	return obj.ListObject() != nil || (obj.HyperCube() != nil && len(obj.HyperCube().DimensionInfo) > 0)
+}
+
 // NewObject container for enigma object
 func NewObject(handle int, t ObjectType, id string, enigmaobject interface{}) *Object {
 	obj := &Object{

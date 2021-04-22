@@ -45,7 +45,6 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	getPrivilegesAsync(sessionState, actionState, host)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil)
 	fillArtifactsFromStreamsAsync(sessionState, actionState, host)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
@@ -72,6 +71,21 @@ func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action
 }
 
 func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *action.State, host string) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil {
+			return
+		}
+		var stream structs.Stream
+		if err := jsonit.Unmarshal(req.ResponseBody, &stream); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+	})
+
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
