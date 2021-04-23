@@ -292,8 +292,8 @@ func (settings AskHubAdvisorSettings) Validate() ([]string, error) {
 		if q.Query == "" {
 			return nil, errors.New("empty query")
 		}
-		if q.Weight < 0 {
-			return nil, errors.New("negative weight")
+		if q.Weight <= 0 {
+			return nil, errors.New("weight must be a positive number")
 		}
 	}
 
