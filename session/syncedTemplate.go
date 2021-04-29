@@ -161,6 +161,16 @@ func parseToInt64(val interface{}) (int64, error) {
 		return int64(val), nil
 	case int64:
 		return val, nil
+	case uint:
+		return int64(val), nil
+	case uint8:
+		return int64(val), nil
+	case uint16:
+		return int64(val), nil
+	case uint32:
+		return int64(val), nil
+	case uint64:
+		return int64(val), nil
 	default:
 		return 0, errors.Errorf("type<%T> not parseable to int64", val)
 	}
