@@ -15,13 +15,13 @@ import (
 
 type (
 	HookCore struct {
-		Url         string                            `json:"url"`
-		Method      string                            `json:"method"`
+		Url         string                      `json:"url"`
+		Method      string                      `json:"method"`
 		Payload     synced.Template             `json:"payload"`
-		RespCodes   []int                             `json:"respcodes"`
-		ContentType string                            `json:"contenttype"`
-		Extractors  map[string]helpers.DataPath       `json:"extractors"`
-		Headers     map[string]*synced.Template `json:"headers"`
+		RespCodes   []int                       `json:"respcodes"`
+		ContentType string                      `json:"contenttype"`
+		Extractors  map[string]helpers.DataPath `json:"extractors"`
+		Headers     synced.TemplateMap          `json:"headers"`
 		// TODO StopOnError bool                   `json:"stoponerror"`
 		// TODO response data extract and validation rules on response
 	}

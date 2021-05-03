@@ -88,31 +88,3 @@ func testParam(t *testing.T, tmpl *Template, expected string) {
 		t.Errorf("unexpected template result<%s> expected<%s>", result, expected)
 	}
 }
-
-type headerStruct struct {
-	Params map[string]*Template
-}
-
-func TestMap(t *testing.T) {
-	_ = os.Setenv("test-env", "val2")
-	var myStruct headerStruct
-	jsn := `{
-		"Params" : {
-			"param1" : "val1 is {{.Val1}} and val2 is {{env \"test-env\"}}",
-			"param2" : "{{ add 1 \"3\" }}",
-			"param3" : "{{ join .Val2 \",\" }},elem4",
-			"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}"		
-		}
-	}`
-
-	if err := jsonit.Unmarshal([]byte(jsn), &myStruct); err != nil {
-		t.Fatal("failed to unmarshal struct:", err)
-	}
-
-	t.Logf("%+v", myStruct)
-
-	testParam(t, myStruct.Params["param1"], "val1 is val1 and val2 is val2")
-	testParam(t, myStruct.Params["param2"], "4")
-	testParam(t, myStruct.Params["param3"], "elem1,elem2,elem3,elem4")
-	testParam(t, myStruct.Params["param4"], "elem1,elem2")
-}
