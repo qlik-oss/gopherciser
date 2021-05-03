@@ -1,4 +1,4 @@
-package syncedtemplate
+package synced
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ import (
 )
 
 type (
-	// Synced Template used for creating templates parsed once
-	SyncedTemplate struct {
+	// Template used for creating synced templates parsed once
+	Template struct {
 		// t text including parameters
 		t string
 		// s sync object
@@ -28,7 +28,7 @@ type (
 	}
 )
 
-func (syn SyncedTemplate) TreatAs() string {
+func (syn Template) TreatAs() string {
 	return "string"
 }
 
@@ -52,9 +52,9 @@ func timestamp() string {
 		t.Hour(), t.Minute(), t.Second())
 }
 
-// New parses string and creates new instance of SyncedTemplate
-func New(t string) (*SyncedTemplate, error) {
-	syn := SyncedTemplate{t: t, s: &sync.Once{}}
+// New parses string and creates new instance of Template
+func New(t string) (*Template, error) {
+	syn := Template{t: t, s: &sync.Once{}}
 	if err := syn.parse(); err != nil {
 		return nil, errors.Wrapf(err, "failed to create sync template from string<%s>", t)
 	}
@@ -62,14 +62,14 @@ func New(t string) (*SyncedTemplate, error) {
 }
 
 // UnmarshalJSON un-marshal from json string
-func (syn *SyncedTemplate) UnmarshalJSON(arg []byte) error {
+func (syn *Template) UnmarshalJSON(arg []byte) error {
 
 	var s string
 	if err := jsonit.Unmarshal(arg, &s); err != nil {
 		return errors.Wrap(err, "failed un-marshaling synced template to string")
 	}
 
-	*syn = SyncedTemplate{
+	*syn = Template{
 		t: s,
 		s: &sync.Once{},
 	}
@@ -78,12 +78,12 @@ func (syn *SyncedTemplate) UnmarshalJSON(arg []byte) error {
 }
 
 // MarshalJSON marshal template to json string
-func (syn SyncedTemplate) MarshalJSON() ([]byte, error) {
+func (syn Template) MarshalJSON() ([]byte, error) {
 	return jsonit.Marshal(syn.t)
 }
 
 // Parse template
-func (syn *SyncedTemplate) parse() error {
+func (syn *Template) parse() error {
 	if syn == nil {
 		return errors.New("template is nil")
 	}
@@ -99,7 +99,7 @@ func (syn *SyncedTemplate) parse() error {
 }
 
 // Execute template
-func (syn *SyncedTemplate) Execute(writer io.Writer, data interface{}) error {
+func (syn *Template) Execute(writer io.Writer, data interface{}) error {
 	if syn == nil {
 		return errors.New("template is nil")
 	}
@@ -113,7 +113,7 @@ func (syn *SyncedTemplate) Execute(writer io.Writer, data interface{}) error {
 }
 
 // String return text pattern
-func (syn *SyncedTemplate) String() string {
+func (syn *Template) String() string {
 	if syn == nil {
 		return ""
 	}
@@ -121,7 +121,7 @@ func (syn *SyncedTemplate) String() string {
 }
 
 // ExecuteString execute template with data
-func (input *SyncedTemplate) ExecuteString(data interface{}) (string, error) {
+func (input *Template) ExecuteString(data interface{}) (string, error) {
 	buf := helpers.GlobalBufferPool.Get()
 	defer helpers.GlobalBufferPool.Put(buf)
 	if err := input.Execute(buf, data); err != nil {

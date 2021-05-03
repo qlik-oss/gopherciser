@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/qlik-oss/gopherciser/scenario"
-	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 func TestUnmarshalApplyBookmark(t *testing.T) {
-	title, err := session.NewSyncedTemplate("hasTitle")
+	title, err := synced.New("hasTitle")
 	if err != nil {
 		t.Fatal(err)
 	}

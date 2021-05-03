@@ -10,6 +10,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -166,9 +167,9 @@ func TestState_SessionVariables(t *testing.T) {
 	}
 
 	for i, str := range standardStrings {
-		nameTemplate, err := NewSyncedTemplate(str)
+		nameTemplate, err := synced.New(str)
 		if err != nil {
-			t.Errorf("NewSyncedTemplate failed for str<%s>, err:%v", str, err)
+			t.Errorf("synced.New failed for str<%s>, err:%v", str, err)
 			continue
 		}
 		result, err := state.ReplaceSessionVariables(nameTemplate)
@@ -182,8 +183,8 @@ func TestState_SessionVariables(t *testing.T) {
 	}
 
 	localString := "mystring"
-	if nameTemplate, err := NewSyncedTemplate("{{.Local}}"); err != nil {
-		t.Errorf("NewSyncedTemplate failed for str<mystring>, err:%v", err)
+	if nameTemplate, err := synced.New("{{.Local}}"); err != nil {
+		t.Errorf("synced.New failed for str<mystring>, err:%v", err)
 	} else {
 		result, err := state.ReplaceSessionVariablesWithLocalData(nameTemplate, localString)
 		if err != nil {
@@ -196,8 +197,8 @@ func TestState_SessionVariables(t *testing.T) {
 	data := struct {
 		Filename string
 	}{Filename: localString}
-	if nameTemplate, err := NewSyncedTemplate("{{.Local.Filename}}"); err != nil {
-		t.Errorf("NewSyncedTemplate failed for str<mystring>, err:%v", err)
+	if nameTemplate, err := synced.New("{{.Local.Filename}}"); err != nil {
+		t.Errorf("synced.New failed for str<mystring>, err:%v", err)
 	} else {
 		result, err := state.ReplaceSessionVariablesWithLocalData(nameTemplate, data)
 		if err != nil {

@@ -1,4 +1,4 @@
-package syncedtemplate
+package synced
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ var (
 func TestEmptyTemplate(t *testing.T) {
 
 	myStruct := struct {
-		Param1 SyncedTemplate `json:"param1"`
+		Param1 Template `json:"param1"`
 	}{}
 
 	jsn, err := jsonit.Marshal(myStruct)
@@ -42,7 +42,7 @@ func TestEmptyTemplate(t *testing.T) {
 	}
 
 	// test without parse
-	myStruct.Param1 = SyncedTemplate{}
+	myStruct.Param1 = Template{}
 	if err = myStruct.Param1.Execute(buf, data); err != nil {
 		t.Error("failed executing empty synced template:", err)
 	}
@@ -50,10 +50,10 @@ func TestEmptyTemplate(t *testing.T) {
 
 func TestTemplate(t *testing.T) {
 	var myStruct struct {
-		Param1 SyncedTemplate `json:"param1"`
-		Param2 SyncedTemplate `json:"param2"`
-		Param3 SyncedTemplate `json:"param3"`
-		Param4 SyncedTemplate `json:"param4"`
+		Param1 Template `json:"param1"`
+		Param2 Template `json:"param2"`
+		Param3 Template `json:"param3"`
+		Param4 Template `json:"param4"`
 	}
 
 	_ = os.Setenv("test-env", "val2")
@@ -75,7 +75,7 @@ func TestTemplate(t *testing.T) {
 	testParam(t, &myStruct.Param4, "elem1,elem2")
 }
 
-func testParam(t *testing.T, tmpl *SyncedTemplate, expected string) {
+func testParam(t *testing.T, tmpl *Template, expected string) {
 	t.Helper()
 
 	buf := bytes.NewBuffer(nil)
@@ -90,7 +90,7 @@ func testParam(t *testing.T, tmpl *SyncedTemplate, expected string) {
 }
 
 type headerStruct struct {
-	Params map[string]*SyncedTemplate
+	Params map[string]*Template
 }
 
 func TestMap(t *testing.T) {

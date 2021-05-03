@@ -7,14 +7,14 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/syncedtemplate"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
 	//SetSenseVariableSettings
 	SetSenseVariableSettings struct {
-		VariableName  string                        `json:"name" displayname:"name of the variable" doc-key:"setsensevariable.name"`
-		VariableValue syncedtemplate.SyncedTemplate `json:"value" displayname:"value of the variable" doc-key:"setsensevariable.value"`
+		VariableName  string                `json:"name" displayname:"name of the variable" doc-key:"setsensevariable.name"`
+		VariableValue synced.Template `json:"value" displayname:"value of the variable" doc-key:"setsensevariable.value"`
 	}
 )
 

@@ -21,7 +21,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
-	"github.com/qlik-oss/gopherciser/syncedtemplate"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 const hubAdvisorEndpoint = "api/v1/sentences"
@@ -63,16 +63,16 @@ var askHubAdvisorDefaultThinktimeSettings = ThinkTimeSettings{
 // AskHubAdvisor-action settings
 type (
 	AskHubAdvisorSettingsCore struct {
-		QuerySource       AdvisorQuerySourceEnum        `json:"querysource" displayname:"Query source" doc-key:"askhubadvisor.querysource"`
-		QueryList         []WeightedQuery               `json:"querylist" displayname:"List of queries" doc-key:"askhubadvisor.querylist"`
-		Lang              language                      `json:"lang" displayname:"Query language" doc-key:"askhubadvisor.lang"`
-		FollowupDepth     uint                          `json:"maxfollowup" displayname:"Max depth of followup queries performed" doc-key:"askhubadvisor.maxfollowup"`
-		FileName          string                        `json:"file" displayname:"File with one query per line" doc-key:"askhubadvisor.file" displayelement:"file"`
-		App               string                        `json:"app" displayname:"App name (optional)" doc-key:"askhubadvisor.app"`
-		SaveImages        bool                          `json:"saveimages" displayname:"Save images" doc-key:"askhubadvisor.saveimages"`
-		SaveImageFile     syncedtemplate.SyncedTemplate `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
-		ThinkTimeSettings *ThinkTimeSettings            `json:"thinktime,omitempty" displayname:"Think time settings" doc-key:"askhubadvisor.thinktime"`
-		FollowupTypes     []followupType                `json:"followuptypes,omitempty" displayname:"Followup query types" doc-key:"askhubadvisor.followuptypes"`
+		QuerySource       AdvisorQuerySourceEnum `json:"querysource" displayname:"Query source" doc-key:"askhubadvisor.querysource"`
+		QueryList         []WeightedQuery        `json:"querylist" displayname:"List of queries" doc-key:"askhubadvisor.querylist"`
+		Lang              language               `json:"lang" displayname:"Query language" doc-key:"askhubadvisor.lang"`
+		FollowupDepth     uint                   `json:"maxfollowup" displayname:"Max depth of followup queries performed" doc-key:"askhubadvisor.maxfollowup"`
+		FileName          string                 `json:"file" displayname:"File with one query per line" doc-key:"askhubadvisor.file" displayelement:"file"`
+		App               string                 `json:"app" displayname:"App name (optional)" doc-key:"askhubadvisor.app"`
+		SaveImages        bool                   `json:"saveimages" displayname:"Save images" doc-key:"askhubadvisor.saveimages"`
+		SaveImageFile     synced.Template  `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
+		ThinkTimeSettings *ThinkTimeSettings     `json:"thinktime,omitempty" displayname:"Think time settings" doc-key:"askhubadvisor.thinktime"`
+		FollowupTypes     []followupType         `json:"followuptypes,omitempty" displayname:"Followup query types" doc-key:"askhubadvisor.followuptypes"`
 	}
 
 	WeightedQueryCore struct {
@@ -92,7 +92,7 @@ type (
 	hubAdvisorRequestSettings struct {
 		host          string
 		saveImages    bool
-		saveImageFile syncedtemplate.SyncedTemplate
+		saveImageFile synced.Template
 		query         *hubAdvisorQuery
 		response      *hubAdvisorResponse
 	}
@@ -374,15 +374,15 @@ type localData struct {
 
 const defaultFileNameTemplateString = "{{.Local.Query}}--app-{{.Local.AppName}}--user-{{.UserName}}--thread-{{.Thread}}--session-{{.Session}}"
 
-var defaultFileNameTemplate = func() *syncedtemplate.SyncedTemplate {
-	aTemplate, err := syncedtemplate.New(defaultFileNameTemplateString)
+var defaultFileNameTemplate = func() *synced.Template {
+	aTemplate, err := synced.New(defaultFileNameTemplateString)
 	if err != nil {
 		panic(err)
 	}
 	return aTemplate
 }()
 
-func imageNameFromTemplate(sessionState *session.State, aTemplate *syncedtemplate.SyncedTemplate, templateName string, data *localData) (string, error) {
+func imageNameFromTemplate(sessionState *session.State, aTemplate *synced.Template, templateName string, data *localData) (string, error) {
 	imageName, err := sessionState.ReplaceSessionVariablesWithLocalData(aTemplate, &data)
 	if err != nil {
 		return "", errors.Wrapf(err, `failed to create filename image name using %s template<%s>`, templateName, aTemplate)

@@ -18,13 +18,13 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/structs"
-	"github.com/qlik-oss/gopherciser/syncedtemplate"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
 	//GenerateOdagSettings settings for GenerateOdag
 	GenerateOdagSettings struct {
-		Name syncedtemplate.SyncedTemplate `json:"linkname" displayname:"ODAG link name" doc-key:"generateodag.linkname"`
+		Name synced.Template `json:"linkname" displayname:"ODAG link name" doc-key:"generateodag.linkname"`
 	}
 )
 

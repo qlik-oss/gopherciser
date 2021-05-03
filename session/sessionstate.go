@@ -24,7 +24,7 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/structs"
-	"github.com/qlik-oss/gopherciser/syncedtemplate"
+	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/wsdialer"
 )
@@ -606,7 +606,7 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 }
 
 // ReplaceSessionVariables execute template and replace session variables, e.g. "my app ({{.UserName}})" -> "my app (user_1)"
-func (state *State) ReplaceSessionVariables(input *syncedtemplate.SyncedTemplate) (string, error) {
+func (state *State) ReplaceSessionVariables(input *synced.Template) (string, error) {
 	state.variablesLock.RLock() // Lock variables map while replaceing session variables
 	defer state.variablesLock.RUnlock()
 
@@ -615,7 +615,7 @@ func (state *State) ReplaceSessionVariables(input *syncedtemplate.SyncedTemplate
 
 // ReplaceSessionVariablesWithLocalData execute template and replace session variables, e.g. "my app ({{.UserName}})" -> "my app (user_1)",
 // extra "local" data can be added in addition to the session variables
-func (state *State) ReplaceSessionVariablesWithLocalData(input *syncedtemplate.SyncedTemplate, localData interface{}) (string, error) {
+func (state *State) ReplaceSessionVariablesWithLocalData(input *synced.Template, localData interface{}) (string, error) {
 	if input == nil {
 		return "", nil
 	}

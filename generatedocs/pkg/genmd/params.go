@@ -55,7 +55,7 @@ func handleValue(value reflect.Value, paramDocs map[string][]string, buf *bytes.
 				}
 			}
 			// Template is recursive
-			if value.Type().String() == "session.SyncedTemplate" {
+			if value.Type().String() == "synced.Template" {
 				continue fieldLoop
 			}
 
