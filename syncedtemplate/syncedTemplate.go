@@ -120,8 +120,8 @@ func (syn *SyncedTemplate) String() string {
 	return syn.t
 }
 
-// ReplaceWithoutSessionVariables execute template without session variables - only use if we do not have a session
-func (input *SyncedTemplate) ReplaceWithoutSessionVariables(data interface{}) (string, error) {
+// ExecuteString execute template with data
+func (input *SyncedTemplate) ExecuteString(data interface{}) (string, error) {
 	buf := helpers.GlobalBufferPool.Get()
 	defer helpers.GlobalBufferPool.Put(buf)
 	if err := input.Execute(buf, data); err != nil {

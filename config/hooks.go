@@ -55,7 +55,7 @@ func (hook *Hook) SetDefaults() {
 
 // Execute hook
 func (hook *Hook) Execute(data *hookData) error {
-	payload, err := hook.Payload.ReplaceWithoutSessionVariables(data)
+	payload, err := hook.Payload.ExecuteString(data)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -1019,7 +1019,7 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 		Regression: settings.Regression,
 	})
 
-	filename, err := settings.FileName.ReplaceWithoutSessionVariables(templateData)
+	filename, err := settings.FileName.ExecuteString(templateData)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to expand session variables in filename")
 	}
