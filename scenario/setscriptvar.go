@@ -9,6 +9,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/syncedtemplate"
 )
 
 type (
@@ -16,7 +17,7 @@ type (
 	SetScriptVarSettings struct {
 		Name      string                          `json:"name" doc-key:"setscriptvar.name" displayname:"Name"`
 		Type      session.SessionVariableTypeEnum `json:"type" doc-key:"setscriptvar.type" displayname:"Variable type"`
-		Value     session.SyncedTemplate          `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
+		Value     syncedtemplate.SyncedTemplate   `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
 		Separator string                          `json:"sep" doc-key:"setscriptvar.sep" displayname:"Array separator"`
 	}
 )

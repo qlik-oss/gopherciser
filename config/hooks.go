@@ -10,17 +10,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
-	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/syncedtemplate"
 )
 
 type (
 	HookCore struct {
-		Url         string                      `json:"url"`
-		Method      string                      `json:"method"`
-		Payload     session.SyncedTemplate      `json:"payload"`
-		RespCodes   []int                       `json:"respcodes"`
-		ContentType string                      `json:"contenttype"`
-		Extractors  map[string]helpers.DataPath `json:"extractors"`
+		Url         string                        `json:"url"`
+		Method      string                        `json:"method"`
+		Payload     syncedtemplate.SyncedTemplate `json:"payload"`
+		RespCodes   []int                         `json:"respcodes"`
+		ContentType string                        `json:"contenttype"`
+		Extractors  map[string]helpers.DataPath   `json:"extractors"`
 		// TODO StopOnError bool                   `json:"stoponerror"`
 		// TODO Headers
 		// TODO parse data from response and save to data structure on hooks

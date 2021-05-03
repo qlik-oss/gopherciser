@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/syncedtemplate"
 )
 
 type (
@@ -32,14 +33,14 @@ type (
 		// The entries for "alg" and "typ" are added automatically to the header.
 		// E.g. to add a key id header, "kid" add the following string
 		// "{\"kid\":\"myKeyId\"}"
-		JwtHeader session.SyncedTemplate `json:"jwtheader,omitempty" doc-key:"config.connectionSettings.jwtsettings.jwtheader"`
+		JwtHeader syncedtemplate.SyncedTemplate `json:"jwtheader,omitempty" doc-key:"config.connectionSettings.jwtsettings.jwtheader"`
 		// Claims JWT claims as escaped json string. E.g. for an on prem JWT auth (with user and directory set as keys in QMC):
 		// "{\"user\": \"{{.UserName}}\",\"directory\": \"{{.Directory}}\"}"
 		// to add "iat":
 		// "{\"iat\":{{now.Unix}}}"
 		// or to add "exp" with 5 hours expiration
 		// "{\"exp\":{{(now.Add 18000000000000).Unix}}}"
-		Claims session.SyncedTemplate `json:"claims,omitempty" doc-key:"config.connectionSettings.jwtsettings.claims"`
+		Claims syncedtemplate.SyncedTemplate `json:"claims,omitempty" doc-key:"config.connectionSettings.jwtsettings.claims"`
 
 		// Alg is the signing method to be used for the JWT. Defaults to RS512 if omitted
 		Alg string `json:"alg,omitempty" doc-key:"config.connectionSettings.jwtsettings.alg"`

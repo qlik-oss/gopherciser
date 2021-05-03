@@ -23,6 +23,7 @@ import (
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/syncedtemplate"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/version"
 	"github.com/shiena/ansicolor"
@@ -69,13 +70,13 @@ type (
 
 	// LogSettings settings for logging
 	LogSettings struct {
-		Traffic        bool                   `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
-		Debug          bool                   `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
-		TrafficMetrics bool                   `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
-		Regression     bool                   `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
-		FileName       session.SyncedTemplate `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
-		Format         LogFormatType          `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
-		Summary        SummaryType            `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		Traffic        bool                          `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
+		Debug          bool                          `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
+		TrafficMetrics bool                          `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression     bool                          `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
+		FileName       syncedtemplate.SyncedTemplate `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
+		Format         LogFormatType                 `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
+		Summary        SummaryType                   `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
 	}
 
 	// OutputsSettings settings for produced outputs (if any)
@@ -295,7 +296,7 @@ func NewExampleConfig() (*Config, error) {
 	selectAction.Type = scenario.ActionSelect
 	selectAction.Label = "select 1-10 values in object uvxyz"
 
-	logFileName, err := session.NewSyncedTemplate("scenarioresult.tsv")
+	logFileName, err := syncedtemplate.NewSyncedTemplate("scenarioresult.tsv")
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +359,7 @@ func NewExampleConfig() (*Config, error) {
 // NewEmptyConfig creates an empty config
 func NewEmptyConfig() (*Config, error) {
 
-	logFileName, err := session.NewSyncedTemplate("scenarioresult.tsv")
+	logFileName, err := syncedtemplate.NewSyncedTemplate("scenarioresult.tsv")
 	if err != nil {
 		return nil, err
 	}

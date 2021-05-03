@@ -11,12 +11,13 @@ import (
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/structs"
+	"github.com/qlik-oss/gopherciser/syncedtemplate"
 )
 
 type (
 	//DeleteOdagSettings settings for DeleteOdag
 	DeleteOdagSettings struct {
-		Name session.SyncedTemplate `json:"linkname" displayname:"ODAG link name" doc-key:"deleteodag.linkname"`
+		Name syncedtemplate.SyncedTemplate `json:"linkname" displayname:"ODAG link name" doc-key:"deleteodag.linkname"`
 	}
 )
 
