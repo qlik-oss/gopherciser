@@ -53,7 +53,7 @@ func (hook *Hook) SetDefaults() {
 }
 
 // Execute hook
-func (hook *Hook) Execute(data *hookData) error {
+func (hook *Hook) Execute(ctx context.Context, data *hookData) error {
 	payload, err := hook.Payload.ExecuteString(data)
 	if err != nil {
 		return errors.WithStack(err)
@@ -72,10 +72,6 @@ func (hook *Hook) Execute(data *hookData) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	// TODO use real context
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, hook.Url, buf)
 	if err != nil {

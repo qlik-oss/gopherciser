@@ -70,13 +70,13 @@ type (
 
 	// LogSettings settings for logging
 	LogSettings struct {
-		Traffic        bool                  `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
-		Debug          bool                  `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
-		TrafficMetrics bool                  `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
-		Regression     bool                  `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
+		Traffic        bool            `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
+		Debug          bool            `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
+		TrafficMetrics bool            `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression     bool            `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
 		FileName       synced.Template `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
-		Format         LogFormatType         `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
-		Summary        SummaryType           `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		Format         LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
+		Summary        SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
 	}
 
 	// OutputsSettings settings for produced outputs (if any)
@@ -618,19 +618,25 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log test summary after test is done
 	defer summary(log, summaryType, time.Now(), &cfg.Counters)
 
+	cfg.Hooks.data.Vars = make(map[string]interface{})
 	// Execute pre execution hook
 	if cfg.Hooks.Pre != nil {
-		cfg.Hooks.data.Vars = make(map[string]interface{})
-		if err := cfg.Hooks.Pre.Execute(&cfg.Hooks.data); err != nil { // TODO feed data with settings
+		hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
+		defer cancel()
+		if err := cfg.Hooks.Pre.Execute(hookCtx, &cfg.Hooks.data); err != nil { // TODO feed data with settings
 			return err
 		}
 	}
 
 	if cfg.Hooks.Post != nil {
-		// Execute post execution hook
-		if err := cfg.Hooks.Post.Execute(&cfg.Hooks.data); err != nil { // TODO feed data from execution
-			return err
-		}
+		defer func() {
+			// Execute post execution hook
+			hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
+			defer cancel()
+			if err := cfg.Hooks.Post.Execute(hookCtx, &cfg.Hooks.data); err != nil { // TODO feed data from execution
+				entry.LogError(err)
+			}
+		}()
 	}
 
 	execErr := cfg.Scheduler.Execute(
