@@ -204,7 +204,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	fileName := cfg.Settings.LogSettings.FileName.String()
 	ext := filepath.Ext(fileName)
 	appStructureLogPath := fmt.Sprintf("%s-appstructure%s", strings.TrimSuffix(fileName, ext), ext)
-	stmpl, err := syncedtemplate.NewSyncedTemplate(appStructureLogPath)
+	stmpl, err := syncedtemplate.New(appStructureLogPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}

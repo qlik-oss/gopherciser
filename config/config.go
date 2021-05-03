@@ -296,7 +296,7 @@ func NewExampleConfig() (*Config, error) {
 	selectAction.Type = scenario.ActionSelect
 	selectAction.Label = "select 1-10 values in object uvxyz"
 
-	logFileName, err := syncedtemplate.NewSyncedTemplate("scenarioresult.tsv")
+	logFileName, err := syncedtemplate.New("scenarioresult.tsv")
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func NewExampleConfig() (*Config, error) {
 // NewEmptyConfig creates an empty config
 func NewEmptyConfig() (*Config, error) {
 
-	logFileName, err := syncedtemplate.NewSyncedTemplate("scenarioresult.tsv")
+	logFileName, err := syncedtemplate.New("scenarioresult.tsv")
 	if err != nil {
 		return nil, err
 	}

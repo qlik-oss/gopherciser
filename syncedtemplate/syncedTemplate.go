@@ -52,8 +52,8 @@ func timestamp() string {
 		t.Hour(), t.Minute(), t.Second())
 }
 
-// NewSyncedTemplate parses string and creates new instance of SyncedTemplate
-func NewSyncedTemplate(t string) (*SyncedTemplate, error) {
+// New parses string and creates new instance of SyncedTemplate
+func New(t string) (*SyncedTemplate, error) {
 	syn := SyncedTemplate{t: t, s: &sync.Once{}}
 	if err := syn.parse(); err != nil {
 		return nil, errors.Wrapf(err, "failed to create sync template from string<%s>", t)

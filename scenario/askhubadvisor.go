@@ -375,7 +375,7 @@ type localData struct {
 const defaultFileNameTemplateString = "{{.Local.Query}}--app-{{.Local.AppName}}--user-{{.UserName}}--thread-{{.Thread}}--session-{{.Session}}"
 
 var defaultFileNameTemplate = func() *syncedtemplate.SyncedTemplate {
-	aTemplate, err := syncedtemplate.NewSyncedTemplate(defaultFileNameTemplateString)
+	aTemplate, err := syncedtemplate.New(defaultFileNameTemplateString)
 	if err != nil {
 		panic(err)
 	}

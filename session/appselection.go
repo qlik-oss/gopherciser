@@ -115,7 +115,7 @@ func (appSelection *AppSelection) UnmarshalJSON(arg []byte) error {
 
 // NewAppSelection creates new instance of AppSelection
 func NewAppSelection(appMode AppSelectionModeEnum, app string, list []string) (*AppSelection, error) {
-	tmpl, err := syncedtemplate.NewSyncedTemplate(app)
+	tmpl, err := syncedtemplate.New(app)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
