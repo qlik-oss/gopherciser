@@ -59,6 +59,11 @@ func (hook *Hook) Execute(data *hookData) error {
 		return errors.WithStack(err)
 	}
 
+	headers, err := hook.Headers.Execute(data)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	fmt.Println("SEND:", payload)
 
 	buf := helpers.GlobalBufferPool.Get()
@@ -77,10 +82,14 @@ func (hook *Hook) Execute(data *hookData) error {
 		return errors.WithStack(err)
 	}
 	req.Header.Set("Content-Type", hook.ContentType)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 
 	allowUntrusted := true // TODO set from config
 
 	// TODO add traffic logging
+	// TODO try avoid creating client here
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error { return nil },
 		Transport: &http.Transport{
