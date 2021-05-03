@@ -90,11 +90,21 @@ type (
 		OutputsSettings OutputsSettings `json:"outputs,omitempty" doc-key:"config.settings.outputs"`
 	}
 
+	hookData struct {
+		Vars map[string]interface{}
+	}
+
 	cfgCore struct {
 		Scenario           []scenario.Action             `json:"scenario"`
 		Settings           Settings                      `json:"settings"`
 		LoginSettings      users.UserGenerator           `json:"loginSettings"`
 		ConnectionSettings connection.ConnectionSettings `json:"connectionSettings"`
+		Hooks              struct {
+			Pre  *Hook `json:"preexecute"`
+			Post *Hook `json:"postexecute"`
+
+			data hookData
+		} `json:"hooks"`
 	}
 
 	// Config setup and scenario to execute
@@ -607,9 +617,25 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log test summary after test is done
 	defer summary(log, summaryType, time.Now(), &cfg.Counters)
 
+	// Execute pre execution hook
+	if cfg.Hooks.Pre != nil {
+		cfg.Hooks.data.Vars = make(map[string]interface{})
+		if err := cfg.Hooks.Pre.Execute(&cfg.Hooks.data); err != nil { // TODO feed data with settings
+			return err
+		}
+	}
+
+	if cfg.Hooks.Post != nil {
+		// Execute post execution hook
+		if err := cfg.Hooks.Post.Execute(&cfg.Hooks.data); err != nil { // TODO feed data from execution
+			return err
+		}
+	}
+
 	execErr := cfg.Scheduler.Execute(
 		ctx, log, timeout, cfg.Scenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters,
 	)
+
 	if execErr != nil {
 		return errors.WithStack(execErr)
 	}

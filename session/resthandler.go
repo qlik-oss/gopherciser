@@ -188,7 +188,7 @@ func (handler *RestHandler) DecPending(request *RestRequest) {
 
 // DefaultClient creates client instance with default client settings
 func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
-	// todo client values are currently from http.DefaultClient, should choose better values depending on
+	// todo client values are currently from http.DefaultTransport, should choose better values depending on
 	// configured timeout etc
 
 	client := &http.Client{

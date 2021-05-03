@@ -259,7 +259,9 @@ func execute() error {
 	}{strings.Split(filepath.Base(cfgFile), ".")[0]}
 
 	// === start execution ===
-	return cfg.Execute(ctx, templateData)
+	executionErr := cfg.Execute(ctx, templateData)
+
+	return executionErr
 }
 
 func ReadObjectDefinitions() error {
