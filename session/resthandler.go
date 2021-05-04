@@ -18,11 +18,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/buildmetrics"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -85,6 +84,11 @@ type (
 		// NoVirtualProxy disables the automatic adding of virtualproxy to request when a virtualproxy is defined.
 		// This is useful e.g. when sending requests towards non sense environments as part of custom actions.
 		NoVirtualProxy bool
+	}
+
+	MinimalTrafficLogger interface {
+		Sent(message []byte)
+		Received(message []byte)
 	}
 )
 
@@ -650,23 +654,11 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 		logErrors(errors.Wrap(err, "failed to update sent request metrics"))
 	}
 
-	// traffic logging turned on?
-	logTraffic := transport.LogEntry.ShouldLogTraffic()
-
-	if logTraffic && transport.trafficLogger != nil {
-		body := true
-		if isApp || reqSize > constant.MaxBodySize {
-			body = false // avoid logging large bodies
-		}
-		if trafficOut, err := httputil.DumpRequestOut(req, body); err == nil {
-			transport.trafficLogger.Sent(append([]byte(fmt.Sprintf("[%d] ", requestID)), trafficOut...))
-		} else {
-			transport.LogEntry.Log(logger.WarningLevel, "error dumping request", err)
-		}
-	} else {
-		// make sure global and local request counters ticks.
-		transport.trafficLogger.Sent(nil)
+	body := true
+	if isApp || reqSize > constant.MaxBodySize {
+		body = false // avoid logging large bodies
 	}
+	LogTrafficOut(req, body, transport.trafficLogger, transport.LogEntry, requestID)
 
 	resp, err := transport.Transport.RoundTrip(req)
 	if err != nil || resp == nil {
@@ -734,19 +726,41 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 		}
 	}
 
-	if logTraffic && transport.trafficLogger != nil {
+	LogTrafficIn(resp, transport.trafficLogger, transport.LogEntry, requestID)
+
+	return resp, err
+}
+
+func LogTrafficIn(resp *http.Response, trafficLogger MinimalTrafficLogger, logEntry *logger.LogEntry, requestID uint64) {
+	if !logEntry.ShouldLogTraffic() || trafficLogger != nil {
 		body := !contentIsBinary(resp.Header)
+		respSize := int64(0)
+		if resp.ContentLength > 0 {
+			respSize = resp.ContentLength
+		}
+
 		if respSize > constant.MaxBodySize {
 			body = false // avoid logging large bodies
 		}
 		if trafficIn, err := httputil.DumpResponse(resp, body); err == nil {
-			transport.trafficLogger.Received(append([]byte(fmt.Sprintf("[%d] ", requestID)), trafficIn...))
+			trafficLogger.Received(append([]byte(fmt.Sprintf("[%d] ", requestID)), trafficIn...))
 		} else {
-			transport.LogEntry.Log(logger.WarningLevel, "error dumping response", err)
+			logEntry.Log(logger.WarningLevel, "error dumping response", err)
 		}
 	}
+}
 
-	return resp, err
+func LogTrafficOut(req *http.Request, doLogBody bool, trafficLogger MinimalTrafficLogger, logEntry *logger.LogEntry, requestID uint64) {
+	if logEntry.ShouldLogTraffic() && trafficLogger != nil {
+		if trafficOut, err := httputil.DumpRequestOut(req, doLogBody); err == nil {
+			trafficLogger.Sent(append([]byte(fmt.Sprintf("[%d] ", requestID)), trafficOut...))
+		} else {
+			logEntry.Log(logger.WarningLevel, "error dumping request", err)
+		}
+	} else {
+		// make sure global and local request counters ticks.
+		trafficLogger.Sent(nil)
+	}
 }
 
 func contentIsBinary(header http.Header) bool {
