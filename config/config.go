@@ -623,7 +623,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	if cfg.Hooks.Pre != nil {
 		hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
 		defer cancel()
-		if err := cfg.Hooks.Pre.Execute(hookCtx, entry, &cfg.Hooks.data); err != nil { // TODO feed data with settings
+		if err := cfg.Hooks.Pre.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil { // TODO feed data with settings
 			return err
 		}
 	}
@@ -633,7 +633,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 			// Execute post execution hook
 			hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
 			defer cancel()
-			if err := cfg.Hooks.Post.Execute(hookCtx, entry, &cfg.Hooks.data); err != nil { // TODO feed data from execution
+			if err := cfg.Hooks.Post.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil { // TODO feed data from execution
 				entry.LogError(err)
 			}
 		}()

@@ -61,7 +61,7 @@ func (hook *Hook) UnmarshalJSON(arg []byte) error {
 }
 
 // Execute hook
-func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *hookData) error {
+func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *hookData, allowUntrusted bool) error {
 	hook.init()
 
 	payload, err := hook.Payload.ExecuteString(data)
@@ -89,8 +89,6 @@ func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-
-	allowUntrusted := true // TODO set from config
 
 	// TODO try avoid creating client here
 	client := &http.Client{
