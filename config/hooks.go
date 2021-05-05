@@ -3,12 +3,15 @@ package config
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
@@ -16,16 +19,36 @@ import (
 )
 
 type (
+	FailLevel      int
+	ValidationType int
+
+	ValidatorCore struct {
+		Type  ValidationType `json:"type"`
+		Level FailLevel      `json:"faillevel"`
+		// TODO add validation that value is parseable to correct type
+		Value interface{} `json:"value"`
+	}
+
+	Validator struct {
+		ValidatorCore
+	}
+
+	Extractor struct {
+		// TODO add validation that all extractors have a name
+		Name      string           `Json:"name"`
+		Path      helpers.DataPath `json:"path"`
+		Validator Validator        `json:"validator"`
+	}
+
 	HookCore struct {
-		Url         string                      `json:"url"`
-		Method      string                      `json:"method"`
-		Payload     synced.Template             `json:"payload"`
-		RespCodes   []int                       `json:"respcodes"`
-		ContentType string                      `json:"contenttype"`
-		Extractors  map[string]helpers.DataPath `json:"extractors"`
-		Headers     synced.TemplateMap          `json:"headers"`
-		// TODO StopOnError bool                   `json:"stoponerror"`
-		// TODO response data extract and validation rules on response
+		Url         string             `json:"url"`
+		Method      string             `json:"method"`
+		Payload     synced.Template    `json:"payload"`
+		RespCodes   []int              `json:"respcodes"`
+		ContentType string             `json:"contenttype"`
+		Extractors  []Extractor        `json:"extractors"`
+		Headers     synced.TemplateMap `json:"headers"`
+
 		initOnce sync.Once
 	}
 
@@ -37,6 +60,50 @@ type (
 		LogEntry *logger.LogEntry
 	}
 )
+
+var (
+	// FailLevel enumeration
+	failLevelEnum = enummap.NewEnumMapOrPanic(map[string]int{
+		"none":    int(FailLevelNone),
+		"info":    int(FailLevelInfo),
+		"warning": int(FailLevelWarning),
+		"error":   int(FailLevelError),
+	})
+
+	// ValidationType enumeration
+	validationTypeEnum = enummap.NewEnumMapOrPanic(map[string]int{
+		"none":   int(ValidationTypeNone),
+		"bool":   int(ValidationTypeBool),
+		"number": int(ValidationTypeNumber),
+		"string": int(ValidationTypeString),
+	})
+)
+
+// FailLevel
+const (
+	FailLevelNone FailLevel = iota
+	FailLevelInfo
+	FailLevelWarning
+	FailLevelError
+)
+
+// ValidationType
+const (
+	ValidationTypeNone ValidationType = iota
+	ValidationTypeBool
+	ValidationTypeNumber
+	ValidationTypeString
+)
+
+// GetEnumMap of FailLevel for GUI
+func (fl FailLevel) GetEnumMap() *enummap.EnumMap {
+	return failLevelEnum
+}
+
+// GetEnumMap of ValidationType for GUI
+func (val ValidationType) GetEnumMap() *enummap.EnumMap {
+	return validationTypeEnum
+}
 
 func (hook *Hook) init() {
 	hook.initOnce.Do(func() {
@@ -50,12 +117,38 @@ func (hook *Hook) init() {
 	})
 }
 
-// UnmarshalJSON hook
+// UnmarshalJSON(arg []byte) error {
 func (hook *Hook) UnmarshalJSON(arg []byte) error {
 	if err := jsonit.Unmarshal(arg, &hook.HookCore); err != nil {
 		return err
 	}
 	hook.init()
+
+	return nil
+}
+
+// UnmarshalJSON Validator
+func (validator *Validator) UnmarshalJSON(arg []byte) error {
+	err := jsonit.Unmarshal(arg, &validator.ValidatorCore)
+	if err != nil {
+		return err
+	}
+
+	switch value := validator.Value.(type) {
+	case string:
+		switch validator.Type {
+		case ValidationTypeBool:
+			validator.Value, err = strconv.ParseBool(value)
+			if err != nil {
+				return errors.Errorf("value<%s> is not boolean", value)
+			}
+		case ValidationTypeNumber:
+			validator.Value, err = strconv.ParseFloat(value, 64)
+			if err != nil {
+				return errors.Errorf("value<%s> is not a number", value)
+			}
+		}
+	}
 
 	return nil
 }
@@ -131,26 +224,46 @@ func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *
 		return errors.Errorf("unexpected hook response code<%d>, response body: %s", resp.StatusCode, buf.String())
 	}
 
-	if err := hook.ExtractData(buf.Bytes(), data); err != nil {
+	if err := hook.ExtractAndValidateData(buf.Bytes(), data, logEntry); err != nil {
 		return errors.Wrapf(err, "hook<%s> failed", hook.Url)
 	}
 
-	// TODO add response validators
-
 	return nil
 }
 
-func (hook *Hook) ExtractData(source []byte, data *hookData) error {
-	for k, v := range hook.Extractors {
-		value, err := v.LookupNoQuotes(source)
+// ExtractAndValidateData
+func (hook *Hook) ExtractAndValidateData(source []byte, data *hookData, logEntry *logger.LogEntry) error {
+	for _, extractor := range hook.Extractors {
+		value, err := extractor.Path.LookupNoQuotes(source)
 		if err != nil {
-			return errors.WithStack(err)
+			return reportValidation(logEntry, extractor, err)
 		}
-		data.Vars[k] = string(value)
+		strValue := string(value)
+		if err := extractor.Validator.Validate(strValue); err != nil {
+			return reportValidation(logEntry, extractor, err)
+		}
+		data.Vars[extractor.Name] = strValue
 	}
 	return nil
 }
 
+func reportValidation(logEntry *logger.LogEntry, extractor Extractor, err error) error {
+	switch extractor.Validator.Level {
+	case FailLevelError:
+		return errors.WithStack(err)
+	case FailLevelWarning:
+		logEntry.Logf(logger.WarningLevel, "hook %s extractor validation failed: %v", extractor.Name, err)
+		return nil
+	case FailLevelInfo:
+		logEntry.LogInfo("HookValidation", fmt.Sprintf("hook %s extractor validation failed: %v", extractor.Name, err))
+		return nil
+	case FailLevelNone:
+		return nil
+	}
+	return errors.Errorf("unknown faillevel<%s>", failLevelEnum.StringDefault(int(extractor.Validator.Level), fmt.Sprintf("%v", extractor.Validator.Level)))
+}
+
+// OkResponse checks if response is listed response code
 func (hook *Hook) OkResponse(respCode int) bool {
 	for _, code := range hook.RespCodes {
 		if code == respCode {
@@ -160,10 +273,54 @@ func (hook *Hook) OkResponse(respCode int) bool {
 	return false
 }
 
+//  Sent implements minimal traffic logger
 func (tl *miniTrafficLogger) Sent(message []byte) {
 	tl.LogEntry.LogDetail(logger.TrafficLevel, string(message), "Sent")
 }
 
+// Received implements minimal traffic logger
 func (tl *miniTrafficLogger) Received(message []byte) {
 	tl.LogEntry.LogDetail(logger.TrafficLevel, string(message), "Received")
+}
+
+// Validate validation rule
+func (val *Validator) Validate(value string) error {
+	switch val.Type {
+	case ValidationTypeNumber:
+		floatValA, ok := val.Value.(float64)
+		if !ok {
+			return errors.Errorf("value<%v> type<%T> not a float64", val.Value, val.Value)
+		}
+		floatValB, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return errors.Errorf("extracted value<%s> not a number", value)
+		}
+		if helpers.NearlyEqual(floatValA, floatValB) {
+			return nil
+		}
+		return errors.Errorf("value<%v> and extracted value<%s> not equal", val.Value, value)
+	case ValidationTypeString:
+		str, ok := val.Value.(string)
+		if !ok {
+			return errors.Errorf("value<%v> type<%T> not a string", val.Value, val.Value)
+		}
+		if str == value {
+			return nil
+		}
+		return errors.Errorf("value<%s> and extracted value<%s> not equal", str, value)
+	case ValidationTypeBool:
+		boolValA, ok := val.Value.(bool)
+		if !ok {
+			return errors.Errorf("value<%v> type<%T> not a bool", val.Value, val.Value)
+		}
+		boolValB, err := strconv.ParseBool(value)
+		if err != nil {
+			return errors.Errorf("extracted value<%v> not a bool", value)
+		}
+		if boolValA == boolValB {
+			return nil
+		}
+		return errors.Errorf("value<%v> and extracted value<%v> not equal", val.Value, value)
+	}
+	return nil
 }
