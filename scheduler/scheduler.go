@@ -37,6 +37,8 @@ type (
 			*statistics.ExecutionCounters,
 		) error
 		RequireScenario() bool
+		// PopulateHookData populate map with data which can be used by go template in hooks
+		PopulateHookData(data map[string]interface{})
 	}
 
 	// Scheduler common core of schedulers

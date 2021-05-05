@@ -92,7 +92,9 @@ type (
 	}
 
 	hookData struct {
-		Vars map[string]interface{}
+		Vars               map[string]interface{}
+		Scheduler          map[string]interface{}
+		ConnectionSettings *connection.ConnectionSettings
 	}
 
 	Hooks struct {
@@ -627,7 +629,8 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log test summary after test is done
 	defer summary(log, summaryType, time.Now(), &cfg.Counters)
 
-	cfg.Hooks.data.Vars = make(map[string]interface{})
+	cfg.PopulateHookData()
+
 	// Execute pre execution hook
 	if cfg.Hooks.Pre != nil {
 		hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
@@ -657,6 +660,13 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	}
 
 	return nil
+}
+
+func (cfg *Config) PopulateHookData() {
+	cfg.Hooks.data.Vars = make(map[string]interface{})
+	cfg.Hooks.data.Scheduler = make(map[string]interface{})
+	cfg.Scheduler.PopulateHookData(cfg.Hooks.data.Scheduler)
+	cfg.Hooks.data.ConnectionSettings = &cfg.ConnectionSettings
 }
 
 func (cfg *Config) SetupStatistics(summary SummaryType) error {
