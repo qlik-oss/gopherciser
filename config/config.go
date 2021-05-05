@@ -95,6 +95,7 @@ type (
 		Vars               map[string]interface{}
 		Scheduler          map[string]interface{}
 		ConnectionSettings *connection.ConnectionSettings
+		Counters           *statistics.ExecutionCounters
 	}
 
 	Hooks struct {
@@ -635,7 +636,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	if cfg.Hooks.Pre != nil {
 		hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
 		defer cancel()
-		if err := cfg.Hooks.Pre.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil { // TODO feed data with settings
+		if err := cfg.Hooks.Pre.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil {
 			return err
 		}
 	}
@@ -645,7 +646,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 			// Execute post execution hook
 			hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
 			defer cancel()
-			if err := cfg.Hooks.Post.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil { // TODO feed data from execution
+			if err := cfg.Hooks.Post.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil {
 				entry.LogError(err)
 			}
 		}()
@@ -667,6 +668,7 @@ func (cfg *Config) PopulateHookData() {
 	cfg.Hooks.data.Scheduler = make(map[string]interface{})
 	cfg.Scheduler.PopulateHookData(cfg.Hooks.data.Scheduler)
 	cfg.Hooks.data.ConnectionSettings = &cfg.ConnectionSettings
+	cfg.Hooks.data.Counters = &cfg.Counters
 }
 
 func (cfg *Config) SetupStatistics(summary SummaryType) error {
