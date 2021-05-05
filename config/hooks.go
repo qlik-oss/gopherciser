@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 type (
 	FailLevel      int
 	ValidationType int
+	HttpMethod     int
 
 	ValidatorCore struct {
 		Type  ValidationType `json:"type"`
@@ -42,7 +44,7 @@ type (
 
 	HookCore struct {
 		Url         string             `json:"url"`
-		Method      string             `json:"method"`
+		Method      HttpMethod         `json:"method"`
 		Payload     synced.Template    `json:"payload"`
 		RespCodes   []int              `json:"respcodes"`
 		ContentType string             `json:"contenttype"`
@@ -77,14 +79,26 @@ var (
 		"number": int(ValidationTypeNumber),
 		"string": int(ValidationTypeString),
 	})
+
+	httpMethodEnum = enummap.NewEnumMapOrPanic(map[string]int{
+		strings.ToLower(http.MethodGet):     int(MethodGet),
+		strings.ToLower(http.MethodHead):    int(MethodHead),
+		strings.ToLower(http.MethodPost):    int(MethodPost),
+		strings.ToLower(http.MethodPut):     int(MethodPut),
+		strings.ToLower(http.MethodPatch):   int(MethodPatch),
+		strings.ToLower(http.MethodDelete):  int(MethodDelete),
+		strings.ToLower(http.MethodConnect): int(MethodConnect),
+		strings.ToLower(http.MethodOptions): int(MethodOptions),
+		strings.ToLower(http.MethodTrace):   int(MethodTrace),
+	})
 )
 
 // FailLevel
 const (
-	FailLevelNone FailLevel = iota
-	FailLevelInfo
+	FailLevelError FailLevel = iota
 	FailLevelWarning
-	FailLevelError
+	FailLevelInfo
+	FailLevelNone
 )
 
 // ValidationType
@@ -95,6 +109,18 @@ const (
 	ValidationTypeString
 )
 
+const (
+	MethodGet HttpMethod = iota
+	MethodHead
+	MethodPost
+	MethodPut
+	MethodPatch
+	MethodDelete
+	MethodConnect
+	MethodOptions
+	MethodTrace
+)
+
 // GetEnumMap of FailLevel for GUI
 func (fl FailLevel) GetEnumMap() *enummap.EnumMap {
 	return failLevelEnum
@@ -103,6 +129,11 @@ func (fl FailLevel) GetEnumMap() *enummap.EnumMap {
 // GetEnumMap of ValidationType for GUI
 func (val ValidationType) GetEnumMap() *enummap.EnumMap {
 	return validationTypeEnum
+}
+
+// GetEnumMap of HttpMethod for GUI
+func (method HttpMethod) GetEnumMap() *enummap.EnumMap {
+	return httpMethodEnum
 }
 
 func (hook *Hook) init() {
@@ -153,6 +184,41 @@ func (validator *Validator) UnmarshalJSON(arg []byte) error {
 	return nil
 }
 
+// UnmarshalJSON HttpMethod
+func (method *HttpMethod) UnmarshalJSON(arg []byte) error {
+	i, err := httpMethodEnum.UnMarshal(arg)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal httpMethodEnum")
+	}
+	*method = HttpMethod(i)
+	return nil
+}
+
+// UnmarshalJSON ValidationType
+func (typ *ValidationType) UnmarshalJSON(arg []byte) error {
+	i, err := validationTypeEnum.UnMarshal(arg)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal validationTypeEnum")
+	}
+	*typ = ValidationType(i)
+	return nil
+}
+
+// UnmarshalJSON FailLevel
+func (lvl *FailLevel) UnmarshalJSON(arg []byte) error {
+	i, err := failLevelEnum.UnMarshal(arg)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal failLevelEnum")
+	}
+	*lvl = FailLevel(i)
+	return nil
+}
+
+// Validate hook settings, returns list of warnings or error
+func (hook *Hook) Validate() ([]string, error) {
+	return nil, nil
+}
+
 // Execute hook
 func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *hookData, allowUntrusted bool) error {
 	hook.init()
@@ -174,7 +240,7 @@ func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, hook.Url, buf)
+	req, err := http.NewRequestWithContext(ctx, strings.ToUpper(httpMethodEnum.StringDefault(int(hook.Method), http.MethodPost)), hook.Url, buf)
 	if err != nil {
 		return errors.WithStack(err)
 	}
