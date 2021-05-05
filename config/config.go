@@ -95,17 +95,19 @@ type (
 		Vars map[string]interface{}
 	}
 
+	Hooks struct {
+		Pre  *Hook `json:"preexecute"`
+		Post *Hook `json:"postexecute"`
+
+		data hookData
+	}
+
 	cfgCore struct {
 		Scenario           []scenario.Action             `json:"scenario"`
 		Settings           Settings                      `json:"settings"`
 		LoginSettings      users.UserGenerator           `json:"loginSettings"`
 		ConnectionSettings connection.ConnectionSettings `json:"connectionSettings"`
-		Hooks              struct {
-			Pre  *Hook `json:"preexecute"`
-			Post *Hook `json:"postexecute"`
-
-			data hookData
-		} `json:"hooks"`
+		Hooks              Hooks                         `json:"hooks"`
 	}
 
 	// Config setup and scenario to execute
@@ -507,6 +509,13 @@ func (cfg *Config) Validate() error {
 		} else if len(w) > 0 {
 			cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 		}
+	}
+
+	// Validate hooks
+	if w, err := cfg.Hooks.Validate(); err != nil {
+		return errors.WithStack(err)
+	} else if len(w) > 0 {
+		cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
 	}
 
 	return nil
@@ -986,6 +995,31 @@ func (header SummaryHeader) Col(key string, tbl *tabular.Table) {
 // ColRJ sets column (Right Justified) in table from header entry
 func (header SummaryHeader) ColRJ(key string, tbl *tabular.Table) {
 	tbl.ColRJ(key, header[key].FullName, header[key].ColSize)
+}
+
+// Validate hooks settings
+func (hooks Hooks) Validate() ([]string, error) {
+	warnings := make([]string, 0)
+	appendWarnings := func(w []string) {
+		if len(w) > 0 {
+			warnings = append(warnings, w...)
+		}
+	}
+	if hooks.Pre != nil {
+		w, err := hooks.Pre.Validate()
+		appendWarnings(w)
+		if err != nil {
+			return warnings, errors.WithStack(err)
+		}
+	}
+	if hooks.Post != nil {
+		w, err := hooks.Post.Validate()
+		appendWarnings(w)
+		if err != nil {
+			return warnings, errors.WithStack(err)
+		}
+	}
+	return warnings, nil
 }
 
 func setupOutputs(settings OutputsSettings) (string, error) {

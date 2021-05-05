@@ -40,10 +40,9 @@ func cmp(a interface{}, b string, validationType ValidationType) error {
 	validator := &Validator{
 		ValidatorCore{
 			Type:  validationType,
-			Level: FailLevelError,
 			Value: a,
 		},
 	}
 
-	return validator.Validate(b)
+	return validator.ValidateValue(b)
 }

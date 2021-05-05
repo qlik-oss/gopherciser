@@ -26,9 +26,7 @@ type (
 
 	ValidatorCore struct {
 		Type  ValidationType `json:"type"`
-		Level FailLevel      `json:"faillevel"`
-		// TODO add validation that value is parseable to correct type
-		Value interface{} `json:"value"`
+		Value interface{}    `json:"value"`
 	}
 
 	Validator struct {
@@ -36,10 +34,10 @@ type (
 	}
 
 	Extractor struct {
-		// TODO add validation that all extractors have a name
 		Name      string           `Json:"name"`
 		Path      helpers.DataPath `json:"path"`
-		Validator Validator        `json:"validator"`
+		Level     FailLevel        `json:"faillevel"`
+		Validator *Validator       `json:"validator"`
 	}
 
 	HookCore struct {
@@ -216,7 +214,59 @@ func (lvl *FailLevel) UnmarshalJSON(arg []byte) error {
 
 // Validate hook settings, returns list of warnings or error
 func (hook *Hook) Validate() ([]string, error) {
+	if hook.Url == "" {
+		return nil, errors.Errorf("hook defined with empty URL")
+	}
+
+	// Validate extractors
+	for _, extractor := range hook.Extractors {
+		if err := extractor.Validate(); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
 	return nil, nil
+}
+
+// Validate extractor
+func (extractor *Extractor) Validate() error {
+	if extractor == nil {
+		return nil
+	}
+	if extractor.Name == "" {
+		return errors.New("no key name defined for extractor")
+	}
+	if extractor.Path.String() == "" {
+		return errors.New("no path defined for extractor")
+	}
+
+	return extractor.Validator.Validate()
+}
+
+//Validate validator settings
+func (validator *Validator) Validate() error {
+	if validator == nil {
+		return nil
+	}
+
+	switch validator.Type {
+	case ValidationTypeBool:
+		if _, isBool := validator.Value.(bool); !isBool {
+			return errors.Errorf("validator value<%v> not of type bool", validator.Value)
+		}
+	case ValidationTypeNumber:
+		if _, isFloat := validator.Value.(float64); !isFloat {
+			return errors.Errorf("validator value<%v> not of type number", validator.Value)
+		}
+	case ValidationTypeString:
+		if _, isString := validator.Value.(string); !isString {
+			return errors.Errorf("validator value<%v> not of type string", validator.Value)
+		}
+	case ValidationTypeNone:
+	default:
+		return errors.Errorf("ValidationType<%v> not supported", validator.Type)
+	}
+	return nil
 }
 
 // Execute hook
@@ -305,7 +355,7 @@ func (hook *Hook) ExtractAndValidateData(source []byte, data *hookData, logEntry
 			return reportValidation(logEntry, extractor, err)
 		}
 		strValue := string(value)
-		if err := extractor.Validator.Validate(strValue); err != nil {
+		if err := extractor.Validator.ValidateValue(strValue); err != nil {
 			return reportValidation(logEntry, extractor, err)
 		}
 		data.Vars[extractor.Name] = strValue
@@ -314,7 +364,7 @@ func (hook *Hook) ExtractAndValidateData(source []byte, data *hookData, logEntry
 }
 
 func reportValidation(logEntry *logger.LogEntry, extractor Extractor, err error) error {
-	switch extractor.Validator.Level {
+	switch extractor.Level {
 	case FailLevelError:
 		return errors.WithStack(err)
 	case FailLevelWarning:
@@ -326,7 +376,7 @@ func reportValidation(logEntry *logger.LogEntry, extractor Extractor, err error)
 	case FailLevelNone:
 		return nil
 	}
-	return errors.Errorf("unknown faillevel<%s>", failLevelEnum.StringDefault(int(extractor.Validator.Level), fmt.Sprintf("%v", extractor.Validator.Level)))
+	return errors.Errorf("unknown faillevel<%s>", failLevelEnum.StringDefault(int(extractor.Level), fmt.Sprintf("%v", extractor.Level)))
 }
 
 // OkResponse checks if response is listed response code
@@ -350,7 +400,10 @@ func (tl *miniTrafficLogger) Received(message []byte) {
 }
 
 // Validate validation rule
-func (val *Validator) Validate(value string) error {
+func (val *Validator) ValidateValue(value string) error {
+	if val == nil {
+		return nil
+	}
 	switch val.Type {
 	case ValidationTypeNumber:
 		floatValA, ok := val.Value.(float64)
