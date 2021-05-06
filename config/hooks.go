@@ -192,6 +192,15 @@ func (method *HttpMethod) UnmarshalJSON(arg []byte) error {
 	return nil
 }
 
+// MarshalJSON marshal HttpMethod
+func (method HttpMethod) MarshalJSON() ([]byte, error) {
+	str, err := httpMethodEnum.String(int(method))
+	if err != nil {
+		return nil, errors.Errorf("Unknown HttpMethod<%d>", method)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
 // UnmarshalJSON ValidationType
 func (typ *ValidationType) UnmarshalJSON(arg []byte) error {
 	i, err := validationTypeEnum.UnMarshal(arg)
@@ -202,6 +211,15 @@ func (typ *ValidationType) UnmarshalJSON(arg []byte) error {
 	return nil
 }
 
+// MarshalJSON marshal ValidationType
+func (typ ValidationType) MarshalJSON() ([]byte, error) {
+	str, err := httpMethodEnum.String(int(typ))
+	if err != nil {
+		return nil, errors.Errorf("Unknown ValidationType<%d>", typ)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
 // UnmarshalJSON FailLevel
 func (lvl *FailLevel) UnmarshalJSON(arg []byte) error {
 	i, err := failLevelEnum.UnMarshal(arg)
@@ -210,6 +228,15 @@ func (lvl *FailLevel) UnmarshalJSON(arg []byte) error {
 	}
 	*lvl = FailLevel(i)
 	return nil
+}
+
+// MarshalJSON marshal ValidationType
+func (lvl FailLevel) MarshalJSON() ([]byte, error) {
+	str, err := httpMethodEnum.String(int(lvl))
+	if err != nil {
+		return nil, errors.Errorf("Unknown FailLevel<%d>", lvl)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
 // Validate hook settings, returns list of warnings or error
