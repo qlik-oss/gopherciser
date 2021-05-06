@@ -115,6 +115,140 @@ connectionSettings": {
 </details>
 
 <details>
+<summary>hooks</summary>
+
+## Hooks section
+
+This section contains the possibility to define hooks, which will send requests to a defined endpoint before and after a test execution.
+
+* `preexecute`: Pre execution hook. Can be used to send a request to an endpoint before a test starts.
+  * `url`: Url to send a request towards.
+  * `method`: Method of request, defaults to POST.
+  * `payload`: (optional) Content of request.
+  * `respcodes`: Accepted response codes, defaults to 200.
+  * `contenttype`: Request content-type header. Defaults to application/json.
+  * `extractors`: Extractors, can be used to extract a value from the response to be used on subsequent hook, or to validate that a that part of a response has a specific value.
+    * `Name`: Name of extractor, this name is what is later used to when accessing the extracted data in a template such as {{ .Vars.MyExtractorName }}.
+    * `path`: Path to data to extract, e.g. /id to extract the data my-id from from a parameter *id* in JSON root.
+    * `faillevel`: Defines how to report data extraction or validation failure.
+        * `none`: Do nothing.
+        * `info`: Log an info log row.
+        * `warning`: Log a warning log row.
+        * `error`: Log a error row and abort script.
+    * `validator`: Validate that part of the response has a specific value
+      * `type`: Value should be of this type.
+          * `none`: Default type, no validation of value will be done.
+          * `bool`: Value should be a boolean.
+          * `number`: Value should be a number.
+          * `string`: Value should be a string.
+      * `value`: Validate the value is exactly equal to this.
+  * `headers`: Custom headers to add to the request.
+* `postexecute`: Post execution hook. Can be used to send a request to an endpoint after a test is done.
+  * `url`: Url to send a request towards.
+  * `method`: Method of request, defaults to POST.
+  * `payload`: (optional) Content of request.
+  * `respcodes`: Accepted response codes, defaults to 200.
+  * `contenttype`: Request content-type header. Defaults to application/json.
+  * `extractors`: Extractors, can be used to extract a value from the response to be used on subsequent hook, or to validate that a that part of a response has a specific value.
+    * `Name`: Name of extractor, this name is what is later used to when accessing the extracted data in a template such as {{ .Vars.MyExtractorName }}.
+    * `path`: Path to data to extract, e.g. /id to extract the data my-id from from a parameter *id* in JSON root.
+    * `faillevel`: Defines how to report data extraction or validation failure.
+        * `none`: Do nothing.
+        * `info`: Log an info log row.
+        * `warning`: Log a warning log row.
+        * `error`: Log a error row and abort script.
+    * `validator`: Validate that part of the response has a specific value
+      * `type`: Value should be of this type.
+          * `none`: Default type, no validation of value will be done.
+          * `bool`: Value should be a boolean.
+          * `number`: Value should be a number.
+          * `string`: Value should be a string.
+      * `value`: Validate the value is exactly equal to this.
+  * `headers`: Custom headers to add to the request.
+
+### Example
+
+#### Send a request to slack that a test is starting.
+
+```json
+"hooks": {
+    "preexecute": {
+        "url": "https://hooks.slack.com/services/XXXXXXXXX/YYYYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ",
+        "method": "POST",
+        "payload": "{ \"text\": \"Running test with {{ .Scheduler.ConcurrentUsers }} concurrent users and {{ .Scheduler.Iterations }} iterations towards {{ .ConnectionSettings.Server }}.\"}",
+        "contenttype": "application/json"
+    },
+    "postexecute": {
+        "url": "https://hooks.slack.com/services/XXXXXXXXX/YYYYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ",
+        "method": "POST",
+        "payload": "{ \"text\": \"Test finished with {{ .Counters.Errors }} errors and {{ .Counters.Warnings }} warnings. Total Sessions: {{ .Counters.Sessions }}\"}"
+    }
+}
+```
+
+This will send a message on test startup such as:
+
+```text
+Running test with 10 concurrent users and 2 iterations towards MyServer.com.
+```
+
+And a message on test finished such as:
+
+```text
+Test finished with 4 errors and 12 warnings. Total Sessions: 20.
+```
+
+#### Ask an endpoint before execution if test is ok to run
+
+```json
+"hooks": {
+    "preexecute": {
+        "url": "http://myserver:8080/oktoexecute",
+        "method": "POST",
+        "headers": {
+            "someheader": "headervalue",
+        },
+        "payload": "{\"testID\": \"12345\",\"startAt\": \"{{now.Format \"2006-01-02T15:04:05Z07:00\"}}\"}",
+        "extractors": [
+            {
+                "name": "oktorun",
+                "path" : "/oktorun",
+                "faillevel": "error",
+                "validator" : {
+                    "type": "bool",
+                    "value": true
+                }
+            }
+        ]
+    }
+}
+```
+
+This will POST a request to `http://myserver:8080/oktoexecute` with the body:
+
+```json
+{
+    "testID": "12345",
+    "startAt": "2021-05-06T08:00:00Z01:00"
+}
+```
+
+For a test started at `2021-05-06T08:00:00` in timezone UTC+1.
+
+Let's assume the response from this endpoint is:
+
+```json
+{
+    "oktorun": false
+}
+```
+
+The validator with path `/oktorun` will extract the value `false` and compare to the value defined in the validator, in this case `true`. Since the they are not equal the test will stop with error before starting exection.
+
+---
+</details>
+
+<details>
 <summary>loginSettings</summary>
 
 ## Login settings section

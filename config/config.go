@@ -99,8 +99,8 @@ type (
 	}
 
 	Hooks struct {
-		Pre  *Hook `json:"preexecute"`
-		Post *Hook `json:"postexecute"`
+		Pre  *Hook `json:"preexecute" doc-key:"config.hooks.preexecute" displayname:"Pre-execution Hook"`
+		Post *Hook `json:"postexecute" doc-key:"config.hooks.postexecute" displayname:"Post-execution Hook"`
 
 		data hookData
 	}

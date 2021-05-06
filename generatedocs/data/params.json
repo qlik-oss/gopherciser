@@ -131,6 +131,12 @@
     "config.connectionSettings.headers": [
         "Headers to use in requests."
     ],
+    "config.hooks.preexecute": [
+        "Pre execution hook. Can be used to send a request to an endpoint before a test starts."
+    ],
+    "config.hooks.postexecute":[
+        "Post execution hook. Can be used to send a request to an endpoint after a test is done."
+    ],
     "config.loginSettings": [
         "This section of the JSON file contains information on the login settings."
     ],
@@ -342,6 +348,53 @@
     ],
     "generateodag.linkname": [
         "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
+    ],
+    "hook.content" : [
+        "(optional) Content of request."
+    ],
+    "hook.contenttype": [
+        "Request content-type header. Defaults to application/json."
+    ],
+    "hook.extractors": [
+        "Extractors, can be used to extract a value from the response to be used on subsequent hook, or to validate that a that part of a response has a specific value."
+    ],
+    "hook.extractor.faillevel": [
+        "Defines how to report data extraction or validation failure.",
+        "`none`: Do nothing.",
+        "`info`: Log an info log row.",
+        "`warning`: Log a warning log row.",
+        "`error`: Log a error row and abort script."
+    ],
+    "hook.extractor.name": [
+        "Name of extractor, this name is what is later used to when accessing the extracted data in a template such as {{ .Vars.MyExtractorName }}."
+    ],
+    "hook.extractor.path": [
+        "Path to data to extract, e.g. /id to extract the data my-id from from a parameter *id* in JSON root."
+    ],
+    "hook.extractor.validator": [
+        "Validate that part of the response has a specific value"
+    ],
+    "hook.extractor.validator.type": [
+        "Value should be of this type.",
+        "`none`: Default type, no validation of value will be done.",
+        "`bool`: Value should be a boolean.",
+        "`number`: Value should be a number.",
+        "`string`: Value should be a string."
+    ],
+    "hook.extractor.validator.value": [
+        "Validate the value is exactly equal to this."
+    ],
+    "hook.headers":[
+        "Custom headers to add to the request."
+    ],
+    "hook.method": [
+        "Method of request, defaults to POST."
+    ],
+    "hook.respcodes": [
+        "Accepted response codes, defaults to 200."
+    ],
+    "hook.url": [
+        "Url to send a request towards."
     ],
     "iterated.iterations": [
         "Number of loops."

@@ -25,8 +25,8 @@ type (
 	HttpMethod     int
 
 	ValidatorCore struct {
-		Type  ValidationType `json:"type"`
-		Value interface{}    `json:"value"`
+		Type  ValidationType `json:"type" doc-key:"hook.extractor.validator.type" displayname:"Type"`
+		Value interface{}    `json:"value" doc-key:"hook.extractor.validator.value" displayname:"Value"`
 	}
 
 	Validator struct {
@@ -34,20 +34,20 @@ type (
 	}
 
 	Extractor struct {
-		Name      string           `Json:"name"`
-		Path      helpers.DataPath `json:"path"`
-		Level     FailLevel        `json:"faillevel"`
-		Validator *Validator       `json:"validator"`
+		Name      string           `Json:"name" doc-key:"hook.extractor.name" displayname:"Name"`
+		Path      helpers.DataPath `json:"path" doc-key:"hook.extractor.path" displayname:"Path"`
+		Level     FailLevel        `json:"faillevel" doc-key:"hook.extractor.faillevel" displayname:"Fail level"`
+		Validator *Validator       `json:"validator" doc-key:"hook.extractor.validator" displayname:"Validator"`
 	}
 
 	HookCore struct {
-		Url         string             `json:"url"`
-		Method      HttpMethod         `json:"method"`
-		Payload     synced.Template    `json:"payload"`
-		RespCodes   []int              `json:"respcodes"`
-		ContentType string             `json:"contenttype"`
-		Extractors  []Extractor        `json:"extractors"`
-		Headers     synced.TemplateMap `json:"headers"`
+		Url         string             `json:"url" doc-key:"hook.url" displayname:"Url"`
+		Method      HttpMethod         `json:"method" doc-key:"hook.method" displayname:"Method"`
+		Content     synced.Template    `json:"payload" doc-key:"hook.content" displayname:"Content"`
+		RespCodes   []int              `json:"respcodes" doc-key:"hook.respcodes" displayname:"Response codes"`
+		ContentType string             `json:"contenttype" doc-key:"hook.contenttype" displayname:"Content-Type"`
+		Extractors  []Extractor        `json:"extractors" doc-key:"hook.extractors" displayname:"Extractors"`
+		Headers     synced.TemplateMap `json:"headers" doc-key:"hook.headers" displayname:"Headers"`
 
 		initOnce sync.Once
 	}
@@ -273,7 +273,7 @@ func (validator *Validator) Validate() error {
 func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *hookData, allowUntrusted bool) error {
 	hook.init()
 
-	payload, err := hook.Payload.ExecuteString(data)
+	payload, err := hook.Content.ExecuteString(data)
 	if err != nil {
 		return errors.WithStack(err)
 	}
