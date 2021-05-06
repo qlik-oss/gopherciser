@@ -213,7 +213,7 @@ func (typ *ValidationType) UnmarshalJSON(arg []byte) error {
 
 // MarshalJSON marshal ValidationType
 func (typ ValidationType) MarshalJSON() ([]byte, error) {
-	str, err := httpMethodEnum.String(int(typ))
+	str, err := validationTypeEnum.String(int(typ))
 	if err != nil {
 		return nil, errors.Errorf("Unknown ValidationType<%d>", typ)
 	}
@@ -232,7 +232,7 @@ func (lvl *FailLevel) UnmarshalJSON(arg []byte) error {
 
 // MarshalJSON marshal ValidationType
 func (lvl FailLevel) MarshalJSON() ([]byte, error) {
-	str, err := httpMethodEnum.String(int(lvl))
+	str, err := failLevelEnum.String(int(lvl))
 	if err != nil {
 		return nil, errors.Errorf("Unknown FailLevel<%d>", lvl)
 	}
