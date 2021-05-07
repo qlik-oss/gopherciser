@@ -22,7 +22,7 @@ func NearlyEqualEpsilon(a, b float64, epsilon float64) bool {
 
 	if a == b { // shortcut, handles infinities
 		return true
-	} else if a == 0 || b == 0 || diff < FloatMinNormal {
+	} else if a == 0 || b == 0 || absA+absB < FloatMinNormal {
 		// a or b is zero or both are extremely close to it
 		// relative error is less meaningful here
 		return diff < (epsilon * FloatMinNormal)
