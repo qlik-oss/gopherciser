@@ -26,7 +26,10 @@ type (
 
 	ValidatorCore struct {
 		Type  ValidationType `json:"type" doc-key:"hook.extractor.validator.type" displayname:"Type"`
-		Value interface{}    `json:"value" doc-key:"hook.extractor.validator.value" displayname:"Value"`
+		Value string         `json:"value" doc-key:"hook.extractor.validator.value" displayname:"Value"`
+
+		value   interface{} // GUI can't handle interface{} so have to expose a string, convert real value and put here
+		convert sync.Once
 	}
 
 	Validator struct {
@@ -163,23 +166,7 @@ func (validator *Validator) UnmarshalJSON(arg []byte) error {
 		return err
 	}
 
-	switch value := validator.Value.(type) {
-	case string:
-		switch validator.Type {
-		case ValidationTypeBool:
-			validator.Value, err = strconv.ParseBool(value)
-			if err != nil {
-				return errors.Errorf("value<%s> is not boolean", value)
-			}
-		case ValidationTypeNumber:
-			validator.Value, err = strconv.ParseFloat(value, 64)
-			if err != nil {
-				return errors.Errorf("value<%s> is not a number", value)
-			}
-		}
-	}
-
-	return nil
+	return validator.convertString()
 }
 
 // UnmarshalJSON HttpMethod
@@ -276,17 +263,21 @@ func (validator *Validator) Validate() error {
 		return nil
 	}
 
+	if err := validator.convertString(); err != nil {
+		return errors.WithStack(err)
+	}
+
 	switch validator.Type {
 	case ValidationTypeBool:
-		if _, isBool := validator.Value.(bool); !isBool {
+		if _, isBool := validator.value.(bool); !isBool {
 			return errors.Errorf("validator value<%v> not of type bool", validator.Value)
 		}
 	case ValidationTypeNumber:
-		if _, isFloat := validator.Value.(float64); !isFloat {
+		if _, isFloat := validator.value.(float64); !isFloat {
 			return errors.Errorf("validator value<%v> not of type number", validator.Value)
 		}
 	case ValidationTypeString:
-		if _, isString := validator.Value.(string); !isString {
+		if _, isString := validator.value.(string); !isString {
 			return errors.Errorf("validator value<%v> not of type string", validator.Value)
 		}
 	case ValidationTypeNone:
@@ -294,6 +285,27 @@ func (validator *Validator) Validate() error {
 		return errors.Errorf("ValidationType<%v> not supported", validator.Type)
 	}
 	return nil
+}
+
+func (validator *Validator) convertString() error {
+	var err error
+	validator.convert.Do(func() {
+		switch validator.Type {
+		case ValidationTypeBool:
+			validator.value, err = strconv.ParseBool(validator.Value)
+			if err != nil {
+				err = errors.Errorf("value<%s> is not boolean", validator.Value)
+			}
+		case ValidationTypeNumber:
+			validator.value, err = strconv.ParseFloat(validator.Value, 64)
+			if err != nil {
+				err = errors.Errorf("value<%s> is not a number", validator.Value)
+			}
+		case ValidationTypeString:
+			validator.value = validator.Value
+		}
+	})
+	return err
 }
 
 // Execute hook
@@ -433,7 +445,7 @@ func (val *Validator) ValidateValue(value string) error {
 	}
 	switch val.Type {
 	case ValidationTypeNumber:
-		floatValA, ok := val.Value.(float64)
+		floatValA, ok := val.value.(float64)
 		if !ok {
 			return errors.Errorf("value<%v> type<%T> not a float64", val.Value, val.Value)
 		}
@@ -446,7 +458,7 @@ func (val *Validator) ValidateValue(value string) error {
 		}
 		return errors.Errorf("value<%v> and extracted value<%s> not equal", val.Value, value)
 	case ValidationTypeString:
-		str, ok := val.Value.(string)
+		str, ok := val.value.(string)
 		if !ok {
 			return errors.Errorf("value<%v> type<%T> not a string", val.Value, val.Value)
 		}
@@ -455,7 +467,7 @@ func (val *Validator) ValidateValue(value string) error {
 		}
 		return errors.Errorf("value<%s> and extracted value<%s> not equal", str, value)
 	case ValidationTypeBool:
-		boolValA, ok := val.Value.(bool)
+		boolValA, ok := val.value.(bool)
 		if !ok {
 			return errors.Errorf("value<%v> type<%T> not a bool", val.Value, val.Value)
 		}

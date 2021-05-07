@@ -40,7 +40,7 @@ func cmp(a interface{}, b string, validationType ValidationType) error {
 	validator := &Validator{
 		ValidatorCore{
 			Type:  validationType,
-			Value: a,
+			value: a,
 		},
 	}
 
