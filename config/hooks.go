@@ -82,6 +82,7 @@ var (
 	})
 
 	httpMethodEnum = enummap.NewEnumMapOrPanic(map[string]int{
+		"none":                              int(MethodNone),
 		strings.ToLower(http.MethodGet):     int(MethodGet),
 		strings.ToLower(http.MethodHead):    int(MethodHead),
 		strings.ToLower(http.MethodPost):    int(MethodPost),
@@ -111,7 +112,8 @@ const (
 )
 
 const (
-	MethodGet HttpMethod = iota
+	MethodNone HttpMethod = iota
+	MethodGet
 	MethodHead
 	MethodPost
 	MethodPut
@@ -228,6 +230,9 @@ func (lvl FailLevel) MarshalJSON() ([]byte, error) {
 
 // Validate hook settings, returns list of warnings or error
 func (hook *Hook) Validate() ([]string, error) {
+	if hook.Method == MethodNone {
+		return nil, nil
+	}
 	if hook.Url == "" {
 		return nil, errors.Errorf("hook defined with empty URL")
 	}
@@ -311,6 +316,10 @@ func (validator *Validator) convertString() error {
 // Execute hook
 func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *hookData, allowUntrusted bool) error {
 	hook.init()
+
+	if hook.Method == MethodNone {
+		return nil
+	}
 
 	payload, err := hook.Content.ExecuteString(data)
 	if err != nil {
