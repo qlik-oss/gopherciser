@@ -216,7 +216,7 @@ Test finished with 4 errors and 12 warnings. Total Sessions: 20.
                 "faillevel": "error",
                 "validator" : {
                     "type": "bool",
-                    "value": true
+                    "value": "true"
                 }
             }
         ]
