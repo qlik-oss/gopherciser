@@ -123,7 +123,7 @@ This section contains the possibility to define hooks, which will send requests 
 
 * `preexecute`: Pre execution hook. Can be used to send a request to an endpoint before a test starts.
   * `url`: Url to send a request towards.
-  * `method`: Method of request, defaults to POST.
+  * `method`: Method of request, defaults to none.
   * `payload`: (optional) Content of request.
   * `respcodes`: Accepted response codes, defaults to 200.
   * `contenttype`: Request content-type header. Defaults to application/json.
@@ -145,7 +145,7 @@ This section contains the possibility to define hooks, which will send requests 
   * `headers`: Custom headers to add to the request.
 * `postexecute`: Post execution hook. Can be used to send a request to an endpoint after a test is done.
   * `url`: Url to send a request towards.
-  * `method`: Method of request, defaults to POST.
+  * `method`: Method of request, defaults to none.
   * `payload`: (optional) Content of request.
   * `respcodes`: Accepted response codes, defaults to 200.
   * `contenttype`: Request content-type header. Defaults to application/json.

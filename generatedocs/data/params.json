@@ -388,7 +388,7 @@
         "Custom headers to add to the request."
     ],
     "hook.method": [
-        "Method of request, defaults to POST."
+        "Method of request, defaults to none."
     ],
     "hook.respcodes": [
         "Accepted response codes, defaults to 200."
