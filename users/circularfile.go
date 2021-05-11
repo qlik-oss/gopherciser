@@ -19,7 +19,6 @@ type (
 		CircularUsersFileCore
 
 		userList []*User
-		mu       sync.Mutex
 		fill     sync.Once
 	}
 )
@@ -64,8 +63,6 @@ func (users *CircularUsersFile) Iterate(iteration uint64) *User {
 func (users *CircularUsersFile) parseUserList() error {
 	var errParse error
 	users.fill.Do(func() {
-		users.mu.Lock()
-		defer users.mu.Unlock()
 		rows := users.Filename.Rows()
 		users.userList = make([]*User, 0, len(rows))
 		for i, row := range rows {
