@@ -124,9 +124,11 @@ This section of the JSON file contains information on the login settings.
 * `type`: Type of login request
     * `prefix`: Add a prefix (specified by the `prefix` setting below) to the username, so that it will be `prefix_{session}`.
     * `userlist`: List of users as specified by the `userList` setting below.
+    * `fromfile`: List of users from a file with 1 user per row and the format `username;directory;password`
     * `none`: Do not add a prefix to the username, so that it will be `{session}`.
 * `settings`: 
     * `userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.
+    * `fromfile`: Path to file with users.
   * `prefix`: Prefix to add to the username, so that it will be `prefix_{session}`.
   * `directory`: Directory to set for the users.
 
@@ -147,24 +149,64 @@ This section of the JSON file contains information on the login settings.
 #### Userlist login request type
 
 ```json
-  "loginSettings": {
-    "type": "userlist",
-    "settings": {
-      "userList": [
-        {
-          "username": "sim1@myhost.example",
-          "directory": "anydir1",
-          "password": "MyPassword1"
-        },
-        {
-          "username": "sim2@myhost.example"
-        }
-      ],
-      "directory": "anydir2",
-      "password": "MyPassword2"
-    }
+"loginSettings": {
+  "type": "userlist",
+  "settings": {
+    "userList": [
+      {
+        "username": "sim1@myhost.example",
+        "directory": "anydir1",
+        "password": "MyPassword1"
+      },
+      {
+        "username": "sim2@myhost.example"
+      }
+    ],
+    "directory": "anydir2",
+    "password": "MyPassword2"
   }
+}
 ```
+
+#### Fromfile login request type
+
+Reads a user list from file. 1 User per row of the and with the format `username;directory;password`. `directory` and `password` are optional, if none are defined for a user it will use the default values on settings (i.e. `defaultdir` and `defaultpassword`). If the used authentication type doesn't use `directory` or `password` these can be omitted.
+
+Definition with default values:
+
+```json
+"loginSettings": {
+  "type": "fromfile",
+  "settings": {
+    "filename": "./myusers.txt",
+    "directory": "defaultdir",
+    "password": "defaultpassword"
+  }
+}
+```
+
+Definition without default values:
+
+```json
+"loginSettings": {
+  "type": "fromfile",
+  "settings": {
+    "filename": "./myusers.txt"
+  }
+}
+```
+
+This is a valid format of a file.
+
+```text
+testuser1
+testuser2;myspecialdirectory
+testuser3;;somepassword
+testuser4;specialdir;anotherpassword
+testuser5;;A;d;v;a;n;c;e;d;;P;a;s;s;w;o;r;d;
+```
+
+*testuser1* will get default `directory` and `password`, *testuser3* and *testuser5* will get default `directory`.
 
 ---
 </details>
