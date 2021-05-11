@@ -1,7 +1,6 @@
 package users
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 
@@ -41,10 +40,6 @@ func (users *CircularUsersFile) UnmarshalJSON(arg []byte) error {
 	}
 	if err := users.parseUserList(); err != nil {
 		return err
-	}
-
-	for _, user := range users.userList {
-		fmt.Printf("User<%s> Directory<%s> Password<%s>\n", user.UserName, user.Directory, string(user.Password))
 	}
 
 	return nil
