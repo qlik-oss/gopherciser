@@ -10,7 +10,7 @@ import (
 
 type (
 	CircularUsersFileCore struct {
-		Filename  helpers.RowFile `json:"filename" displayname:"Filename"`
+		Filename  helpers.RowFile `json:"filename" displayname:"Filename"  displayelement:"file"`
 		Password  Password        `json:"password,omitempty" displayname:"Password"`
 		Directory string          `json:"directory,omitempty" displayname:"User directory"`
 	}
