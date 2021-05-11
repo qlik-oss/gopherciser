@@ -195,7 +195,7 @@ var (
 		"config.connectionSettings.virtualproxy":          {"Prefix for the virtual proxy that handles the virtual users."},
 		"config.connectionSettings.wssettings":            {"(WebSocket only) Settings for the WebSocket connection."},
 		"config.loginSettings":                            {"This section of the JSON file contains information on the login settings."},
-		"config.loginSettings.settings":                   {"", "`userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.", "`fromfile`: Path to file with users."},
+		"config.loginSettings.settings":                   {"", "`userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.", "`filename`: Path to file with users."},
 		"config.loginSettings.settings.directory":         {"Directory to set for the users."},
 		"config.loginSettings.settings.prefix":            {"Prefix to add to the username, so that it will be `prefix_{session}`."},
 		"config.loginSettings.type":                       {"Type of login request", "`prefix`: Add a prefix (specified by the `prefix` setting below) to the username, so that it will be `prefix_{session}`.", "`userlist`: List of users as specified by the `userList` setting below.", "`fromfile`: List of users from a file with 1 user per row and the format `username;directory;password`", "`none`: Do not add a prefix to the username, so that it will be `{session}`."},

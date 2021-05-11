@@ -128,7 +128,7 @@ This section of the JSON file contains information on the login settings.
     * `none`: Do not add a prefix to the username, so that it will be `{session}`.
 * `settings`: 
     * `userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.
-    * `fromfile`: Path to file with users.
+    * `filename`: Path to file with users.
   * `prefix`: Prefix to add to the username, so that it will be `prefix_{session}`.
   * `directory`: Directory to set for the users.
 
