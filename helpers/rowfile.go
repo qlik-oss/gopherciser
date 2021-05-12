@@ -107,3 +107,8 @@ func (file *RowFile) readRows() error {
 func (file *RowFile) Rows() []string {
 	return file.rows
 }
+
+// PurgeRows from memory
+func (file *RowFile) PurgeRows() {
+	file.rows = nil
+}
