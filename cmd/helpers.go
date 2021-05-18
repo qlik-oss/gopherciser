@@ -11,6 +11,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/mitchellh/go-ps"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -62,13 +63,18 @@ func AddLoggingParameters(cmd *cobra.Command) {
 }
 
 func unmarshalConfigFile() (*config.Config, error) {
-	var cfgJSON []byte
 	var err error
-	if cfgFile == "" {
-		hasPipe, err := hasPipe()
+	var cfgJSON []byte
+	var hasPipe bool
+
+	if !IsLaunchedByDebugger() {
+		hasPipe, err = HasPipe()
 		if err != nil {
-			return nil, errors.Wrap(err, "error reading config from stdin")
+			return nil, errors.Wrap(err, "error discovering if piped data exist")
 		}
+	}
+
+	if cfgFile == "" {
 		if !hasPipe {
 			return nil, errors.New("no config file and nothing on stdin")
 		}
@@ -89,7 +95,7 @@ func unmarshalConfigFile() (*config.Config, error) {
 	}
 
 	var overrides []string
-	cfgJSON, overrides, err = overrideScriptValues(cfgJSON)
+	cfgJSON, overrides, err = overrideScriptValues(cfgJSON, hasPipe)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -117,7 +123,7 @@ func cfgJsonFromFile() ([]byte, error) {
 	return ioutil.ReadFile(cfgFile)
 }
 
-func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
+func overrideScriptValues(cfgJSON []byte, hasPipe bool) ([]byte, []string, error) {
 	var overrides []string
 	if scriptOverrideFile != "" {
 		overrideFile, err := helpers.NewRowFile(scriptOverrideFile)
@@ -128,34 +134,28 @@ func overrideScriptValues(cfgJSON []byte) ([]byte, []string, error) {
 			scriptOverrides = make([]string, 0, len(overrideFile.Rows()))
 		}
 		scriptOverrides = append(overrideFile.Rows(), scriptOverrides...) // let command line overrides override file overrides
-	} else if cfgFile != "" { // if cfg file has been pointed to, but has stdin piped, assume it's overrides
-		hasPipe, err := hasPipe()
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "error reading overrides from stdin")
+	} else if cfgFile != "" && hasPipe { // if cfg file has been pointed to, but has stdin piped, assume it's overrides
+		if scriptOverrides == nil {
+			scriptOverrides = make([]string, 0, 10)
 		}
-		if hasPipe {
-			if scriptOverrides == nil {
-				scriptOverrides = make([]string, 0, 10)
-			}
 
-			// golang can't detect char devices properly in cygwin, handle this by closing stdin after a second
-			readingCtx, done := context.WithCancel(context.Background())
-			if runtime.GOOS == "windows" {
-				go func() {
-					select {
-					case <-time.After(time.Second):
-						os.Stdin.Close()
-					case <-readingCtx.Done():
-					}
-				}()
-			}
-
-			scanner := bufio.NewScanner(os.Stdin)
-			for scanner.Scan() {
-				scriptOverrides = append(scriptOverrides, scanner.Text())
-			}
-			done()
+		// golang can't detect char devices properly in cygwin, handle this by closing stdin after a second
+		readingCtx, done := context.WithCancel(context.Background())
+		if runtime.GOOS == "windows" {
+			go func() {
+				select {
+				case <-time.After(time.Second):
+					os.Stdin.Close()
+				case <-readingCtx.Done():
+				}
+			}()
 		}
+
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			scriptOverrides = append(scriptOverrides, scanner.Text())
+		}
+		done()
 	}
 
 	overrides = make([]string, 0, len(scriptOverrides))
@@ -255,10 +255,25 @@ func PrintOverrides(overrides []string) {
 	os.Stderr.WriteString("========================\n")
 }
 
-func hasPipe() (bool, error) {
+// HasPipe discovers if process has a chardevice attached
+func HasPipe() (bool, error) {
 	fileInfo, err := os.Stdin.Stat()
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
 	return fileInfo.Mode()&os.ModeCharDevice == 0, nil
+}
+
+// IsLaunchedByDebugger discovers if pararent process is deleve
+func IsLaunchedByDebugger() bool {
+	parent, err := ps.FindProcess(os.Getppid())
+	if err != nil {
+		return false
+	}
+	name := parent.Executable()
+	switch name {
+	case "dlv", "dlv.exe":
+		return true
+	}
+	return false
 }
