@@ -209,9 +209,12 @@ Test finished with 4 errors and 12 warnings. Total Sessions: 20.
     "preexecute": {
         "url": "http://myserver:8080/oktoexecute",
         "method": "POST",
-        "headers": {
-            "someheader": "headervalue",
-        },
+        "headers": [
+            {
+                "name" : "someheader",
+                "value": "headervalue"
+            }
+        ],
         "payload": "{\"testID\": \"12345\",\"startAt\": \"{{now.Format \"2006-01-02T15:04:05Z07:00\"}}\"}",
         "extractors": [
             {
