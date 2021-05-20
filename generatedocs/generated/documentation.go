@@ -264,6 +264,8 @@ var (
 		"hook.extractor.validator.value":                  {"Validate the value is exactly equal to this."},
 		"hook.extractors":                                 {"Extractors, can be used to extract a value from the response to be used on subsequent hook, or to validate that a that part of a response has a specific value."},
 		"hook.headers":                                    {"Custom headers to add to the request."},
+		"hook.headers.name":                               {"Name of header."},
+		"hook.headers.value":                              {"Value of header."},
 		"hook.method":                                     {"Method of request, defaults to none."},
 		"hook.respcodes":                                  {"Accepted response codes, defaults to 200."},
 		"hook.url":                                        {"Url to send a request towards."},

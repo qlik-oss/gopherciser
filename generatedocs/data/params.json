@@ -389,6 +389,12 @@
     "hook.headers":[
         "Custom headers to add to the request."
     ],
+    "hook.headers.name": [
+        "Name of header."
+    ],
+    "hook.headers.value": [
+        "Value of header."
+    ],
     "hook.method": [
         "Method of request, defaults to none."
     ],

@@ -143,6 +143,8 @@ This section contains the possibility to define hooks, which will send requests 
           * `string`: Value should be a string.
       * `value`: Validate the value is exactly equal to this.
   * `headers`: Custom headers to add to the request.
+    * `name`: Name of header.
+    * `value`: Value of header.
 * `postexecute`: Post execution hook. Can be used to send a request to an endpoint after a test is done.
   * `url`: Url to send a request towards.
   * `method`: Method of request, defaults to none.
@@ -165,6 +167,8 @@ This section contains the possibility to define hooks, which will send requests 
           * `string`: Value should be a string.
       * `value`: Validate the value is exactly equal to this.
   * `headers`: Custom headers to add to the request.
+    * `name`: Name of header.
+    * `value`: Value of header.
 
 ### Example
 

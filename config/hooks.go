@@ -43,14 +43,19 @@ type (
 		Validator *Validator       `json:"validator" doc-key:"hook.extractor.validator" displayname:"Validator"`
 	}
 
+	HookHeader struct {
+		Name  string          `json:"name" doc-key:"hook.headers.name" displayname:"Name"`
+		Value synced.Template `json:"value" doc-key:"hook.headers.value" displayname:"value"`
+	}
+
 	HookCore struct {
-		Url         string             `json:"url" doc-key:"hook.url" displayname:"Url"`
-		Method      HttpMethod         `json:"method" doc-key:"hook.method" displayname:"Method"`
-		Content     synced.Template    `json:"payload" doc-key:"hook.content" displayname:"Content" displayelement:"textarea"`
-		RespCodes   []int              `json:"respcodes" doc-key:"hook.respcodes" displayname:"Response codes"`
-		ContentType string             `json:"contenttype" doc-key:"hook.contenttype" displayname:"Content-Type"`
-		Extractors  []Extractor        `json:"extractors" doc-key:"hook.extractors" displayname:"Extractors"`
-		Headers     synced.TemplateMap `json:"headers" doc-key:"hook.headers" displayname:"Headers"`
+		Url         string          `json:"url" doc-key:"hook.url" displayname:"Url"`
+		Method      HttpMethod      `json:"method" doc-key:"hook.method" displayname:"Method"`
+		Content     synced.Template `json:"payload" doc-key:"hook.content" displayname:"Content" displayelement:"textarea"`
+		RespCodes   []int           `json:"respcodes" doc-key:"hook.respcodes" displayname:"Response codes"`
+		ContentType string          `json:"contenttype" doc-key:"hook.contenttype" displayname:"Content-Type"`
+		Extractors  []Extractor     `json:"extractors" doc-key:"hook.extractors" displayname:"Extractors"`
+		Headers     []HookHeader    `json:"headers" doc-key:"hook.headers" displayname:"Headers"`
 
 		initOnce sync.Once
 	}
@@ -326,9 +331,13 @@ func (hook *Hook) Execute(ctx context.Context, logEntry *logger.LogEntry, data *
 		return errors.WithStack(err)
 	}
 
-	headers, err := hook.Headers.Execute(data)
-	if err != nil {
-		return errors.WithStack(err)
+	headers := make(map[string]string, len(hook.Headers))
+	for _, header := range hook.Headers {
+		value, err := header.Value.ExecuteString(data)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		headers[header.Name] = value
 	}
 
 	buf := helpers.GlobalBufferPool.Get()
