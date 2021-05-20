@@ -48,6 +48,8 @@ const (
 	UserGeneratorPrefix
 	// UserGeneratorNone no user creation
 	UserGeneratorNone
+	// UserGeneratorCircularFile userlist read from file
+	UserGeneratorCircularFile
 )
 
 var (
@@ -55,12 +57,18 @@ var (
 		"userlist": int(UserGeneratorCircular),
 		"prefix":   int(UserGeneratorPrefix),
 		"none":     int(UserGeneratorNone),
+		"fromfile": int(UserGeneratorCircularFile),
 	})
 	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func (value Type) GetEnumMap() *enummap.EnumMap {
 	return userGeneratorTypeEnumMap
+}
+
+// String implements stringer interface
+func (value Type) String() string {
+	return userGeneratorTypeEnumMap.StringDefault(int(value), fmt.Sprintf("%d", value))
 }
 
 func UserGenHandler(generator Type) interface{} {
@@ -71,6 +79,8 @@ func UserGenHandler(generator Type) interface{} {
 		return NewCircularUsers()
 	case UserGeneratorPrefix:
 		return &PrefixUsers{}
+	case UserGeneratorCircularFile:
+		return NewCircularUsersFromFile()
 	case UserGeneratorNone:
 		return &NoneUsers{}
 	default:
