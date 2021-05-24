@@ -6,12 +6,13 @@ import (
 
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
 func TestParsing(t *testing.T) {
 	// simple claims
-	stClaims, err := session.NewSyncedTemplate(`{
+	stClaims, err := synced.New(`{
 			"user": "{{.UserName}}",
 			"directory": "{{.Directory}}"
 		}`)
@@ -51,7 +52,7 @@ func TestParsing(t *testing.T) {
 	value = fmt.Sprintf("%v", claims[key])
 	validate(t, key, value, expected)
 
-	stClaims, err = session.NewSyncedTemplate(`{
+	stClaims, err = synced.New(`{
 			"iat": {{now.Unix}},
 			"exp": {{(now.Add 18000000000000).Unix}},
 			"iss" : "https://qlik.api.interal",
@@ -125,7 +126,7 @@ func TestParsing(t *testing.T) {
 		}
 	}
 
-	stJWTHeader, err := session.NewSyncedTemplate("{\"kid\":\"{{.UserName}}-Key\"}")
+	stJWTHeader, err := synced.New("{\"kid\":\"{{.UserName}}-Key\"}")
 	if err != nil {
 		t.Fatal(err)
 	}

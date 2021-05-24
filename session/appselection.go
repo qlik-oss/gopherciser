@@ -8,6 +8,7 @@ import (
 	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
@@ -19,7 +20,7 @@ type (
 		// AppMode app selection mode
 		AppMode AppSelectionModeEnum `json:"appmode" displayname:"App selection mode" doc-key:"appselection.appmode"`
 		// App name or GUID depending on AppMode
-		App SyncedTemplate `json:"app,omitempty" displayname:"App" doc-key:"appselection.app"`
+		App synced.Template `json:"app,omitempty" displayname:"App" doc-key:"appselection.app"`
 		// AppList of app names or GUID's, depending on AppMode
 		AppList []string `json:"list,omitempty" displayname:"App selection list" doc-key:"appselection.list"`
 		// Filename of file containing app names, one app per line
@@ -114,7 +115,7 @@ func (appSelection *AppSelection) UnmarshalJSON(arg []byte) error {
 
 // NewAppSelection creates new instance of AppSelection
 func NewAppSelection(appMode AppSelectionModeEnum, app string, list []string) (*AppSelection, error) {
-	tmpl, err := NewSyncedTemplate(app)
+	tmpl, err := synced.New(app)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

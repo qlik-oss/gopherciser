@@ -23,6 +23,7 @@ import (
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/version"
 	"github.com/shiena/ansicolor"
@@ -69,13 +70,13 @@ type (
 
 	// LogSettings settings for logging
 	LogSettings struct {
-		Traffic        bool                   `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
-		Debug          bool                   `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
-		TrafficMetrics bool                   `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
-		Regression     bool                   `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
-		FileName       session.SyncedTemplate `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
-		Format         LogFormatType          `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
-		Summary        SummaryType            `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		Traffic        bool            `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
+		Debug          bool            `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
+		TrafficMetrics bool            `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression     bool            `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
+		FileName       synced.Template `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
+		Format         LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
+		Summary        SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
 	}
 
 	// OutputsSettings settings for produced outputs (if any)
@@ -90,11 +91,26 @@ type (
 		OutputsSettings OutputsSettings `json:"outputs,omitempty" doc-key:"config.settings.outputs"`
 	}
 
+	hookData struct {
+		Vars               map[string]interface{}
+		Scheduler          map[string]interface{}
+		ConnectionSettings *connection.ConnectionSettings
+		Counters           *statistics.ExecutionCounters
+	}
+
+	Hooks struct {
+		Pre  *Hook `json:"preexecute" doc-key:"config.hooks.preexecute" displayname:"Pre-execution Hook"`
+		Post *Hook `json:"postexecute" doc-key:"config.hooks.postexecute" displayname:"Post-execution Hook"`
+
+		data hookData
+	}
+
 	cfgCore struct {
 		Scenario           []scenario.Action             `json:"scenario"`
 		Settings           Settings                      `json:"settings"`
 		LoginSettings      users.UserGenerator           `json:"loginSettings"`
 		ConnectionSettings connection.ConnectionSettings `json:"connectionSettings"`
+		Hooks              Hooks                         `json:"hooks"`
 	}
 
 	// Config setup and scenario to execute
@@ -285,7 +301,7 @@ func NewExampleConfig() (*Config, error) {
 	selectAction.Type = scenario.ActionSelect
 	selectAction.Label = "select 1-10 values in object uvxyz"
 
-	logFileName, err := session.NewSyncedTemplate("scenarioresult.tsv")
+	logFileName, err := synced.New("scenarioresult.tsv")
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +364,7 @@ func NewExampleConfig() (*Config, error) {
 // NewEmptyConfig creates an empty config
 func NewEmptyConfig() (*Config, error) {
 
-	logFileName, err := session.NewSyncedTemplate("scenarioresult.tsv")
+	logFileName, err := synced.New("scenarioresult.tsv")
 	if err != nil {
 		return nil, err
 	}
@@ -498,6 +514,13 @@ func (cfg *Config) Validate() error {
 		}
 	}
 
+	// Validate hooks
+	if w, err := cfg.Hooks.Validate(); err != nil {
+		return errors.WithStack(err)
+	} else if len(w) > 0 {
+		cfg.ValidationWarnings = append(cfg.ValidationWarnings, w...)
+	}
+
 	return nil
 }
 
@@ -607,14 +630,45 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log test summary after test is done
 	defer summary(log, summaryType, time.Now(), &cfg.Counters)
 
+	cfg.PopulateHookData()
+
+	// Execute pre execution hook
+	if cfg.Hooks.Pre != nil {
+		hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
+		defer cancel()
+		if err := cfg.Hooks.Pre.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil {
+			return err
+		}
+	}
+
+	if cfg.Hooks.Post != nil {
+		defer func() {
+			// Execute post execution hook
+			hookCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Settings.Timeout*int(time.Second)))
+			defer cancel()
+			if err := cfg.Hooks.Post.Execute(hookCtx, entry, &cfg.Hooks.data, cfg.ConnectionSettings.Allowuntrusted); err != nil {
+				entry.LogError(err)
+			}
+		}()
+	}
+
 	execErr := cfg.Scheduler.Execute(
 		ctx, log, timeout, cfg.Scenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters,
 	)
+
 	if execErr != nil {
 		return errors.WithStack(execErr)
 	}
 
 	return nil
+}
+
+func (cfg *Config) PopulateHookData() {
+	cfg.Hooks.data.Vars = make(map[string]interface{})
+	cfg.Hooks.data.Scheduler = make(map[string]interface{})
+	cfg.Scheduler.PopulateHookData(cfg.Hooks.data.Scheduler)
+	cfg.Hooks.data.ConnectionSettings = &cfg.ConnectionSettings
+	cfg.Hooks.data.Counters = &cfg.Counters
 }
 
 func (cfg *Config) SetupStatistics(summary SummaryType) error {
@@ -955,6 +1009,31 @@ func (header SummaryHeader) ColRJ(key string, tbl *tabular.Table) {
 	tbl.ColRJ(key, header[key].FullName, header[key].ColSize)
 }
 
+// Validate hooks settings
+func (hooks Hooks) Validate() ([]string, error) {
+	warnings := make([]string, 0)
+	appendWarnings := func(w []string) {
+		if len(w) > 0 {
+			warnings = append(warnings, w...)
+		}
+	}
+	if hooks.Pre != nil {
+		w, err := hooks.Pre.Validate()
+		appendWarnings(w)
+		if err != nil {
+			return warnings, errors.WithStack(err)
+		}
+	}
+	if hooks.Post != nil {
+		w, err := hooks.Post.Validate()
+		appendWarnings(w)
+		if err != nil {
+			return warnings, errors.WithStack(err)
+		}
+	}
+	return warnings, nil
+}
+
 func setupOutputs(settings OutputsSettings) (string, error) {
 	if settings.Dir == "" {
 		return "", nil
@@ -992,7 +1071,7 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 		Regression: settings.Regression,
 	})
 
-	filename, err := settings.FileName.ReplaceWithoutSessionVariables(templateData)
+	filename, err := settings.FileName.ExecuteString(templateData)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to expand session variables in filename")
 	}

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go"
 	"github.com/qlik-oss/gopherciser/action"
@@ -23,6 +24,7 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/structs"
+	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/wsdialer"
 )
@@ -161,6 +163,7 @@ const (
 
 var (
 	defaultReconnectBackoff = wsdialer.DefaultBackoff // current set to same as event ws backoff, but keeping constant so it could be independently changed
+	jsonit                  = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 // Error implements error interface
@@ -603,7 +606,7 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 }
 
 // ReplaceSessionVariables execute template and replace session variables, e.g. "my app ({{.UserName}})" -> "my app (user_1)"
-func (state *State) ReplaceSessionVariables(input *SyncedTemplate) (string, error) {
+func (state *State) ReplaceSessionVariables(input *synced.Template) (string, error) {
 	state.variablesLock.RLock() // Lock variables map while replaceing session variables
 	defer state.variablesLock.RUnlock()
 
@@ -612,7 +615,7 @@ func (state *State) ReplaceSessionVariables(input *SyncedTemplate) (string, erro
 
 // ReplaceSessionVariablesWithLocalData execute template and replace session variables, e.g. "my app ({{.UserName}})" -> "my app (user_1)",
 // extra "local" data can be added in addition to the session variables
-func (state *State) ReplaceSessionVariablesWithLocalData(input *SyncedTemplate, localData interface{}) (string, error) {
+func (state *State) ReplaceSessionVariablesWithLocalData(input *synced.Template, localData interface{}) (string, error) {
 	if input == nil {
 		return "", nil
 	}

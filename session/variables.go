@@ -42,7 +42,7 @@ func (typ SessionVariableTypeEnum) String() string {
 func (typ *SessionVariableTypeEnum) UnmarshalJSON(arg []byte) error {
 	i, err := sessionVariableTypeEnumMap.UnMarshal(arg)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal DistributionType")
+		return errors.Wrap(err, "Failed to unmarshal SessionVariableType")
 	}
 
 	*typ = SessionVariableTypeEnum(i)

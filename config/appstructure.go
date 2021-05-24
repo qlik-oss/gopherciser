@@ -22,6 +22,7 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
@@ -203,7 +204,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	fileName := cfg.Settings.LogSettings.FileName.String()
 	ext := filepath.Ext(fileName)
 	appStructureLogPath := fmt.Sprintf("%s-appstructure%s", strings.TrimSuffix(fileName, ext), ext)
-	stmpl, err := session.NewSyncedTemplate(appStructureLogPath)
+	stmpl, err := synced.New(appStructureLogPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}

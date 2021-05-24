@@ -7,12 +7,13 @@ import (
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
 	BookMarkSettings struct {
-		Title session.SyncedTemplate `json:"title" displayname:"Bookmark title" doc-key:"bookmark.title"`
-		ID    string                 `json:"id" displayname:"Bookmark ID" doc-key:"bookmark.id" appstructure:"active:bookmark"`
+		Title synced.Template `json:"title" displayname:"Bookmark title" doc-key:"bookmark.title"`
+		ID    string                `json:"id" displayname:"Bookmark ID" doc-key:"bookmark.id" appstructure:"active:bookmark"`
 	}
 )
 
