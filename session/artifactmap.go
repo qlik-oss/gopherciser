@@ -44,6 +44,8 @@ type (
 		Title string
 		Type  string
 	}
+
+	ArtifactEntryCompareType int
 )
 
 // Currently known resource types
@@ -52,6 +54,12 @@ const (
 	ResourceTypeGenericLink = "genericlink"
 	ResourceTypeDataset     = "dataset"
 	ResourceTypeDataAsset   = "dataasset"
+)
+
+const (
+	ArtifactEntryCompareTypeID ArtifactEntryCompareType = iota
+	ArtifactEntryCompareTypeItemID
+	ArtifactEntryCompareTypeName
 )
 
 func (d *ArtifactList) Len() int {
@@ -135,16 +143,21 @@ func (am *ArtifactMap) FillArtifacts(item *ItemData) error {
 
 // DeleteApp deletes an app from the ArtifactMap
 func (am *ArtifactMap) DeleteApp(appGUID string) {
-	am.DeleteItem(ResourceTypeApp, appGUID, true)
+	am.DeleteItem(ResourceTypeApp, appGUID, ArtifactEntryCompareTypeID)
 }
 
 // DeleteItemUsingID with resource type and ID
 func (am *ArtifactMap) DeleteItemUsingID(id, resourceType string) {
-	am.DeleteItem(resourceType, id, true)
+	am.DeleteItem(resourceType, id, ArtifactEntryCompareTypeID)
+}
+
+// DeleteItemUsingItemID with resource type and item ID
+func (am *ArtifactMap) DeleteItemUsingItemID(id, resourceType string) {
+	am.DeleteItem(resourceType, id, ArtifactEntryCompareTypeItemID)
 }
 
 // DeleteItem from artifact map
-func (am *ArtifactMap) DeleteItem(resourceType, lookfor string, id bool) {
+func (am *ArtifactMap) DeleteItem(resourceType, lookfor string, compareType ArtifactEntryCompareType) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
@@ -152,7 +165,7 @@ func (am *ArtifactMap) DeleteItem(resourceType, lookfor string, id bool) {
 		return
 	}
 
-	compare := getCompareFunc(id)
+	compare := getCompareFunc(compareType)
 	for index, entry := range am.resourceMap[resourceType].list {
 		if compare(entry, lookfor) {
 			am.resourceMap[resourceType].list = append(am.resourceMap[resourceType].list[:index], am.resourceMap[resourceType].list[index+1:]...)
@@ -229,7 +242,7 @@ func (am *ArtifactMap) GetAppItemID(appName string) (string, error) {
 }
 
 func (am *ArtifactMap) getAppEntry(appName string) (*ArtifactEntry, error) {
-	entry, err := am.Lookup(ResourceTypeApp, appName, false)
+	entry, err := am.Lookup(ResourceTypeApp, appName, ArtifactEntryCompareTypeName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -269,12 +282,17 @@ func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error)
 
 // LookupAppTitle lookup app using title
 func (am *ArtifactMap) LookupAppTitle(title string) (*ArtifactEntry, error) {
-	return am.Lookup(ResourceTypeApp, title, false)
+	return am.Lookup(ResourceTypeApp, title, ArtifactEntryCompareTypeName)
+}
+
+// LookupItemID lookup resource using Item ID
+func (am *ArtifactMap) LookupItemID(resourcetype, itemID string) (*ArtifactEntry, error) {
+	return am.Lookup(resourcetype, itemID, ArtifactEntryCompareTypeItemID)
 }
 
 // LookupAppGUID lookup app using GUID
 func (am *ArtifactMap) LookupAppGUID(guid string) (*ArtifactEntry, error) {
-	entry, err := am.Lookup(ResourceTypeApp, guid, true)
+	entry, err := am.Lookup(ResourceTypeApp, guid, ArtifactEntryCompareTypeID)
 	if err != nil {
 		// GUID not found in map, create new entry with GUID (Supports using openapp with GUID and no preceeding OpenHub)
 		entry = &ArtifactEntry{ID: guid, ResourceType: ResourceTypeApp} // todo how to handle itemID?
@@ -283,11 +301,11 @@ func (am *ArtifactMap) LookupAppGUID(guid string) (*ArtifactEntry, error) {
 }
 
 // Lookup resource type with using lookup (name or ID, defined by id flag)
-func (am *ArtifactMap) Lookup(resourcetype, lookup string, id bool) (*ArtifactEntry, error) {
+func (am *ArtifactMap) Lookup(resourcetype, lookup string, compareType ArtifactEntryCompareType) (*ArtifactEntry, error) {
 	am.mu.RLock()
 	defer am.mu.RUnlock()
 
-	compare := getCompareFunc(id)
+	compare := getCompareFunc(compareType)
 
 	if am.resourceMap[resourcetype] != nil {
 		for _, entry := range am.resourceMap[resourcetype].list {
@@ -300,11 +318,16 @@ func (am *ArtifactMap) Lookup(resourcetype, lookup string, id bool) (*ArtifactEn
 	return nil, errors.Errorf("item type<%s> id<%s> not found in artifact map", resourcetype, lookup)
 }
 
-func getCompareFunc(id bool) func(*ArtifactEntry, string) bool {
-	if id {
+func getCompareFunc(compareType ArtifactEntryCompareType) func(*ArtifactEntry, string) bool {
+	switch compareType {
+	case ArtifactEntryCompareTypeID:
 		return compareID
+	case ArtifactEntryCompareTypeName:
+		return compareName
+	case ArtifactEntryCompareTypeItemID:
+		return compareItemID
 	}
-	return compareName
+	return nil
 }
 
 func compareName(entry *ArtifactEntry, name string) bool {
@@ -319,6 +342,13 @@ func compareID(entry *ArtifactEntry, id string) bool {
 		return false
 	}
 	return entry.ID == id
+}
+
+func compareItemID(entry *ArtifactEntry, id string) bool {
+	if entry == nil {
+		return false
+	}
+	return entry.ItemID == id
 }
 
 // LogMap log entire map as debug logging
