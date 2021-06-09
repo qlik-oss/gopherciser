@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -88,7 +89,12 @@ func PushMetrics(ctx context.Context, metricsPort int, metricsAddress, job strin
 		return err
 	}
 
-	var addr = flag.String("push-address", fmt.Sprintf("%s:%d", metricsAddress, metricsPort), "The address to push prometheus metrics")
+	u, err := url.Parse(metricsAddress)
+	if err != nil {
+		return fmt.Errorf("can't parse metricsAddress <%s>, metrics will not be pushed", metricsAddress)
+	}
+
+	var addr = flag.String("push-address", fmt.Sprintf("%s://%s:%d%s", u.Scheme, u.Host, metricsPort, u.Path), "The address to push prometheus metrics")
 	pusher := push.New(*addr, job).Gatherer(gopherRegistry)
 	for _, gk := range groupingKeys {
 		kv := strings.SplitN(gk, "=", 2)
