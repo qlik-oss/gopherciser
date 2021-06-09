@@ -125,23 +125,23 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 		return false, errors.Wrapf(err, "error unmarshaling value in path<%s>", string(constraint.Path))
 	}
 
-	switch value.(type) {
+	switch v := value.(type) {
 	case float64:
 		floatValue, errParse := strconv.ParseFloat(constraint.value, 64)
 		if errParse != nil {
 			return false, errors.Wrapf(errParse, "error parsing constraint value as float64")
 		}
-		return constraint.operator.evalFloat64(value.(float64), floatValue)
+		return constraint.operator.evalFloat64(v, floatValue)
 	case bool:
 		boolValue, errParse := strconv.ParseBool(constraint.value)
 		if errParse != nil {
 			return false, errors.Wrapf(errParse, "error parsing constraint value as bool")
 		}
-		return constraint.operator.evalBool(value.(bool), boolValue)
+		return constraint.operator.evalBool(v, boolValue)
 	case string:
-		return constraint.operator.evalString(value.(string), constraint.value)
+		return constraint.operator.evalString(v, constraint.value)
 	case []interface{}:
-		return constraint.operator.evalArray(value.([]interface{}), constraint.value)
+		return constraint.operator.evalArray(v, constraint.value)
 	default:
 		return false, errors.Errorf("value type<%T> not supported", value)
 	}
@@ -205,24 +205,24 @@ func (operator constraintOperator) evalArray(val []interface{}, constraint strin
 	switch operator {
 	case containsOperator:
 		for _, v := range val {
-			switch v.(type) {
+			switch vtyped := v.(type) {
 			case float64:
 				if errParseFloat != nil {
 					return false, errors.Wrapf(errParseFloat, "error parsing constraint value as float64")
 				}
-				if v.(float64) > floatValue-0.0000000000001 && v.(float64) < floatValue+0.0000000000001 {
+				if vtyped > floatValue-0.0000000000001 && vtyped < floatValue+0.0000000000001 {
 					return true, nil
 				}
 			case bool:
 				if errParseBool != nil {
 					return false, errors.Wrapf(errParseBool, "error parsing constraint value as bool")
 				}
-				if v.(bool) == boolValue {
+				if vtyped == boolValue {
 					return true, nil
 				}
-				return operator.evalBool(v.(bool), boolValue)
+				return operator.evalBool(vtyped, boolValue)
 			case string:
-				if v.(string) == constraint {
+				if vtyped == constraint {
 					return true, nil
 				}
 			default:

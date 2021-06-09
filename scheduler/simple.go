@@ -22,7 +22,7 @@ type (
 		ExecutionTime    int     `json:"executionTime" displayname:"Execution time" doc-key:"config.scheduler.settings.executiontime"` // in seconds
 		Iterations       int     `json:"iterations" displayname:"Iterations" doc-key:"config.scheduler.settings.iterations"`
 		RampupDelay      float64 `json:"rampupDelay" displayname:"Rampup delay" doc-key:"config.scheduler.settings.rampupdelay"` // in seconds
-		ConcurrentUsers  int     `json:"concurrentUsers" displayname:"Concurrent users" displayname:"Rampup delay" doc-key:"config.scheduler.settings.concurrentusers"`
+		ConcurrentUsers  int     `json:"concurrentUsers" displayname:"Concurrent users" doc-key:"config.scheduler.settings.concurrentusers"`
 		ReuseUsers       bool    `json:"reuseUsers" displayname:"Reuse users" doc-key:"config.scheduler.settings.reuseusers"`
 		OnlyInstanceSeed bool    `json:"onlyinstanceseed" displayname:"Only use instance seed" doc-key:"config.scheduler.settings.onlyinstanceseed"`
 	}

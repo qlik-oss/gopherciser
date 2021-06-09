@@ -630,9 +630,9 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 }
 
 func checkEngineErr(err error, sessionState *State, req string) error {
-	switch err.(type) {
+	switch e := err.(type) {
 	case enigma.Error:
-		switch err.(enigma.Error).Code() {
+		switch e.Code() {
 		case constant.LocerrGenericAborted:
 			sessionState.LogEntry.LogDebugf("Request<%s> was aborted", req)
 			return nil

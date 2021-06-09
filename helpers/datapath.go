@@ -125,9 +125,9 @@ func (path DataPath) LookupMulti(data json.RawMessage, separator string) ([]json
 	}
 
 	var dataArray []interface{}
-	switch jMap.(type) {
+	switch j := jMap.(type) {
 	case []interface{}:
-		dataArray = jMap.([]interface{})
+		dataArray = j
 	default:
 		return nil, errors.Errorf("Expected array at path<%s> but was type<%T>", sa[0], jMap)
 	}
