@@ -91,7 +91,7 @@ func PushMetrics(ctx context.Context, metricsPort int, metricsAddress, job strin
 
 	u, err := url.Parse(metricsAddress)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("can't parse metricsAddress <%s>, metrics will not be pushed", metricsAddress)
 	}
 
 	var addr = flag.String("push-address", fmt.Sprintf("%s://%s:%d%s", u.Scheme, u.Host, metricsPort, u.Path), "The address to push prometheus metrics")
