@@ -24,15 +24,15 @@ func FlattenMultiError(mErr *multierror.Error) error {
 
 // TrueCause of error, in the case of a multi error, the first error in list will be used
 func TrueCause(err error) error {
-	switch err.(type) {
+	switch e := err.(type) {
 	case nil:
 		return nil
 	case *multierror.Error:
-		switch err.(*multierror.Error).Len() {
+		switch e.Len() {
 		case 0:
 			return nil
 		default:
-			return TrueCause(err.(*multierror.Error).Errors[0])
+			return TrueCause(e.Errors[0])
 		}
 	default:
 		cause := errors.Cause(err)

@@ -32,40 +32,17 @@ set -eu
 
 export GO111MODULE=on
 
-GLVERSION=1.18.0
-CURVER=
-EXPECTEDVER=MD5
+GLVERSION=1.40.1
+CURVER=NULL
 
 # Determine OS and act accordingly to extract MD5 sum as an override due to -version being missing in golangci-lint CLI
 
 # Check if linter is installed
-if [[ -f "$GOPATH/bin/golangci-lint" ]]; then
-    # No longer possible with golangci-lint >v1.17
-    # CURVER=$($GOPATH/bin/golangci-lint --version)
-    case $OS in
-    Darwin)
-      echo OS type Darwin
-      echo Expecting golangci-lint MD5 sum of : 6d3ea0852296ec0463db6c18520004bf
-      EXPECTEDVER=6d3ea0852296ec0463db6c18520004bf
-      CURVER=$(md5 -q "$GOPATH"/bin/golangci-lint)
-      ;;
-    Windows)
-      echo OS type Windows
-      echo Expecting golangci-lint MD5 sum of : 3b17a70714623ea776803e6708eaa5aa
-      EXPECTEDVER=3b17a70714623ea776803e6708eaa5aa
-      CURVER=$(md5sum "$GOPATH"/bin/golangci-lint | cut -f 1 -d\ )
-      ;;
-    *)
-      echo OS type Linux
-      echo Expecting golangci-lint MD5 sum of : e7a94795a7aedd194053d89c563df528
-      EXPECTEDVER=e7a94795a7aedd194053d89c563df528
-      CURVER=$(md5sum "$GOPATH"/bin/golangci-lint | cut -f 1 -d\ )
-      ;;
-    esac
-fi
+CURVER=$("$GOPATH"/bin/golangci-lint --version | cut -f 4 -d\ )
 
 # Check if we have the correct version, otherwise install it
-if ! [[ "$CURVER" == *"$EXPECTEDVER"* ]]; then
+echo detected lint version "$CURVER"
+if ! [[ "$CURVER" == "$GLVERSION" ]]; then
     echo golangci-lint not installed or incorrect version, installing golangci-lint v$GLVERSION
     curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$(go env GOPATH)"/bin v$GLVERSION
 else
