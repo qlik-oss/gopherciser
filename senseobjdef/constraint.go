@@ -205,24 +205,24 @@ func (operator constraintOperator) evalArray(val []interface{}, constraint strin
 	switch operator {
 	case containsOperator:
 		for _, v := range val {
-			switch vtyped := v.(type) {
+			switch vTyped := v.(type) {
 			case float64:
 				if errParseFloat != nil {
 					return false, errors.Wrapf(errParseFloat, "error parsing constraint value as float64")
 				}
-				if vtyped > floatValue-0.0000000000001 && vtyped < floatValue+0.0000000000001 {
+				if vTyped > floatValue-0.0000000000001 && vTyped < floatValue+0.0000000000001 {
 					return true, nil
 				}
 			case bool:
 				if errParseBool != nil {
 					return false, errors.Wrapf(errParseBool, "error parsing constraint value as bool")
 				}
-				if vtyped == boolValue {
+				if vTyped == boolValue {
 					return true, nil
 				}
-				return operator.evalBool(vtyped, boolValue)
+				return operator.evalBool(vTyped, boolValue)
 			case string:
-				if vtyped == constraint {
+				if vTyped == constraint {
 					return true, nil
 				}
 			default:

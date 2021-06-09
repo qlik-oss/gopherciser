@@ -92,11 +92,9 @@ func TestPanicAndFailRecover(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := errors.Cause(cfg.Execute(ctx, nil)); err != nil {
-		switch e := err.(type) {
+		switch mErr := err.(type) {
 		case *multierror.Error:
 			expectedErrs := []string{"PANIC: panic 1", "PANIC: panic 2", "fail error 1", "fail error 2"}
-
-			mErr := e
 			if len(mErr.Errors) != len(expectedErrs) {
 				t.Log(err)
 				t.Fatalf("multi error contains %d errors, expected %d", len(mErr.Errors), len(expectedErrs))

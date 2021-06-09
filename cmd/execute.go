@@ -114,7 +114,7 @@ var executeCmd = &cobra.Command{
 			var exitCode int
 
 			cause := errors.Cause(execErr)
-			switch c := cause.(type) {
+			switch cErr := cause.(type) {
 			case JSONParseError:
 				errMsg = fmt.Sprint("JSONParseError: ", execErr)
 				exitCode = ExitCodeJSONParseError
@@ -140,11 +140,10 @@ var executeCmd = &cobra.Command{
 				errMsg = fmt.Sprint("SummaryError: ", execErr)
 				exitCode = ExitCodeSummaryTypeError
 			case *multierror.Error:
-				mErr := c
-				if mErr != nil {
-					errCount := len(mErr.Errors)
+				if cErr != nil {
+					errCount := len(cErr.Errors)
 					if errCount > 0 {
-						errMsg = fmt.Sprintf("%d errors occurred:\nFirst error: %s", errCount, mErr.Errors[0].Error())
+						errMsg = fmt.Sprintf("%d errors occurred:\nFirst error: %s", errCount, cErr.Errors[0].Error())
 					}
 					if errCount > 0x7F {
 						errCount = 0x7F
