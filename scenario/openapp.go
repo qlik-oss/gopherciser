@@ -144,7 +144,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 
 		sessionState.LogEntry.LogInfo("EngineVersion", version.ComponentVersion)
 		return nil
-	}, actionState, false, fmt.Sprintf("Failed getting engine version"))
+	}, actionState, false, "Failed getting engine version")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		idm, desktopErr := uplink.Global.IsDesktopMode(ctx)

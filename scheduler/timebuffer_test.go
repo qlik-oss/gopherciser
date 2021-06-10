@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -40,7 +39,7 @@ func TestTimeBufMinDur(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	expectedError := fmt.Sprintf("illegal start time<0001-01-01 00:00:00 +0000 UTC>")
+	expectedError := "illegal start time<0001-01-01 00:00:00 +0000 UTC>"
 	if err := timeBuf.Wait(ctx, false); err == nil || err.Error() != expectedError {
 		t.Errorf("Expected error<%s>  got: %+v", expectedError, err)
 	}

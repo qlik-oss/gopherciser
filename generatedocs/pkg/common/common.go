@@ -59,9 +59,7 @@ func Actions() map[string]interface{} {
 
 	// remove helper actions
 	for _, ignore := range IgnoreActions {
-		if _, remove := actionMap[ignore]; remove {
-			delete(actionMap, ignore)
-		}
+		delete(actionMap, ignore)
 	}
 
 	return actionMap
