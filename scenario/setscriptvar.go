@@ -17,7 +17,7 @@ type (
 	SetScriptVarSettings struct {
 		Name      string                          `json:"name" doc-key:"setscriptvar.name" displayname:"Name"`
 		Type      session.SessionVariableTypeEnum `json:"type" doc-key:"setscriptvar.type" displayname:"Variable type"`
-		Value     synced.Template           `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
+		Value     synced.Template                 `json:"value" doc-key:"setscriptvar.value" displayname:"Variable value"`
 		Separator string                          `json:"sep" doc-key:"setscriptvar.sep" displayname:"Array separator"`
 	}
 )

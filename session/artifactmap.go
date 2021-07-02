@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	enigma "github.com/qlik-oss/enigma-go"
+	enigma "github.com/qlik-oss/enigma-go/v2"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/structs"
 )

@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 
-	"github.com/qlik-oss/enigma-go"
+	"github.com/qlik-oss/enigma-go/v2"
 )
 
 type (
