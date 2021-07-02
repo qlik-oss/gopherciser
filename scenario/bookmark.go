@@ -2,7 +2,7 @@ package scenario
 
 import (
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go"
+	"github.com/qlik-oss/enigma-go/v2"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
@@ -13,7 +13,7 @@ import (
 type (
 	BookMarkSettings struct {
 		Title synced.Template `json:"title" displayname:"Bookmark title" doc-key:"bookmark.title"`
-		ID    string                `json:"id" displayname:"Bookmark ID" doc-key:"bookmark.id" appstructure:"active:bookmark"`
+		ID    string          `json:"id" displayname:"Bookmark ID" doc-key:"bookmark.id" appstructure:"active:bookmark"`
 	}
 )
 

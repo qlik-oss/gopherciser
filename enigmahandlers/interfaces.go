@@ -1,6 +1,6 @@
 package enigmahandlers
 
-import enigma "github.com/qlik-oss/enigma-go"
+import enigma "github.com/qlik-oss/enigma-go/v2"
 
 type (
 	// ITrafficLogger interface for traffic logger

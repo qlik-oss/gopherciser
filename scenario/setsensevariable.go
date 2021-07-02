@@ -13,7 +13,7 @@ import (
 type (
 	//SetSenseVariableSettings
 	SetSenseVariableSettings struct {
-		VariableName  string                `json:"name" displayname:"name of the variable" doc-key:"setsensevariable.name"`
+		VariableName  string          `json:"name" displayname:"name of the variable" doc-key:"setsensevariable.name"`
 		VariableValue synced.Template `json:"value" displayname:"value of the variable" doc-key:"setsensevariable.value"`
 	}
 )
