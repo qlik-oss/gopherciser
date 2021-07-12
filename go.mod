@@ -8,9 +8,8 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eventials/go-tus v0.0.0-20200718001131-45c7ec8f5d59
-	github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.0.4
+	github.com/gobwas/ws v1.1.0
 	github.com/google/uuid v1.2.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/json-iterator/go v1.1.11
