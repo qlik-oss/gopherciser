@@ -10,7 +10,7 @@ require (
 	github.com/eventials/go-tus v0.0.0-20200718001131-45c7ec8f5d59
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.1.0
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/json-iterator/go v1.1.11
 	github.com/kr/text v0.2.0 // indirect
