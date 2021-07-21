@@ -57,7 +57,7 @@ case $LINTLEVEL in
 # subrules currently disabled:
 #   * structtag : We override tags in engima, so structtag complains about repeating tags, found no way to tell it this is intended.
 MIN)
-  "$GOPATH"/bin/golangci-lint run -D structcheck
+  "$GOPATH"/bin/golangci-lint run -D structcheck --timeout 5m
   ;;
 # Default set of linters
 *)
