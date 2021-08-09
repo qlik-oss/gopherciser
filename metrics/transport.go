@@ -116,7 +116,13 @@ func PushMetrics(ctx context.Context, metricsPort int, metricsAddress, job strin
 					_, _ = fmt.Fprintf(os.Stderr, "Push error received: %s", err)
 				}
 			case <-ctx.Done():
-				_ = pusher.Push() // push the latest values, but ignore error when shutting down
+				err := pusher.Push() // push the latest values, but ignore error when shutting down
+				if err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "Push error received: %s", err)
+				} else {
+					_, _ = os.Stderr.WriteString("Pushed to prometheus ok")
+				}
+
 				ticker.Stop()
 				return
 			}
