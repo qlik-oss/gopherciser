@@ -10,7 +10,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.16
+      - image: circleci/golang:1.17
     steps:
       - checkout
       - setup_remote_docker
@@ -123,7 +123,7 @@ jobs:
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.16
+      - image: circleci/golang:1.17
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
