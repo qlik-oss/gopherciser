@@ -100,8 +100,8 @@ jobs:
           paths:
             - "/go/pkg/mod"
       - store_artifacts:
-          path: pack
-          destination: pack            
+          path: build
+          destination: build
 
   publish-github:
     <<: *defaults
