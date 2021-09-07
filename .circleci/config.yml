@@ -99,6 +99,9 @@ jobs:
           key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
+      - store_artifacts:
+          path: build
+          destination: build
 
   publish-github:
     <<: *defaults
@@ -173,6 +176,9 @@ workflows:
       - test-go-version:
           name: "Test Go 1.15"
           version: "1.15"
+      - test-go-version:
+          name: "Test Go 1.17"
+          version: "1.17"
       - publish-github:
           requires:
             - build
