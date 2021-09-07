@@ -99,6 +99,9 @@ jobs:
           key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
+      - store_artifacts:
+          path: pack
+          destination: pack            
 
   publish-github:
     <<: *defaults
