@@ -231,7 +231,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 		err := sched.runIteration(userScenario, sessionState, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
-			if sched.MaxErrorCount > 0 && counters.Errors.Current() > sched.MaxErrorCount {
+			if !helpers.IsContextTriggered(ctx) && sched.MaxErrorCount > 0 && counters.Errors.Current() > sched.MaxErrorCount {
 				globalLogEntry := log.NewLogEntry()
 				msg := fmt.Sprintf("Max error count of %d surpassed, aborting execution!", sched.MaxErrorCount)
 				globalLogEntry.Log(logger.ErrorLevel, msg)
