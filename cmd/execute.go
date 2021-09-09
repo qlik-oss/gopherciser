@@ -38,6 +38,11 @@ type (
 	OsError string
 	// SummaryTypeError incorrect summary type
 	SummaryTypeError string
+	// MaxErrorsReachedError max errors limit was reached during execution
+	MaxErrorsReachedError struct {
+		SubError error
+		Msg      string
+	}
 )
 
 var (
@@ -92,6 +97,18 @@ func (err SummaryTypeError) Error() string {
 	return string(err)
 }
 
+// Error max error limit reached
+func (err MaxErrorsReachedError) Error() string {
+	msg := ""
+	switch subErr := errors.Cause(err.SubError).(type) {
+	case *multierror.Error:
+		msg = TruncatedMultiErrorMessage(subErr)
+	default:
+		msg = fmt.Sprint("1 error occurred:\n", subErr)
+	}
+	return fmt.Sprintf("%s\n%s\n", msg, err.Msg)
+}
+
 // *********************
 
 // executeCmd represents the execute command
@@ -140,15 +157,15 @@ var executeCmd = &cobra.Command{
 				errMsg = fmt.Sprint("SummaryError: ", execErr)
 				exitCode = ExitCodeSummaryTypeError
 			case *multierror.Error:
-				if cErr != nil {
-					errCount := len(cErr.Errors)
-					if errCount > 0 {
-						errMsg = fmt.Sprintf("%d errors occurred:\nFirst error: %s", errCount, cErr.Errors[0].Error())
-					}
-					if errCount > 0x7F {
-						errCount = 0x7F
-					}
-					exitCode = errCount
+				errMsg = TruncatedMultiErrorMessage(cErr)
+				exitCode = MultiErrorCode(cErr)
+			case MaxErrorsReachedError:
+				errMsg = cErr.Error()
+				switch subErr := errors.Cause(cErr.SubError).(type) {
+				case *multierror.Error:
+					exitCode = MultiErrorCode(subErr)
+				default:
+					exitCode = 1
 				}
 			default:
 				// only one error
@@ -160,6 +177,31 @@ var executeCmd = &cobra.Command{
 			os.Exit(exitCode)
 		}
 	},
+}
+
+// TruncatedMultiErrorMessage to first message + error count
+func TruncatedMultiErrorMessage(err *multierror.Error) string {
+	errMsg := ""
+	errCount := 0
+	if err != nil {
+		errCount = len(err.Errors)
+		if errCount > 0 {
+			errMsg = fmt.Sprintf("%d errors occurred:\nFirst error: %s", errCount, err.Errors[0].Error())
+		}
+	}
+	return errMsg
+}
+
+// MultiErrorCode error count truncated to 0x7F
+func MultiErrorCode(err *multierror.Error) int {
+	if err == nil {
+		return 0
+	}
+	errCount := len(err.Errors)
+	if errCount > 0x7F {
+		errCount = 0x7F
+	}
+	return errCount
 }
 
 func init() {
@@ -264,13 +306,19 @@ func execute() error {
 	}{strings.Split(filepath.Base(cfgFile), ".")[0]}
 
 	// === start execution ===
+	var msgErrorReachedMsg *string
 	cfg.Scheduler.SetCancel(func(msg string) {
-		if msg != "" {
-			os.Stderr.WriteString(fmt.Sprintf("%s\n", msg))
-		}
+		msgErrorReachedMsg = &msg
 		cancel()
 	})
-	return cfg.Execute(ctx, templateData)
+	err := cfg.Execute(ctx, templateData)
+	if msgErrorReachedMsg != nil {
+		return MaxErrorsReachedError{
+			Msg:      *msgErrorReachedMsg,
+			SubError: err,
+		}
+	}
+	return err
 }
 
 func ReadObjectDefinitions() error {
