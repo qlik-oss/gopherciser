@@ -2214,6 +2214,7 @@ This section of the JSON file contains scheduler settings for the users in the l
       * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
       * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
       * `20.0`: If the previous attempt to re-connect failed, wait 20.0s before attempting again
+* `maxerrors`: Break execution if max errors exceeded. 0 - Do not break. Defaults to 0.
 * `settings`: 
   * `executionTime`: Test execution time (seconds). The sessions are disconnected when the specified time has elapsed. Allowed values are positive integers. `-1` means an infinite execution time.
   * `iterations`: Number of iterations for each 'concurrent' user to repeat. Allowed values are positive integers. `-1` means an infinite number of iterations.

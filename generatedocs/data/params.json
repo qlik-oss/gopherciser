@@ -224,6 +224,9 @@
     "config.scheduler.instance": [
         "Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1."
     ],
+    "config.scheduler.maxerrors": [
+        "Break execution if max errors exceeded. 0 - Do not break. Defaults to 0."
+    ],
     "config.settings": [
         "This section of the JSON file contains timeout and logging settings for the load scenario"
     ],

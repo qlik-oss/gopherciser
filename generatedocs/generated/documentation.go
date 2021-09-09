@@ -211,6 +211,7 @@ var (
 		"config.scheduler.iterationtimebuffer":            {""},
 		"config.scheduler.iterationtimebuffer.duration":   {"Duration of the time buffer (for example, `500ms`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`."},
 		"config.scheduler.iterationtimebuffer.mode":       {"Time buffer mode. Defaults to `nowait`, if omitted.", "`nowait`: No time buffer in between the iterations.", "`constant`: Add a constant time buffer after each iteration. Defined by `duration`.", "`onerror`: Add a time buffer in case of an error. Defined by `duration`.", "`minduration`: Add a time buffer if the iteration duration is less than `duration`."},
+		"config.scheduler.maxerrors":                      {"Break execution if max errors exceeded. 0 - Do not break. Defaults to 0."},
 		"config.scheduler.reconnectsettings":              {"Settings for enabling re-connection attempts in case of unexpected disconnects."},
 		"config.scheduler.settings":                       {""},
 		"config.scheduler.settings.concurrentusers":       {"Number of concurrent users to simulate. Allowed values are positive integers."},
