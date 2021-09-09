@@ -255,6 +255,12 @@ func execute() error {
 	}{strings.Split(filepath.Base(cfgFile), ".")[0]}
 
 	// === start execution ===
+	cfg.Scheduler.SetCancel(func(msg string) {
+		if msg != "" {
+			os.Stderr.WriteString(fmt.Sprintf("%s\n", msg))
+		}
+		cancel()
+	})
 	return cfg.Execute(ctx, templateData)
 }
 
