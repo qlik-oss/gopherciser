@@ -228,8 +228,17 @@ func execute() error {
 	}
 
 	// === Handle SIGINT ===
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	// this could be replaced by
+	// 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	// when moving above go 1.15
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		cancel()
+	}()
 
 	// === Prometheus section ===
 	if metricsPort > 0 {
