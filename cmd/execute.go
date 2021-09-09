@@ -127,7 +127,7 @@ var executeCmd = &cobra.Command{
 		}()
 
 		if execErr := execute(); execErr != nil {
-			errMsg := "Unknown error"
+			var errMsg string
 			var exitCode int
 
 			cause := errors.Cause(execErr)
