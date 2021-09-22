@@ -373,9 +373,14 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 		return false, errors.WithStack(panicErr)
 	}
 
+	if sessionState.Counters.MaxErrorReached() {
+		sessionState.Cancel()
+		return false, errors.WithStack(act.endAction(sessionState, actionState, originalActionEntry))
+	}
+
 	if actionState.Failed {
 		err := actionState.Errors()
-		if sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsSenseWebsocketDisconnected(err) {
+		if !sessionState.IsAbortTriggered() && sessionState.ReconnectSettings.Reconnect && !act.IsContainerAction() && sessionState.IsSenseWebsocketDisconnected(err) {
 			sessionState.AwaitReconnect()
 			if sessionState.IsAbortTriggered() {
 				if err = sessionState.GetReconnectError(); err != nil {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/InVisionApp/tabular"
@@ -89,6 +90,7 @@ type (
 		Timeout         int             `json:"timeout" displayname:"WebSocket timeout" doc-key:"config.settings.timeout"` // Timeout in seconds
 		LogSettings     LogSettings     `json:"logs" doc-key:"config.settings.logs"`
 		OutputsSettings OutputsSettings `json:"outputs,omitempty" doc-key:"config.settings.outputs"`
+		MaxErrorCount   uint64          `json:"maxerrors,omitempty" doc-key:"config.settings.maxerrors"`
 	}
 
 	hookData struct {
@@ -129,6 +131,9 @@ type (
 			// AcceptNoScheduler produces no error scheduler does not exist in json
 			AcceptNoScheduler bool
 		} `json:"-"`
+
+		// Cancel execution, should be set to function triggering context cancel
+		Cancel func(msg string) `json:"-"`
 	}
 
 	//SummaryEntry title, value and color combo for summary printout
@@ -629,6 +634,20 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 
 	// Log test summary after test is done
 	defer summary(log, summaryType, time.Now(), &cfg.Counters)
+
+	if cfg.Settings.MaxErrorCount > 0 {
+		var once sync.Once
+		cfg.Counters.SetMaxErrors(cfg.Settings.MaxErrorCount, func(msg string) {
+			once.Do(func() {
+				if cfg.Cancel == nil {
+					entry.LogError(errors.Errorf("max errors surpassed, but no function to cancel execution is set!"))
+					return
+				}
+				entry.Log(logger.ErrorLevel, msg)
+				cfg.Cancel(msg)
+			})
+		})
+	}
 
 	cfg.PopulateHookData()
 

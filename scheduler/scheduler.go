@@ -39,9 +39,6 @@ type (
 		RequireScenario() bool
 		// PopulateHookData populate map with data which can be used by go template in hooks
 		PopulateHookData(data map[string]interface{})
-
-		Cancel(msg string)
-		SetCancel(cancel func(msg string))
 	}
 
 	// Scheduler common core of schedulers
@@ -54,14 +51,9 @@ type (
 		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"`
 		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
 		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings"`
-		// MaxErrorCount abort scheduler after error count is reached
-		MaxErrorCount uint64 `json:"maxerrors,omitempty" doc-key:"config.scheduler.maxerrors"`
 
 		connectionSettings *connection.ConnectionSettings
-
-		continueOnErrors bool
-
-		cancel func(msg string)
+		continueOnErrors   bool
 	}
 
 	schedulerTmp struct {
@@ -231,14 +223,6 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 		err := sched.runIteration(userScenario, sessionState, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
-			if !helpers.IsContextTriggered(ctx) && sched.MaxErrorCount > 0 && counters.Errors.Current() > sched.MaxErrorCount {
-				globalLogEntry := log.NewLogEntry()
-				msg := fmt.Sprintf("Max error count of %d surpassed, aborting execution!", sched.MaxErrorCount)
-				globalLogEntry.Log(logger.ErrorLevel, msg)
-
-				sched.Cancel(msg)
-				break
-			}
 		}
 
 		if err := sched.TimeBuf.Wait(ctx, false); err != nil {
@@ -293,24 +277,6 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 		}
 	}
 	return nil
-}
-
-// SetCancel function to execute to cancel all executions
-func (sched *Scheduler) SetCancel(cancel func(msg string)) {
-	if sched == nil {
-		return
-	}
-	sched.cancel = cancel
-}
-
-// Cancel all executions
-func (sched *Scheduler) Cancel(msg string) {
-	if sched == nil {
-		return
-	}
-	if sched.cancel != nil {
-		sched.cancel(msg)
-	}
 }
 
 func logErrReport(sessionState *session.State) {

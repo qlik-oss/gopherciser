@@ -307,10 +307,12 @@ func execute() error {
 
 	// === start execution ===
 	var msgErrorReachedMsg *string
-	cfg.Scheduler.SetCancel(func(msg string) {
+
+	cfg.Cancel = func(msg string) {
 		msgErrorReachedMsg = &msg
 		cancel()
-	})
+	}
+
 	err := cfg.Execute(ctx, templateData)
 	if msgErrorReachedMsg != nil {
 		return MaxErrorsReachedError{

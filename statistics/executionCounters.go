@@ -1,8 +1,18 @@
 package statistics
 
-import "github.com/qlik-oss/gopherciser/atomichandlers"
+import (
+	"fmt"
+
+	"github.com/qlik-oss/gopherciser/atomichandlers"
+)
 
 type (
+	Errors struct {
+		counter     atomichandlers.AtomicCounter
+		maxErrors   uint64
+		triggerFunc func(msg string)
+	}
+
 	// ExecutionCounters counts values during a execution
 	ExecutionCounters struct {
 		// Threads - Total started threads
@@ -11,8 +21,6 @@ type (
 		Sessions atomichandlers.AtomicCounter
 		// Users - Total unique users
 		Users atomichandlers.AtomicCounter
-		// Errors - Total errors
-		Errors atomichandlers.AtomicCounter
 		// Warnings - Total warnings
 		Warnings atomichandlers.AtomicCounter
 		// ActionID - Unique global action id
@@ -27,5 +35,36 @@ type (
 		RestRequestID atomichandlers.AtomicCounter
 		// StatisticsCollector optional collection of statistics
 		StatisticsCollector *Collector
+
+		// Errors - Total errors
+		Errors Errors
 	}
 )
+
+// MaxErrorReached report is counters reached max configured errors if any
+func (counters *ExecutionCounters) MaxErrorReached() bool {
+	if counters == nil {
+		return false
+	}
+	return counters.Errors.maxErrors > 0 && counters.Errors.Current() >= counters.Errors.maxErrors
+}
+
+// SetMaxErrors set a function (e.g. execution cancel) to be triggered each time Inc is called with a value >= maxerrors
+func (counters *ExecutionCounters) SetMaxErrors(maxErrors uint64, triggerFunc func(msg string)) {
+	counters.Errors.maxErrors = maxErrors
+	counters.Errors.triggerFunc = triggerFunc
+}
+
+// Current value of counter
+func (errors Errors) Current() uint64 {
+	return errors.counter.Current()
+}
+
+// // Inc increase counter by 1
+func (errors Errors) Inc() uint64 {
+	errCount := errors.counter.Inc()
+	if errors.triggerFunc != nil && errors.maxErrors > 0 && errCount >= errors.maxErrors {
+		errors.triggerFunc(fmt.Sprintf("Max error count of %d surpassed, aborting execution!", errors.maxErrors))
+	}
+	return errCount
+}
