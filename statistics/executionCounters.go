@@ -55,8 +55,24 @@ func (errors Errors) Current() uint64 {
 // // Inc increase counter by 1
 func (errors Errors) Inc() uint64 {
 	errCount := errors.counter.Inc()
+	errors.checkMaxError(errCount)
+	return errCount
+}
+
+// Add value to counter
+func (errors Errors) Add(u uint64) uint64 {
+	errCount := errors.counter.Add(u)
+	errors.checkMaxError(errCount)
+	return errCount
+}
+
+// Reset counter to 0
+func (errors Errors) Reset() {
+	errors.counter.Reset()
+}
+
+func (errors Errors) checkMaxError(errCount uint64) {
 	if errors.triggerFunc != nil && errors.maxErrors > 0 && errCount >= errors.maxErrors {
 		errors.triggerFunc(fmt.Sprintf("Max error count of %d surpassed, aborting execution!", errors.maxErrors))
 	}
-	return errCount
 }
