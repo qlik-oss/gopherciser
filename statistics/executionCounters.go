@@ -41,14 +41,6 @@ type (
 	}
 )
 
-// MaxErrorReached report is counters reached max configured errors if any
-func (counters *ExecutionCounters) MaxErrorReached() bool {
-	if counters == nil {
-		return false
-	}
-	return counters.Errors.maxErrors > 0 && counters.Errors.Current() >= counters.Errors.maxErrors
-}
-
 // SetMaxErrors set a function (e.g. execution cancel) to be triggered each time Inc is called with a value >= maxerrors
 func (counters *ExecutionCounters) SetMaxErrors(maxErrors uint64, triggerFunc func(msg string)) {
 	counters.Errors.maxErrors = maxErrors
