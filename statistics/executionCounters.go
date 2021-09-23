@@ -48,26 +48,26 @@ func (counters *ExecutionCounters) SetMaxErrors(maxErrors uint64, triggerFunc fu
 }
 
 // Current value of counter
-func (errors Errors) Current() uint64 {
+func (errors *Errors) Current() uint64 {
 	return errors.counter.Current()
 }
 
 // // Inc increase counter by 1
-func (errors Errors) Inc() uint64 {
+func (errors *Errors) Inc() uint64 {
 	errCount := errors.counter.Inc()
 	errors.checkMaxError(errCount)
 	return errCount
 }
 
 // Add value to counter
-func (errors Errors) Add(u uint64) uint64 {
+func (errors *Errors) Add(u uint64) uint64 {
 	errCount := errors.counter.Add(u)
 	errors.checkMaxError(errCount)
 	return errCount
 }
 
 // Reset counter to 0
-func (errors Errors) Reset() {
+func (errors *Errors) Reset() {
 	errors.counter.Reset()
 }
 
