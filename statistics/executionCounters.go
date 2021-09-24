@@ -71,6 +71,11 @@ func (errors *Errors) Reset() {
 	errors.counter.Reset()
 }
 
+// String implements Stringer interface
+func (errors *Errors) String() string {
+	return errors.counter.String()
+}
+
 func (errors Errors) checkMaxError(errCount uint64) {
 	if errors.triggerFunc != nil && errors.maxErrors > 0 && errCount >= errors.maxErrors {
 		errors.triggerFunc(fmt.Sprintf("Max error count of %d surpassed, aborting execution!", errors.maxErrors))
