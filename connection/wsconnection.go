@@ -15,7 +15,7 @@ type (
 )
 
 // GetConnectFunc get ws connect function
-func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID string, headers, customHeaders http.Header) func() (string, error) {
+func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) func() (string, error) {
 	return func() (string, error) {
 		if sessionState == nil {
 			return appGUID, errors.New("Session state is nil")
@@ -31,7 +31,7 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 		sessionState.Connection.SetSense(sense)
 		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
-		url, err := connectionSettings.GetURL(appGUID)
+		url, err := connectionSettings.GetURL(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
 		}

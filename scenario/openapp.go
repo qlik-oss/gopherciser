@@ -17,7 +17,8 @@ import (
 
 type (
 	OpenAppSettingsCore struct {
-		UniqueSession bool `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
+		ExternalHost  string `json:"externalhost" displayname:"External hostname" doc-key:"openapp.externalhost"`
+		UniqueSession bool   `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
 	}
 	// OpenAppSettings app and server settings
 	OpenAppSettings struct {
@@ -67,7 +68,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		headers = make(http.Header, 1)
 		headers.Add("X-Qlik-Session", uuid.NewString())
 	}
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID, headers)
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID, openApp.ExternalHost, headers)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to get connect function"))
 		return

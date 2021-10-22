@@ -120,26 +120,32 @@ func (connectionSettings *ConnectionSettings) Validate() error {
 }
 
 // GetConnectFunc Get function for connecting to sense
-func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID string, customHeaders http.Header) (func() (string, error), error) {
-	header, err := connectionSettings.GetHeaders(state)
+func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (func() (string, error), error) {
+	header, err := connectionSettings.GetHeaders(state, externalhost)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	switch connectionSettings.Mode {
 	case JWT:
-		return connectionSettings.JwtSettings.GetConnectFunc(state, connectionSettings, appGUID, header, customHeaders), nil
+		return connectionSettings.JwtSettings.GetConnectFunc(state, connectionSettings, appGUID, externalhost, header, customHeaders), nil
 	case WS:
-		return connectionSettings.WsSettings.GetConnectFunc(state, connectionSettings, appGUID, header, customHeaders), nil
+		return connectionSettings.WsSettings.GetConnectFunc(state, connectionSettings, appGUID, externalhost, header, customHeaders), nil
 	default:
 		return nil, errors.Errorf("Unknown connection mode <%d>", connectionSettings.Mode)
 	}
 }
 
 // GetHeaders Get auth headers
-func (connectionSettings *ConnectionSettings) GetHeaders(state *session.State) (http.Header, error) {
-	host, err := connectionSettings.GetHost()
-	if err != nil {
-		return nil, errors.WithStack(err)
+func (connectionSettings *ConnectionSettings) GetHeaders(state *session.State, externalhost string) (http.Header, error) {
+	var host string
+	var err error
+	if externalhost == "" {
+		host, err = connectionSettings.GetHost()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	} else {
+		host = externalhost
 	}
 
 	header := state.HeaderJar.GetHeader(host)
@@ -201,13 +207,19 @@ func (connection *ConnectionSettings) GetRestUrl() (string, error) {
 }
 
 // GetURL get websocket URL
-func (connection *ConnectionSettings) GetURL(appGUID string) (string, error) {
+func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (string, error) {
 	if connection.RawURL != "" {
 		return connection.RawURL, nil
 	}
 
 	// Remove protocol
-	url := connection.Server
+	var url string
+	if externalhost == "" {
+		url = connection.Server
+	} else {
+		url = externalhost
+	}
+
 	splitUrl := strings.Split(url, "://")
 	if len(splitUrl) > 1 {
 		url = splitUrl[1]

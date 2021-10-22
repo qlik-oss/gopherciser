@@ -432,6 +432,9 @@
     "openapp.unique" : [
         "Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."
     ],
+    "openapp.externalhost" : [
+        "(optional) Sets an external host to be used instead of `server` configured in connection settings."
+    ],
     "productversion.log": [
         "Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."
     ],

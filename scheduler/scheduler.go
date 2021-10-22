@@ -236,7 +236,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 }
 
 func setupRESTHandler(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
-	headers, err := connectionSettings.GetHeaders(sessionState)
+	headers, err := connectionSettings.GetHeaders(sessionState, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to get connection settings headers")
 	}
