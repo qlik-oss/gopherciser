@@ -160,6 +160,7 @@ func TestNegative(t *testing.T) {
 	rnd := NewRandomizer()
 	if rnd == nil {
 		t.Fatal("Expected randomizer object, got nil")
+		return // make linter not warn
 	}
 
 	if _, err := rnd.RandDuration(6, 2); err == nil {

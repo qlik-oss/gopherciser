@@ -545,7 +545,7 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 	sessionState.SetLogEntry(logEntry)
 	sessionState.LogEntry.Session = &logger.SessionEntry{}
 
-	headers, err := cfg.ConnectionSettings.GetHeaders(sessionState)
+	headers, err := cfg.ConnectionSettings.GetHeaders(sessionState, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to generate authentication headers")
 	}

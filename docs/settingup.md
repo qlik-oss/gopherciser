@@ -1114,6 +1114,7 @@ Open an app.
 * `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
 * `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
 * `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
+* `externalhost`: (optional) Sets an external host to be used instead of `server` configured in connection settings.
 * `unique`: Create unqiue engine session not re-using session from previous connection with same user. Defaults to false.
 
 ### Examples
