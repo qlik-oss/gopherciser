@@ -272,7 +272,7 @@ func IsLaunchedByDebugger() bool {
 	}
 	name := parent.Executable()
 	switch name {
-	case "dlv", "dlv.exe":
+	case "dlv", "dlv.exe", "debugserver":
 		return true
 	}
 	return false
