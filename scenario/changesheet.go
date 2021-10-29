@@ -63,11 +63,11 @@ func (settings ChangeSheetSettings) Execute(sessionState *session.State, actionS
 		return nil
 	}, actionState, true, "failed to create CurrentSelection object")
 
-	// Get locale info
+	// Clear undo buffer
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetLocaleInfo(ctx)
+		err := uplink.CurrentApp.Doc.ClearUndoBuffer(ctx)
 		return errors.WithStack(err)
-	}, actionState, false, "error getting locale info")
+	}, actionState, false, "error clearing undo buffer")
 
 	// Send GetConfiguration request
 	sessionState.QueueRequest(func(ctx context.Context) error {
