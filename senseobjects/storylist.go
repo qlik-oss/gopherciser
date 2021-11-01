@@ -81,7 +81,7 @@ func (storyList *StoryList) UpdateProperties(ctx context.Context) error {
 		return errors.Errorf("storyList enigma object is nil")
 	}
 
-	propertiesRaw, err := storyList.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := storyList.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal storyList properties")
 	}

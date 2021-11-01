@@ -71,7 +71,7 @@ func (listBox *ListBox) UpdateProperties(ctx context.Context) error {
 		return errors.Errorf("listBox enigma object is nil")
 	}
 
-	propertiesRaw, err := listBox.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := listBox.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal listBox properties")
 	}

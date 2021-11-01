@@ -168,13 +168,13 @@ func firstNonEmpty(strs ...string) string {
 func buttonActions(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) ([]buttonAction, *buttonNavigationAction, error) {
 	// TODO(atluq): Add buttonActions to enigma.GenericObjectProperties such
 	// that obj.Properties() could be used, instead of
-	// obj.EnigmaObject.GetpropertiesRaw()
+	// obj.EnigmaObject.GetEffectivePropertiesRaw()
 
 	switch t := obj.EnigmaObject.(type) {
 	case *enigma.GenericObject:
 		genericObj := obj.EnigmaObject.(*enigma.GenericObject)
 
-		propsRaw, err := sessionState.SendRequestRaw(actionState, genericObj.GetPropertiesRaw)
+		propsRaw, err := sessionState.SendRequestRaw(actionState, genericObj.GetEffectivePropertiesRaw)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "properties request failed for object<%s>", obj.ID)
 		}

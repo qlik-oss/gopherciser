@@ -68,7 +68,7 @@ func (fieldlist *FieldList) Layout() *enigma.GenericObjectLayout {
 
 // UpdateProperties update object with new properties from engine
 func (fieldlist *FieldList) UpdateProperties(ctx context.Context) error {
-	properties, err := fieldlist.enigmaObject.GetProperties(ctx)
+	properties, err := fieldlist.enigmaObject.GetEffectiveProperties(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}

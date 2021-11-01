@@ -81,7 +81,7 @@ func (variableList *VariableList) UpdateProperties(ctx context.Context) error {
 		return errors.Errorf("variableList enigma object is nil")
 	}
 
-	propertiesRaw, err := variableList.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := variableList.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal variableList properties")
 	}

@@ -150,7 +150,7 @@ func (sheetList *SheetList) UpdateProperties(ctx context.Context) error {
 		return errors.Errorf("sheetlist enigma object is nil")
 	}
 
-	propertiesRaw, err := sheetList.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := sheetList.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal sheetlist properties")
 	}

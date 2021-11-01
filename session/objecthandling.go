@@ -271,9 +271,9 @@ func GetObjectProperties(sessionState *State, actionState *action.State, obj *en
 
 	//Get object properties
 	getProperties := func(ctx context.Context) error {
-		properties, err := enigmaObject.GetProperties(ctx)
+		properties, err := enigmaObject.GetEffectiveProperties(ctx)
 		if err != nil {
-			return errors.Wrapf(err, "object<%s>.GetProperties failed", obj.ID)
+			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties failed", obj.ID)
 		}
 		obj.SetProperties(properties)
 		return nil

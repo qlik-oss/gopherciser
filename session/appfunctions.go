@@ -123,7 +123,7 @@ func (state *State) GetSheet(actionState *action.State, upLink *enigmahandlers.S
 	state.LogEntry.LogDebugf("Fetched sheet<%s> successfully", id)
 
 	getProperties := func(ctx context.Context) error {
-		_, err := sheet.GetProperties(ctx)
+		_, err := sheet.GetEffectiveProperties(ctx)
 		return err
 	}
 	if err := state.SendRequest(actionState, getProperties); err != nil {

@@ -51,7 +51,7 @@ func (cs *CurrentSelections) UpdateLayout(ctx context.Context) error {
 
 // UpdateProperties for current selections
 func (cs *CurrentSelections) UpdateProperties(ctx context.Context) error {
-	propertiesRaw, err := cs.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := cs.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrap(err, "Error getting properties for current selection object")
 	}
