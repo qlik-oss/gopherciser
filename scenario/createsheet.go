@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 
+	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
@@ -64,6 +65,32 @@ func (settings CreateSheetSettings) Execute(sessionState *session.State,
 
 		if settings.ID != "" {
 			return sessionState.IDMap.Add(settings.ID, genObj.GenericId, sessionState.LogEntry)
+		}
+
+		prop, err := genObj.GetPropertiesRaw(ctx)
+		if err != nil {
+			return err
+		}
+
+		// client updates two parameters, do this safely jsonparser as using a struct might "lose" values
+		_, err = jsonparser.GetString(prop, "gridResolution")
+		if err == jsonparser.KeyPathNotFoundError {
+			prop, err = jsonparser.Set(prop, []byte(`"small"`), "gridResolution")
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err = jsonparser.GetString(prop, "layoutOptions")
+		if err == jsonparser.KeyPathNotFoundError {
+			prop, err = jsonparser.Set(prop, []byte(`{ "mobileLayout": "LIST" }`), "layoutOptions")
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := genObj.SetPropertiesRaw(ctx, prop); err != nil {
+			return err
 		}
 
 		return nil
