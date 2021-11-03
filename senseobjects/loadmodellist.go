@@ -74,7 +74,7 @@ func (loadModelList *LoadModelList) UpdateProperties(ctx context.Context) error 
 		return errors.Errorf("loadModelList enigma object is nil")
 	}
 
-	propertiesRaw, err := loadModelList.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := loadModelList.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal loadModelList properties")
 	}

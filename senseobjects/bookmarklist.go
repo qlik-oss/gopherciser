@@ -118,7 +118,7 @@ func (bookmarkList *BookmarkList) UpdateProperties(ctx context.Context) error {
 		return errors.Errorf("bookmarklist enigma object is nil")
 	}
 
-	propertiesRaw, err := bookmarkList.enigmaObject.GetPropertiesRaw(ctx)
+	propertiesRaw, err := bookmarkList.enigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal bookmarklist properties")
 	}

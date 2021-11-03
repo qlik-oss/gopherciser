@@ -97,7 +97,7 @@ func (sheet *Sheet) GetProperties(ctx context.Context) (*SheetProperties, error)
 		return nil, errors.New("sheet is nil")
 	}
 
-	raw, err := sheet.GenericObject.GetPropertiesRaw(ctx)
+	raw, err := sheet.GenericObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get properties for sheet<%s>", sheet.ID)
 	}

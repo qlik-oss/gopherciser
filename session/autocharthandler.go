@@ -214,9 +214,9 @@ func getRawLayoutAndGeneratedProperties(sessionState *State, actionState *action
 	var generatedProperties enigma.GenericObjectProperties
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
-		rawAutoChartProperties, err := sessionState.SendRequestRaw(actionState, autochartGen.GetPropertiesRaw)
+		rawAutoChartProperties, err := sessionState.SendRequestRaw(actionState, autochartGen.GetEffectivePropertiesRaw)
 		if err != nil {
-			return errors.Wrapf(err, "object<%s>.GetProperties", autochartGen.GenericId)
+			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties", autochartGen.GenericId)
 		}
 
 		var autoChartProp enigma.GenericObjectProperties
