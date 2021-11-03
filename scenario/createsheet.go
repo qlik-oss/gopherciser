@@ -79,6 +79,8 @@ func (settings CreateSheetSettings) Execute(sessionState *session.State,
 			if err != nil {
 				return err
 			}
+		} else if err != nil {
+			return err
 		}
 
 		_, err = jsonparser.GetString(prop, "layoutOptions")
@@ -87,6 +89,8 @@ func (settings CreateSheetSettings) Execute(sessionState *session.State,
 			if err != nil {
 				return err
 			}
+		} else if err != nil {
+			return err
 		}
 
 		if err := genObj.SetPropertiesRaw(ctx, prop); err != nil {
