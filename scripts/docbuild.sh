@@ -4,7 +4,10 @@ set -eox pipefail
 BIN=${1:-build}
 USER=$(id -u)
 PROJECTFOLDER=${2:-.}
+PANDOCVERSION=pandoc/core:2.15
+
 echo PROJECTFOLDER:"$PROJECTFOLDER"
+echo PANDOCVERSION:"$PANDOCVERSION"
 
 # Test project folder and change to project folder
 if [[ ! -e $PROJECTFOLDER/docs ]]; then echo "$PROJECTFOLDER"/docs not found; exit 1; fi
@@ -19,7 +22,7 @@ if [[ -x $(command -v docker) ]]; then
     GOPHERCISERDATAVOLUME=$(docker create -v /data alpine:latest /bin/true)
 
     echo creating pandoc container...
-    PANDOCCONTAINER=$(docker create --volumes-from "$GOPHERCISERDATAVOLUME" -it --entrypoint /bin/ash pandoc/core:latest)
+    PANDOCCONTAINER=$(docker create --volumes-from "$GOPHERCISERDATAVOLUME" -it --entrypoint /bin/ash "$PANDOCVERSION")
     docker start "$PANDOCCONTAINER"
 
     # Create folder structure needed
