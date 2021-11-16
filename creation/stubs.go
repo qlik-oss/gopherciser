@@ -1,6 +1,6 @@
 package creation
 
-import "github.com/qlik-oss/enigma-go/v2"
+import "github.com/qlik-oss/enigma-go/v3"
 
 // StubMetaDef creates a MetaDef template to be used when creating objects
 func StubMetaDef(title string, description string) map[string]interface{} {

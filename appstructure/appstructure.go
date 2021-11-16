@@ -3,7 +3,7 @@ package appstructure
 import (
 	"encoding/json"
 
-	"github.com/qlik-oss/enigma-go/v2"
+	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/enummap"
 )
 

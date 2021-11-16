@@ -7,7 +7,7 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v2"
+	"github.com/qlik-oss/enigma-go/v3"
 )
 
 type (

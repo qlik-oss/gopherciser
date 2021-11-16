@@ -11,7 +11,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	enigma "github.com/qlik-oss/enigma-go/v2"
+	enigma "github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/eventws"

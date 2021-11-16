@@ -3,7 +3,7 @@ package enigmahandlers
 import (
 	"sync"
 
-	"github.com/qlik-oss/enigma-go/v2"
+	"github.com/qlik-oss/enigma-go/v3"
 )
 
 type (
