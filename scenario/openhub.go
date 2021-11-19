@@ -50,7 +50,11 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s/hub/", host, host), actionState, sessionState.LogEntry, nil) // TODO check requests with header
+	virtualProxy := ""
+	if connectionSettings.VirtualProxy != "" {
+		virtualProxy = fmt.Sprintf("/%s", connectionSettings.VirtualProxy)
+	}
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s%s/hub/", host, host, virtualProxy), actionState, sessionState.LogEntry, nil)
 
 	xrfkey := helpers.GenerateXrfKey(sessionState.Randomizer())
 	sessionState.Rest.GetWithHeadersAsync(fmt.Sprintf("%s/qrs/datacollection/settings?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, map[string]string{
