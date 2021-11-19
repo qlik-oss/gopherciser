@@ -5,6 +5,7 @@ import (
 
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/structs"
@@ -49,10 +50,15 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/hub/qrsData?reloadUri=%s/header/hub/", host, host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s/hub/", host, host), actionState, sessionState.LogEntry, nil) // TODO check requests with header
+
+	xrfkey := helpers.GenerateXrfKey(sessionState.Randomizer())
+	sessionState.Rest.GetWithHeadersAsync(fmt.Sprintf("%s/qrs/datacollection/settings?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, map[string]string{
+		"X-Qlik-XrfKey": xrfkey,
+	}, nil, nil)
 
 	// These requests will warn only instead of error in case of failure
+
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, reqNoError)
 
@@ -71,6 +77,7 @@ func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action
 }
 
 func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *action.State, host string) {
+	// Get all apps in "Work" and "Published" sections
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
@@ -86,6 +93,7 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 		}
 	})
 
+	// Get all apps from other streams
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return

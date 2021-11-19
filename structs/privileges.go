@@ -9,7 +9,10 @@ type Privileges struct {
 				Installation string   `json:"installation"`
 				Override     struct {
 				} `json:"override"`
-				QvVersion string `json:"qvVersion"`
+				QvVersion string        `json:"qvVersion"`
+				Stream    []interface{} `json:"stream"`
+				Schemas   []interface{} `json:"schemas"`
+				Routes    []interface{} `json:"routes"`
 			} `json:"definition"`
 		} `json:"attributes"`
 		Type string `json:"type"`

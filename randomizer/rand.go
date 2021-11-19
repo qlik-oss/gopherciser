@@ -83,6 +83,12 @@ func (rnd *Randomizer) RandInt(ints []int) (int, error) {
 	return value, err
 }
 
+// RandRune from rune array
+func (rnd *Randomizer) RandRune(runes []rune) rune {
+	pos := rnd.r.Intn(len(runes))
+	return runes[pos]
+}
+
 //RandIntPos return random int value and position from list (value, pos)
 func (rnd *Randomizer) RandIntPos(ints []int) (int, int, error) {
 	if len(ints) < 1 {
