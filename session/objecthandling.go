@@ -303,10 +303,7 @@ func UpdateObjectHyperCubeDataAsync(sessionState *State, actionState *action.Sta
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
-				if err = obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false); err != nil {
-					return errors.Wrap(err, "failed to set hypercube datapages")
-				}
-				return nil
+				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
 			}
 			return errors.WithStack(err)
 		}
@@ -370,10 +367,7 @@ func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
-				if err = obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false); err != nil {
-					return errors.Wrap(err, "failed to set hypercube datapages")
-				}
-				return nil
+				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
 			}
 			return errors.WithStack(err)
 		}
@@ -426,10 +420,7 @@ func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *acti
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
-				if err = obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false); err != nil {
-					return errors.Wrap(err, "failed to set hypercube datapages")
-				}
-				return nil
+				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
 			}
 			return errors.WithStack(err)
 		} else if hypercube.Error != nil {
@@ -515,10 +506,7 @@ func UpdateObjectHyperCubeStackDataAsync(sessionState *State, actionState *actio
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
-				if err = obj.SetStackHyperCubePages(make([]*enigma.NxStackPage, 0)); err != nil {
-					return errors.Wrap(err, "failed to set hypercube datapages")
-				}
-				return nil
+				return errors.Wrap(obj.SetStackHyperCubePages(make([]*enigma.NxStackPage, 0)), "failed to set hypercube datapages")
 			}
 			return errors.WithStack(err)
 		}
