@@ -26,11 +26,12 @@ type (
 	}
 
 	ContainerHandlerInstance struct {
-		ID       string
-		ActiveID string
-		children []ContainerChildReference
+		ID        string
+		ActiveID  string
+		DefaultID string
 
-		lock sync.Mutex
+		children []ContainerChildReference
+		lock     sync.Mutex
 	}
 
 	ContainerExternal struct {
@@ -67,8 +68,9 @@ type (
 	}
 
 	ContainerLayout struct {
-		Children  []ContainerChild   `json:"children"`
-		ChildList ContainerChildList `json:"qChildList"`
+		Children   []ContainerChild   `json:"children"`
+		ChildList  ContainerChildList `json:"qChildList"`
+		DefaultTab string             `json:"defaultTab"`
 	}
 )
 
@@ -87,6 +89,7 @@ func (handler *ContainerHandlerInstance) SetObjectAndEvents(sessionState *State,
 	if layout == nil {
 		return // error occured and has been reported on actionState
 	}
+	handler.DefaultID = layout.DefaultTab
 
 	if err := handler.UpdateChildren(layout); err != nil {
 		actionState.AddErrors(err)
@@ -200,6 +203,18 @@ func (handler *ContainerHandlerInstance) FirstShowableChild() (*ContainerChildRe
 	// ActiveChildReference also locks, don't lock before this
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
+
+	if handler.DefaultID != "" { // container has a default tab set
+		for _, child := range handler.children {
+			if child.ObjID == handler.DefaultID {
+				if child.Show {
+					return &child, false
+				} else {
+					break
+				}
+			}
+		}
+	}
 
 	// find first with no condition or condition = true
 	for _, child := range handler.children {
