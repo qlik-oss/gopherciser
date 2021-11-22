@@ -26,6 +26,8 @@ type (
 		m         map[string]ObjectHandler
 		writeLock sync.Mutex
 	}
+
+	CalcEvalConditionFailedError struct{}
 )
 
 const (
@@ -45,6 +47,11 @@ func init() {
 	if err := GlobalObjectHandler.RegisterHandler("container", &ContainerHandler{}, false); err != nil {
 		panic(err)
 	}
+}
+
+// Error implements error interface
+func (err CalcEvalConditionFailedError) Error() string {
+	return "object has unsatisfied calculation condition"
 }
 
 // RegisterHandler for object type, override existing handler with override flag
@@ -292,12 +299,17 @@ func UpdateObjectHyperCubeDataAsync(sessionState *State, actionState *action.Sta
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if hypercube.Size == nil {
-			return errors.Errorf("object<%s> has no hypercube size", gob.GenericId)
+		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+			switch err.(type) {
+			case CalcEvalConditionFailedError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
+				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
+			}
+			return errors.WithStack(err)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
-			return errors.WithStack(err)
+		if hypercube.Size == nil {
+			return errors.Errorf("object<%s> has no hypercube size", gob.GenericId)
 		}
 
 		if hypercube.Size.Cx < 1 {
@@ -352,6 +364,11 @@ func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 		}
 
 		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+			switch err.(type) {
+			case CalcEvalConditionFailedError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
+				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
+			}
 			return errors.WithStack(err)
 		}
 
@@ -400,7 +417,14 @@ func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *acti
 		}
 
 		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+			switch err.(type) {
+			case CalcEvalConditionFailedError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
+				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
+			}
 			return errors.WithStack(err)
+		} else if hypercube.Error != nil {
+			return nil
 		}
 
 		if hypercube.Size == nil {
@@ -479,6 +503,11 @@ func UpdateObjectHyperCubeStackDataAsync(sessionState *State, actionState *actio
 		}
 
 		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+			switch err.(type) {
+			case CalcEvalConditionFailedError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
+				return errors.Wrap(obj.SetStackHyperCubePages(make([]*enigma.NxStackPage, 0)), "failed to set hypercube datapages")
+			}
 			return errors.WithStack(err)
 		}
 
@@ -544,6 +573,11 @@ func UpdateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 		sessionState.LogEntry.LogDebugf("Get continuous data for object<%s>", gob.GenericId)
 		hypercube := obj.HyperCube()
 		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+			switch err.(type) {
+			case CalcEvalConditionFailedError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
+				return nil
+			}
 			return errors.WithStack(err)
 		}
 		maxLines := maxNbrLines
@@ -623,7 +657,7 @@ func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
 	}
 	switch err.ErrorCode {
 	case constant.LocerrCalcEvalConditionFailed:
-		return nil
+		return CalcEvalConditionFailedError{}
 	default:
 		return errors.Errorf("object<%s> has hypercube error<ErrorCode:%d (%s)>", id, err.ErrorCode, enigma.ErrorCodeLookup(err.ErrorCode))
 	}
