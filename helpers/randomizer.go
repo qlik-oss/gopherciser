@@ -8,4 +8,5 @@ type Randomizer interface {
 	RandIntPos(ints []int) (int, int, error)
 	RandDuration(minDuration, maxDuration time.Duration) (time.Duration, error)
 	Reset(instance, session uint64, onlyinstanceSeed bool)
+	RandRune(runes []rune) rune
 }
