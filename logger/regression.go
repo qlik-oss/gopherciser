@@ -41,6 +41,7 @@ var filters = marshalFilters(
 	"+qPivotDataPages",
 	"+qStackedDataPages",
 	"-qNum",
+	"-qInExtRow",
 )
 
 func marshalFilters(filters ...filterType) []byte {
