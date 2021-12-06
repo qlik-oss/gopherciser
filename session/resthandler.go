@@ -732,7 +732,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 }
 
 func LogTrafficIn(resp *http.Response, trafficLogger MinimalTrafficLogger, logEntry *logger.LogEntry, requestID uint64) {
-	if !logEntry.ShouldLogTraffic() || trafficLogger != nil {
+	if logEntry.ShouldLogTraffic() && trafficLogger != nil {
 		body := !contentIsBinary(resp.Header)
 		respSize := int64(0)
 		if resp.ContentLength > 0 {
