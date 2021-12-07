@@ -18,6 +18,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/qlik-oss/enigma-go/v3 v3.0.1
+	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
 	github.com/rs/zerolog v1.26.0
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18

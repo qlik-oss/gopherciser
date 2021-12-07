@@ -28,6 +28,7 @@ import (
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/version"
+	"github.com/rs/dnscache"
 )
 
 type (
@@ -190,6 +191,24 @@ func (handler *RestHandler) DecPending(request *RestRequest) {
 	handler.reqCounterCond.L.Unlock()
 }
 
+var fixedTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	ForceAttemptHTTP2:     true,
+	MaxIdleConns:          100,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+	TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+	},
+}
+
+var dnsResolver = &dnscache.Resolver{}
+
 // DefaultClient creates client instance with default client settings
 func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 	// todo client values are currently from http.DefaultTransport, should choose better values depending on
@@ -200,10 +219,28 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 		Transport: &Transport{
 			&http.Transport{
 				Proxy: http.ProxyFromEnvironment,
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).DialContext,
+				DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
+					host, port, err := net.SplitHostPort(addr)
+					if err != nil {
+						return nil, err
+					}
+					ips, err := dnsResolver.LookupHost(ctx, host)
+					if err != nil {
+						return nil, err
+					}
+					for _, ip := range ips {
+						var dialer net.Dialer
+						conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+						if err == nil {
+							return conn, nil
+						}
+					}
+					return nil, nil
+				},
+				// DialContext: (&net.Dialer{
+				// 	Timeout:   30 * time.Second,
+				// 	KeepAlive: 30 * time.Second,
+				// }).DialContext,
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
 				IdleConnTimeout:       90 * time.Second,

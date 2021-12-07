@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"crypto/md5"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -46,8 +47,9 @@ type (
 		Alg string `json:"alg,omitempty" doc-key:"config.connectionSettings.jwtsettings.alg"`
 
 		// handle jwt private key
-		key     []byte
-		readKey sync.Once
+		key       []byte
+		readKey   sync.Once
+		hashTable map[[16]byte]string
 	}
 )
 
@@ -149,10 +151,18 @@ func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, 
 		token.Header[k] = v
 	}
 
-	// sign JWT
-	signedToken, err := GetSignedJwtToken(key, token)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error signing token with key from file<%s>", connectJWT.KeyPath)
+	h := md5.Sum([]byte(token.Raw))
+	signedToken, ok := connectJWT.hashTable[h]
+	if !ok {
+		// sign JWT
+		signedToken, err = GetSignedJwtToken(key, token)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error signing token with key from file<%s>", connectJWT.KeyPath)
+		}
+		if connectJWT.hashTable == nil {
+			connectJWT.hashTable = make(map[[16]byte]string)
+		}
+		connectJWT.hashTable[h] = signedToken
 	}
 
 	// set request headers

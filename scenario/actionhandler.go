@@ -437,6 +437,7 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 	errs = multierror.Append(errs, logResult(sessionState, actionState, actionState.Details, containerActionEntry))
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
 	errs = multierror.Append(errs, logObjectRegressionData(sessionState))
+
 	return helpers.FlattenMultiError(errs)
 }
 
