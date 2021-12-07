@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/qlik-oss/gopherciser/version"
 )
 
 type (
@@ -65,6 +67,7 @@ func NewRegressionLogger(w io.WriteCloser, headerEntries ...HeaderEntry) Regress
 	logger := &regressionLogger{w}
 	logger.write("HEADER_KEY", "HEADER_VALUE")
 	logger.write("FILTERS", string(filters))
+	logger.write("VERSION", version.Version)
 	for _, he := range headerEntries {
 		logger.write(strings.ToUpper(strings.TrimSpace(he.Key)), strings.TrimSpace(he.Value))
 	}
