@@ -229,7 +229,10 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 						return nil, err
 					}
 					for _, ip := range ips {
-						var dialer net.Dialer
+						dialer := &net.Dialer{
+							Timeout:   30 * time.Second,
+							KeepAlive: 30 * time.Second,
+						}
 						conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 						if err == nil {
 							return conn, nil
