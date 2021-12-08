@@ -121,6 +121,8 @@ var (
 		FailOnError:        true,
 		ContentType:        "application/json",
 	}
+
+	dnsResolver = &dnscache.Resolver{}
 )
 
 // NewRestHandler new instance of RestHandler
@@ -191,24 +193,6 @@ func (handler *RestHandler) DecPending(request *RestRequest) {
 	handler.reqCounterCond.L.Unlock()
 }
 
-var fixedTransport = &http.Transport{
-	Proxy: http.ProxyFromEnvironment,
-	DialContext: (&net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-	}).DialContext,
-	ForceAttemptHTTP2:     true,
-	MaxIdleConns:          100,
-	IdleConnTimeout:       90 * time.Second,
-	TLSHandshakeTimeout:   10 * time.Second,
-	ExpectContinueTimeout: 1 * time.Second,
-	TLSClientConfig: &tls.Config{
-		InsecureSkipVerify: true,
-	},
-}
-
-var dnsResolver = &dnscache.Resolver{}
-
 // DefaultClient creates client instance with default client settings
 func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 	// todo client values are currently from http.DefaultTransport, should choose better values depending on
@@ -240,10 +224,6 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 					}
 					return nil, nil
 				},
-				// DialContext: (&net.Dialer{
-				// 	Timeout:   30 * time.Second,
-				// 	KeepAlive: 30 * time.Second,
-				// }).DialContext,
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
 				IdleConnTimeout:       90 * time.Second,
