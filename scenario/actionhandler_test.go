@@ -46,7 +46,7 @@ func TestActionhandler(t *testing.T) {
 	}`
 
 	var act Action
-	if err := jsonit.Unmarshal([]byte(rawSelect), &act); err != nil {
+	if err := json.Unmarshal([]byte(rawSelect), &act); err != nil {
 		t.Fatal("Unmarshal select action failed, err:", err)
 	}
 
@@ -68,14 +68,14 @@ func TestActionhandler(t *testing.T) {
 		}
 	}`
 
-	if err := jsonit.Unmarshal([]byte(rawCustom), &act); err == nil {
+	if err := json.Unmarshal([]byte(rawCustom), &act); err == nil {
 		t.Fatal("Custom action not registered and did not get unmarshal error")
 	}
 
 	if err := RegisterAction("customaction", customActionSettings{}); err != nil {
 		t.Fatal("Failed to register custom action")
 	}
-	if err := jsonit.Unmarshal([]byte(rawCustom), &act); err != nil {
+	if err := json.Unmarshal([]byte(rawCustom), &act); err != nil {
 		t.Fatal("Unmarshal customAction failed, err:", err)
 	}
 
@@ -96,7 +96,7 @@ func TestActionhandler(t *testing.T) {
 		t.Fatal("Error registering overide actions: ", err)
 	}
 
-	if err := jsonit.Unmarshal([]byte(rawSelect), &act); err != nil {
+	if err := json.Unmarshal([]byte(rawSelect), &act); err != nil {
 		t.Fatal("Unmarshal select action failed, err:", err)
 	}
 	_, ok = act.Settings.(*selectOverride)
@@ -104,7 +104,7 @@ func TestActionhandler(t *testing.T) {
 		t.Fatal("overidden select settings not of type selectOverride")
 	}
 
-	if err := jsonit.Unmarshal([]byte(rawCustom), &act); err != nil {
+	if err := json.Unmarshal([]byte(rawCustom), &act); err != nil {
 		t.Fatal("Unmarshal customAction failed, err:", err)
 	}
 	_, ok = act.Settings.(*customActionSettings2)
@@ -124,7 +124,7 @@ func TestDisabledInvalid(t *testing.T) {
 
 	var act Action
 
-	if err := jsonit.Unmarshal([]byte(disabledInvalid), &act); err != nil {
+	if err := json.Unmarshal([]byte(disabledInvalid), &act); err != nil {
 		t.Fatal("Unmarshal thinktime with invalid settings failed, err:", err)
 	}
 

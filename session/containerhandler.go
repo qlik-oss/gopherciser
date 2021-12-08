@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
@@ -138,7 +139,7 @@ func GetContainerLayout(sessionState *State, actionState *action.State, containe
 	}
 
 	var layout ContainerLayout
-	if err := jsonit.Unmarshal(rawLayout, &layout); err != nil {
+	if err := json.Unmarshal(rawLayout, &layout); err != nil {
 		actionState.AddErrors(err)
 		return nil
 	}

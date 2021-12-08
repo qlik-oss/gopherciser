@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/qlik-oss/gopherciser/senseobjdef"
-
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 )
 
 type (
@@ -42,7 +42,7 @@ func (otn *OdagToolbarNavpoint) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout OdagToolbarNavpointLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal otn layout")
 	}

@@ -16,7 +16,7 @@ func TestMarshal(t *testing.T) {
 			Delay: 1.0,
 		},
 	}
-	if thinktime, err := jsonit.Marshal(settings); err != nil {
+	if thinktime, err := json.Marshal(settings); err != nil {
 		t.Error(err)
 	} else {
 		validateString(t, "static think time", string(thinktime), `{"type":"static","delay":1}`)
@@ -30,7 +30,7 @@ func TestMarshal(t *testing.T) {
 			Deviation: 2.5,
 		},
 	}
-	if thinktime, err := jsonit.Marshal(settings); err != nil {
+	if thinktime, err := json.Marshal(settings); err != nil {
 		t.Error(err)
 	} else {
 		validateString(t, "uniform think time", string(thinktime), `{"type":"uniform","mean":12.5,"dev":2.5}`)
@@ -54,7 +54,7 @@ func TestNegative(t *testing.T) {
 			Type: 300,
 		},
 	}
-	_, err = jsonit.Marshal(settings)
+	_, err = json.Marshal(settings)
 	validateError(t, err, "scenario.ThinkTimeSettings.DistributionSettings: Type: Unknown DistributionType<300>")
 
 	_, err = settings.Validate()
@@ -83,7 +83,7 @@ func unmarshal(t *testing.T, raw string) (*ThinkTimeSettings, error) {
 	t.Helper()
 
 	var settings ThinkTimeSettings
-	if err := jsonit.Unmarshal([]byte(raw), &settings); err != nil {
+	if err := json.Unmarshal([]byte(raw), &settings); err != nil {
 		return nil, err
 	}
 

@@ -15,7 +15,7 @@ func TestMap(t *testing.T) {
 	}`
 
 	var tmplMap TemplateMap
-	if err := jsonit.Unmarshal([]byte(jsn), &tmplMap); err != nil {
+	if err := json.Unmarshal([]byte(jsn), &tmplMap); err != nil {
 		t.Fatal("failed to unmarshal struct:", err)
 	}
 

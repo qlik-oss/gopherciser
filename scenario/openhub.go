@@ -3,6 +3,7 @@ package scenario
 import (
 	"fmt"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -87,7 +88,7 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 			return
 		}
 		var stream structs.Stream
-		if err := jsonit.Unmarshal(req.ResponseBody, &stream); err != nil {
+		if err := json.Unmarshal(req.ResponseBody, &stream); err != nil {
 			actionState.AddErrors(err)
 			return
 		}
@@ -103,7 +104,7 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 			return
 		}
 		var streams structs.Streams
-		if err := jsonit.Unmarshal(req.ResponseBody, &streams); err != nil {
+		if err := json.Unmarshal(req.ResponseBody, &streams); err != nil {
 			actionState.AddErrors(err)
 			return
 		}
@@ -118,7 +119,7 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 					return
 				}
 				var stream structs.Stream
-				if err = jsonit.Unmarshal(req.ResponseBody, &stream); err != nil {
+				if err = json.Unmarshal(req.ResponseBody, &stream); err != nil {
 					actionState.AddErrors(err)
 					return
 				}
@@ -138,7 +139,7 @@ func getPrivilegesAsync(sessionState *session.State, actionState *action.State, 
 			return
 		}
 		var privileges structs.Privileges
-		if err := jsonit.Unmarshal(req.ResponseBody, &privileges); err != nil {
+		if err := json.Unmarshal(req.ResponseBody, &privileges); err != nil {
 			sessionState.LogEntry.Logf(logger.WarningLevel, "failed to unmarshal privileges response: %s", err)
 		}
 		sessionState.LogEntry.LogDebugf("privileges: %v", privileges)

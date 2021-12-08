@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/atomichandlers"
@@ -40,7 +41,7 @@ func NewEventHandler() *EventHandler {
 
 func (handler *EventHandler) event(actionState *action.State, message []byte) {
 	var event Event
-	if err := jsonit.Unmarshal(message, &event); err != nil {
+	if err := json.Unmarshal(message, &event); err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}

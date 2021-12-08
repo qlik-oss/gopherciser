@@ -2,7 +2,7 @@ package session
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"math"
 	"sync"
@@ -210,7 +210,7 @@ func SetChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	}
 
 	var children enigma.ChildList
-	if errUnMarshal := jsonit.Unmarshal(rawChildren, &children); errUnMarshal != nil {
+	if errUnMarshal := json.Unmarshal(rawChildren, &children); errUnMarshal != nil {
 		return errors.Wrapf(errUnMarshal, "failed to unmarshal childlist")
 	}
 
@@ -232,7 +232,7 @@ func SetChildren(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
 	}
 
 	var children []enigmahandlers.ObjChild
-	if errUnMarshal := jsonit.Unmarshal(rawChildren, &children); errUnMarshal != nil {
+	if errUnMarshal := json.Unmarshal(rawChildren, &children); errUnMarshal != nil {
 		return errors.Wrapf(errUnMarshal, "failed to unmarshal children")
 	}
 
@@ -247,7 +247,7 @@ func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path h
 	}
 
 	var listObject *enigma.ListObject
-	if err = jsonit.Unmarshal(rawListObject, &listObject); err != nil {
+	if err = json.Unmarshal(rawListObject, &listObject); err != nil {
 		return errors.Wrap(err, "Failed to unmarshal listObject from layout subtree")
 	}
 
@@ -262,7 +262,7 @@ func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path he
 	}
 
 	var hyperCube *enigma.HyperCube
-	if err = jsonit.Unmarshal(rawHyperCube, &hyperCube); err != nil {
+	if err = json.Unmarshal(rawHyperCube, &hyperCube); err != nil {
 		return errors.Wrap(err, "Failed to unmarshal hypercube from layout subtree")
 	}
 

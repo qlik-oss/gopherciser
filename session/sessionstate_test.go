@@ -127,7 +127,7 @@ func TestState_RestMethod(t *testing.T) {
 		Method: POST,
 	}
 
-	marshalBytes, err := jsonit.Marshal(data)
+	marshalBytes, err := json.Marshal(data)
 	if err != nil {
 		t.Fatal("failed to marshal RestMethod:", err)
 	}
@@ -137,7 +137,7 @@ func TestState_RestMethod(t *testing.T) {
 	}
 
 	// Test Unmarshal
-	err = jsonit.Unmarshal([]byte(expectedJSON), &data)
+	err = json.Unmarshal([]byte(expectedJSON), &data)
 	if err != nil {
 		t.Fatalf("failed to unmarshal data<%s> to RestMethod: %v", expectedJSON, err)
 	}

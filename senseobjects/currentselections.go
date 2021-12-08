@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 )
@@ -40,7 +41,7 @@ func (cs *CurrentSelections) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout CurrentSelectionLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal CurrentSelection layout")
 	}
@@ -57,7 +58,7 @@ func (cs *CurrentSelections) UpdateProperties(ctx context.Context) error {
 	}
 
 	var properties CurrentSelectionProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
+	err = json.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal CurrentSelction properties")
 	}

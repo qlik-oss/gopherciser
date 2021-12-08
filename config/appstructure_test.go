@@ -4250,7 +4250,7 @@ var structureJSON = []byte(`{
 
 func TestConfig_GetSelectables(t *testing.T) {
 	var structure appstructure.AppStructure
-	if err := jsonit.Unmarshal(structureJSON, &structure); err != nil {
+	if err := json.Unmarshal(structureJSON, &structure); err != nil {
 		t.Fatal(err)
 	}
 

@@ -33,7 +33,7 @@ func TestSelectUnmarshal(t *testing.T) {
 		}
 	}`
 	var item Action
-	if err := jsonit.Unmarshal([]byte(raw), &item); err != nil {
+	if err := json.Unmarshal([]byte(raw), &item); err != nil {
 		t.Fatal(err)
 	}
 
@@ -84,7 +84,7 @@ func TestSelectMarshal(t *testing.T) {
 		},
 	}
 
-	raw, err := jsonit.Marshal(item)
+	raw, err := json.Marshal(item)
 	if err != nil {
 		t.Fatal(err)
 	}

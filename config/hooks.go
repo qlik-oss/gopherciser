@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -158,7 +159,7 @@ func (hook *Hook) init() {
 
 // UnmarshalJSON(arg []byte) error {
 func (hook *Hook) UnmarshalJSON(arg []byte) error {
-	if err := jsonit.Unmarshal(arg, &hook.HookCore); err != nil {
+	if err := json.Unmarshal(arg, &hook.HookCore); err != nil {
 		return err
 	}
 	hook.init()
@@ -168,7 +169,7 @@ func (hook *Hook) UnmarshalJSON(arg []byte) error {
 
 // UnmarshalJSON Validator
 func (validator *Validator) UnmarshalJSON(arg []byte) error {
-	err := jsonit.Unmarshal(arg, &validator.ValidatorCore)
+	err := json.Unmarshal(arg, &validator.ValidatorCore)
 	if err != nil {
 		return err
 	}

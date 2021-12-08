@@ -105,11 +105,11 @@ func TestTimeBufMarshaling(t *testing.T) {
 	raw := `{"mode":"constant","duration":"25s"}`
 
 	var timeBuf TimeBuffer
-	if err := jsonit.Unmarshal([]byte(raw), &timeBuf); err != nil {
+	if err := json.Unmarshal([]byte(raw), &timeBuf); err != nil {
 		t.Fatal("Failed to unmarshal TimeBuffer", err)
 	}
 
-	marshaled, err := jsonit.Marshal(timeBuf)
+	marshaled, err := json.Marshal(timeBuf)
 	if err != nil {
 		t.Fatal("Failed to marshal TimeBuffer:", err)
 	}

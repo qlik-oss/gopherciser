@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/hashicorp/go-multierror"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -60,8 +60,6 @@ type (
 		SchedType Type `json:"type"`
 	}
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	// SchedUnknown unknown scheduler
@@ -295,12 +293,12 @@ func logErrReport(sessionState *session.State) {
 func UnmarshalScheduler(raw []byte) (IScheduler, error) {
 	// use json parser instead for fetching type?
 	var tmp schedulerTmp
-	if err := jsonit.Unmarshal(raw, &tmp); err != nil {
+	if err := json.Unmarshal(raw, &tmp); err != nil {
 		return nil, errors.Wrap(err, "failed unmarshaling scheduler type")
 	}
 
 	schedType := SchedHandler(tmp.SchedType)
-	if err := jsonit.Unmarshal(raw, schedType); err != nil {
+	if err := json.Unmarshal(raw, schedType); err != nil {
 		return nil, errors.Wrap(err, "failed unmarshaling scheduler ")
 	}
 

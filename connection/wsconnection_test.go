@@ -20,7 +20,7 @@ func TestWsConnection(t *testing.T) {
 		}`
 
 	var connection ConnectionSettings
-	if err := jsonit.Unmarshal([]byte(raw), &connection); err != nil {
+	if err := json.Unmarshal([]byte(raw), &connection); err != nil {
 		t.Fatal("failed to unmarshal connectionsettings:", err)
 	}
 

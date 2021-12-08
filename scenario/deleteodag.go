@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -71,7 +72,7 @@ func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 		return errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagRequests.ResponseBody))
 	}
 	var odagRequestsByLink structs.OdagRequestsByLink
-	if err := jsonit.Unmarshal(odagRequests.ResponseBody, &odagRequestsByLink); err != nil {
+	if err := json.Unmarshal(odagRequests.ResponseBody, &odagRequestsByLink); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody))
 	}
 

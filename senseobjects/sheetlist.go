@@ -2,7 +2,7 @@ package senseobjects
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"sort"
 	"sync"
@@ -115,7 +115,7 @@ func (sheetList *SheetList) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout SheetListLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal sheetlist layout")
 	}
@@ -156,7 +156,7 @@ func (sheetList *SheetList) UpdateProperties(ctx context.Context) error {
 	}
 
 	var properties SheetListProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
+	err = json.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal sheetlist properties")
 	}

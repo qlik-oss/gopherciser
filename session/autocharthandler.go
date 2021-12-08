@@ -2,7 +2,7 @@ package session
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"sync"
 
@@ -67,7 +67,7 @@ func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionSt
 		actionState.AddErrors(errors.Wrapf(errDataPath, "Failed to get generated layout for autochart<%s>", autochartGen.GenericId))
 		return
 	}
-	if err := jsonit.Unmarshal(rawGeneratedLayout, &generatedLayout); err != nil {
+	if err := json.Unmarshal(rawGeneratedLayout, &generatedLayout); err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to unmarshal auto-chart<%s> generated layout.", autochartObj.ID))
 		return
 	}
@@ -220,7 +220,7 @@ func getRawLayoutAndGeneratedProperties(sessionState *State, actionState *action
 		}
 
 		var autoChartProp enigma.GenericObjectProperties
-		if err = jsonit.Unmarshal(rawAutoChartProperties, &autoChartProp); err != nil {
+		if err = json.Unmarshal(rawAutoChartProperties, &autoChartProp); err != nil {
 			return errors.Wrap(err, "Failed to unmarshal auto-chart properties to GenericObjectProperties")
 		}
 
@@ -230,7 +230,7 @@ func getRawLayoutAndGeneratedProperties(sessionState *State, actionState *action
 		if errDataPath != nil {
 			return errors.Wrapf(errDataPath, "Failed to get generated properties for autochart<%s>", autochartGen.GenericId)
 		}
-		if err := jsonit.Unmarshal(rawGeneratedProp, &generatedProperties); err != nil {
+		if err := json.Unmarshal(rawGeneratedProp, &generatedProperties); err != nil {
 			return errors.Wrapf(err, "failed to unmarshal auto-chart<%s> generated properties.", autochartObj.ID)
 		}
 		autochartObj.SetProperties(&generatedProperties)

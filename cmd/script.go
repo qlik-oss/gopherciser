@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/spf13/cobra"
@@ -76,7 +77,7 @@ var templateCmd = &cobra.Command{
 			_, _ = fmt.Fprintf(os.Stderr, "creating example config:\n%v\n", err)
 		}
 
-		jsonCfg, err := jsonit.MarshalIndent(cfg, "", "  ")
+		jsonCfg, err := json.MarshalIndent(cfg, "", "  ")
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "error marshling template config:\n%v\n", err)
 			return

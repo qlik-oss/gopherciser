@@ -32,7 +32,7 @@ testuser_8;MyDir;Pass;;2323;`)
 	}`)
 
 	var usergen CircularUsersFile
-	if err := jsonit.Unmarshal(jsn, &usergen); err != nil {
+	if err := json.Unmarshal(jsn, &usergen); err != nil {
 		t.Fatal(err)
 	}
 

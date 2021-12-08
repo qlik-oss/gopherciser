@@ -3,6 +3,7 @@ package helpers
 import (
 	"strings"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 )
 
@@ -14,7 +15,7 @@ type (
 // UnmarshalJSON StringBool
 func (sb *StringBool) UnmarshalJSON(arg []byte) error {
 	var s string
-	if err := jsonit.Unmarshal(arg, &s); err != nil {
+	if err := json.Unmarshal(arg, &s); err != nil {
 		return errors.Wrap(err, "failed to unmarshal StringBool")
 	}
 

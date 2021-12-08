@@ -2,7 +2,7 @@ package senseobjects
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -103,7 +103,7 @@ func (bookmarkList *BookmarkList) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout BookmarkListLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal bookmarklist layout")
 	}
@@ -124,7 +124,7 @@ func (bookmarkList *BookmarkList) UpdateProperties(ctx context.Context) error {
 	}
 
 	var properties BookmarkListProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
+	err = json.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal bookmarklist properties")
 	}

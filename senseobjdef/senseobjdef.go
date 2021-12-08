@@ -1,12 +1,11 @@
 package senseobjdef
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -157,8 +156,6 @@ var (
 		"hypercubecontinuousdata": int(DataTypeHyperCubeContinuousData),
 		"hypercubetreedata":       int(DataTypeHyperCubeTreeData),
 	})
-
-	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func init() {
@@ -304,7 +301,7 @@ func (defs ObjectDefs) OverrideFromFile(cfgFile string) error {
 	}
 
 	var overrides ObjectDefs
-	err = jsonit.Unmarshal(jsonOverrides, &overrides)
+	err = json.Unmarshal(jsonOverrides, &overrides)
 	if err != nil {
 		return errors.Wrapf(err, "Error unmarshaling file<%s>", cfgFile)
 	}

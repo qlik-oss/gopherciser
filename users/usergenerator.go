@@ -1,11 +1,10 @@
 package users
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"runtime"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/statistics"
@@ -59,7 +58,6 @@ var (
 		"none":     int(UserGeneratorNone),
 		"fromfile": int(UserGeneratorCircularFile),
 	})
-	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func (value Type) GetEnumMap() *enummap.EnumMap {
@@ -128,7 +126,7 @@ func NewUserGeneratorNone() UserGenerator {
 // UnmarshalJSON unmarshal password from json
 func (passwd *Password) UnmarshalJSON(arg []byte) error {
 	var s string
-	if err := jsonit.Unmarshal(arg, &s); err != nil {
+	if err := json.Unmarshal(arg, &s); err != nil {
 		return errors.Wrap(err, "failed to unmarshal password")
 	}
 	*passwd = Password(s)
@@ -174,7 +172,7 @@ func (value Type) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshal scheduler from json
 func (value *UserGenerator) UnmarshalJSON(arg []byte) error {
 	var gen generatorTmp
-	if err := jsonit.Unmarshal(arg, &gen); err != nil {
+	if err := json.Unmarshal(arg, &gen); err != nil {
 		return errors.Wrap(err, "Failed to unmarshal user generator")
 	}
 
@@ -186,7 +184,7 @@ func (value *UserGenerator) UnmarshalJSON(arg []byte) error {
 		(*value).Settings = settings.(Settings)
 		return nil
 	}
-	if err := jsonit.Unmarshal(gen.Settings, &settings); err != nil {
+	if err := json.Unmarshal(gen.Settings, &settings); err != nil {
 		return errors.Wrap(err, "Failed to unmarshal user generator settings")
 	}
 

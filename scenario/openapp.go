@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -44,11 +45,11 @@ func (openApp *OpenAppSettings) UnmarshalJSON(arg []byte) error {
 		return errors.Errorf("%s %s, please remove from script", ActionOpenApp, err.Error())
 	}
 
-	if err := jsonit.Unmarshal(arg, &openApp.OpenAppSettingsCore); err != nil {
+	if err := json.Unmarshal(arg, &openApp.OpenAppSettingsCore); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
 	}
 
-	if err := jsonit.Unmarshal(arg, &openApp.AppSelection); err != nil {
+	if err := json.Unmarshal(arg, &openApp.AppSelection); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal action<%s>", ActionOpenApp)
 	}
 	return nil

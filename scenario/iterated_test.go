@@ -46,7 +46,7 @@ func TestIterated(t *testing.T) {
 			}`
 
 	var item Action
-	if err := jsonit.Unmarshal([]byte(raw), &item); err != nil {
+	if err := json.Unmarshal([]byte(raw), &item); err != nil {
 		t.Fatal(err)
 	}
 

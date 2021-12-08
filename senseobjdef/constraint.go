@@ -1,7 +1,7 @@
 package senseobjdef
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -121,7 +121,7 @@ func (constraint *Constraint) Evaluate(data json.RawMessage) (bool, error) {
 	}
 
 	var value interface{}
-	if err = jsonit.Unmarshal(rawValue, &value); err != nil {
+	if err = json.Unmarshal(rawValue, &value); err != nil {
 		return false, errors.Wrapf(err, "error unmarshaling value in path<%s>", string(constraint.Path))
 	}
 

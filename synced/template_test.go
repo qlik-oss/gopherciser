@@ -22,7 +22,7 @@ func TestEmptyTemplate(t *testing.T) {
 		Param1 Template `json:"param1"`
 	}{}
 
-	jsn, err := jsonit.Marshal(myStruct)
+	jsn, err := json.Marshal(myStruct)
 	if err != nil {
 		t.Fatal("error marshaling empty synced template:", err)
 	}
@@ -65,7 +65,7 @@ func TestTemplate(t *testing.T) {
 	"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}"
 }`
 
-	if err := jsonit.Unmarshal([]byte(jsn), &myStruct); err != nil {
+	if err := json.Unmarshal([]byte(jsn), &myStruct); err != nil {
 		t.Fatal("failed to unmarshal struct:", err)
 	}
 
