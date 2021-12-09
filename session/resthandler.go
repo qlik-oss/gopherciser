@@ -125,6 +125,16 @@ var (
 	dnsResolver = &dnscache.Resolver{}
 )
 
+func init() {
+	go func() {
+		t := time.NewTicker(10 * time.Minute)
+		defer t.Stop()
+		for range t.C {
+			dnsResolver.Refresh(true)
+		}
+	}()
+}
+
 // NewRestHandler new instance of RestHandler
 func NewRestHandler(ctx context.Context, size int, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
 	return &RestHandler{
