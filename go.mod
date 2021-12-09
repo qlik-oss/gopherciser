@@ -9,7 +9,7 @@ require (
 	github.com/eventials/go-tus v0.0.0-20211022131811-252c8454f2dc
 	github.com/gobwas/ws v1.1.0
 	github.com/goccy/go-json v0.8.1
-	github.com/golang-jwt/jwt/v4 v4.1.0
+	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kr/text v0.2.0 // indirect
@@ -27,3 +27,7 @@ require (
 	github.com/tus/tusd v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
+
+replace github.com/qlik-oss/enigma-go => /home/parallels/dev/qlik-oss/enigma-go
+
+replace github.com/qlik-oss/enigma-go/v3 => /home/parallels/dev/qlik-oss/enigma-go
