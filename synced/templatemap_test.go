@@ -3,6 +3,8 @@ package synced
 import (
 	"os"
 	"testing"
+
+	"github.com/goccy/go-json"
 )
 
 func TestMap(t *testing.T) {

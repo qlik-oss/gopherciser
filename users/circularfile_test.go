@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+
+	"github.com/goccy/go-json"
 )
 
 func TestUsersFromFile(t *testing.T) {

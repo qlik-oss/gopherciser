@@ -3,6 +3,7 @@ package session_test
 import (
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/users"

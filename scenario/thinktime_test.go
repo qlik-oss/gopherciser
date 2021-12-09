@@ -3,6 +3,7 @@ package scenario
 import (
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
@@ -44,10 +45,7 @@ func TestNegative(t *testing.T) {
 		"type" : "badtype"
 	}`
 	_, err := unmarshal(t, badraw)
-	validateError(t, err, `scenario.ThinkTimeSettings.DistributionSettings: Type: unmarshalerDecoder: Failed to unmarshal DistributionType: Unknown enum<badtype>: Key<badtype> not found, error found in #10 byte of ...| "badtype"
-	}|..., bigger context ...|{
-		"type" : "badtype"
-	}|...`)
+	validateError(t, err, "Key<badtype> not found")
 
 	settings := ThinkTimeSettings{
 		helpers.DistributionSettings{
@@ -55,7 +53,7 @@ func TestNegative(t *testing.T) {
 		},
 	}
 	_, err = json.Marshal(settings)
-	validateError(t, err, "scenario.ThinkTimeSettings.DistributionSettings: Type: Unknown DistributionType<300>")
+	validateError(t, err, "json: error calling MarshalJSON for type helpers.DistributionType: Unknown DistributionType<300>")
 
 	_, err = settings.Validate()
 	validateError(t, err, "distribution type<300> not supported")

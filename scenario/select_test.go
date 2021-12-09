@@ -4,6 +4,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/randomizer"
 )

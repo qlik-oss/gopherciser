@@ -1,10 +1,12 @@
 package config
 
 import (
-	"github.com/qlik-oss/gopherciser/appstructure"
-	"github.com/qlik-oss/gopherciser/scenario"
 	"strings"
 	"testing"
+
+	"github.com/goccy/go-json"
+	"github.com/qlik-oss/gopherciser/appstructure"
+	"github.com/qlik-oss/gopherciser/scenario"
 )
 
 var structureJSON = []byte(`{

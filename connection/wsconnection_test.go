@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
