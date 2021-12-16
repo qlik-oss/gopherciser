@@ -114,14 +114,16 @@ jobs:
           name: Publish to github
           command: |
             set -eu
-            if [[ ! -f ./build/VERSION ]]; then echo "./build/VERSION not found"; exit 1; fi
+            if [[ ! -f ./build/version ]]; then echo "./build/version not found"; exit 1; fi
             go install github.com/github-release/github-release@latest
-            TAG=v$(cat build/version)
+            TAG=v$(cat ./build/version)
             TITLE=$(head -n 1 changelog.md)
             BODY=$(tail -n+1 changelog.md)
             echo Creating release version $TAG
             github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY" --draft
             github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_linux.zip
+            github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_windows.zip
+            github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_osx.zip
 
   build-publish-docker:
     <<: *defaults
