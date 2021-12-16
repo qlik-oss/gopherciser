@@ -121,9 +121,13 @@ jobs:
             BODY=$(tail -n+1 changelog.md)
             echo Creating release version $TAG
             github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY" --draft
-            github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_linux.zip
-            github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_windows.zip
-            github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_osx.zip
+            for f in \
+              ./pack/gopherciser_linux.zip \
+              ./pack/gopherciser_windows.zip \
+              ./pack/gopherciser_osx.zip
+            ; do
+              github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -f "$f"
+            done
 
   build-publish-docker:
     <<: *defaults
