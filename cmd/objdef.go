@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/spf13/cobra"
@@ -67,7 +68,7 @@ Use to export default values or examples or to validate custom definitions or ov
 				objDefList = senseobjdef.DefaultObjectDefs
 			}
 
-			jsn, err := jsonit.MarshalIndent(objDefList, "", "  ")
+			jsn, err := json.MarshalIndent(objDefList, "", "  ")
 			if err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "failed to generate default object definitions: %v\n", err)
 				return

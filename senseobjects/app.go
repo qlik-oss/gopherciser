@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -33,8 +32,6 @@ type (
 		SessionObjects
 	}
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // GetSheetList update sheet list for app
 func (app *App) GetSheetList(sessionState SessionState, actionState *action.State) (*SheetList, error) {

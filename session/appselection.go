@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
@@ -103,7 +104,7 @@ func (mode AppSelectionModeEnum) String() string {
 // UnmarshalJSON unmarshal AppSelection
 func (appSelection *AppSelection) UnmarshalJSON(arg []byte) error {
 	var core AppSelectionCore
-	if err := jsonit.Unmarshal(arg, &core); err != nil {
+	if err := json.Unmarshal(arg, &core); err != nil {
 		return errors.WithStack(err)
 	}
 	*appSelection = AppSelection{

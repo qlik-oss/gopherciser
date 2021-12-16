@@ -9,15 +9,13 @@ import (
 	"testing"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func TestConfig(t *testing.T) {
 	tmpKeyFile, err := ioutil.TempFile("", "priv.pem")
@@ -34,7 +32,7 @@ func TestConfig(t *testing.T) {
 		t.Fatal("Failed writing mock private key to tmp file")
 	}
 
-	tmpKeyFilePath, err := jsonit.Marshal(tmpKeyFile.Name())
+	tmpKeyFilePath, err := json.Marshal(tmpKeyFile.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,11 +98,11 @@ func TestConfig(t *testing.T) {
 	}`
 
 	var cfg config.Config
-	if err := jsonit.Unmarshal([]byte(JSONConfigFile), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(JSONConfigFile), &cfg); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = jsonit.Marshal(cfg)
+	_, err = json.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +245,7 @@ func TestScenario(t *testing.T) {
 	t.Logf("config file: %v", JSONConfigFile)
 
 	var cfg config.Config
-	if err := jsonit.Unmarshal([]byte(JSONConfigFile), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(JSONConfigFile), &cfg); err != nil {
 		t.Fatal(err)
 	}
 
@@ -302,7 +300,7 @@ func TestScheduler(t *testing.T) {
 	}`
 
 	var cfg config.Config
-	if err := jsonit.Unmarshal([]byte(JSONConfigFile), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(JSONConfigFile), &cfg); err != nil {
 		t.Fatal(err)
 	}
 
@@ -327,11 +325,11 @@ func TestScheduler(t *testing.T) {
 		t.Errorf("Unexpected ConcurrentUsers<%d> expected<2>", settings.ConcurrentUsers)
 	}
 
-	if _, err := jsonit.Marshal(&cfg); err != nil {
+	if _, err := json.Marshal(&cfg); err != nil {
 		t.Fatal(err)
 	}
 
-	marshJSON, err := jsonit.Marshal(settings)
+	marshJSON, err := json.Marshal(settings)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -507,7 +505,7 @@ func TestCustomLogger(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		script, err := jsonit.Marshal(cfg)
+		script, err := json.Marshal(cfg)
 		if err != nil {
 			t.Fatal("failed marshaling config:", err)
 		}
@@ -537,7 +535,7 @@ func TestCustomLogger(t *testing.T) {
 			t.Fatal(err)
 		}
 		cfg.Settings.LogSettings.Debug = true
-		script, err := jsonit.Marshal(cfg)
+		script, err := json.Marshal(cfg)
 		if err != nil {
 			t.Fatal("failed marshaling config:", err)
 		}
@@ -576,7 +574,7 @@ func TestCustomLogger(t *testing.T) {
 		cfg.SetTrafficLogging()
 		cfg.SetTrafficMetricsLogging()
 
-		script, err := jsonit.Marshal(cfg)
+		script, err := json.Marshal(cfg)
 		if err != nil {
 			t.Fatal("failed marshaling config:", err)
 		}
@@ -627,7 +625,7 @@ func runCustomLogTest(t *testing.T, cfg *config.Config, expected []writerEntry, 
 
 func setupConfig(script string) (*config.Config, error) {
 	var cfg config.Config
-	if err := jsonit.Unmarshal([]byte(script), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(script), &cfg); err != nil {
 		return nil, err
 	}
 	if err := cfg.Validate(); err != nil {

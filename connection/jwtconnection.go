@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
@@ -165,7 +166,7 @@ func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, 
 }
 
 func parseAlgo(key []byte) (string, error) {
-	str := fmt.Sprintf("%s", key)
+	str := string(key)
 	startMarker := "BEGIN "
 	endMarker := " PRIVATE"
 	startIndex := strings.Index(str, startMarker) + len(startMarker)
@@ -189,7 +190,7 @@ func (connectJWT *ConnectJWTSettings) executeClaimsTemplates(sessionState *sessi
 	}
 
 	var m map[string]interface{}
-	if err := jsonit.Unmarshal([]byte(claims), &m); err != nil {
+	if err := json.Unmarshal([]byte(claims), &m); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal JWT Claims<%s>", claims)
 	}
 	return m, nil
@@ -206,7 +207,7 @@ func (connectJWT *ConnectJWTSettings) executeJWTHeaderTemplates(sessionState *se
 	}
 
 	var m map[string]interface{}
-	if err := jsonit.Unmarshal([]byte(jwtHeader), &m); err != nil {
+	if err := json.Unmarshal([]byte(jwtHeader), &m); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal JWT Header<%s>", jwtHeader)
 	}
 	return m, nil

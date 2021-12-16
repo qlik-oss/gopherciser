@@ -1,7 +1,7 @@
 package scenario
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -147,7 +146,6 @@ const (
 var (
 	actionHandler map[string]ActionSettings
 	ahLock        sync.Mutex
-	jsonit        = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func init() {
@@ -291,7 +289,7 @@ func CheckActionError(err error) (bool, error) {
 // UnmarshalJSON unmarshal action
 func (act *Action) UnmarshalJSON(arg []byte) error {
 	var tmpAction actionTemp
-	if err := jsonit.Unmarshal(arg, &tmpAction); err != nil {
+	if err := json.Unmarshal(arg, &tmpAction); err != nil {
 		return errors.Wrap(err, "Failed to unmarshal action")
 	}
 
@@ -304,7 +302,7 @@ func (act *Action) UnmarshalJSON(arg []byte) error {
 	}
 
 	if tmpAction.Settings != nil {
-		if err := jsonit.Unmarshal(tmpAction.Settings, &settings); err != nil {
+		if err := json.Unmarshal(tmpAction.Settings, &settings); err != nil {
 			return errors.Wrapf(err, "Failed to unmarshal action<%s> settings", tmpAction.Type)
 		}
 
@@ -437,6 +435,7 @@ func (act *Action) endAction(sessionState *session.State, actionState *action.St
 	errs = multierror.Append(errs, logResult(sessionState, actionState, actionState.Details, containerActionEntry))
 	sessionState.LogEntry.LogDebugf("%s END", act.Type)
 	errs = multierror.Append(errs, logObjectRegressionData(sessionState))
+
 	return helpers.FlattenMultiError(errs)
 }
 

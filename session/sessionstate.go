@@ -2,14 +2,13 @@ package session
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	neturl "net/url"
 	"sync"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -163,7 +162,6 @@ const (
 
 var (
 	defaultReconnectBackoff = wsdialer.DefaultBackoff // current set to same as event ws backoff, but keeping constant so it could be independently changed
-	jsonit                  = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 // Error implements error interface

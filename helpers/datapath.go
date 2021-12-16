@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"strings"
 
@@ -120,7 +120,7 @@ func (path DataPath) LookupMulti(data json.RawMessage, separator string) ([]json
 
 	var jMap interface{}
 
-	if err := jsonit.Unmarshal(jsonArray, &jMap); err != nil {
+	if err := json.Unmarshal(jsonArray, &jMap); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal data")
 	}
 
@@ -137,7 +137,7 @@ func (path DataPath) LookupMulti(data json.RawMessage, separator string) ([]json
 	hasSubPath := len(sa) > 1
 
 	for i, v := range dataArray {
-		raw, marshalErr := jsonit.Marshal(v)
+		raw, marshalErr := json.Marshal(v)
 		if marshalErr != nil {
 			return nil, errors.Wrapf(marshalErr, "Failed to marshal array entry<%d> in path<%s>", i, sa[0])
 		}

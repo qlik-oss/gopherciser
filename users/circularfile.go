@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
@@ -34,7 +35,7 @@ func NewCircularUsersFromFile() *CircularUsersFile {
 
 // UnmarshalJSON CircularUsersFile
 func (users *CircularUsersFile) UnmarshalJSON(arg []byte) error {
-	if err := jsonit.Unmarshal(arg, &users.CircularUsersFileCore); err != nil {
+	if err := json.Unmarshal(arg, &users.CircularUsersFileCore); err != nil {
 		return err
 	}
 	if err := users.parseUserList(); err != nil {

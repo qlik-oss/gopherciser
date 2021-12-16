@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/stretchr/testify/assert"
 )
@@ -78,7 +79,7 @@ func TestRandomactionUnmarshal(t *testing.T) {
 			}
 		}`
 	var item Action
-	if err := jsonit.Unmarshal([]byte(raw), &item); err != nil {
+	if err := json.Unmarshal([]byte(raw), &item); err != nil {
 		t.Fatal(err)
 	}
 
@@ -99,7 +100,7 @@ func TestRandomactionUnmarshal(t *testing.T) {
 }
 
 func TestRandomactionMarshal(t *testing.T) {
-	raw, err := jsonit.Marshal(someRandomAction)
+	raw, err := json.Marshal(someRandomAction)
 	if err != nil {
 		t.Fatal(err)
 	}

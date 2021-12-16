@@ -10,7 +10,6 @@ import (
 	"text/template"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -62,7 +61,6 @@ var (
 	funcMap = template.FuncMap{
 		"now": time.Now,
 	}
-	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func (value AuthenticationMode) GetEnumMap() *enummap.EnumMap {

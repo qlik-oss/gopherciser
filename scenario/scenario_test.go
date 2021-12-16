@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/hashicorp/go-multierror"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/config"
@@ -19,8 +19,6 @@ import (
 type (
 	PanicActionSettings struct{}
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func (settings PanicActionSettings) Validate() ([]string, error) {
 	return nil, nil
@@ -85,7 +83,7 @@ func TestPanicAndFailRecover(t *testing.T) {
 	]
 }`
 	var cfg config.Config
-	if err := jsonit.Unmarshal([]byte(script), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(script), &cfg); err != nil {
 		t.Fatal("error unmarshaling config", err)
 	}
 

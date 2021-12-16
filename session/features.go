@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -51,7 +52,7 @@ func (features *Features) UpdateFeatureMap(rest *RestHandler, host string, actio
 			return errors.WithStack(err)
 		}
 
-		if err := jsonit.Unmarshal(req.ResponseBody, &features.m); err != nil {
+		if err := json.Unmarshal(req.ResponseBody, &features.m); err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return errors.WithStack(err)
 		}
@@ -69,7 +70,7 @@ func (features *Features) UpdateCapabilities(rest *RestHandler, host string, act
 		}
 
 		var capabilityList capabilites
-		if err := jsonit.Unmarshal(req.ResponseBody, &capabilityList); err != nil {
+		if err := json.Unmarshal(req.ResponseBody, &capabilityList); err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return errors.WithStack(err)
 		}

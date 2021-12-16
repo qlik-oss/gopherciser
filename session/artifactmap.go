@@ -4,6 +4,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -79,7 +80,7 @@ func (d ArtifactList) Swap(i, j int) {
 
 // MarshalJSON marshal artifact list to JSON
 func (d ArtifactList) MarshalJSON() ([]byte, error) {
-	return jsonit.Marshal(d.list)
+	return json.Marshal(d.list)
 }
 
 // NewArtifactMap returns an empty ArtifactMap
@@ -372,7 +373,7 @@ func (am *ArtifactMap) JSON() ([]byte, error) {
 	am.mu.RLock()
 	defer am.mu.RUnlock()
 
-	return jsonit.Marshal(am.resourceMap)
+	return json.Marshal(am.resourceMap)
 }
 
 // Count of specified resource type list

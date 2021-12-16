@@ -3,7 +3,7 @@ package enigmahandlers
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	neturl "net/url"
@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/enigmainterceptors"
@@ -69,8 +68,6 @@ const (
 	//MaxRetries when engine aborts request
 	MaxRetries = 3
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // NewSenseUplink SenseUplink constructor
 func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *requestmetrics.RequestMetrics, trafficLogger ITrafficLogger) *SenseUplink {
@@ -251,7 +248,7 @@ func emptyMsgChan(msgChan chan enigma.SessionMessage, logEntry *logger.LogEntry)
 			switch event.Topic {
 			case constant.EventTopicOnConnected:
 				var onConnected OnConnected
-				if err := jsonit.Unmarshal(event.Content, &onConnected); err != nil {
+				if err := json.Unmarshal(event.Content, &onConnected); err != nil {
 					logEntry.Log(logger.WarningLevel, "failed to unmarshal pushed onConnected message")
 					return mustAuthenticate, onConnectedSessionState, otherTopics
 				}
@@ -270,7 +267,7 @@ func emptyMsgChan(msgChan chan enigma.SessionMessage, logEntry *logger.LogEntry)
 
 func handleOnAuthenticationInformation(content json.RawMessage, logEntry *logger.LogEntry) *bool {
 	var onAuthInfo OnAuthenticationInformation
-	if err := jsonit.Unmarshal(content, &onAuthInfo); err != nil {
+	if err := json.Unmarshal(content, &onAuthInfo); err != nil {
 		logEntry.Log(logger.WarningLevel, "failed to unmarshal pushed OnAuthenticationInformation message")
 		return nil
 	}
@@ -340,7 +337,7 @@ func (uplink *SenseUplink) LogMetric(invocation *enigma.Invocation, metrics *eni
 			}
 		}
 		if invocation.Params != nil {
-			if jB, err := jsonit.Marshal(invocation.Params); err == nil && jB != nil {
+			if jB, err := json.Marshal(invocation.Params); err == nil && jB != nil {
 				params = string(jB)
 			}
 		}

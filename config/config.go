@@ -13,7 +13,7 @@ import (
 
 	"github.com/InVisionApp/tabular"
 	"github.com/buger/jsonparser"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -186,7 +186,6 @@ const (
 
 var (
 	ansiWriter = ansicolor.NewAnsiColorWriter(os.Stdout)
-	jsonit     = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func (value LogFormatType) GetEnumMap() *enummap.EnumMap {
@@ -422,7 +421,7 @@ func NewEmptyConfig() (*Config, error) {
 // UnmarshalJSON unmarshal Config. Only unmarshals scheduler if scheduler is nil.
 func (cfg *Config) UnmarshalJSON(arg []byte) error {
 	var core cfgCore
-	if err := jsonit.Unmarshal(arg, &core); err != nil {
+	if err := json.Unmarshal(arg, &core); err != nil {
 		return errors.Wrap(err, "Failed unmarshaling config")
 	}
 	cfg.cfgCore = &core
@@ -613,7 +612,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	}
 
 	// Log script to be executed
-	script, err := jsonit.Marshal(cfg)
+	script, err := json.Marshal(cfg)
 	if err != nil {
 		entry.Logf(logger.WarningLevel, "failed to Marshal config for logging: %v", err)
 	} else {

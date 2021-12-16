@@ -1,7 +1,7 @@
 package examples
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"io/ioutil"
 	"strings"
 	"testing"

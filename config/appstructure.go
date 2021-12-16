@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -345,7 +345,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	// Lookup and set ExtendsID
 	extendsIdPath := helpers.NewDataPath("/qExtendsId")
 	rawExtendsID, _ := extendsIdPath.Lookup(obj.RawBaseProperties)
-	_ = jsonit.Unmarshal(rawExtendsID, &obj.ExtendsId)
+	_ = json.Unmarshal(rawExtendsID, &obj.ExtendsId)
 
 	if obj.ExtendsId != "" {
 		extendedObject, err := structure.getObject(ctx, app, obj.ExtendsId, obj.Type)
@@ -430,7 +430,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	// Lookup and set Visualization
 	visualizationPath := helpers.NewDataPath("/visualization")
 	rawVisualization, _ := visualizationPath.Lookup(properties)
-	_ = jsonit.Unmarshal(rawVisualization, &obj.Visualization)
+	_ = json.Unmarshal(rawVisualization, &obj.Visualization)
 
 	vis := obj.Visualization
 	if vis == "" {
@@ -439,7 +439,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 
 	metaDef := helpers.NewDataPath("/qMetaDef")
 	rawMetaDef, _ := metaDef.Lookup(properties)
-	_ = jsonit.Unmarshal(rawMetaDef, &obj.MetaDef)
+	_ = json.Unmarshal(rawMetaDef, &obj.MetaDef)
 
 	enumTyp, _ := appstructure.ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
 
@@ -481,7 +481,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	rawDimensions, _ := dimensions.Lookup(properties)
 	if rawDimensions != nil {
 		var dimensions []*enigma.NxDimension
-		if err := jsonit.Unmarshal(rawDimensions, &dimensions); err != nil {
+		if err := json.Unmarshal(rawDimensions, &dimensions); err != nil {
 			return errors.WithStack(err)
 		}
 		obj.Dimensions = make([]appstructure.AppStructureDimensionMeta, 0, len(dimensions))
@@ -502,7 +502,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	rawMeasures, _ := measures.Lookup(properties)
 	if rawMeasures != nil {
 		var measures []*enigma.NxMeasure
-		if err := jsonit.Unmarshal(rawMeasures, &measures); err != nil {
+		if err := json.Unmarshal(rawMeasures, &measures); err != nil {
 			return errors.WithStack(err)
 		}
 		obj.Measures = make([]appstructure.AppStructureMeasureMeta, 0, len(measures))
@@ -521,7 +521,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	rawListObject, _ := listObjects.Lookup(properties)
 	if rawListObject != nil {
 		var listObject enigma.ListObjectDef
-		if err := jsonit.Unmarshal(rawListObject, &listObject); err != nil {
+		if err := json.Unmarshal(rawListObject, &listObject); err != nil {
 			return errors.WithStack(err)
 		}
 		obj.Dimensions = []appstructure.AppStructureDimensionMeta{
@@ -580,7 +580,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	if err != nil {
 		structure.warn(fmt.Sprintf("measure<%s> definition not found", id))
 	} else {
-		if err := jsonit.Unmarshal(rawMeasure, &measure); err != nil {
+		if err := json.Unmarshal(rawMeasure, &measure); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -592,7 +592,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	if err != nil {
 		structure.warn(fmt.Sprintf("measure<%s> has not meta information", id))
 	} else {
-		if err := jsonit.Unmarshal(rawMeta, &meta); err != nil {
+		if err := json.Unmarshal(rawMeta, &meta); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -625,7 +625,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	if err != nil {
 		structure.warn(fmt.Sprintf("dimension<%s> defintion not found", id))
 	} else {
-		if err := jsonit.Unmarshal(rawDimension, &dimension); err != nil {
+		if err := json.Unmarshal(rawDimension, &dimension); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -637,7 +637,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	if err != nil {
 		structure.warn(fmt.Sprintf("dimension<%s> has not meta information", id))
 	} else {
-		if err := jsonit.Unmarshal(rawMeta, &meta); err != nil {
+		if err := json.Unmarshal(rawMeta, &meta); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -699,7 +699,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 	// Lookup and set Visualization
 	visualizationPath := helpers.NewDataPath("/visualization")
 	rawVisualization, _ := visualizationPath.Lookup(storyObject.RawProperties)
-	_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
+	_ = json.Unmarshal(rawVisualization, &storyObject.Visualization)
 
 	if err := handleChildren(ctx, obj, &storyObject.AppStructureObjectChildren); err != nil {
 		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get object children error<%s>", id, typ, err))
@@ -721,7 +721,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 
 		// Lookup and set Visualization
 		rawVisualization, _ := visualizationPath.Lookup(storyObject.RawSnapShotProperties)
-		_ = jsonit.Unmarshal(rawVisualization, &storyObject.Visualization)
+		_ = json.Unmarshal(rawVisualization, &storyObject.Visualization)
 	}
 }
 
@@ -737,7 +737,7 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	}
 
 	var structureBookmark appstructure.AppStructureBookmark
-	if err := jsonit.Unmarshal(properties, &structureBookmark); err != nil {
+	if err := json.Unmarshal(properties, &structureBookmark); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -748,7 +748,7 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	if err != nil {
 		structure.warn(fmt.Sprintf("bookmark<%s> has no meta information", id))
 	} else {
-		if err = jsonit.Unmarshal(rawMeta, &meta); err != nil {
+		if err = json.Unmarshal(rawMeta, &meta); err != nil {
 			structure.warn(fmt.Sprintf("bookmark<%s> failed to unmarshal meta information: %v", id, err))
 		}
 	}
@@ -764,7 +764,7 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	if err != nil {
 		return errors.Wrap(err, "failed to get ID of bookmark")
 	}
-	if err := jsonit.Unmarshal(rawId, &structureBookmark.ID); err != nil {
+	if err := json.Unmarshal(rawId, &structureBookmark.ID); err != nil {
 		return errors.Wrap(err, "failed to unmarshal ID of bookmark")
 	}
 
@@ -868,7 +868,7 @@ func stringFromDataPath(path string, data json.RawMessage) string {
 	dataPath := helpers.NewDataPath(path)
 	rawData, _ := dataPath.Lookup(data)
 	var str string
-	_ = jsonit.Unmarshal(rawData, &str)
+	_ = json.Unmarshal(rawData, &str)
 	return str
 }
 

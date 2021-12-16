@@ -3,15 +3,15 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/statistics"
 	"testing"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/connection"
-
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/statistics"
 )
 
 func TestIterated(t *testing.T) {
@@ -46,7 +46,7 @@ func TestIterated(t *testing.T) {
 			}`
 
 	var item Action
-	if err := jsonit.Unmarshal([]byte(raw), &item); err != nil {
+	if err := json.Unmarshal([]byte(raw), &item); err != nil {
 		t.Fatal(err)
 	}
 

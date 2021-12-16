@@ -3,6 +3,7 @@ package senseobjects
 import (
 	"context"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 )
@@ -103,7 +104,7 @@ func (sheet *Sheet) GetProperties(ctx context.Context) (*SheetProperties, error)
 	}
 
 	var properties SheetProperties
-	err = jsonit.Unmarshal(raw, &properties)
+	err = json.Unmarshal(raw, &properties)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal properties for sheet<%s>", sheet.ID)
@@ -126,7 +127,7 @@ func (sheet *Sheet) GetLayout(ctx context.Context) (*SheetLayout, error) {
 	}
 
 	var layout SheetLayout
-	err = jsonit.Unmarshal(raw, &layout)
+	err = json.Unmarshal(raw, &layout)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal layout for sheet<%s>", sheet.ID)
@@ -143,7 +144,7 @@ func (sheet *Sheet) SetProperties(ctx context.Context) error {
 		return errors.New("sheet is nil")
 	}
 
-	raw, err := jsonit.Marshal(sheet.Properties)
+	raw, err := json.Marshal(sheet.Properties)
 	if err != nil {
 		return errors.Wrapf(err, "failed marshaling properties for sheet<%s>", sheet.ID)
 	}

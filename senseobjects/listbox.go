@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/qlik-oss/gopherciser/senseobjdef"
-
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/gopherciser/senseobjdef"
 )
 
 type (
@@ -56,7 +56,7 @@ func (listBox *ListBox) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout ListBoxLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal listBox layout")
 	}
@@ -77,7 +77,7 @@ func (listBox *ListBox) UpdateProperties(ctx context.Context) error {
 	}
 
 	var properties ListBoxProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
+	err = json.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal listBox properties")
 	}

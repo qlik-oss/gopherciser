@@ -4,18 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 )
 
 type TimeDuration time.Duration
 
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
-
 // UnmarshalJSON unmarshal time buffer duration from JSON
 func (duration *TimeDuration) UnmarshalJSON(arg []byte) error {
 	var v interface{}
-	if err := jsonit.Unmarshal(arg, &v); err != nil {
+	if err := json.Unmarshal(arg, &v); err != nil {
 		return errors.Wrap(err, "failed to unmarshal time buffer duration")
 	}
 

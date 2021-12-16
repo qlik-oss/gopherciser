@@ -6,7 +6,6 @@ import (
 	neturl "net/url"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -29,8 +28,6 @@ type (
 		SocketOpenMetric(url *neturl.URL, duration time.Duration)
 	}
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const WsType = "EventWebsocket"
 

@@ -3,13 +3,11 @@ package session_test
 import (
 	"testing"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/users"
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func Test_AppSelection_RoundRobin(t *testing.T) {
 	js := []byte(`{
@@ -19,7 +17,7 @@ func Test_AppSelection_RoundRobin(t *testing.T) {
 	}`)
 
 	var appSelection session.AppSelection
-	if err := jsonit.Unmarshal(js, &appSelection); err != nil {
+	if err := json.Unmarshal(js, &appSelection); err != nil {
 		t.Fatal(err)
 	}
 

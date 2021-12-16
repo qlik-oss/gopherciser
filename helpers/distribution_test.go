@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/randomizer"
 )
 
@@ -87,7 +88,7 @@ func unmarshal(t *testing.T, raw string) (*DistributionSettings, error) {
 	t.Helper()
 
 	var settings DistributionSettings
-	if err := jsonit.Unmarshal([]byte(raw), &settings); err != nil {
+	if err := json.Unmarshal([]byte(raw), &settings); err != nil {
 		return nil, err
 	}
 

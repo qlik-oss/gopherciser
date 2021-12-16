@@ -2,7 +2,7 @@ package senseobjects
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -60,7 +60,7 @@ func (storyList *StoryList) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout enigma.GenericObjectLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal storyList layout")
 	}
@@ -87,7 +87,7 @@ func (storyList *StoryList) UpdateProperties(ctx context.Context) error {
 	}
 
 	var properties enigma.GenericObjectProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
+	err = json.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal storyList properties")
 	}

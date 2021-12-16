@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"testing"
 )
@@ -109,7 +109,7 @@ func TestLookupAndSet(t *testing.T) {
 
 			// unmarshal results
 			var result LookupAndSetResult
-			err = jsonit.Unmarshal(modifiedData, &result)
+			err = json.Unmarshal(modifiedData, &result)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -115,7 +116,7 @@ func (value ActionType) String() string {
 // UnmarshalJSON unmarshal ActionType
 func (settings *RandomActionSettings) UnmarshalJSON(arg []byte) error {
 	core := RandomActionSettingsCore{}
-	err := jsonit.Unmarshal(arg, &core)
+	err := json.Unmarshal(arg, &core)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal RandomActionSettings")
 	}
@@ -338,14 +339,14 @@ func getSelectableObjectsOnSheet(sessionState *session.State) ([]*enigmahandlers
 
 func overrideSettings(originalSettings ActionSettings, overrideSettings map[string]interface{}) (interface{}, error) {
 	// Marshal settings into json []byte
-	originalSettingsJSON, err := jsonit.Marshal(originalSettings)
+	originalSettingsJSON, err := json.Marshal(originalSettings)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// Unmarshal to generic struct
 	var anyJSON map[string]interface{}
-	if err := jsonit.Unmarshal(originalSettingsJSON, &anyJSON); err != nil {
+	if err := json.Unmarshal(originalSettingsJSON, &anyJSON); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -357,7 +358,7 @@ func overrideSettings(originalSettings ActionSettings, overrideSettings map[stri
 	}
 
 	// Marshal it back into json []byte
-	finalJSON, err := jsonit.Marshal(anyJSON)
+	finalJSON, err := json.Marshal(anyJSON)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -366,21 +367,21 @@ func overrideSettings(originalSettings ActionSettings, overrideSettings map[stri
 	switch originalSettings.(type) {
 	case SelectionSettings:
 		newSettingsObject := SelectionSettings{}
-		err = jsonit.Unmarshal(finalJSON, &newSettingsObject)
+		err = json.Unmarshal(finalJSON, &newSettingsObject)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return newSettingsObject, nil
 	case ChangeSheetSettings:
 		newSettingsObject := ChangeSheetSettings{}
-		err = jsonit.Unmarshal(finalJSON, &newSettingsObject)
+		err = json.Unmarshal(finalJSON, &newSettingsObject)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return newSettingsObject, nil
 	case ThinkTimeSettings:
 		newSettingsObject := ThinkTimeSettings{}
-		err = jsonit.Unmarshal(finalJSON, &newSettingsObject)
+		err = json.Unmarshal(finalJSON, &newSettingsObject)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

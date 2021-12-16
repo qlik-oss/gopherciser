@@ -28,6 +28,7 @@ import (
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/version"
+	"github.com/rs/dnscache"
 )
 
 type (
@@ -120,7 +121,19 @@ var (
 		FailOnError:        true,
 		ContentType:        "application/json",
 	}
+
+	dnsResolver = &dnscache.Resolver{}
 )
+
+func init() {
+	go func() {
+		t := time.NewTicker(10 * time.Minute)
+		defer t.Stop()
+		for range t.C {
+			dnsResolver.Refresh(true)
+		}
+	}()
+}
 
 // NewRestHandler new instance of RestHandler
 func NewRestHandler(ctx context.Context, size int, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
@@ -200,10 +213,27 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 		Transport: &Transport{
 			&http.Transport{
 				Proxy: http.ProxyFromEnvironment,
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).DialContext,
+				DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
+					host, port, err := net.SplitHostPort(addr)
+					if err != nil {
+						return nil, err
+					}
+					ips, err := dnsResolver.LookupHost(ctx, host)
+					if err != nil {
+						return nil, err
+					}
+					for _, ip := range ips {
+						dialer := &net.Dialer{
+							Timeout:   30 * time.Second,
+							KeepAlive: 30 * time.Second,
+						}
+						conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+						if err == nil {
+							return conn, nil
+						}
+					}
+					return nil, nil
+				},
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
 				IdleConnTimeout:       90 * time.Second,
@@ -732,7 +762,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 }
 
 func LogTrafficIn(resp *http.Response, trafficLogger MinimalTrafficLogger, logEntry *logger.LogEntry, requestID uint64) {
-	if !logEntry.ShouldLogTraffic() || trafficLogger != nil {
+	if logEntry.ShouldLogTraffic() && trafficLogger != nil {
 		body := !contentIsBinary(resp.Header)
 		respSize := int64(0)
 		if resp.ContentLength > 0 {

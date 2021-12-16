@@ -2,7 +2,7 @@ package senseobjects
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"sync"
 
@@ -58,7 +58,7 @@ func (davlist *DynamicAppViewList) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout DynamicAppViewListLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal DynamicAppViewList layout")
 	}

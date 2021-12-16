@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -158,7 +159,7 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 	}
 
 	// time to send the final request
-	postObjJson, err := jsonit.Marshal(postObject)
+	postObjJson, err := json.Marshal(postObject)
 	if err != nil {
 		actionState.AddErrors(err)
 		//return
@@ -177,7 +178,7 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 		return errors.Errorf("failed to POST ODAG request: unexpected response code %d <%s>", postRequest.ResponseStatusCode, postRequest.ResponseBody)
 	}
 	var odagPostResponse structs.OdagPostRequestResponse
-	if err := jsonit.Unmarshal(postRequest.ResponseBody, &odagPostResponse); err != nil {
+	if err := json.Unmarshal(postRequest.ResponseBody, &odagPostResponse); err != nil {
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG request POST response: %s", postRequest.ResponseBody)))
 	}
 
@@ -202,7 +203,7 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 			return errors.Errorf("failed to get ODAG requests: %s", odagRequests.ResponseBody)
 		}
 		var odagGetRequests structs.OdagGetRequests
-		if err := jsonit.Unmarshal(odagRequests.ResponseBody, &odagGetRequests); err != nil {
+		if err := json.Unmarshal(odagRequests.ResponseBody, &odagGetRequests); err != nil {
 			return errors.Wrapf(err, "failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody)
 		}
 
@@ -331,7 +332,7 @@ func getOdagLinkByName(name string, host string, sessionState *session.State,
 		return nil, errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagLinks.ResponseBody))
 	}
 	var odagGetLinksResponse structs.OdagGetLinks
-	if err := jsonit.Unmarshal(odagLinks.ResponseBody, &odagGetLinksResponse); err != nil {
+	if err := json.Unmarshal(odagLinks.ResponseBody, &odagGetLinksResponse); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG links GET reponse: %s", odagLinks.ResponseBody))
 	}
 	odagLink := structs.OdagGetLink{}
@@ -363,7 +364,7 @@ func GetOdagSelectionBindings(host string, odagLinkId string, sessionState *sess
 		return nil, errors.New(fmt.Sprintf("failed to get ODAG link info: %s", odagLinkInfo.ResponseBody))
 	}
 	var odagLinkInfoStruct structs.OdagGetLinkInfo
-	if err := jsonit.Unmarshal(odagLinkInfo.ResponseBody, &odagLinkInfoStruct); err != nil {
+	if err := json.Unmarshal(odagLinkInfo.ResponseBody, &odagLinkInfoStruct); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG links info GET reponse: %s", odagLinkInfo.ResponseBody))
 	}
 	if odagLinkInfoStruct.Bindings != nil {

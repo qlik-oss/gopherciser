@@ -2,7 +2,7 @@ package doccompiler
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"go/format"
 	"io/ioutil"

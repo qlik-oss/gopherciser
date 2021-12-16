@@ -1,10 +1,12 @@
 package config
 
 import (
-	"github.com/qlik-oss/gopherciser/appstructure"
-	"github.com/qlik-oss/gopherciser/scenario"
 	"strings"
 	"testing"
+
+	"github.com/goccy/go-json"
+	"github.com/qlik-oss/gopherciser/appstructure"
+	"github.com/qlik-oss/gopherciser/scenario"
 )
 
 var structureJSON = []byte(`{
@@ -4250,7 +4252,7 @@ var structureJSON = []byte(`{
 
 func TestConfig_GetSelectables(t *testing.T) {
 	var structure appstructure.AppStructure
-	if err := jsonit.Unmarshal(structureJSON, &structure); err != nil {
+	if err := json.Unmarshal(structureJSON, &structure); err != nil {
 		t.Fatal(err)
 	}
 

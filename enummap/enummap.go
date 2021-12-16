@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 )
 
@@ -27,8 +27,6 @@ type (
 	// NonLowercaseKeyError Key contains non-lowercase character
 	NonLowercaseKeyError string
 )
-
-var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func (ik IntKeyNotFoundError) Error() string {
 	return fmt.Sprintf("Key<%d> not found", int(ik))
@@ -155,13 +153,13 @@ func (em *EnumMap) Add(k string, v int) error {
 func (em *EnumMap) UnMarshal(arg []byte) (int, error) {
 	var i int
 	// Is integer
-	if err := jsonit.Unmarshal(arg, &i); err == nil {
+	if err := json.Unmarshal(arg, &i); err == nil {
 		return i, nil
 	}
 
 	// Is string
 	var s string
-	if err := jsonit.Unmarshal(arg, &s); err != nil {
+	if err := json.Unmarshal(arg, &s); err != nil {
 		return 0, errors.Wrapf(err, "Failed to unmarshal byte array<%v>", arg)
 	}
 

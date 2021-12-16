@@ -1,7 +1,7 @@
 package senseobjdef
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"fmt"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"io/ioutil"
@@ -202,13 +202,13 @@ func TestConfig(t *testing.T) {
 	}`
 
 	var defs ObjectDefs
-	if err := jsonit.Unmarshal([]byte(raw), &defs); err != nil {
+	if err := json.Unmarshal([]byte(raw), &defs); err != nil {
 		t.Fatal(err)
 	}
 
 	validateConfigStruct(t, defs, testObjDefs)
 
-	jString, err := jsonit.Marshal(defs)
+	jString, err := json.Marshal(defs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,7 +284,7 @@ func TestDeprecatedConfig(t *testing.T) {
 	}`
 
 	var defs ObjectDefs
-	if err := jsonit.Unmarshal([]byte(raw), &defs); err == nil {
+	if err := json.Unmarshal([]byte(raw), &defs); err == nil {
 		t.Fatal("expected unmarshal error on deprecated field")
 	}
 }
@@ -302,7 +302,7 @@ func TestOverideFromFile(t *testing.T) {
 		// todo delete file
 	}()
 
-	overrides, err := jsonit.Marshal(testObjDefs)
+	overrides, err := json.Marshal(testObjDefs)
 	if err != nil {
 		t.Fatal("error marshaling testObjDefs", err)
 	}

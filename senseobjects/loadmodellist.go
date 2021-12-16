@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 )
@@ -53,7 +54,7 @@ func (loadModelList *LoadModelList) UpdateLayout(ctx context.Context) error {
 	}
 
 	var layout enigma.GenericObjectLayout
-	err = jsonit.Unmarshal(layoutRaw, &layout)
+	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal loadModelList layout")
 	}
@@ -80,7 +81,7 @@ func (loadModelList *LoadModelList) UpdateProperties(ctx context.Context) error 
 	}
 
 	var properties enigma.GenericObjectProperties
-	err = jsonit.Unmarshal(propertiesRaw, &properties)
+	err = json.Unmarshal(propertiesRaw, &properties)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal loadModelList properties")
 	}

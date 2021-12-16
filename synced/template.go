@@ -10,8 +10,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/goccy/go-json"
 	uuid "github.com/google/uuid"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
@@ -42,7 +42,6 @@ var (
 		"add":       add,
 		"join":      strings.Join,
 	}
-	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func timestamp() string {
@@ -65,7 +64,7 @@ func New(t string) (*Template, error) {
 func (syn *Template) UnmarshalJSON(arg []byte) error {
 
 	var s string
-	if err := jsonit.Unmarshal(arg, &s); err != nil {
+	if err := json.Unmarshal(arg, &s); err != nil {
 		return errors.Wrap(err, "failed un-marshaling synced template to string")
 	}
 
@@ -79,7 +78,7 @@ func (syn *Template) UnmarshalJSON(arg []byte) error {
 
 // MarshalJSON marshal template to json string
 func (syn Template) MarshalJSON() ([]byte, error) {
-	return jsonit.Marshal(syn.t)
+	return json.Marshal(syn.t)
 }
 
 // Parse template

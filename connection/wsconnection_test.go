@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -20,7 +21,7 @@ func TestWsConnection(t *testing.T) {
 		}`
 
 	var connection ConnectionSettings
-	if err := jsonit.Unmarshal([]byte(raw), &connection); err != nil {
+	if err := json.Unmarshal([]byte(raw), &connection); err != nil {
 		t.Fatal("failed to unmarshal connectionsettings:", err)
 	}
 

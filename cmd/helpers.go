@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/mitchellh/go-ps"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
@@ -32,8 +32,6 @@ var (
 	debug          bool
 	logFormat      string
 	summaryType    string
-
-	jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 // AddAllSharedParameters add shared parameters to command
@@ -104,7 +102,7 @@ func unmarshalConfigFile() (*config.Config, error) {
 	if regression {
 		cfg.Options.AcceptNoScheduler = true
 	}
-	if err = jsonit.Unmarshal(cfgJSON, &cfg); err != nil {
+	if err = json.Unmarshal(cfgJSON, &cfg); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal config from json")
 	}
 
@@ -272,7 +270,7 @@ func IsLaunchedByDebugger() bool {
 	}
 	name := parent.Executable()
 	switch name {
-	case "dlv", "dlv.exe", "debugserver":
+	case "dlv", "dlv.exe", "debugserver", "dlv-dap":
 		return true
 	}
 	return false
