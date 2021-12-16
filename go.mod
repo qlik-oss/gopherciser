@@ -19,10 +19,10 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/qlik-oss/enigma-go/v3 v3.0.2-0.20211216135847-b31ee494315e
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
-	github.com/rs/zerolog v1.26.0
+	github.com/rs/zerolog v1.26.1
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
-	github.com/spf13/cobra v1.2.1
+	github.com/spf13/cobra v1.3.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tus/tusd v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
