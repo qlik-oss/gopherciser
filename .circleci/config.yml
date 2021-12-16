@@ -106,22 +106,22 @@ jobs:
   publish-github:
     <<: *defaults
     docker:
-      - image: golang:1.11-alpine
+      - image: golang:alpine
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
       - run:
-          name: "Publish release to github.com"
+          name: Publish to github
           command: |
-            set -e
-            apk add --no-cache git
-            go get -u github.com/tcnksm/ghr
+            set -eu
+            if [[ ! -f ./build/VERSION ]]; then echo "./build/VERSION not found"; exit 1; fi
+            go install github.com/github-release/github-release@latest
             TAG=v$(cat build/version)
             TITLE=$(head -n 1 changelog.md)
             BODY=$(tail -n+1 changelog.md)
-            RELEASE=pack
-            echo publish contents of $RELEASE as release $TAG
-            ghr -t ${GITHUB_TOKEN} -debug -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c ${CIRCLE_SHA1} -n "$TITLE" -b "$BODY" -delete $TAG $RELEASE
+            echo Creating release version $TAG
+            github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY" --draft
+            github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" ./pack/gopherciser_linux.zip
 
   build-publish-docker:
     <<: *defaults
@@ -194,5 +194,6 @@ workflows:
             branches:
               only:
                 - master
+                - ci/switchGHReleaser
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
