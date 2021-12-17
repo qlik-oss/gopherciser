@@ -126,7 +126,7 @@ jobs:
               ./pack/gopherciser_windows.zip \
               ./pack/gopherciser_osx.zip
             do
-              github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -f "$f"
+              github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -f "$f"
             done
 
   build-publish-docker:
