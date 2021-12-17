@@ -106,27 +106,34 @@ jobs:
   publish-github:
     <<: *defaults
     docker:
-      - image: golang:1.11-alpine
+      - image: golang:alpine
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
       - run:
-          name: "Publish release to github.com"
+          name: Publish to github
           command: |
-            set -e
-            apk add --no-cache git
-            go get -u github.com/tcnksm/ghr
-            TAG=v$(cat build/version)
+            set -eu
+            if [[ ! -f ./build/version ]]; then echo "./build/version not found"; exit 1; fi
+            go install github.com/github-release/github-release@latest
+            TAG=v$(cat ./build/version)
             TITLE=$(head -n 1 changelog.md)
-            BODY=$(tail -n+1 changelog.md)
-            RELEASE=pack
-            echo publish contents of $RELEASE as release $TAG
-            ghr -t ${GITHUB_TOKEN} -debug -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c ${CIRCLE_SHA1} -n "$TITLE" -b "$BODY" -delete $TAG $RELEASE
+            BODY=$(tail -n+2 changelog.md)
+            echo Creating release version $TAG
+            github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY"
+            for f in \
+              ./pack/gopherciser_linux.zip \
+              ./pack/gopherciser_windows.zip \
+              ./pack/gopherciser_osx.zip
+            do
+              echo uploading "$f" to github
+              github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n $(basename "$f") -R -f "$f"
+            done
 
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.16
+      - image: circleci/golang:1.17
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
@@ -136,7 +143,7 @@ jobs:
           command: |
             for envvar in \
                 GITHUB_USER  \
-                GITHUB_TOKEN  \
+                GITHUB_TOKEN  
             ; do
               if [ -z "${!envvar}" ]; then
                 echo "\$${envvar} is not set!"
