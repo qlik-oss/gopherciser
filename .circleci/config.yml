@@ -120,7 +120,7 @@ jobs:
             TITLE=$(head -n 1 changelog.md)
             BODY=$(tail -n+2 changelog.md)
             echo Creating release version $TAG
-            github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY" --draft
+            github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY"
             for f in \
               ./pack/gopherciser_linux.zip \
               ./pack/gopherciser_windows.zip \
@@ -191,9 +191,7 @@ workflows:
             - build
           filters:
             branches:
-              only:
-                - ci/switchGHReleaser
-              # ignore: /.*/  # only publish on release tags, ignore all branches
+              ignore: /.*/  # only publish on release tags, ignore all branches
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - build-publish-docker:
