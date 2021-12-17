@@ -118,7 +118,7 @@ jobs:
             go install github.com/github-release/github-release@latest
             TAG=v$(cat ./build/version)
             TITLE=$(head -n 1 changelog.md)
-            BODY=$(tail -n+1 changelog.md)
+            BODY=$(tail -n+2 changelog.md)
             echo Creating release version $TAG
             github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY" --draft
             for f in \
@@ -126,6 +126,7 @@ jobs:
               ./pack/gopherciser_windows.zip \
               ./pack/gopherciser_osx.zip
             do
+              echo uploading "$f" to github
               github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n $(basename "$f") -R -f "$f"
             done
 
