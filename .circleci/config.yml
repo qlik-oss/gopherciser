@@ -142,7 +142,7 @@ jobs:
           command: |
             for envvar in \
                 GITHUB_USER  \
-                GITHUB_TOKEN  \
+                GITHUB_TOKEN  
             ; do
               if [ -z "${!envvar}" ]; then
                 echo "\$${envvar} is not set!"
