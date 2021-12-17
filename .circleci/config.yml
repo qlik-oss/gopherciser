@@ -125,7 +125,7 @@ jobs:
               ./pack/gopherciser_linux.zip \
               ./pack/gopherciser_windows.zip \
               ./pack/gopherciser_osx.zip
-            ; do
+            do
               github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -f "$f"
             done
 
@@ -143,7 +143,7 @@ jobs:
             for envvar in \
                 GITHUB_USER  \
                 GITHUB_TOKEN  
-            do
+            ; do
               if [ -z "${!envvar}" ]; then
                 echo "\$${envvar} is not set!"
                 exit 1
