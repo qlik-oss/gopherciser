@@ -126,13 +126,13 @@ jobs:
               ./pack/gopherciser_windows.zip \
               ./pack/gopherciser_osx.zip
             do
-              github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -f "$f"
+              github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n $(basename "$f") -R -f "$f"
             done
 
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.16
+      - image: circleci/golang:1.17
     steps:
       - attach_workspace:
           at: /go/src/github.com/qlik-oss/gopherciser/
