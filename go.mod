@@ -17,7 +17,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
-	github.com/qlik-oss/enigma-go/v3 v3.0.2-0.20211216135847-b31ee494315e
+	github.com/qlik-oss/enigma-go/v3 v3.1.0
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
 	github.com/rs/zerolog v1.26.1
 	github.com/sergi/go-diff v1.1.0 // indirect
