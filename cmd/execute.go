@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -295,7 +296,7 @@ func execute() error {
 		buf := make([]byte, 1<<16)
 		runtime.Stack(buf, true)
 
-		if err := os.WriteFile("hang.stack", buf, 0644); err != nil {
+		if err := ioutil.WriteFile("hang.stack", buf, 0644); err != nil {
 			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to write crash.stack: %v\n", err))
 		}
 
