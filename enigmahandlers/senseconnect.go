@@ -3,7 +3,6 @@ package enigmahandlers
 import (
 	"context"
 	"crypto/tls"
-	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	neturl "net/url"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/enigmainterceptors"
@@ -140,6 +140,7 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		uplink.executeFailedConnectFuncs()
 	}
 
+	// senseDialer :=
 	setupDialer(&dialer, timeout, uplink.logEntry, onUnexpectedDisconnect)
 
 	// TODO somehow get better values for connect time
@@ -148,6 +149,18 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 	if err != nil {
 		return errors.Wrap(err, "Error connecting to Sense")
 	}
+
+	// go func() {
+	// 	// Make sure underlaying connection is closed on disconnect
+	// 	<-global.Disconnected()
+	// 	if senseDialer != nil {
+	// 		if wsDialer := senseDialer.WsDialer; wsDialer != nil {
+	// 			if conn := wsDialer.Conn; conn != nil {
+	// 				_ = conn.Close()
+	// 			}
+	// 		}
+	// 	}
+	// }()
 
 	// Log X-Qlik-Session if available
 	u, err := neturl.Parse(url)

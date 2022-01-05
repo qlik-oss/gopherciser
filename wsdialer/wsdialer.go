@@ -34,6 +34,10 @@ type (
 		OnReconnectDone func(err error, attempts int, timeSpent time.Duration)
 		// GetContext context used to abort waiting during backoff and as a mother context to dial, defaults to background context
 		GetContext func() context.Context
+		// SetPending reconnect
+		SetPending func()
+		// UnsetPending reconnect
+		UnsetPending func()
 	}
 
 	// WsDialer wraps gobwas websocket dialer
@@ -201,6 +205,12 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 
 			attempts := 0
 			started := time.Now()
+
+			if dialer.Reconnect.SetPending != nil && dialer.Reconnect.UnsetPending != nil {
+				dialer.Reconnect.SetPending()
+				defer dialer.Reconnect.UnsetPending()
+			}
+
 			if dialer.Reconnect.OnReconnectStart != nil {
 				dialer.Reconnect.OnReconnectStart()
 			}
