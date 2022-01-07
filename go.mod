@@ -8,7 +8,7 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/eventials/go-tus v0.0.0-20211022131811-252c8454f2dc
 	github.com/gobwas/ws v1.1.0
-	github.com/goccy/go-json v0.8.1
+	github.com/goccy/go-json v0.9.0
 	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
