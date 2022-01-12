@@ -206,10 +206,10 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 			attempts := 0
 			started := time.Now()
 
-			if dialer.Reconnect.SetPending != nil && dialer.Reconnect.UnsetPending != nil {
-				dialer.Reconnect.SetPending()
-				defer dialer.Reconnect.UnsetPending()
-			}
+			// if dialer.Reconnect.SetPending != nil && dialer.Reconnect.UnsetPending != nil {
+			// 	dialer.Reconnect.SetPending()
+			// 	defer dialer.Reconnect.UnsetPending()
+			// }
 
 			if dialer.Reconnect.OnReconnectStart != nil {
 				dialer.Reconnect.OnReconnectStart()
