@@ -23,11 +23,11 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/statistics"
-	"github.com/qlik-oss/gopherciser/version"
 	"github.com/rs/dnscache"
 )
 
@@ -611,8 +611,7 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 
 func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestRequest, reqHeader http.Header) {
 	//Set user-agent as special "gopherciser version". version is set from the version package during build.
-	useragent := fmt.Sprintf("gopherciser %s", version.Version)
-	reqHeader.Set("User-Agent", useragent)
+	reqHeader.Set("User-Agent", globals.UserAgent())
 
 	for k, v := range mainHeader {
 		reqHeader[k] = v

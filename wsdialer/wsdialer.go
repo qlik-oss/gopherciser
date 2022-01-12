@@ -15,6 +15,7 @@ import (
 	gobwas "github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
@@ -116,6 +117,8 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 			wsHeader.Add("Cookie", strings.Join(cookieStrings, "; "))
 		}
 	}
+
+	wsHeader.Add("User-Agent", globals.UserAgent())
 
 	dialer := WsDialer{
 		Dialer: gobwas.Dialer{
