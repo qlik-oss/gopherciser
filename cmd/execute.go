@@ -3,9 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -291,13 +291,18 @@ func execute() error {
 		killcontext, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 		<-killcontext.Done()
-		_, _ = os.Stderr.WriteString("5 minutes passed since process was cancelled, force quiting and creating hang.stack file for debugging!")
+
+		stackFile := fmt.Sprintf("%s_%d_hang.stack", path.Base(os.Args[0]), os.Getpid())
+
+		_, _ = os.Stderr.WriteString("5 minutes passed since process was cancelled, creating stack file for debugging and force quitting!")
 
 		buf := make([]byte, 1<<16)
 		runtime.Stack(buf, true)
 
-		if err := ioutil.WriteFile("hang.stack", buf, 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to write crash.stack: %v\n", err))
+		if err := helpers.WriteToFile(stackFile, buf); err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to write %s: %v\n", stackFile, err))
+		} else {
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("stack file written to: %s\n", stackFile))
 		}
 
 		os.Exit(ExitCodeForceQuit)
