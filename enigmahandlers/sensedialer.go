@@ -25,7 +25,6 @@ const (
 )
 
 func setupDialer(dialer *enigma.Dialer, timeout time.Duration, logEntry *logger.LogEntry, onUnexpectedDisconnect func()) /**SenseDialer*/ {
-	// var senseDialer SenseDialer
 	dialer.CreateSocket = func(ctx context.Context, url string, httpHeader http.Header) (enigma.Socket, error) {
 		nURL, err := neturl.Parse(url)
 		if err != nil {
@@ -44,5 +43,4 @@ func setupDialer(dialer *enigma.Dialer, timeout time.Duration, logEntry *logger.
 
 		return senseDialer, nil
 	}
-	// return &senseDialer
 }

@@ -140,7 +140,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		uplink.executeFailedConnectFuncs()
 	}
 
-	// senseDialer :=
 	setupDialer(&dialer, timeout, uplink.logEntry, onUnexpectedDisconnect)
 
 	// TODO somehow get better values for connect time
@@ -150,19 +149,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		return errors.Wrap(err, "Error connecting to Sense")
 	}
 
-	// go func() {
-	// 	// Make sure underlaying connection is closed on disconnect
-	// 	<-global.Disconnected()
-	// 	if senseDialer != nil {
-	// 		if wsDialer := senseDialer.WsDialer; wsDialer != nil {
-	// 			if conn := wsDialer.Conn; conn != nil {
-	// 				_ = conn.Close()
-	// 			}
-	// 		}
-	// 	}
-	// }()
-
-	// Log X-Qlik-Session if available
 	u, err := neturl.Parse(url)
 	if err != nil {
 		uplink.logEntry.Logf(logger.WarningLevel, "error<%v> resolving url<%s>", err, url)

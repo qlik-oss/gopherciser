@@ -206,54 +206,60 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 				return len(data), data, DisconnectError{Type: dialer.Type}
 			}
 
-			attempts := 0
-			started := time.Now()
-
-			// if dialer.Reconnect.SetPending != nil && dialer.Reconnect.UnsetPending != nil {
-			// 	dialer.Reconnect.SetPending()
-			// 	defer dialer.Reconnect.UnsetPending()
-			// }
-
-			if dialer.Reconnect.OnReconnectStart != nil {
-				dialer.Reconnect.OnReconnectStart()
-			}
-			reConnectDone := dialer.Reconnect.OnReconnectDone
-			if reConnectDone != nil {
-				defer func() {
-					reConnectDone(err, attempts, time.Since(started))
-				}()
-			}
-
-			backoff := dialer.Reconnect.Backoff
-			if len(backoff) < 1 {
-				backoff = DefaultBackoff
-			}
-			for i, w := range backoff {
-				// wait for defined time before attempting re-connect
-				helpers.WaitFor(motherContext, time.Duration(w*float64(time.Second)))
-				if isClosed() {
-					return len(data), data, DisconnectError{Type: dialer.Type}
-				}
-
-				if helpers.IsContextTriggered(motherContext) {
-					return len(data), data, DisconnectError{Type: dialer.Type}
-				}
-				if dialer.IsClosed() {
-					return len(data), data, DisconnectError{Type: dialer.Type}
-				}
-
-				// Attempt re-connect
-				attempts = i + 1
-				func() {
-					ctx, cancel := context.WithTimeout(motherContext, dialer.Timeout)
-					defer cancel()
-					err = dialer.Dial(ctx)
-				}()
-			}
+			err = dialer.reconnect(motherContext, isClosed)
 		}
 	}
 
 	return len(data), data, err
+}
+
+func (dialer *WsDialer) reconnect(ctx context.Context, isClosed func() bool) error {
+	attempts := 0
+	started := time.Now()
+
+	var err error
+	if dialer.Reconnect.SetPending != nil && dialer.Reconnect.UnsetPending != nil {
+		dialer.Reconnect.SetPending()
+		defer dialer.Reconnect.UnsetPending()
+	}
+
+	if dialer.Reconnect.OnReconnectStart != nil {
+		dialer.Reconnect.OnReconnectStart()
+	}
+	reConnectDone := dialer.Reconnect.OnReconnectDone
+	if reConnectDone != nil {
+		defer func() {
+			reConnectDone(err, attempts, time.Since(started))
+		}()
+	}
+
+	backoff := dialer.Reconnect.Backoff
+	if len(backoff) < 1 {
+		backoff = DefaultBackoff
+	}
+	for i, w := range backoff {
+		// wait for defined time before attempting re-connect
+		helpers.WaitFor(ctx, time.Duration(w*float64(time.Second)))
+		if isClosed() {
+			return DisconnectError{Type: dialer.Type}
+		}
+
+		if helpers.IsContextTriggered(ctx) {
+			return DisconnectError{Type: dialer.Type}
+		}
+		if dialer.IsClosed() {
+			return DisconnectError{Type: dialer.Type}
+		}
+
+		// Attempt re-connect
+		attempts = i + 1
+		func() {
+			dialCtx, cancel := context.WithTimeout(ctx, dialer.Timeout)
+			defer cancel()
+			err = dialer.Dial(dialCtx)
+		}()
+	}
+	return err
 }
 
 // Close connection
