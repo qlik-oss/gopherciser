@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -280,6 +283,29 @@ func execute() error {
 	go func() {
 		<-c
 		cancel()
+	}()
+
+	// If process is not killed 5 minutes after context cancelled, create hang.stack file and force quit.
+	go func() {
+		<-ctx.Done()
+		killcontext, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		<-killcontext.Done()
+
+		stackFile := fmt.Sprintf("%s_%d_hang.stack", path.Base(os.Args[0]), os.Getpid())
+
+		_, _ = os.Stderr.WriteString("5 minutes passed since process was cancelled, creating stack file for debugging and force quitting!")
+
+		buf := make([]byte, 1<<16)
+		runtime.Stack(buf, true)
+
+		if err := helpers.WriteToFile(stackFile, buf); err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to write %s: %v\n", stackFile, err))
+		} else {
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("stack file written to: %s\n", stackFile))
+		}
+
+		os.Exit(ExitCodeForceQuit)
 	}()
 
 	// === Prometheus section ===

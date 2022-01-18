@@ -2,13 +2,13 @@ package session
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	neturl "net/url"
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -908,11 +908,12 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 		state.eventWs.Reconnect.GetContext = state.BaseContext
 		state.eventWs.Reconnect.AutoReconnect = true
 		state.eventWs.Reconnect.Backoff = state.ReconnectSettings.Backoff
+		state.eventWs.Reconnect.SetPending = state.Pending.IncPending
+		state.eventWs.Reconnect.UnsetPending = state.Pending.DecPending
 		state.eventWs.Reconnect.OnReconnectStart = func() {
 			if state == nil {
 				return
 			}
-			state.Pending.IncPending() // "Stop" current action if reaching end to minimize effect on subsequent action due to re-connect
 			if state.LogEntry != nil {
 				state.LogEntry.LogDebug("Start re-connect of event websocket")
 			}
@@ -924,7 +925,6 @@ func (state *State) SetupEventWebsocketAsync(actionState *action.State, nurl net
 			if state == nil {
 				return
 			}
-			defer state.Pending.DecPending()
 			if state.LogEntry != nil {
 				state.LogEntry.LogDebug("End re-connect of event websocket")
 				state.LogEntry.LogInfo("EventWsReconnect", fmt.Sprintf("success=%v;attempts=%d;TimeSpent=%d", err == nil, attempts, timeSpent))

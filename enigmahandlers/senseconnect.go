@@ -3,7 +3,6 @@ package enigmahandlers
 import (
 	"context"
 	"crypto/tls"
-	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	neturl "net/url"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/enigmainterceptors"
@@ -149,7 +149,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		return errors.Wrap(err, "Error connecting to Sense")
 	}
 
-	// Log X-Qlik-Session if available
 	u, err := neturl.Parse(url)
 	if err != nil {
 		uplink.logEntry.Logf(logger.WarningLevel, "error<%v> resolving url<%s>", err, url)

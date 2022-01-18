@@ -31,4 +31,6 @@ const (
 	ExitCodeAppStructure
 	// ExitCodeMissingParameter
 	ExitCodeMissingParameter
+	// ExitCodeForceQuit
+	ExitCodeForceQuit
 )
