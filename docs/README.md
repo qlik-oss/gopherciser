@@ -103,6 +103,13 @@ Exit codes:
 * `131`: Error when resolving the log format (ExitCodeLogFormatError)
 * `132`: Error when reading the object definitions (ExitCodeObjectDefError)
 * `133`: Error when starting the profiling (ExitCodeProfilingError)
+* `134`: Error when starting Prometheus (ExitCodeMetricError)
+* `135`: Error when interacting with host OS (ExitCodeOsError)
+* `136`: Error when using incorrect summary type (ExitCodeSummaryTypeError)
+* `137`: Error during test connection (ExitCodeConnectionError)
+* `138`: Error during during get app structure (ExitCodeConnectionError)
+* `139`: Error when missing parameter (ExitCodeMissingParameter)
+* `140`: Process was force quit (ExitCodeForceQuit)
 
 #### Objdef command
 
