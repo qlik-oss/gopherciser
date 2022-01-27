@@ -109,7 +109,7 @@ Exit codes:
 * `137`: Error during test connection (ExitCodeConnectionError)
 * `138`: Error during during get app structure (ExitCodeConnectionError)
 * `139`: Error when missing parameter (ExitCodeMissingParameter)
-* `140`: Error after process was force quit (ExitCodeForceQuit)
+* `140`: Process was force quit (ExitCodeForceQuit)
 
 #### Objdef command
 
