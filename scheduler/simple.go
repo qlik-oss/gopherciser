@@ -91,6 +91,10 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 			helpers.WaitFor(ctx, time.Duration(sched.Settings.RampupDelay*float64(time.Second)))
 		}
 
+		if helpers.IsContextTriggered(ctx) {
+			break
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

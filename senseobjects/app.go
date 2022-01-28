@@ -75,6 +75,7 @@ func (app *App) setSheetList(sessionState SessionState, sl *SheetList) {
 	app.mutex.Lock()
 	defer app.mutex.Unlock()
 	if app.sheetList != nil && app.sheetList.enigmaObject != nil && app.sheetList.enigmaObject.Handle > 0 && sl != app.sheetList {
+		sessionState.LogDebugf("senseobjects.app.setSheetList: executing DeRegisterEvent on handle<%d>", app.GUID, app.sheetList.enigmaObject.Handle)
 		sessionState.DeRegisterEvent(app.sheetList.enigmaObject.Handle)
 	}
 	app.sheetList = sl

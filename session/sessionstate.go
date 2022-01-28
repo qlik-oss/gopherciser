@@ -706,6 +706,9 @@ func (state *State) Reconnect() error {
 	state.reconnect.pendingReconnection.IncPending()
 	defer state.reconnect.pendingReconnection.DecPending()
 
+	state.LogDebugf("session.state.Reconnect(): entered")
+	defer state.LogDebugf("session.state.Reconnect(): exited")
+
 	if !state.ReconnectSettings.Reconnect {
 		return nil
 	}
@@ -1026,4 +1029,39 @@ func (state *State) SetVariableValue(variable string, value interface{}) {
 	defer state.variablesLock.Unlock()
 
 	state.variables[variable] = value
+}
+
+// LogDebugf debug log using current LogEntry
+func (state *State) LogDebugf(format string, args ...interface{}) {
+	if state.LogEntry != nil {
+		state.LogEntry.LogDebugf(format, args...)
+	}
+}
+
+// LogDetail detail entry using current LogEntry
+func (state *State) LogDetail(level logger.LogLevel, msg, detail string) {
+	if state.LogEntry != nil {
+		state.LogEntry.LogDetail(level, msg, detail)
+	}
+}
+
+// LogError error log using current LogEntry (remember normaly errors should be added to actionstate if available)
+func (state *State) LogError(err error) {
+	if state.LogEntry != nil {
+		state.LogEntry.LogError(err)
+	}
+}
+
+// LogInfo info log using current LogEntry
+func (state *State) LogInfo(infoType, msg string) {
+	if state.LogEntry != nil {
+		state.LogEntry.LogInfo(infoType, msg)
+	}
+}
+
+// LogTrafficMetric traffic metric log using current LogEntry
+func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType string) {
+	if state.LogEntry != nil {
+		state.LogEntry.LogTrafficMetric(responseTime, sent, received, requestID, method, params, trafficType)
+	}
 }

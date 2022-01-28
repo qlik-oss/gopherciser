@@ -44,15 +44,21 @@ func (pending *Handler) WaitForPending(ctx context.Context) {
 
 // IncPending increase pending requests
 func (pending *Handler) IncPending() {
+	pending.cond.L.Lock()
 	pending.pc.Inc()
+	pending.cond.Broadcast()
+	pending.cond.L.Unlock()
 }
 
 // DecPending increase finished requests
 func (pending *Handler) DecPending() {
+	pending.cond.L.Lock()
 	pending.pc.Dec()
-	if pending.pc.Current() < 1 {
-		pending.cond.Broadcast()
-	}
+	pending.cond.Broadcast()
+	pending.cond.L.Unlock()
+	// if pending.pc.Current() < 1 {
+	// 	pending.cond.Broadcast()
+	// }
 }
 
 // QueueRequest Async request,
