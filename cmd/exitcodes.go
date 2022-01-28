@@ -33,4 +33,6 @@ const (
 	ExitCodeMissingParameter
 	// ExitCodeForceQuit
 	ExitCodeForceQuit
+	// ExitCodeMaxErrorsReached
+	ExitCodeMaxErrorsReached
 )

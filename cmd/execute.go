@@ -164,6 +164,8 @@ var executeCmd = &cobra.Command{
 				exitCode = MultiErrorCode(cErr)
 			case MaxErrorsReachedError:
 				errMsg = cErr.Error()
+				// TODO set exit code when this has been ok'd
+				// exitCode = ExitCodeMaxErrorsReached
 				switch subErr := errors.Cause(cErr.SubError).(type) {
 				case *multierror.Error:
 					exitCode = MultiErrorCode(subErr)
