@@ -110,6 +110,7 @@ Exit codes:
 * `138`: Error during during get app structure (ExitCodeConnectionError)
 * `139`: Error when missing parameter (ExitCodeMissingParameter)
 * `140`: Process was force quit (ExitCodeForceQuit)
+* `141`: Error count exceeded `maxerrors` setting
 
 #### Objdef command
 
