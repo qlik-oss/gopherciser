@@ -35,7 +35,7 @@ func (pending *Handler) WaitForPending(ctx context.Context) {
 
 	// Wait until all pending is done
 	pending.cond.L.Lock()
-	for pending.pc.Current() > 0 {
+	for pending.pc > 0 {
 		pending.cond.Wait()
 	}
 	pending.cond.L.Unlock()
@@ -44,7 +44,7 @@ func (pending *Handler) WaitForPending(ctx context.Context) {
 // IncPending increase pending requests
 func (pending *Handler) IncPending() {
 	pending.cond.L.Lock()
-	pending.pc.Inc()
+	pending.pc++
 	pending.cond.Broadcast()
 	pending.cond.L.Unlock()
 }
@@ -52,12 +52,9 @@ func (pending *Handler) IncPending() {
 // DecPending increase finished requests
 func (pending *Handler) DecPending() {
 	pending.cond.L.Lock()
-	pending.pc.Dec()
+	pending.pc--
 	pending.cond.Broadcast()
 	pending.cond.L.Unlock()
-	if pending.pc.Current() < 1 {
-		pending.cond.Broadcast()
-	}
 }
 
 // QueueRequest Async request,
