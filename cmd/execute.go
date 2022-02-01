@@ -294,6 +294,7 @@ func execute() error {
 		buf := make([]byte, 1<<16)
 		runtime.Stack(buf, true)
 
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing file %s...", stackFile))
 		if err := helpers.WriteToFile(stackFile, buf); err != nil {
 			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to write %s: %v\n", stackFile, err))
 		} else {

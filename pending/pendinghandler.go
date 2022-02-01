@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
@@ -16,7 +15,7 @@ type (
 	// Handler handles waiting for pending requests and responses
 	Handler struct {
 		cond *sync.Cond
-		pc   atomichandlers.AtomicCounter
+		pc   int
 	}
 )
 
@@ -36,7 +35,7 @@ func (pending *Handler) WaitForPending(ctx context.Context) {
 
 	// Wait until all pending is done
 	pending.cond.L.Lock()
-	for pending.pc.Current() > 0 {
+	for pending.pc > 0 {
 		pending.cond.Wait()
 	}
 	pending.cond.L.Unlock()
@@ -44,15 +43,18 @@ func (pending *Handler) WaitForPending(ctx context.Context) {
 
 // IncPending increase pending requests
 func (pending *Handler) IncPending() {
-	pending.pc.Inc()
+	pending.cond.L.Lock()
+	pending.pc++
+	pending.cond.Broadcast()
+	pending.cond.L.Unlock()
 }
 
 // DecPending increase finished requests
 func (pending *Handler) DecPending() {
-	pending.pc.Dec()
-	if pending.pc.Current() < 1 {
-		pending.cond.Broadcast()
-	}
+	pending.cond.L.Lock()
+	pending.pc--
+	pending.cond.Broadcast()
+	pending.cond.L.Unlock()
 }
 
 // QueueRequest Async request,
