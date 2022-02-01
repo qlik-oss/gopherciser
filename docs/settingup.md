@@ -1844,7 +1844,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 }
 ```
 
-#### Search with two search term
+#### Search with two search terms
 ```json
 {
     "action": "smartsearch",

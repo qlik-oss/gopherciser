@@ -12,7 +12,7 @@
 }
 ```
 
-#### Search with two search term
+#### Search with two search terms
 ```json
 {
     "action": "smartsearch",
