@@ -19,12 +19,12 @@ import (
 
 type (
 	SmartSearchSettings struct {
-		SearchTerms []string
+		searchTerms []string
 		SmartSearchSettingsCore
 	}
 
 	SmartSearchSettingsCore struct {
-		SearchText string `json:"searchtext"`
+		SearchText string `json:"searchtext" displayname:"Search Text" doc-key:"smartsearch.searchtext"`
 	}
 )
 
@@ -33,14 +33,14 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 	if err != nil {
 		return err
 	}
-	settings.SearchTerms = parseSearchTerms(settings.SearchText)
+	settings.searchTerms = parseSearchTerms(settings.SearchText)
 	return nil
 }
 
 // Validate implements ActionSettings interface
 func (settings SmartSearchSettings) Validate() ([]string, error) {
 	var warnings []string
-	if len(settings.SearchTerms) == 0 {
+	if len(settings.searchTerms) == 0 {
 		return warnings, errors.New("no search terms")
 	}
 	return warnings, nil
@@ -133,7 +133,7 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 		return
 	}
 	doc := uplink.CurrentApp.Doc
-	searchTerms := settings.SearchTerms
+	searchTerms := settings.searchTerms
 	sessionState.LogEntry.LogDebugf(`search terms: "%s"`, strings.Join(searchTerms, `","`))
 
 	var searchResult *enigma.SearchResult

@@ -597,5 +597,8 @@
     ],
     "setsensevariable.value": [
         "Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"
-    ]    
+    ],
+    "smartsearch.searchtext": [
+        "Text used for search. Search terms are separated by spaces. Use double quotes include spaces in search terms."
+    ]
 }

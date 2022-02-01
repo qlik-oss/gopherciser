@@ -13,6 +13,28 @@ func TestParseSearchTerms(t *testing.T) {
 		output []string
 	}{
 		{
+			``,
+			[]string{},
+		},
+		{
+			`     `,
+			[]string{},
+		},
+		{
+			" \t\r\n    ",
+			[]string{},
+		},
+		{
+			" \"\t\r\n \"    ",
+			[]string{},
+		},
+		{
+			" \"\t\r\n \"word  ",
+			[]string{
+				`word`,
+			},
+		},
+		{
 			`"a b c`,
 			[]string{
 				`a b c`,
