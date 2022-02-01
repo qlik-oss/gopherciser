@@ -38,7 +38,7 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "two tern search, one including spaces"
+    "label": "two term search, one including spaces"
     "settings": {
         "searchtext": "\"word1 word2\" term2"
     }
