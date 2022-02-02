@@ -598,7 +598,15 @@
     "setsensevariable.value": [
         "Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"
     ],
-    "smartsearch.searchtext": [
-        "Text used for search. Search terms are separated by spaces. Use double quotes include spaces in search terms."
+    "smartsearch.searchtextsource": [
+        "Source for list of strings used for searching.",
+        "`searchtextlist` (default)",
+        "`searchtextfile`"
+    ],
+    "smartsearch.searchtextlist": [
+        "List of of strings used for searching."
+    ],
+    "smartsearch.searchtextfile": [
+        "File path to file with one search string per line."
     ]
 }

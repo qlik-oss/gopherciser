@@ -1828,7 +1828,11 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 
 Perform a Smart Search in Sense app to find suggested selections.
 
-* `searchtext`: Text used for search. Search terms are separated by spaces. Use double quotes include spaces in search terms.
+* `searchtextsource`: Source for list of strings used for searching.
+    * `searchtextlist` (default)
+    * `searchtextfile`
+* `searchtextlist`: List of of strings used for searching.
+* `searchtextfile`: File path to file with one search string per line.
 
 
 ### Examples
@@ -1848,7 +1852,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "two term search"
+    "label": "two term search",
     "settings": {
         "searchtext": "term1 term2"
     }
@@ -1859,7 +1863,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search including spaces"
+    "label": "one term search including spaces",
     "settings": {
         "searchtext": "\"word1 word2\""
     }
@@ -1870,7 +1874,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "two term search, one including spaces"
+    "label": "two term search, one including spaces",
     "settings": {
         "searchtext": "\"word1 word2\" term2"
     }
@@ -1881,7 +1885,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search including spaces"
+    "label": "one term search including spaces",
     "settings": {
         "searchtext": "\\\"hello"
     }

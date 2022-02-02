@@ -136,7 +136,7 @@ var (
 		},
 		"smartsearch": {
 			Description: "## SmartSearch action\n\nPerform a Smart Search in Sense app to find suggested selections.\n",
-			Examples:    "\n### Examples\n\n#### Search with one search term\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"one term search\"\n    \"settings\": {\n        \"searchtext\": \"term1\"\n    }\n}\n```\n\n#### Search with two search terms\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"two term search\"\n    \"settings\": {\n        \"searchtext\": \"term1 term2\"\n    }\n}\n```\n\n#### Search with one search term including spaces\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"one term search including spaces\"\n    \"settings\": {\n        \"searchtext\": \"\\\"word1 word2\\\"\"\n    }\n}\n```\n\n#### Search with two search terms, one of them including spaces\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"two term search, one including spaces\"\n    \"settings\": {\n        \"searchtext\": \"\\\"word1 word2\\\" term2\"\n    }\n}\n```\n\n#### Search with one search term including double quote\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"one term search including spaces\"\n    \"settings\": {\n        \"searchtext\": \"\\\\\\\"hello\"\n    }\n}\n```\n",
+			Examples:    "\n### Examples\n\n#### Search with one search term\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"one term search\"\n    \"settings\": {\n        \"searchtext\": \"term1\"\n    }\n}\n```\n\n#### Search with two search terms\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"two term search\",\n    \"settings\": {\n        \"searchtext\": \"term1 term2\"\n    }\n}\n```\n\n#### Search with one search term including spaces\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"one term search including spaces\",\n    \"settings\": {\n        \"searchtext\": \"\\\"word1 word2\\\"\"\n    }\n}\n```\n\n#### Search with two search terms, one of them including spaces\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"two term search, one including spaces\",\n    \"settings\": {\n        \"searchtext\": \"\\\"word1 word2\\\" term2\"\n    }\n}\n```\n\n#### Search with one search term including double quote\n```json\n{\n    \"action\": \"smartsearch\",\n    \"label\": \"one term search including spaces\",\n    \"settings\": {\n        \"searchtext\": \"\\\\\\\"hello\"\n    }\n}\n```\n",
 		},
 		"subscribeobjects": {
 			Description: "## Subscribeobjects action\n\nSubscribe to any object in the currently active app.\n",
@@ -311,7 +311,9 @@ var (
 		"setscriptvar.value":                              {"Value to set to variable (supports the use of [session variables](#session_variables))."},
 		"setsensevariable.name":                           {"Name of the Qlik Sense variable to set."},
 		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"},
-		"smartsearch.searchtext":                          {"Text used for search. Search terms are separated by spaces. Use double quotes include spaces in search terms."},
+		"smartsearch.searchtextfile":                      {"File path to file with one search string per line."},
+		"smartsearch.searchtextlist":                      {"List of of strings used for searching."},
+		"smartsearch.searchtextsource":                    {"Source for list of strings used for searching.", "`searchtextlist` (default)", "`searchtextfile`"},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},
