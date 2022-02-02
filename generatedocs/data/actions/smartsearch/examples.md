@@ -16,7 +16,7 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "two term search"
+    "label": "two term search",
     "settings": {
         "searchtext": "term1 term2"
     }
@@ -27,7 +27,7 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search including spaces"
+    "label": "one term search including spaces",
     "settings": {
         "searchtext": "\"word1 word2\""
     }
@@ -38,7 +38,7 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "two term search, one including spaces"
+    "label": "two term search, one including spaces",
     "settings": {
         "searchtext": "\"word1 word2\" term2"
     }
@@ -49,7 +49,7 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search including spaces"
+    "label": "one term search including spaces",
     "settings": {
         "searchtext": "\\\"hello"
     }
