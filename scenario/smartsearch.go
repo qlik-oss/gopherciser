@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 	"unicode"
 
 	"github.com/goccy/go-json"
@@ -62,16 +61,19 @@ func ternary(cond bool, ifCondTrue string, ifCondFalse string) string {
 
 }
 
-func logSmartSearchResults(logEntry *logger.LogEntry, searchResult *enigma.SearchResult, searchSuggestionResult *enigma.SearchSuggestionResult) {
-	if !logEntry.ShouldLogDebug() {
-		return
-	}
+func logSearchSuggestionResult(logEntry *logger.LogEntry, searchSuggestionResult *enigma.SearchSuggestionResult) {
 	suggestions := []string{}
 	for _, suggestion := range searchSuggestionResult.Suggestions {
 		suggestions = append(suggestions, quote(suggestion.Value))
 	}
 	if len(suggestions) > 0 {
 		logEntry.LogDebugf("search suggestions: %s", strings.Join(suggestions, ","))
+	}
+}
+
+func logSearchResult(logEntry *logger.LogEntry, searchResult *enigma.SearchResult) {
+	if !logEntry.ShouldLogDebug() {
+		return
 	}
 	for _, sga := range searchResult.SearchGroupArray {
 		searchTermsMatched := []string{}
@@ -136,65 +138,44 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 	searchTerms := settings.searchTerms
 	sessionState.LogEntry.LogDebugf(`search terms: "%s"`, strings.Join(searchTerms, `","`))
 
-	var searchResult *enigma.SearchResult
-	var searchSuggestionResult *enigma.SearchSuggestionResult
-	var wg sync.WaitGroup
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		searchSuggestionResult, err := doc.SearchSuggest(
+			ctx,
+			&enigma.SearchCombinationOptions{},
+			searchTerms,
+		)
+		logSearchSuggestionResult(sessionState.LogEntry, searchSuggestionResult)
+		return err
+	}, actionState, true, "SearchSuggest call failed")
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			var err error
-			searchSuggestionResult, err = doc.SearchSuggest(
-				ctx,
-				&enigma.SearchCombinationOptions{},
-				searchTerms,
-			)
-			return err
-		})
-		if err != nil {
-			actionState.AddErrors(err)
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			var err error
-			searchResult, err = doc.SearchResults(
-				ctx,
-				&enigma.SearchCombinationOptions{
-					Context:      "CurrentSelections",
-					CharEncoding: "Utf16",
-				},
-				searchTerms,
-				&enigma.SearchPage{
-					Offset: 0,
-					Count:  5,
-					GroupOptions: []*enigma.SearchGroupOptions{
-						{
-							GroupType: "DatasetType",
-							Offset:    0,
-							Count:     intPtr(-1),
-						},
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		searchResult, err := doc.SearchResults(
+			ctx,
+			&enigma.SearchCombinationOptions{
+				Context:      "CurrentSelections",
+				CharEncoding: "Utf16",
+			},
+			searchTerms,
+			&enigma.SearchPage{
+				Offset: 0,
+				Count:  5,
+				GroupOptions: []*enigma.SearchGroupOptions{
+					{
+						GroupType: "DatasetType",
+						Offset:    0,
+						Count:     intPtr(-1),
 					},
-					GroupItemOptions: []*enigma.SearchGroupItemOptions{{
-						GroupItemType: "Field",
-						Offset:        0,
-						Count:         intPtr(5),
-					}},
 				},
-			)
-			return err
-		})
+				GroupItemOptions: []*enigma.SearchGroupItemOptions{{
+					GroupItemType: "Field",
+					Offset:        0,
+					Count:         intPtr(5),
+				}},
+			},
+		)
+		logSearchResult(sessionState.LogEntry, searchResult)
+		return err
+	}, actionState, true, "SearchResults call failed")
 
-		if err != nil {
-			actionState.AddErrors(err)
-		}
-	}()
-
-	wg.Wait()
-	logSmartSearchResults(sessionState.LogEntry, searchResult, searchSuggestionResult)
 	sessionState.Wait(actionState)
 }
