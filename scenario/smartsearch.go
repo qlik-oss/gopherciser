@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/goccy/go-json"
@@ -20,7 +21,6 @@ import (
 
 type (
 	SmartSearchSettings struct {
-		searchTermsList [][]string
 		SmartSearchSettingsCore
 	}
 
@@ -28,9 +28,18 @@ type (
 		SearchTextSource   SearchTextSource `json:"searchtextsource" displayname:"Search Text Source" doc-key:"smartsearch.searchtextsource"`
 		SearchTextList     []string         `json:"searchtextlist" displayname:"Search Text List" doc-key:"smartsearch.searchtextlist"`
 		SearchTextFilePath string           `json:"searchtextfile" displayname:"Search Text File" doc-key:"smartsearch.searchtextfile"`
+		PasteSearchText    bool             `json:"pastesearchtext" displayname:"Simulate Pasting Search Text" doc-key:"smartsearch.pastesearchtext"`
 	}
 
 	SearchTextSource int
+
+	searchTextChunk struct {
+		Text                    string
+		TypingDuration          time.Duration
+		PostTypingThinkDuration time.Duration
+	}
+
+	searchTextChunks []searchTextChunk
 )
 
 const (
@@ -81,20 +90,17 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 	default:
 		return errors.Errorf("Unknown SearchTextSource<%d>", settings.SearchTextSource)
 	}
-	for _, searchText := range settings.SearchTextList {
-		searchTerms := parseSearchTerms(searchText)
-		settings.searchTermsList = append(settings.searchTermsList, searchTerms)
-	}
 	return nil
 }
 
 // Validate implements ActionSettings interface
 func (settings SmartSearchSettings) Validate() ([]string, error) {
 	var warnings []string
-	if len(settings.searchTermsList) == 0 {
+	if len(settings.SearchTextList) == 0 {
 		return warnings, errors.New("no searchtext found")
 	}
-	for idx, searchTerms := range settings.searchTermsList {
+	for idx, searchtext := range settings.SearchTextList {
+		searchTerms := parseSearchTerms(searchtext)
 		if len(searchTerms) == 0 {
 			return warnings, errors.Errorf(`no search terms found in searchtext%d<%s> `, idx+1, settings.SearchTextList[idx])
 		}
@@ -108,7 +114,18 @@ func intPtr(i int) *int {
 }
 
 func quote(s string) string {
-	return fmt.Sprintf(`"%s"`, s)
+	return fmt.Sprintf(`%#v`, s)
+}
+
+func quoteList(strList []string) string {
+	if len(strList) == 0 {
+		return "NONE"
+	}
+	quoted := []string{}
+	for _, v := range strList {
+		quoted = append(quoted, quote(v))
+	}
+	return strings.Join(quoted, ",")
 }
 
 func ternary(cond bool, ifCondTrue string, ifCondFalse string) string {
@@ -119,41 +136,40 @@ func ternary(cond bool, ifCondTrue string, ifCondFalse string) string {
 
 }
 
-func logSearchSuggestionResult(logEntry *logger.LogEntry, searchSuggestionResult *enigma.SearchSuggestionResult) {
+func logSearchSuggestionResult(logEntry *logger.LogEntry, id int, searchSuggestionResult *enigma.SearchSuggestionResult) {
 	if !logEntry.ShouldLogDebug() {
 		return
 	}
 	suggestions := []string{}
 	for _, suggestion := range searchSuggestionResult.Suggestions {
-		suggestions = append(suggestions, quote(suggestion.Value))
+		suggestions = append(suggestions, suggestion.Value)
 	}
-	logEntry.LogDebugf("search suggestions: %s",
-		ternary(len(suggestions) > 0, strings.Join(suggestions, ","), "NONE"))
+	logEntry.LogDebugf("search%d suggestions: %s", id, quoteList(suggestions))
 }
 
-func logSearchResult(logEntry *logger.LogEntry, searchResult *enigma.SearchResult) {
+func logSearchResult(logEntry *logger.LogEntry, id int, searchResult *enigma.SearchResult) {
 	if !logEntry.ShouldLogDebug() {
 		return
 	}
 	hasResult := false
-	for _, sga := range searchResult.SearchGroupArray {
-		searchTermsMatched := []string{}
-		for _, stIndex := range sga.SearchTermsMatched {
-			searchTermsMatched = append(searchTermsMatched, quote(searchResult.SearchTerms[stIndex]))
-		}
+	for sgIdx, sga := range searchResult.SearchGroupArray {
 		for _, item := range sga.Items {
+			searchTermsMatched := []string{}
+			for _, stIndex := range item.SearchTermsMatched {
+				searchTermsMatched = append(searchTermsMatched, searchResult.SearchTerms[stIndex])
+			}
 			matches := []string{}
 			for _, match := range item.ItemMatches {
-				matches = append(matches, quote(match.Text))
+				matches = append(matches, match.Text)
 			}
 			hasResult = true
-			logEntry.LogDebugf(`search result for term%s %s in %s %s: %s`,
-				ternary(len(searchTermsMatched) != 1, "s", ""), strings.Join(searchTermsMatched, ","),
-				item.ItemType, quote(item.Identifier), strings.Join(matches, ","))
+			logEntry.LogDebugf(`search%d result group%d matching term%s %s in %s %s: %s`, id, sgIdx+1,
+				ternary(len(searchTermsMatched) != 1, "s", ""), quoteList(searchTermsMatched),
+				item.ItemType, quote(item.Identifier), quoteList(matches))
 		}
 	}
 	if !hasResult {
-		logEntry.LogDebug("search result: NONE")
+		logEntry.LogDebugf("search%d result: NONE", id)
 	}
 }
 
@@ -192,36 +208,24 @@ func parseSearchTerms(s string) []string {
 	return searchTerms
 }
 
-// Execute implements ActionSettings interface
-func (settings SmartSearchSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-	uplink := sessionState.Connection.Sense()
-	if uplink.CurrentApp == nil {
-		actionState.AddErrors(errors.New("not connected to app"))
-		return
-	}
-	doc := uplink.CurrentApp.Doc
-
-	randomSearchTermsIdx := sessionState.Randomizer().Rand(len(settings.searchTermsList))
-	searchTerms := settings.searchTermsList[randomSearchTermsIdx]
-	searchText := settings.SearchTextList[randomSearchTermsIdx]
-
+func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string) {
+	searchTerms := parseSearchTerms(searchText)
 	if sessionState.LogEntry.ShouldLogDebug() {
-		sessionState.LogEntry.LogDebugf(`search text: %s`, searchText)
-		sessionState.LogEntry.LogDebugf(`search terms: "%s"`, strings.Join(searchTerms, `","`))
+		sessionState.LogEntry.LogDebugf(`search%d text %s becomes search terms: %s`, id, quote(searchText), quoteList(searchTerms))
 	}
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		searchSuggestionResult, err := doc.SearchSuggest(
+		searchSuggestionResult, err := appDoc.SearchSuggest(
 			ctx,
 			&enigma.SearchCombinationOptions{},
 			searchTerms,
 		)
-		logSearchSuggestionResult(sessionState.LogEntry, searchSuggestionResult)
+		logSearchSuggestionResult(sessionState.LogEntry, id, searchSuggestionResult)
 		return err
 	}, actionState, true, "SearchSuggest call failed")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		searchResult, err := doc.SearchResults(
+		searchResult, err := appDoc.SearchResults(
 			ctx,
 			&enigma.SearchCombinationOptions{
 				Context:      "CurrentSelections",
@@ -245,9 +249,102 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 				}},
 			},
 		)
-		logSearchResult(sessionState.LogEntry, searchResult)
+		logSearchResult(sessionState.LogEntry, id, searchResult)
 		return err
 	}, actionState, true, "SearchResults call failed")
+}
+
+func newSearchTextChunks(randomizer helpers.Randomizer, searchText string, pasteSearchText bool) (searchTextChunks, error) {
+	if pasteSearchText {
+		return searchTextChunks{
+			searchTextChunk{
+				Text:                    searchText,
+				PostTypingThinkDuration: 0,
+				TypingDuration:          0,
+			},
+		}, nil
+	}
+
+	const typeOneCharDuration = 300 * time.Millisecond
+	const minPostTypingDuration = 700 * time.Millisecond
+	const maxPostTypingDuration = 1300 * time.Millisecond
+
+	chunks := searchTextChunks{}
+	currentStart := 0
+	for currentEnd := 1; currentEnd < len(searchText); currentEnd++ {
+		randInt, err := randomizer.RandWeightedInt([]int{1, 7})
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to randomize search text chunk")
+
+		}
+		shallSplit := randInt == 0
+		postTypingDuration, err := randomizer.RandDuration(minPostTypingDuration, maxPostTypingDuration)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to randomize search text chunk post typing duration")
+		}
+		if shallSplit {
+			textChunk := searchText[currentStart:currentEnd]
+			currentStart = currentEnd
+			chunks = append(chunks, searchTextChunk{
+				Text:                    textChunk,
+				PostTypingThinkDuration: postTypingDuration,
+				TypingDuration:          time.Duration(len(textChunk)) * typeOneCharDuration,
+			})
+		}
+	}
+	textChunk := searchText[currentStart:]
+	chunks = append(chunks, searchTextChunk{
+		Text:                    textChunk,
+		PostTypingThinkDuration: 0,
+		TypingDuration:          time.Duration(len(textChunk)) * typeOneCharDuration,
+	})
+	return chunks, nil
+
+}
+
+func (chunks searchTextChunks) simulate() <-chan string {
+	textChan := make(chan string, len(chunks))
+	go func() {
+		currentText := ""
+		for _, chunk := range chunks {
+			currentText = currentText + chunk.Text
+			<-time.After(chunk.TypingDuration)
+			textChan <- currentText
+			<-time.After(chunk.PostTypingThinkDuration)
+		}
+		close(textChan)
+	}()
+	return textChan
+}
+
+// Execute implements ActionSettings interface
+func (settings SmartSearchSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+	uplink := sessionState.Connection.Sense()
+	if uplink.CurrentApp == nil {
+		actionState.AddErrors(errors.New("not connected to app"))
+		return
+	}
+	doc := uplink.CurrentApp.Doc
+	rand := sessionState.Randomizer()
+	searchText := settings.SearchTextList[rand.Rand(len(settings.SearchTextList))]
+
+	searchTextChunks, err := newSearchTextChunks(rand, searchText, settings.PasteSearchText)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	sessionState.LogEntry.LogDebugf("search text chunks: %+v", searchTextChunks)
+
+	reset()
+
+	cnt := 0
+	for searchText := range searchTextChunks.simulate() {
+		cnt++
+		doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText)
+	}
+
+	sessionState.LogEntry.LogDebugf("all %d search RPCs done", cnt)
 
 	sessionState.Wait(actionState)
 }
