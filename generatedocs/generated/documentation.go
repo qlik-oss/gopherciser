@@ -311,7 +311,7 @@ var (
 		"setscriptvar.value":                              {"Value to set to variable (supports the use of [session variables](#session_variables))."},
 		"setsensevariable.name":                           {"Name of the Qlik Sense variable to set."},
 		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"},
-		"smartsearch.pastesearchtext":                     {"", "`true`: Simulate pasting search text (default).", "`false`: Simulate typing at normal speed"},
+		"smartsearch.pastesearchtext":                     {"", "`true`: Simulate pasting search text.", "`false`: Simulate typing at normal speed (default)."},
 		"smartsearch.searchtextfile":                      {"File path to file with one search string per line."},
 		"smartsearch.searchtextlist":                      {"List of of strings used for searching."},
 		"smartsearch.searchtextsource":                    {"Source for list of strings used for searching.", "`searchtextlist` (default)", "`searchtextfile`"},

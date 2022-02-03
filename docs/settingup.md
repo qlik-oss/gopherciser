@@ -1834,8 +1834,8 @@ Perform a Smart Search in Sense app to find suggested selections.
 * `searchtextlist`: List of of strings used for searching.
 * `searchtextfile`: File path to file with one search string per line.
 * `pastesearchtext`: 
-    * `true`: Simulate pasting search text (default).
-    * `false`: Simulate typing at normal speed
+    * `true`: Simulate pasting search text.
+    * `false`: Simulate typing at normal speed (default).
 
 
 ### Examples
