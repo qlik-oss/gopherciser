@@ -272,7 +272,7 @@ func newSearchTextChunks(randomizer helpers.Randomizer, searchText string, paste
 	chunks := searchTextChunks{}
 	currentStart := 0
 	for currentEnd := 1; currentEnd < len(searchText); currentEnd++ {
-		randInt, err := randomizer.RandWeightedInt([]int{1, 7})
+		randInt, err := randomizer.RandWeightedInt([]int{1, 9})
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to randomize search text chunk")
 
@@ -308,9 +308,9 @@ func (chunks searchTextChunks) simulate() <-chan string {
 		currentText := ""
 		for _, chunk := range chunks {
 			currentText = currentText + chunk.Text
-			<-time.After(chunk.TypingDuration)
+			time.Sleep(chunk.TypingDuration)
 			textChan <- currentText
-			<-time.After(chunk.PostTypingThinkDuration)
+			time.Sleep(chunk.PostTypingThinkDuration)
 		}
 		close(textChan)
 	}()
