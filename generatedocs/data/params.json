@@ -149,7 +149,7 @@
     ],
     "config.loginSettings.settings": [
         "",
-        "`userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.",        
+        "`userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.",
         "`filename`: Path to file with users."
     ],
     "config.loginSettings.settings.prefix": [
@@ -608,5 +608,10 @@
     ],
     "smartsearch.searchtextfile": [
         "File path to file with one search string per line."
+    ],
+    "smartsearch.pastesearchtext": [
+        "",
+        "`true`: Simulate pasting search text (default).",
+        "`false`: Simulate typing at normal speed"
     ]
 }

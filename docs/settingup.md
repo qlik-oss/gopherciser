@@ -1833,6 +1833,9 @@ Perform a Smart Search in Sense app to find suggested selections.
     * `searchtextfile`
 * `searchtextlist`: List of of strings used for searching.
 * `searchtextfile`: File path to file with one search string per line.
+* `pastesearchtext`: 
+    * `true`: Simulate pasting search text (default).
+    * `false`: Simulate typing at normal speed
 
 
 ### Examples
@@ -1841,9 +1844,11 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search"
+    "label": "one term search",
     "settings": {
-        "searchtext": "term1"
+        "searchtextlist": [
+            "term1"
+        ]
     }
 }
 ```
@@ -1852,9 +1857,60 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "two term search",
+    "label": "one term search",
     "settings": {
-        "searchtext": "term1 term2"
+        "searchtextlist": [
+            "term1 term2"
+        ]
+    }
+}
+```
+
+#### Search with random selection of search text from list
+```json
+{
+    "action": "smartsearch",
+    "label": "one term search",
+    "settings": {
+        "searchtextlist": [
+            "text1",
+            "text2",
+            "text3"
+        ]
+    }
+}
+```
+
+#### Search with random selection of search text from file
+```json
+{
+    "action": "smartsearch",
+    "label": "one term search",
+    "settings": {
+        "searchtextsource": "searchtextfile",
+        "searchtextfile": "data/searchtexts.txt"
+    }
+}
+```
+##### `data/searchtexts.txt`
+```
+search text
+"quoted search text"
+another search text
+```
+
+#### Simulate pasting search text
+
+The default behavior is to simulate typing at normal speed.
+```json
+{
+    "action": "smartsearch",
+    "label": "one term search",
+    "settings": {
+        "pastesearchtext": true,
+        "searchtextlist": [
+            "text1"
+        ]
     }
 }
 ```
@@ -1863,9 +1919,11 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search including spaces",
+    "label": "one term search",
     "settings": {
-        "searchtext": "\"word1 word2\""
+        "searchtextlist": [
+            "\"word1 word2\""
+        ]
     }
 }
 ```
@@ -1876,7 +1934,9 @@ Perform a Smart Search in Sense app to find suggested selections.
     "action": "smartsearch",
     "label": "two term search, one including spaces",
     "settings": {
-        "searchtext": "\"word1 word2\" term2"
+        "searchtextlist": [
+            "\"word1 word2\" term2"
+        ]
     }
 }
 ```
@@ -1887,7 +1947,10 @@ Perform a Smart Search in Sense app to find suggested selections.
     "action": "smartsearch",
     "label": "one term search including spaces",
     "settings": {
-        "searchtext": "\\\"hello"
+        "searchtext":
+        "searchtextlist": [
+            "\\\"hello"
+        ]
     }
 }
 ```
