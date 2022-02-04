@@ -89,6 +89,11 @@ func (rnd *Randomizer) RandRune(runes []rune) rune {
 	return runes[pos]
 }
 
+// Float64 returns, as a float64, a pseudo-random number in the half-open interval [0.0,1.0).
+func (rnd *Randomizer) Float64() float64 {
+	return rnd.r.Float64()
+}
+
 //RandIntPos return random int value and position from list (value, pos)
 func (rnd *Randomizer) RandIntPos(ints []int) (int, int, error) {
 	if len(ints) < 1 {
