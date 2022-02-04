@@ -3,7 +3,6 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -173,8 +172,6 @@ func logSearchResult(logEntry *logger.LogEntry, id int, searchResult *enigma.Sea
 	}
 }
 
-var spaceRegex = regexp.MustCompile(`\s+`)
-
 func parseSearchTerms(s string) []string {
 	searchTerms := []string{}
 	sb := &strings.Builder{}
@@ -182,9 +179,7 @@ func parseSearchTerms(s string) []string {
 	escaped := false
 	addSearchTerm := func() {
 		defer sb.Reset()
-		searchTerm := sb.String()
-		searchTerm = strings.TrimSpace(searchTerm)
-		searchTerm = spaceRegex.ReplaceAllString(searchTerm, " ")
+		searchTerm := standardizeWhiteSpace(sb.String())
 		if searchTerm != "" {
 			searchTerms = append(searchTerms, searchTerm)
 		}
@@ -206,6 +201,10 @@ func parseSearchTerms(s string) []string {
 	}
 	addSearchTerm()
 	return searchTerms
+}
+
+func standardizeWhiteSpace(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
 
 func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string) {
