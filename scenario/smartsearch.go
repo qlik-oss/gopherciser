@@ -323,7 +323,6 @@ func (chunks searchTextChunks) simulate(ctx context.Context, onErrors func(err .
 					textChan <- currentText
 					select {
 					case <-time.After(chunk.PostTypingThinkDuration):
-						textChan <- currentText
 					case <-ctx.Done():
 						onContextDone()
 						return
