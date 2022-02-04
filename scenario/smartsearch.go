@@ -302,17 +302,38 @@ func newSearchTextChunks(randomizer helpers.Randomizer, searchText string, paste
 
 }
 
-func (chunks searchTextChunks) simulate() <-chan string {
+func (chunks searchTextChunks) simulate(ctx context.Context, onErrors func(err ...error)) <-chan string {
 	textChan := make(chan string, len(chunks))
 	go func() {
-		currentText := ""
-		for _, chunk := range chunks {
-			currentText = currentText + chunk.Text
-			time.Sleep(chunk.TypingDuration)
-			textChan <- currentText
-			time.Sleep(chunk.PostTypingThinkDuration)
+		panicErr := helpers.RecoverWithErrorFunc(
+			func() {
+				defer close(textChan)
+				onContextDone := func() {
+					onErrors(errors.Wrap(ctx.Err(), "smart search typing simulation stopped"))
+				}
+				currentText := ""
+				for _, chunk := range chunks {
+					currentText = currentText + chunk.Text
+					select {
+					case <-time.After(chunk.TypingDuration):
+					case <-ctx.Done():
+						onContextDone()
+						return
+					}
+					textChan <- currentText
+					select {
+					case <-time.After(chunk.PostTypingThinkDuration):
+						textChan <- currentText
+					case <-ctx.Done():
+						onContextDone()
+						return
+					}
+				}
+			},
+		)
+		if panicErr != nil {
+			onErrors(panicErr)
 		}
-		close(textChan)
 	}()
 	return textChan
 }
@@ -339,7 +360,7 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 	reset()
 
 	cnt := 0
-	for searchText := range searchTextChunks.simulate() {
+	for searchText := range searchTextChunks.simulate(context.Background(), actionState.AddErrors) {
 		cnt++
 		doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText)
 	}
