@@ -18,6 +18,51 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
+const (
+	// typeOneCharDuration is based on:
+	//
+	// typing speed: 50 words per miniute
+	// average word length: 4.7
+	//
+	// 60 * 1000 / (50 * 4.7) ~= 255 ms
+	//
+	typeOneCharDuration   = 255 * time.Millisecond
+	typingHaltProbability = 0.10
+	// minTypingHaltDuration must be over 500ms since the delay until search is
+	// done after a typing halt  is 500ms in the Sense client.
+	minTypingHaltDuration = 700 * time.Millisecond
+	maxTypingHaltDuration = 1300 * time.Millisecond
+)
+
+var (
+	// searchResultsDefaultSearchPage is always sent in SearchResults websocket messages.
+	searchResultsDefaultSearchPage = &enigma.SearchPage{
+		Offset: 0,
+		Count:  5,
+		GroupOptions: []*enigma.SearchGroupOptions{
+			{
+				GroupType: "DatasetType",
+				Offset:    0,
+				Count:     intPtr(-1),
+			},
+		},
+		GroupItemOptions: []*enigma.SearchGroupItemOptions{{
+			GroupItemType: "Field",
+			Offset:        0,
+			Count:         intPtr(5),
+		}},
+	}
+
+	// searchResultsDefaultSearchCombinationOptions is always sent in SearchResults websocket messages.
+	searchResultsDefaultSearchCombinationOptions = &enigma.SearchCombinationOptions{
+		Context:      "CurrentSelections",
+		CharEncoding: "Utf16",
+	}
+
+	// searchSuggestDefaultSearchCombinationOptions is always sent in searchSuggest websocket messages.
+	searchSuggestDefaultSearchCombinationOptions = &enigma.SearchCombinationOptions{}
+)
+
 type (
 	SmartSearchSettings struct {
 		SmartSearchSettingsCore
@@ -216,7 +261,7 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		searchSuggestionResult, err := appDoc.SearchSuggest(
 			ctx,
-			&enigma.SearchCombinationOptions{},
+			searchSuggestDefaultSearchCombinationOptions,
 			searchTerms,
 		)
 		logSearchSuggestionResult(sessionState.LogEntry, id, searchSuggestionResult)
@@ -226,27 +271,9 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		searchResult, err := appDoc.SearchResults(
 			ctx,
-			&enigma.SearchCombinationOptions{
-				Context:      "CurrentSelections",
-				CharEncoding: "Utf16",
-			},
+			searchResultsDefaultSearchCombinationOptions,
 			searchTerms,
-			&enigma.SearchPage{
-				Offset: 0,
-				Count:  5,
-				GroupOptions: []*enigma.SearchGroupOptions{
-					{
-						GroupType: "DatasetType",
-						Offset:    0,
-						Count:     intPtr(-1),
-					},
-				},
-				GroupItemOptions: []*enigma.SearchGroupItemOptions{{
-					GroupItemType: "Field",
-					Offset:        0,
-					Count:         intPtr(5),
-				}},
-			},
+			searchResultsDefaultSearchPage,
 		)
 		logSearchResult(sessionState.LogEntry, id, searchResult)
 		return err
@@ -264,20 +291,12 @@ func newSearchTextChunks(randomizer helpers.Randomizer, searchText string, paste
 		}, nil
 	}
 
-	const typeOneCharDuration = 300 * time.Millisecond
-	const minPostTypingDuration = 700 * time.Millisecond
-	const maxPostTypingDuration = 1300 * time.Millisecond
-
 	chunks := searchTextChunks{}
 	currentStart := 0
 	for currentEnd := 1; currentEnd < len(searchText); currentEnd++ {
-		randInt, err := randomizer.RandWeightedInt([]int{1, 9})
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to randomize search text chunk")
-
-		}
-		shallSplit := randInt == 0
-		postTypingDuration, err := randomizer.RandDuration(minPostTypingDuration, maxPostTypingDuration)
+		randFloat := randomizer.Float64()
+		shallSplit := randFloat < typingHaltProbability
+		postTypingDuration, err := randomizer.RandDuration(minTypingHaltDuration, maxTypingHaltDuration)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to randomize search text chunk post typing duration")
 		}
