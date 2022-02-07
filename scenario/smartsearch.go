@@ -443,10 +443,13 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 			return
 		}
 		if settings.SelectionThinkTime != nil {
-			thinkStart := time.Now()
-			think(sessionState.BaseContext(), settings.SelectionThinkTime, sessionState.Randomizer())
-			thinkDuration := time.Since(thinkStart)
-			sessionState.LogEntry.LogDebugf("thought about selection for %s", thinkDuration)
+			thinkDuration, err := think(sessionState.BaseContext(), settings.SelectionThinkTime, sessionState.Randomizer())
+			if err != nil {
+				actionState.AddErrors(errors.Wrap(err, "failed to execute smart search pre selection think time"))
+			}
+			if thinkDuration > 0 {
+				sessionState.LogEntry.LogDebugf("thought about selection for %s", thinkDuration)
+			}
 		}
 		err = selectFromSearchResult(sessionState, actionState, searchResult)
 		if err != nil {

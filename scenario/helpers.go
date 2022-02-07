@@ -124,21 +124,21 @@ func (getVar varReq) WithCache(vc *enigmahandlers.VarCache) varReq {
 	}
 }
 
-func think(ctx context.Context, distributionSettings *helpers.DistributionSettings, rand helpers.Randomizer) error {
+func think(ctx context.Context, distributionSettings *helpers.DistributionSettings, rand helpers.Randomizer) (time.Duration, error) {
 	if distributionSettings == nil {
-		return errors.New("distributionSettings is nil")
+		return 0, errors.New("distributionSettings is nil")
 	}
 	delay, err := distributionSettings.RandDuration(rand)
 	if err != nil {
-		return errors.WithStack(err)
+		return 0, errors.WithStack(err)
 	}
 	if delay < time.Nanosecond {
-		return errors.New("timer delay not set")
+		return 0, errors.New("timer delay not set")
 	}
 
 	select {
 	case <-ctx.Done():
 	case <-time.After(delay):
 	}
-	return nil
+	return delay, nil
 }
