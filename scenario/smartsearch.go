@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -61,6 +62,11 @@ var (
 
 	// searchSuggestDefaultSearchCombinationOptions is always sent in searchSuggest websocket messages.
 	searchSuggestDefaultSearchCombinationOptions = &enigma.SearchCombinationOptions{}
+
+	// selectAssociationsDefaultSearchCombinationOptions is always sent in selectAssociations websocket messages.
+	selectAssociationsDefaultSearchCombinationOptions = &enigma.SearchCombinationOptions{
+		Context: "CurrentSelections",
+	}
 )
 
 type (
@@ -73,6 +79,7 @@ type (
 		SearchTextList     []string         `json:"searchtextlist" displayname:"Search Text List" doc-key:"smartsearch.searchtextlist"`
 		SearchTextFilePath string           `json:"searchtextfile" displayname:"Search Text File" doc-key:"smartsearch.searchtextfile"`
 		PasteSearchText    bool             `json:"pastesearchtext" displayname:"Simulate Pasting Search Text" doc-key:"smartsearch.pastesearchtext"`
+		MakeSelection      bool             `json:"makeselection" displayname:"Make selection from search result" doc-key:"smartsearch.makeselection"`
 	}
 
 	SearchTextSource int
@@ -207,7 +214,7 @@ func logSearchResult(logEntry *logger.LogEntry, id int, searchResult *enigma.Sea
 				matches = append(matches, match.Text)
 			}
 			hasResult = true
-			logEntry.LogDebugf(`search%d result group%d matching term%s %s in %s %s: %s`, id, sgIdx+1,
+			logEntry.LogDebugf(`search%d result group[%d] matching term%s %s in %s %s: %s`, id, sgIdx,
 				ternary(len(searchTermsMatched) != 1, "s", ""), quoteList(searchTermsMatched),
 				item.ItemType, quote(item.Identifier), quoteList(matches))
 		}
@@ -252,7 +259,9 @@ func standardizeWhiteSpace(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
-func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string) {
+// doSmartSearchRPCs gets search suggestions and search result in parallel. Call
+// the returned function to wait for search result.
+func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string) func() (*enigma.SearchResult, error) {
 	searchTerms := parseSearchTerms(searchText)
 	if sessionState.LogEntry.ShouldLogDebug() {
 		sessionState.LogEntry.LogDebugf(`search%d text %s becomes search terms: %s`, id, quote(searchText), quoteList(searchTerms))
@@ -268,8 +277,14 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 		return err
 	}, actionState, true, "SearchSuggest call failed")
 
+	var searchResult *enigma.SearchResult
+	var searchResultErr error
+	var searchResultWG sync.WaitGroup
+	searchResultWG.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		searchResult, err := appDoc.SearchResults(
+		defer searchResultWG.Done()
+		var err error
+		searchResult, searchResultErr = appDoc.SearchResults(
 			ctx,
 			searchResultsDefaultSearchCombinationOptions,
 			searchTerms,
@@ -278,6 +293,14 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 		logSearchResult(sessionState.LogEntry, id, searchResult)
 		return err
 	}, actionState, true, "SearchResults call failed")
+
+	return func() (*enigma.SearchResult, error) {
+		searchResultWG.Wait()
+		if searchResultErr != nil {
+			return nil, searchResultErr
+		}
+		return searchResult, nil
+	}
 }
 
 func newSearchTextChunks(randomizer helpers.Randomizer, searchText string, pasteSearchText bool) (searchTextChunks, error) {
@@ -355,6 +378,26 @@ func (chunks searchTextChunks) simulate(ctx context.Context, onErrors func(err .
 	return textChan
 }
 
+func selectFromSearchResult(sessionState *session.State, actionState *action.State, searchResult *enigma.SearchResult) error {
+	app := sessionState.Connection.Sense().CurrentApp
+	if app == nil {
+		return errors.New("not connected to app")
+	}
+	if len(searchResult.SearchGroupArray) == 0 {
+		return errors.New("can not select from empty search results")
+	}
+	terms := searchResult.SearchTerms
+	searchGroupIdx := sessionState.Randomizer().Rand(len(searchResult.SearchGroupArray))
+	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		sessionState.LogEntry.LogDebugf("selecting search group[%d]", searchGroupIdx)
+		return app.Doc.SelectAssociations(ctx, selectAssociationsDefaultSearchCombinationOptions, terms, searchGroupIdx, false)
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Execute implements ActionSettings interface
 func (settings SmartSearchSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	uplink := sessionState.Connection.Sense()
@@ -374,15 +417,29 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 
 	sessionState.LogEntry.LogDebugf("search text chunks: %+v", searchTextChunks)
 
-	reset()
-
 	cnt := 0
+	waitForSearchResult := func() (*enigma.SearchResult, error) {
+		return nil, errors.New("no search result")
+	}
+	reset()
 	for searchText := range searchTextChunks.simulate(context.Background(), actionState.AddErrors) {
 		cnt++
-		doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText)
+		waitForSearchResult = doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText)
 	}
-
 	sessionState.LogEntry.LogDebugf("all %d search RPCs done", cnt)
+
+	if settings.MakeSelection {
+		searchResult, err := waitForSearchResult()
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		err = selectFromSearchResult(sessionState, actionState, searchResult)
+		if err != nil {
+			actionState.AddErrors(errors.Wrap(err, "failed to select from search result"))
+			return
+		}
+	}
 
 	sessionState.Wait(actionState)
 }
