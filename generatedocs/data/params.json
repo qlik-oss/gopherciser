@@ -613,5 +613,13 @@
         "",
         "`true`: Simulate pasting search text.",
         "`false`: Simulate typing at normal speed (default)."
+    ],
+    "smartsearch.makeselection": [
+        "Select a random search result.",
+        "`true`",
+        "`false`"
+    ],
+    "smartsearch.selectionthinktime": [
+        "Thinktime before seleciton is made."
     ]
 }

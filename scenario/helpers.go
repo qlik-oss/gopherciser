@@ -3,11 +3,13 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -120,4 +122,23 @@ func (getVar varReq) WithCache(vc *enigmahandlers.VarCache) varReq {
 		vc.Store(varName, variable)
 		return variable, nil
 	}
+}
+
+func think(ctx context.Context, distributionSettings *helpers.DistributionSettings, rand helpers.Randomizer) error {
+	if distributionSettings == nil {
+		return errors.New("distributionSettings is nil")
+	}
+	delay, err := distributionSettings.RandDuration(rand)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if delay < time.Nanosecond {
+		return errors.New("timer delay not set")
+	}
+
+	select {
+	case <-ctx.Done():
+	case <-time.After(delay):
+	}
+	return nil
 }

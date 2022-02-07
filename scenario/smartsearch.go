@@ -75,11 +75,12 @@ type (
 	}
 
 	SmartSearchSettingsCore struct {
-		SearchTextSource   SearchTextSource `json:"searchtextsource" displayname:"Search Text Source" doc-key:"smartsearch.searchtextsource"`
-		SearchTextList     []string         `json:"searchtextlist" displayname:"Search Text List" doc-key:"smartsearch.searchtextlist"`
-		SearchTextFilePath string           `json:"searchtextfile" displayname:"Search Text File" doc-key:"smartsearch.searchtextfile"`
-		PasteSearchText    bool             `json:"pastesearchtext" displayname:"Simulate Pasting Search Text" doc-key:"smartsearch.pastesearchtext"`
-		MakeSelection      bool             `json:"makeselection" displayname:"Make selection from search result" doc-key:"smartsearch.makeselection"`
+		SearchTextSource   SearchTextSource              `json:"searchtextsource" displayname:"Search Text Source" doc-key:"smartsearch.searchtextsource"`
+		SearchTextList     []string                      `json:"searchtextlist" displayname:"Search Text List" doc-key:"smartsearch.searchtextlist"`
+		SearchTextFilePath string                        `json:"searchtextfile" displayname:"Search Text File" doc-key:"smartsearch.searchtextfile"`
+		PasteSearchText    bool                          `json:"pastesearchtext" displayname:"Simulate Pasting Search Text" doc-key:"smartsearch.pastesearchtext"`
+		MakeSelection      bool                          `json:"makeselection" displayname:"Make selection from search result" doc-key:"smartsearch.makeselection"`
+		SelectionThinkTime *helpers.DistributionSettings `json:"selectionthinktime,omitempty" displayname:"Think time before selection" doc-key:"smartseach.selectionthinktime"`
 	}
 
 	SearchTextSource int
@@ -154,6 +155,13 @@ func (settings SmartSearchSettings) Validate() ([]string, error) {
 		searchTerms := parseSearchTerms(searchtext)
 		if len(searchTerms) == 0 {
 			return warnings, errors.Errorf(`no search terms found in searchtext%d<%s> `, idx+1, settings.SearchTextList[idx])
+		}
+	}
+	if settings.SelectionThinkTime != nil {
+		thinktimeWarnings, thinktimeErr := settings.SelectionThinkTime.Validate()
+		warnings = append(warnings, thinktimeWarnings...)
+		if thinktimeErr != nil {
+			return warnings, thinktimeErr
 		}
 	}
 
@@ -433,6 +441,12 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 		if err != nil {
 			actionState.AddErrors(err)
 			return
+		}
+		if settings.SelectionThinkTime != nil {
+			thinkStart := time.Now()
+			think(sessionState.BaseContext(), settings.SelectionThinkTime, sessionState.Randomizer())
+			thinkDuration := time.Since(thinkStart)
+			sessionState.LogEntry.LogDebugf("thought about selection for %s", thinkDuration)
 		}
 		err = selectFromSearchResult(sessionState, actionState, searchResult)
 		if err != nil {
