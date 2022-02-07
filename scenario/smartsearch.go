@@ -80,7 +80,7 @@ type (
 		SearchTextFilePath string                        `json:"searchtextfile" displayname:"Search Text File" doc-key:"smartsearch.searchtextfile"`
 		PasteSearchText    bool                          `json:"pastesearchtext" displayname:"Simulate Pasting Search Text" doc-key:"smartsearch.pastesearchtext"`
 		MakeSelection      bool                          `json:"makeselection" displayname:"Make selection from search result" doc-key:"smartsearch.makeselection"`
-		SelectionThinkTime *helpers.DistributionSettings `json:"selectionthinktime,omitempty" displayname:"Think time before selection" doc-key:"smartseach.selectionthinktime"`
+		SelectionThinkTime *helpers.DistributionSettings `json:"selectionthinktime,omitempty" displayname:"Think time before selection" doc-key:"smartsearch.selectionthinktime"`
 	}
 
 	SearchTextSource int
@@ -397,7 +397,7 @@ func selectFromSearchResult(sessionState *session.State, actionState *action.Sta
 	terms := searchResult.SearchTerms
 	searchGroupIdx := sessionState.Randomizer().Rand(len(searchResult.SearchGroupArray))
 	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		sessionState.LogEntry.LogDebugf("selecting search group[%d]", searchGroupIdx)
+		sessionState.LogEntry.LogDebugf("selecting search result group[%d]", searchGroupIdx)
 		return app.Doc.SelectAssociations(ctx, selectAssociationsDefaultSearchCombinationOptions, terms, searchGroupIdx, false)
 	})
 	if err != nil {

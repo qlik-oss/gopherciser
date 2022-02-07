@@ -76,6 +76,24 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
+#### Make a random selection from search results
+```json
+{
+    "action": "smartsearch",
+    "label": "one term search",
+    "settings": {
+        "searchtextlist": [
+            "term1"
+        ],
+        "makeselection": true,
+        "selectionthinktime": {
+            "type": "static",
+            "delay": 2
+        }
+    }
+}
+```
+
 #### Search with one search term including spaces
 ```json
 {

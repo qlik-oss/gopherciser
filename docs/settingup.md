@@ -1836,6 +1836,16 @@ Perform a Smart Search in Sense app to find suggested selections.
 * `pastesearchtext`: 
     * `true`: Simulate pasting search text.
     * `false`: Simulate typing at normal speed (default).
+* `makeselection`: Select a random search result.
+    * `true`
+    * `false`
+* `selectionthinktime`: Optional think time before seleciton is made.
+  * `type`: Type of think time
+      * `static`: Static think time, defined by `delay`.
+      * `uniform`: Random think time with uniform distribution, defined by `mean` and `dev`.
+  * `delay`: Delay (seconds), used with type `static`.
+  * `mean`: Mean (seconds), used with type `uniform`.
+  * `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
 
 
 ### Examples
@@ -1911,6 +1921,24 @@ The default behavior is to simulate typing at normal speed.
         "searchtextlist": [
             "text1"
         ]
+    }
+}
+```
+
+#### Make a random selection from search results
+```json
+{
+    "action": "smartsearch",
+    "label": "one term search",
+    "settings": {
+        "searchtextlist": [
+            "term1"
+        ],
+        "makeselection": true,
+        "selectionthinktime": {
+            "type": "static",
+            "delay": 2
+        }
     }
 }
 ```

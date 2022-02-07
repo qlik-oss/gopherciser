@@ -620,6 +620,6 @@
         "`false`"
     ],
     "smartsearch.selectionthinktime": [
-        "Thinktime before seleciton is made."
+        "Optional think time before seleciton is made."
     ]
 }
