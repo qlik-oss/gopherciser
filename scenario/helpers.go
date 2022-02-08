@@ -135,10 +135,6 @@ func think(ctx context.Context, distributionSettings *helpers.DistributionSettin
 	if delay < time.Nanosecond {
 		return 0, errors.New("timer delay not set")
 	}
-
-	select {
-	case <-ctx.Done():
-	case <-time.After(delay):
-	}
+	helpers.WaitFor(ctx, delay)
 	return delay, nil
 }
