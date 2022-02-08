@@ -438,7 +438,7 @@ func smartSearch(sessionState *session.State, actionState *action.State, reset f
 // Execute implements ActionSettings interface
 func (settings SmartSearchSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
-	executeSub := executeSubActionFuncFactory(sessionState, connectionSettings, ActionSmartSearch, label)
+	executeSubAction := executeSubActionFuncFactory(sessionState, connectionSettings, ActionSmartSearch, label)
 
 	var searchResult *enigma.SearchResult
 
@@ -450,7 +450,7 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 		selectFromSearchResult(sessionState, actionState, searchResult)
 	})
 
-	err := executeSub("search", searchSettings)
+	err := executeSubAction("search", searchSettings)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to execute smart search subaction search"))
 		return
@@ -458,15 +458,15 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 
 	if settings.MakeSelection {
 		if settings.SelectionThinkTime != nil {
-			err := executeSub(ActionThinkTime, settings.SelectionThinkTime)
+			err := executeSubAction(ActionThinkTime, settings.SelectionThinkTime)
 			if err != nil {
-				actionState.AddErrors(errors.Wrap(err, "failed to execute smart search pre selection thinktime"))
+				actionState.AddErrors(errors.Wrap(err, "failed to execute smart search subaction pre selection thinktime"))
 			}
 		}
 
-		err := executeSub(ActionSelect, selectSettings)
+		err := executeSubAction(ActionSelect, selectSettings)
 		if err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed to execute smart search smart search subaction select"))
+			actionState.AddErrors(errors.Wrap(err, "failed to execute smart search subaction select"))
 			return
 		}
 	}
