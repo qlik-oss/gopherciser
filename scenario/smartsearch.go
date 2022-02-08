@@ -429,7 +429,9 @@ func smartSearch(sessionState *session.State, actionState *action.State, reset f
 	if !sessionState.Wait(actionState) {
 		if searchResult == nil {
 			actionState.AddErrors(errors.New("searchResult is unexpectedly nil"))
-
+			return nil
+		} else if *searchResult == nil {
+			actionState.AddErrors(errors.New("*searchResult is unexpectedly nil"))
 		}
 	}
 	return *searchResult
