@@ -166,7 +166,7 @@ func (execute executeFunc) Execute(sessionState *session.State, actionState *act
 
 func (execute executeFunc) Validate() ([]string, error) {
 	if execute == nil {
-		return nil, errors.New("actionExecuteFunc function is nil")
+		return nil, errors.New("executeFunc is nil")
 	}
 	return nil, nil
 }
