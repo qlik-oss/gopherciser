@@ -22,12 +22,11 @@ import (
 const (
 	// typeOneCharDuration is based on:
 	//
-	// typing speed: 50 words per miniute
-	// average word length: 4.7
+	// typing speed: 250 characters per minute
 	//
-	// 60 * 1000 / (50 * 4.7) ~= 255 ms
+	// 60 * 1000 / 250 ~= 240 ms
 	//
-	typeOneCharDuration   = 255 * time.Millisecond
+	typeOneCharDuration   = 240 * time.Millisecond
 	typingHaltProbability = 0.10
 	// minTypingHaltDuration must be over 500ms since the delay until search is
 	// done after a typing halt  is 500ms in the Sense client.
