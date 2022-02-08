@@ -3,13 +3,12 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -124,17 +123,50 @@ func (getVar varReq) WithCache(vc *enigmahandlers.VarCache) varReq {
 	}
 }
 
-func think(ctx context.Context, distributionSettings *helpers.DistributionSettings, rand helpers.Randomizer) (time.Duration, error) {
-	if distributionSettings == nil {
-		return 0, errors.New("distributionSettings is nil")
+func executeThinkTimeSubAction(sessionState *session.State, connection *connection.ConnectionSettings, label string, thinkTimeSettings *ThinkTimeSettings) error {
+	if thinkTimeSettings == nil {
+		return nil
 	}
-	delay, err := distributionSettings.RandDuration(rand)
-	if err != nil {
-		return 0, errors.WithStack(err)
+	return executeSubAction(sessionState, connection, ActionThinkTime, label, thinkTimeSettings)
+}
+
+func executeSubAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
+	actionType string, label string, settings ActionSettings) error {
+
+	action := Action{
+		ActionCore: ActionCore{
+			Type:  actionType,
+			Label: label,
+		},
+		Settings: settings,
 	}
-	if delay < time.Nanosecond {
-		return 0, errors.New("timer delay not set")
+	return action.Execute(sessionState, connectionSettings)
+}
+
+func executeSubActionFuncFactory(baseSessionState *session.State, baseConnection *connection.ConnectionSettings, baseActionType, baseLabel string) func(actionType string, settings ActionSettings) error {
+	return func(subActionType string, settings ActionSettings) error {
+		if baseLabel == "" {
+			baseLabel = baseActionType
+		}
+		return executeSubAction(
+			baseSessionState,
+			baseConnection,
+			fmt.Sprintf(`%s-%s`, baseActionType, subActionType),
+			fmt.Sprintf(`%s: %s`, baseLabel, subActionType),
+			settings,
+		)
 	}
-	helpers.WaitFor(ctx, delay)
-	return delay, nil
+}
+
+type executeFunc func(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func())
+
+func (execute executeFunc) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+	execute(sessionState, actionState, connectionSettings, label, reset)
+}
+
+func (execute executeFunc) Validate() ([]string, error) {
+	if execute == nil {
+		return nil, errors.New("actionExecuteFunc function is nil")
+	}
+	return nil, nil
 }
