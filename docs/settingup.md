@@ -1839,7 +1839,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 * `makeselection`: Select a random search result.
     * `true`
     * `false`
-* `selectionthinktime`: Optional think time before seleciton is made.
+* `selectionthinktime`: Optional think time before selection is made.
   * `type`: Type of think time
       * `static`: Static think time, defined by `delay`.
       * `uniform`: Random think time with uniform distribution, defined by `mean` and `dev`.
@@ -1880,7 +1880,6 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextlist": [
             "text1",
@@ -1895,7 +1894,6 @@ Perform a Smart Search in Sense app to find suggested selections.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextsource": "searchtextfile",
         "searchtextfile": "data/searchtexts.txt"
@@ -1915,7 +1913,6 @@ The default behavior is to simulate typing at normal speed.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "pastesearchtext": true,
         "searchtextlist": [
@@ -1929,7 +1926,6 @@ The default behavior is to simulate typing at normal speed.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextlist": [
             "term1"
@@ -1947,7 +1943,6 @@ The default behavior is to simulate typing at normal speed.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextlist": [
             "\"word1 word2\""

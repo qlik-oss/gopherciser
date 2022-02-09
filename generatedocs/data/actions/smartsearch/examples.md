@@ -31,7 +31,6 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextlist": [
             "text1",
@@ -46,7 +45,6 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextsource": "searchtextfile",
         "searchtextfile": "data/searchtexts.txt"
@@ -66,7 +64,6 @@ The default behavior is to simulate typing at normal speed.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "pastesearchtext": true,
         "searchtextlist": [
@@ -80,7 +77,6 @@ The default behavior is to simulate typing at normal speed.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextlist": [
             "term1"
@@ -98,7 +94,6 @@ The default behavior is to simulate typing at normal speed.
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
     "settings": {
         "searchtextlist": [
             "\"word1 word2\""
