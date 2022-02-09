@@ -18,7 +18,7 @@
 ```json
 {
     "action": "smartsearch",
-    "label": "one term search",
+    "label": "two term search",
     "settings": {
         "searchtextlist": [
             "term1 term2"
