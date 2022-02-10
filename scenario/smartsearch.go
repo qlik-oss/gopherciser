@@ -351,23 +351,18 @@ func (chunks searchTextChunks) simulate(ctx context.Context, onErrors func(err .
 		panicErr := helpers.RecoverWithErrorFunc(
 			func() {
 				defer close(textChan)
-				onContextDone := func() {
-					onErrors(errors.Wrap(ctx.Err(), "smart search typing simulation stopped"))
-				}
 				currentText := ""
 				for _, chunk := range chunks {
 					currentText = currentText + chunk.Text
 					select {
 					case <-time.After(chunk.TypingDuration):
 					case <-ctx.Done():
-						onContextDone()
 						return
 					}
 					textChan <- currentText
 					select {
 					case <-time.After(chunk.PostTypingThinkDuration):
 					case <-ctx.Done():
-						onContextDone()
 						return
 					}
 				}
