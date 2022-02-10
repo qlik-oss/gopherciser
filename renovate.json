@@ -1,7 +1,6 @@
 {
 	"enabled": true,
-	"postUpgradeTasks": {
-		"commands": ["go mod tidy", "go mod verify"],
-		"fileFilters": ["go.mod", "go.sum"]
-	}
+	"postUpdateOptions": [
+		"gomodUpdateImportPaths"
+	]
 }
