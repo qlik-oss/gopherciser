@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	neturl "net/url"
+	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -61,6 +63,11 @@ type (
 	DisconnectError struct {
 		Type string
 	}
+
+	// DebugConn is a temporary wrapper on net.Conn for debugging purposes
+	DebugConn struct {
+		net.Conn
+	}
 )
 
 const (
@@ -77,6 +84,28 @@ var (
 
 func init() {
 	close(closedChan)
+}
+
+func (conn DebugConn) Write(b []byte) (int, error) {
+	if conn.Conn == nil {
+		buf := make([]byte, 1<<16)
+		runtime.Stack(buf, false)
+		errMsg := fmt.Sprintf("Write on nil conn, stack:\n %s", buf)
+		_, _ = os.Stderr.Write([]byte(errMsg))
+		return 0, errors.Errorf(errMsg)
+	}
+	return conn.Conn.Write(b)
+}
+
+func (conn DebugConn) Close() error {
+	if conn.Conn == nil {
+		buf := make([]byte, 1<<16)
+		runtime.Stack(buf, false)
+		errMsg := fmt.Sprintf("Close on nil conn, stack:\n %s", buf)
+		_, _ = os.Stderr.Write([]byte(errMsg))
+		return errors.Errorf(errMsg)
+	}
+	return conn.Conn.Close()
 }
 
 // Error implements error interface
@@ -138,7 +167,11 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 				return nil
 			},
 			NetDial: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return (&net.Dialer{}).DialContext(ctx, network, addr)
+				conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
+				if conn != nil {
+					conn = DebugConn{conn}
+				}
+				return conn, err
 			},
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: allowUntrusted,
