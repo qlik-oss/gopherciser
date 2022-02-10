@@ -282,8 +282,11 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 			searchSuggestDefaultSearchCombinationOptions,
 			searchTerms,
 		)
+		if err != nil {
+			return err
+		}
 		logSearchSuggestionResult(sessionState.LogEntry, id, searchSuggestionResult)
-		return err
+		return nil
 	}, actionState, true, "SearchSuggest call failed")
 
 	var searchResultRet *enigma.SearchResult
