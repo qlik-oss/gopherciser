@@ -417,7 +417,7 @@ func smartSearch(sessionState *session.State, actionState *action.State, reset f
 	defer sessionState.Wait(actionState)
 	cnt := 0
 	var searchResult **enigma.SearchResult
-	for searchText := range searchTextChunks.simulate(context.Background(), actionState.AddErrors) {
+	for searchText := range searchTextChunks.simulate(sessionState.BaseContext(), actionState.AddErrors) {
 		cnt++
 		searchResult = doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText)
 	}
