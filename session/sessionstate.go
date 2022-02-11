@@ -400,6 +400,11 @@ func (state *State) onRequestError(err error, actionState *action.State, failOnE
 			state.LogEntry.LogErrorWithMsg("actionstate nil! error not reported correctly on action", err)
 			return
 		}
+		if errMsg != "" {
+			err = errors.Wrap(err, errMsg)
+		} else {
+			err = errors.WithStack(err)
+		}
 		actionState.AddErrors(err)
 	} else {
 		if helpers.IsContextTriggered(state.BaseContext()) {

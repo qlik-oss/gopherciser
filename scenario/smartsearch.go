@@ -13,6 +13,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
@@ -267,6 +268,19 @@ func standardizeWhiteSpace(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
+func isAbortedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	switch err := err.(type) {
+	case enigma.Error:
+		if err.Code() == constant.LocerrGenericAborted {
+			return true
+		}
+	}
+	return false
+}
+
 // doSmartSearchRPCs gets search suggestions and search result in parallel. Wait
 // for queued requests with `sessionState.Wait(actionState)` before reading
 // returned search result.
@@ -283,6 +297,10 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 			searchTerms,
 		)
 		if err != nil {
+			if isAbortedError(err) {
+				sessionState.LogEntry.LogDebugf("search%d SearchSuggest(%#v) aborted: %v", id, searchTerms, err)
+				return nil
+			}
 			return err
 		}
 		logSearchSuggestionResult(sessionState.LogEntry, id, searchSuggestionResult)
@@ -298,6 +316,10 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 			searchResultsDefaultSearchPage,
 		)
 		if err != nil {
+			if isAbortedError(err) {
+				sessionState.LogEntry.LogDebugf("search%d SearchResults(%#v) aborted: %v", id, searchTerms, err)
+				return nil
+			}
 			return err
 		}
 		searchResultRet = searchResult
