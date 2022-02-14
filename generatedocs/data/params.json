@@ -149,7 +149,7 @@
     ],
     "config.loginSettings.settings": [
         "",
-        "`userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.",        
+        "`userList`: List of users for the `userlist` login request type. Directory and password can be specified per user or outside the list of usernames, which means that they are inherited by all users.",
         "`filename`: Path to file with users."
     ],
     "config.loginSettings.settings.prefix": [
@@ -597,5 +597,29 @@
     ],
     "setsensevariable.value": [
         "Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"
-    ]    
+    ],
+    "smartsearch.searchtextsource": [
+        "Source for list of strings used for searching.",
+        "`searchtextlist` (default)",
+        "`searchtextfile`"
+    ],
+    "smartsearch.searchtextlist": [
+        "List of of strings used for searching."
+    ],
+    "smartsearch.searchtextfile": [
+        "File path to file with one search string per line."
+    ],
+    "smartsearch.pastesearchtext": [
+        "",
+        "`true`: Simulate pasting search text.",
+        "`false`: Simulate typing at normal speed (default)."
+    ],
+    "smartsearch.makeselection": [
+        "Select a random search result.",
+        "`true`",
+        "`false`"
+    ],
+    "smartsearch.selectionthinktime": [
+        "Optional think time before selection is made."
+    ]
 }

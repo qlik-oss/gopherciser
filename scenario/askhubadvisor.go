@@ -2,7 +2,6 @@ package scenario
 
 import (
 	"bufio"
-	"github.com/goccy/go-json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -51,14 +52,24 @@ func (value AdvisorQuerySourceEnum) GetEnumMap() *enummap.EnumMap {
 	return advisorQuerySourceEnumMap
 }
 
-var askHubAdvisorDefaultThinktimeSettings = ThinkTimeSettings{
-	DistributionSettings: helpers.DistributionSettings{
-		Type:      helpers.UniformDistribution,
-		Delay:     0,
-		Mean:      float64(8),
-		Deviation: 4,
-	},
-}
+var askHubAdvisorDefaultThinktimeSettings = func() ThinkTimeSettings {
+	settings := ThinkTimeSettings{
+		DistributionSettings: helpers.DistributionSettings{
+			Type:      helpers.UniformDistribution,
+			Delay:     0,
+			Mean:      float64(8),
+			Deviation: 4,
+		},
+	}
+	warnings, err := settings.Validate()
+	if err != nil {
+		panic(fmt.Errorf("askHubAdvisorDefaultThinktimeSettings has validation error: %s", err.Error()))
+	}
+	if len(warnings) != 0 {
+		panic(fmt.Errorf("askHubAdvisorDefaultThinktimeSettings has validation warnings: %#v", warnings))
+	}
+	return settings
+}()
 
 // AskHubAdvisor-action settings
 type (
@@ -303,7 +314,16 @@ func (settings AskHubAdvisorSettings) Validate() ([]string, error) {
 			"empty followuptypes implies no followups, please set maxfollowup to 0 for this behaviuor")
 	}
 
-	return nil, nil
+	warnings := []string{}
+	if settings.ThinkTimeSettings != nil {
+		thinktimeWarnings, thinktimeErr := settings.ThinkTimeSettings.Validate()
+		warnings = append(warnings, thinktimeWarnings...)
+		if thinktimeErr != nil {
+			return warnings, thinktimeErr
+		}
+	}
+
+	return warnings, nil
 }
 
 type HubAdvisorOption func(*hubAdvisorQuery)
@@ -775,7 +795,7 @@ func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.Sta
 	}
 
 	if depth > 0 {
-		thinktime(sessionState, actionState, connection, settings.ThinkTimeSettings, aHubadvisorQueryAction.Label)
+		preFollowupThinktime(sessionState, actionState, connection, settings.ThinkTimeSettings, aHubadvisorQueryAction.Label)
 	}
 
 	if err := aHubadvisorQueryAction.Execute(sessionState, connection); err != nil {
@@ -806,18 +826,12 @@ func followupsOfType(types []followupType, followups []*followupQuery) []*follow
 	return filtered
 }
 
-func thinktime(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, thinkTimeSettings *ThinkTimeSettings, label string) {
+func preFollowupThinktime(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, thinkTimeSettings *ThinkTimeSettings, label string) {
 	if thinkTimeSettings == nil {
 		thinkTimeSettings = &askHubAdvisorDefaultThinktimeSettings
 	}
-	aThinkTimeAction := Action{
-		ActionCore: ActionCore{
-			Type:  ActionThinkTime,
-			Label: fmt.Sprintf("thinktime before: %s", label),
-		},
-		Settings: thinkTimeSettings,
-	}
-	if err := aThinkTimeAction.Execute(sessionState, connection); err != nil {
+	err := executeThinkTimeSubAction(sessionState, connection, fmt.Sprintf("thinktime before: %s", label), thinkTimeSettings)
+	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}

@@ -62,12 +62,25 @@ type (
 		// SessionState received session state, possible states listed as constants in constant.EventTopicOnConnected*
 		SessionState string `json:"qSessionState"`
 	}
+
+	doNotRetry struct{}
 )
 
 const (
 	//MaxRetries when engine aborts request
 	MaxRetries = 3
 )
+
+// ContextWithoutRetries creates a new context which disables retires for
+// aborted ws requests.
+func ContextWithoutRetries(ctx context.Context) context.Context {
+	return context.WithValue(ctx, doNotRetry{}, true)
+}
+
+func retriesDisabled(ctx context.Context) bool {
+	disabled, isBool := ctx.Value(doNotRetry{}).(bool)
+	return isBool && disabled
+}
 
 // NewSenseUplink SenseUplink constructor
 func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *requestmetrics.RequestMetrics, trafficLogger ITrafficLogger) *SenseUplink {
@@ -367,13 +380,15 @@ func (uplink *SenseUplink) LogMetric(invocation *enigma.Invocation, metrics *eni
 func (uplink *SenseUplink) retryInterceptor(ctx context.Context, invocation *enigma.Invocation,
 	next enigma.InterceptorContinuation) *enigma.InvocationResponse {
 
-	//Temporary check for code 15 in interceptor, we don't want to resend requests which have been
-	//aborted e.g. during a wrapped selection or other cases where aborted is expected. Hence this
-	//should be done somewhere more controlled
+	doNotRetry := retriesDisabled(ctx)
+
 	var response *enigma.InvocationResponse
 	var retries int
 	for {
 		response = next(ctx, invocation)
+		if doNotRetry {
+			break
+		}
 		if qixErr, ok := response.Error.(enigma.Error); ok && qixErr.Code() == constant.LocerrGenericAborted && retries < MaxRetries {
 			if uplink != nil && uplink.logEntry != nil {
 				uplink.logEntry.LogInfo("LocerrGenericAborted", fmt.Sprintf("%s %v", invocation.Method, invocation.Params))

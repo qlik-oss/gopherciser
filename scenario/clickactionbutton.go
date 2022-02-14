@@ -2,10 +2,11 @@ package scenario
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	"github.com/qlik-oss/gopherciser/helpers"
 
@@ -208,23 +209,6 @@ func buttonActions(sessionState *session.State, actionState *action.State, obj *
 	default:
 		return nil, nil, errors.Errorf("expected generic object , got object type<%T>", t)
 	}
-}
-
-func executeSubAction(sessionState *session.State, connectionSettings *connection.ConnectionSettings,
-	actionType string, label string, settings ActionSettings) error {
-
-	if _, err := settings.Validate(); err != nil {
-		return errors.Wrapf(err, "%s settings not valid", actionType)
-	}
-
-	action := Action{
-		ActionCore: ActionCore{
-			Type:  actionType,
-			Label: label,
-		},
-		Settings: settings,
-	}
-	return action.Execute(sessionState, connectionSettings)
 }
 
 type sendRequestSettings func(context.Context) error

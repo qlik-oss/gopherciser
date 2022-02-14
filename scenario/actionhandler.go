@@ -1,12 +1,13 @@
 package scenario
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -140,6 +141,7 @@ const (
 	ActionAskHubAdvisor         = "askhubadvisor"
 	ActionSetSenseVariable      = "setsensevariable"
 	ActionSetScriptVar          = "setscriptvar"
+	ActionSmartSearch           = "smartsearch"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -248,6 +250,7 @@ func ResetDefaultActions() {
 		ActionAskHubAdvisor:         AskHubAdvisorSettings{},
 		ActionSetSenseVariable:      SetSenseVariableSettings{},
 		ActionSetScriptVar:          SetScriptVarSettings{},
+		ActionSmartSearch:           SmartSearchSettings{},
 	}
 }
 
