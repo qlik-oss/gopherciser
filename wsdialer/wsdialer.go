@@ -86,24 +86,31 @@ func init() {
 	close(closedChan)
 }
 
-func (conn DebugConn) Write(b []byte) (int, error) {
+func logStack(msg string) error {
+	buf := make([]byte, 1<<16)
+	runtime.Stack(buf, false)
+	errMsg := fmt.Sprintf("%s, stack:\n %s", msg, buf)
+	_, _ = os.Stderr.Write([]byte(errMsg))
+	return fmt.Errorf(errMsg)
+}
+
+func (conn *DebugConn) Write(b []byte) (int, error) {
+	if conn == nil {
+		return 0, logStack("DebugConn::write:conn == nil")
+	}
 	if conn.Conn == nil {
-		buf := make([]byte, 1<<16)
-		runtime.Stack(buf, false)
-		errMsg := fmt.Sprintf("Write on nil conn, stack:\n %s", buf)
-		_, _ = os.Stderr.Write([]byte(errMsg))
-		return 0, errors.Errorf(errMsg)
+		return 0, logStack("DebugConn:write:conn.Conn == nil")
 	}
 	return conn.Conn.Write(b)
 }
 
-func (conn DebugConn) Close() error {
+func (conn *DebugConn) Close() error {
+	if conn == nil {
+		return logStack("DebugConn:Close:conn == nil")
+	}
+
 	if conn.Conn == nil {
-		buf := make([]byte, 1<<16)
-		runtime.Stack(buf, false)
-		errMsg := fmt.Sprintf("Close on nil conn, stack:\n %s", buf)
-		_, _ = os.Stderr.Write([]byte(errMsg))
-		return errors.Errorf(errMsg)
+		return logStack("DebugConn:Close:conn.Conn == nil")
 	}
 	return conn.Conn.Close()
 }
@@ -169,7 +176,7 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 			NetDial: func(ctx context.Context, network, addr string) (net.Conn, error) {
 				conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
 				if conn != nil {
-					conn = DebugConn{conn}
+					conn = &DebugConn{conn}
 				}
 				return conn, err
 			},
