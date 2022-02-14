@@ -12,6 +12,7 @@ import (
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -284,15 +285,22 @@ func isAbortedError(err error) bool {
 // doSmartSearchRPCs gets search suggestions and search result in parallel. Wait
 // for queued requests with `sessionState.Wait(actionState)` before reading
 // returned search result.
-func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string) **enigma.SearchResult {
+func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string, doRetries bool) **enigma.SearchResult {
 	searchTerms := parseSearchTerms(searchText)
 	if sessionState.LogEntry.ShouldLogDebug() {
 		sessionState.LogEntry.LogDebugf(`search%d text %s becomes search terms: %s`, id, quote(searchText), quoteList(searchTerms))
 	}
 
+	contextDecorator := func(ctx context.Context) context.Context {
+		if doRetries {
+			return ctx
+		}
+		return enigmahandlers.ContextWithoutRetries(ctx)
+	}
+
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		searchSuggestionResult, err := appDoc.SearchSuggest(
-			ctx,
+			contextDecorator(ctx),
 			searchSuggestDefaultSearchCombinationOptions,
 			searchTerms,
 		)
@@ -310,7 +318,7 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 	var searchResultRet *enigma.SearchResult
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		searchResult, err := appDoc.SearchResults(
-			ctx,
+			contextDecorator(ctx),
 			searchResultsDefaultSearchCombinationOptions,
 			searchTerms,
 			searchResultsDefaultSearchPage,
@@ -370,6 +378,10 @@ func newSearchTextChunks(randomizer helpers.Randomizer, searchText string, paste
 
 }
 
+// simulate writes the full search string to the returned channel at the point
+// in time the search string shall be sent to the server. The returned channel
+// has a capacity equal to the number of search strings scheduled to be written
+// to the same channel.
 func (chunks searchTextChunks) simulate(ctx context.Context, onErrors func(err ...error)) <-chan string {
 	textChan := make(chan string, len(chunks))
 	go func() {
@@ -442,16 +454,19 @@ func smartSearch(sessionState *session.State, actionState *action.State, reset f
 	defer sessionState.Wait(actionState)
 	cnt := 0
 	var searchResult **enigma.SearchResult
-	for searchText := range searchTextChunks.simulate(sessionState.BaseContext(), actionState.AddErrors) {
+	searchTexts := searchTextChunks.simulate(sessionState.BaseContext(), actionState.AddErrors)
+	totalCnt := cap(searchTexts)
+	for searchText := range searchTexts {
 		cnt++
-		searchResult = doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText)
+		isLast := cnt == totalCnt
+		searchResult = doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText, isLast)
 	}
 	if !sessionState.Wait(actionState) {
 		if searchResult == nil {
 			actionState.AddErrors(errors.New("searchResult is unexpectedly nil"))
 			return nil
 		} else if *searchResult == nil {
-			actionState.AddErrors(errors.New("*searchResult is unexpectedly nil"))
+			actionState.AddErrors(errors.New("*searchResult is unexpectedly nil: the last search was aborted"))
 		}
 	}
 	return *searchResult
