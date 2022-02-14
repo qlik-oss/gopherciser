@@ -285,7 +285,7 @@ func isAbortedError(err error) bool {
 // doSmartSearchRPCs gets search suggestions and search result in parallel. Wait
 // for queued requests with `sessionState.Wait(actionState)` before reading
 // returned search result.
-func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string, doRetries bool) **enigma.SearchResult {
+func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, appDoc *enigma.Doc, id int, searchText string, doRetries, acceptAborted bool) **enigma.SearchResult {
 	searchTerms := parseSearchTerms(searchText)
 	if sessionState.LogEntry.ShouldLogDebug() {
 		sessionState.LogEntry.LogDebugf(`search%d text %s becomes search terms: %s`, id, quote(searchText), quoteList(searchTerms))
@@ -305,8 +305,7 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 			searchTerms,
 		)
 		if err != nil {
-			if isAbortedError(err) {
-				sessionState.LogEntry.LogDebugf("search%d SearchSuggest(%#v) aborted: %v", id, searchTerms, err)
+			if acceptAborted && isAbortedError(err) {
 				return nil
 			}
 			return err
@@ -324,8 +323,7 @@ func doSmartSearchRPCs(sessionState *session.State, actionState *action.State, a
 			searchResultsDefaultSearchPage,
 		)
 		if err != nil {
-			if isAbortedError(err) {
-				sessionState.LogEntry.LogDebugf("search%d SearchResults(%#v) aborted: %v", id, searchTerms, err)
+			if acceptAborted && isAbortedError(err) {
 				return nil
 			}
 			return err
@@ -459,7 +457,7 @@ func smartSearch(sessionState *session.State, actionState *action.State, reset f
 	for searchText := range searchTexts {
 		cnt++
 		isLast := cnt == totalCnt
-		searchResult = doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText, isLast)
+		searchResult = doSmartSearchRPCs(sessionState, actionState, doc, cnt, searchText, isLast, !isLast)
 	}
 	if !sessionState.Wait(actionState) {
 		if searchResult == nil {
