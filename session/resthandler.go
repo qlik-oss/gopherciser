@@ -125,16 +125,6 @@ var (
 	dnsResolver = &dnscache.Resolver{}
 )
 
-func init() {
-	go func() {
-		t := time.NewTicker(10 * time.Minute)
-		defer t.Stop()
-		for range t.C {
-			dnsResolver.Refresh(true)
-		}
-	}()
-}
-
 // NewRestHandler new instance of RestHandler
 func NewRestHandler(ctx context.Context, size int, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
 	return &RestHandler{
@@ -227,12 +217,13 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 							Timeout:   30 * time.Second,
 							KeepAlive: 30 * time.Second,
 						}
-						conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+						var conn net.Conn
+						conn, err = dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 						if err == nil {
 							return conn, nil
 						}
 					}
-					return nil, nil
+					return nil, err
 				},
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,

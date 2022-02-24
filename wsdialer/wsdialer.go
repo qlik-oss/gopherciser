@@ -63,11 +63,6 @@ type (
 	DisconnectError struct {
 		Type string
 	}
-
-	// DebugConn is a temporary wrapper on net.Conn for debugging purposes
-	DebugConn struct {
-		net.Conn
-	}
 )
 
 const (
@@ -92,27 +87,6 @@ func logStack(msg string) error {
 	errMsg := fmt.Sprintf("%s, stack:\n %s", msg, buf)
 	_, _ = os.Stderr.Write([]byte(errMsg))
 	return fmt.Errorf(errMsg)
-}
-
-func (conn *DebugConn) Write(b []byte) (int, error) {
-	if conn == nil {
-		return 0, logStack("DebugConn::write:conn == nil")
-	}
-	if conn.Conn == nil {
-		return 0, logStack("DebugConn:write:conn.Conn == nil")
-	}
-	return conn.Conn.Write(b)
-}
-
-func (conn *DebugConn) Close() error {
-	if conn == nil {
-		return logStack("DebugConn:Close:conn == nil")
-	}
-
-	if conn.Conn == nil {
-		return logStack("DebugConn:Close:conn.Conn == nil")
-	}
-	return conn.Conn.Close()
 }
 
 // Error implements error interface
@@ -175,9 +149,6 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 			},
 			NetDial: func(ctx context.Context, network, addr string) (net.Conn, error) {
 				conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
-				if conn != nil {
-					conn = &DebugConn{conn}
-				}
 				return conn, err
 			},
 			TLSConfig: &tls.Config{
