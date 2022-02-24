@@ -8,8 +8,6 @@ import (
 	"net"
 	"net/http"
 	neturl "net/url"
-	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -81,14 +79,6 @@ func init() {
 	close(closedChan)
 }
 
-func logStack(msg string) error {
-	buf := make([]byte, 1<<16)
-	runtime.Stack(buf, false)
-	errMsg := fmt.Sprintf("%s, stack:\n %s", msg, buf)
-	_, _ = os.Stderr.Write([]byte(errMsg))
-	return fmt.Errorf(errMsg)
-}
-
 // Error implements error interface
 func (err DisconnectError) Error() string {
 	return fmt.Sprintf("Websocket<%s> disconnected", err.Type)
@@ -148,8 +138,7 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 				return nil
 			},
 			NetDial: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
-				return conn, err
+				return (&net.Dialer{}).DialContext(ctx, network, addr)
 			},
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: allowUntrusted,
