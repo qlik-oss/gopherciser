@@ -121,6 +121,8 @@ jobs:
             BODY=$(tail -n+2 changelog.md)
             echo Creating release version $TAG
             github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY"
+            # Sleep 60s workaround for "release not existing"
+            sleep 60
             for f in \
               ./pack/gopherciser_linux.zip \
               ./pack/gopherciser_windows.zip \
