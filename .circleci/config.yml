@@ -121,7 +121,7 @@ jobs:
             BODY=$(tail -n+2 changelog.md)
             echo Creating release version $TAG
             github-release release -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n "$TITLE" -d "$BODY"
-            sleep 1
+            sleep 60
             for f in \
               ./pack/gopherciser_linux.zip \
               ./pack/gopherciser_windows.zip \
