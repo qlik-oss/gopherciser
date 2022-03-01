@@ -1,7 +1,7 @@
 package senseobjdef
 
 import (
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"

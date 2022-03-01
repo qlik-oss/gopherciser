@@ -1,7 +1,7 @@
 package helpers_test
 
 import (
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"

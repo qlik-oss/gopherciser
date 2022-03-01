@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 )
 
 var (

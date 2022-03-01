@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"

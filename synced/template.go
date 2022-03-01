@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	uuid "github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"

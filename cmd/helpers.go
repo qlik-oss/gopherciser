@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/mitchellh/go-ps"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"

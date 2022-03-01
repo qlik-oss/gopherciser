@@ -2,7 +2,7 @@ package session
 
 import (
 	"context"
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"fmt"
 	"math"
 	"sync"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/spf13/cobra"

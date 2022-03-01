@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/spf13/cobra"

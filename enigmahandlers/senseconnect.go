@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/enigmainterceptors"

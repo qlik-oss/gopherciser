@@ -3,7 +3,7 @@ package helpers
 import (
 	"strings"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 )
 

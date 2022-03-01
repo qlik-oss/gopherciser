@@ -13,7 +13,7 @@ import (
 
 	"github.com/InVisionApp/tabular"
 	"github.com/buger/jsonparser"
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 )
 
 func TestUsersFromFile(t *testing.T) {

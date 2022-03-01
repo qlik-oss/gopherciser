@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/logger"

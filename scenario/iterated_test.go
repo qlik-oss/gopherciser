@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"

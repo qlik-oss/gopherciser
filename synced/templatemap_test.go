@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 )
 
 func TestMap(t *testing.T) {

@@ -1,7 +1,7 @@
 package scenario
 
 import (
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"

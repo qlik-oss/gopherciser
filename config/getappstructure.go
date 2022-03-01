@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"

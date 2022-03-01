@@ -2,7 +2,7 @@ package senseobjects
 
 import (
 	"context"
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"sync"
 

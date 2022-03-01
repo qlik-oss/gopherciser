@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	enigma "github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/logger"

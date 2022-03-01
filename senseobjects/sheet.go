@@ -3,7 +3,7 @@ package senseobjects
 import (
 	"context"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 )

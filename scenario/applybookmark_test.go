@@ -1,7 +1,7 @@
 package scenario_test
 
 import (
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"fmt"
 	"testing"
 

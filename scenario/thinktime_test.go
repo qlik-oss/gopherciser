@@ -3,7 +3,7 @@ package scenario
 import (
 	"testing"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 

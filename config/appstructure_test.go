@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/scenario"
 )

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
