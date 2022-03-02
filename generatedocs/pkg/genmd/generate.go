@@ -90,7 +90,7 @@ func (node *FoldedDocNode) WriteTo(writer io.Writer) {
 	fmt.Fprint(writer, "<details>\n")
 	fmt.Fprintf(writer, "<summary>%s</summary>\n\n", node.Name)
 	node.DocNode.WriteTo(writer)
-	fmt.Fprint(writer, "---\n")
+	fmt.Fprint(writer, "<hr>")
 	fmt.Fprint(writer, "</details>\n\n")
 }
 
