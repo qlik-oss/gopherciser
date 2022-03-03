@@ -2,7 +2,7 @@
 version: 2.1
 
 defaults: &defaults
-  working_directory: /go/src/github.com/qlik-oss/gopherciser/
+  working_directory: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
   environment:
     DOCKER_REPO: docker.pkg.github.com/qlik-oss/gopherciser/gopherciser
 
@@ -10,7 +10,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.17
     steps:
       - checkout
       - setup_remote_docker
@@ -36,7 +36,7 @@ jobs:
       - save_cache:
           key: dependency-cache-1.17{{ checksum "go.sum" }}
           paths:
-            - "/go/pkg/mod"
+            - "/home/circleci/go/pkg/mod"
       - run:
           name: Build documentation
           command: |
@@ -77,7 +77,7 @@ jobs:
         type: string
         default: "1.15"
     docker:
-      - image: circleci/golang:<< parameters.version >>
+      - image: cimg/go:<< parameters.version >>
     steps:
       - checkout
       - run:
@@ -98,7 +98,7 @@ jobs:
       - save_cache:
           key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
           paths:
-            - "/go/pkg/mod"
+            - "/home/circleci/go/pkg/mod"
       - store_artifacts:
           path: build
           destination: build
@@ -109,7 +109,7 @@ jobs:
       - image: golang:alpine
     steps:
       - attach_workspace:
-          at: /go/src/github.com/qlik-oss/gopherciser/
+          at: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
       - run:
           name: Publish to github
           command: |
@@ -135,10 +135,10 @@ jobs:
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.17
     steps:
       - attach_workspace:
-          at: /go/src/github.com/qlik-oss/gopherciser/
+          at: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
       - setup_remote_docker
       - run:
           name: Check environment variables
