@@ -109,7 +109,7 @@ jobs:
       - image: golang:alpine
     steps:
       - attach_workspace:
-          at: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
+          at: /go/src/github.com/qlik-oss/gopherciser/
       - run:
           name: Publish to github
           command: |
