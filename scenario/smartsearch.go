@@ -104,6 +104,25 @@ var searchTextSourceEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"searchtextfile": int(SearchTextSourceFile),
 })
 
+var smartSearchDefaultThinktimeSettings = func() ThinkTimeSettings {
+	settings := ThinkTimeSettings{
+		DistributionSettings: helpers.DistributionSettings{
+			Type:      helpers.UniformDistribution,
+			Delay:     0,
+			Mean:      float64(10),
+			Deviation: 4,
+		},
+	}
+	warnings, err := settings.Validate()
+	if err != nil {
+		panic(fmt.Errorf("smartSearchThinktimeSettings has validation error: %s", err.Error()))
+	}
+	if len(warnings) != 0 {
+		panic(fmt.Errorf("smartSearchThinktimeSettings has validation warnings: %#v", warnings))
+	}
+	return settings
+}()
+
 func (SearchTextSource) GetEnumMap() *enummap.EnumMap {
 	return searchTextSourceEnumMap
 }
@@ -131,6 +150,10 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 	if err != nil {
 		return err
 	}
+	settings.SmartSearchSettingsCore.SelectionThinkTime = thinkTimeWithFallback(
+		settings.SmartSearchSettingsCore.SelectionThinkTime,
+		smartSearchDefaultThinktimeSettings,
+	)
 	switch settings.SearchTextSource {
 	case SearchTextSourceList:
 	case SearchTextSourceFile:

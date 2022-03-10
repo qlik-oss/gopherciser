@@ -111,8 +111,7 @@ connectionSettings": {
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>hooks</summary>
@@ -252,8 +251,7 @@ Let's assume the response from this endpoint is:
 
 The validator with path `/oktorun` will extract the value `false` and compare to the value defined in the validator, in this case `true`. Since the they are not equal the test will stop with error before starting exection.
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>loginSettings</summary>
@@ -349,8 +347,7 @@ testuser5;;A;d;v;a;n;c;e;d;;P;a;s;s;w;o;r;d;
 
 *testuser1* will get default `directory` and `password`, *testuser3* and *testuser5* will get default `directory`.
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>scenario</summary>
@@ -415,8 +412,7 @@ Apply a bookmark in the current app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>askhubadvisor</summary>
@@ -606,8 +602,7 @@ You can apart from session variables include the following action local variable
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>changesheet</summary>
@@ -652,8 +647,7 @@ The action supports getting data from the following objects:
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>clearall</summary>
@@ -672,8 +666,7 @@ Clear all selections in an app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>clearfield</summary>
@@ -696,8 +689,7 @@ Clear selections in a field.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>clickactionbutton</summary>
@@ -744,8 +736,7 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>containertab</summary>
@@ -799,8 +790,7 @@ A `Containertab` action simulates switching the active object in a `container` o
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>createbookmark</summary>
@@ -829,8 +819,7 @@ Create a bookmark from the current selection and selected sheet.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>createsheet</summary>
@@ -854,8 +843,7 @@ Create a new sheet in the current app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>deletebookmark</summary>
@@ -885,8 +873,7 @@ Delete one or more bookmarks in the current app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>deletesheet</summary>
@@ -916,8 +903,7 @@ Delete one or more sheets in the current app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>disconnectapp</summary>
@@ -936,8 +922,7 @@ Disconnect from an already connected app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>disconnectenvironment</summary>
@@ -958,8 +943,7 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>dosave</summary>
@@ -977,8 +961,7 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>duplicatesheet</summary>
@@ -1006,8 +989,7 @@ Duplicate a sheet, including all objects.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>iterated</summary>
@@ -1050,8 +1032,7 @@ Loop one or more actions.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>listboxselect</summary>
@@ -1085,8 +1066,7 @@ Perform list object specific selectiontypes in listbox.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>openapp</summary>
@@ -1140,8 +1120,7 @@ Open an app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>productversion</summary>
@@ -1176,8 +1155,7 @@ Request the product version from the server and, optionally, save it to the log.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>publishbookmark</summary>
@@ -1219,8 +1197,7 @@ Publish the bookmark with the `title` "bookmark of testuser", where "testuser" i
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>publishsheet</summary>
@@ -1246,8 +1223,7 @@ Publish sheets in the current app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>randomaction</summary>
@@ -1382,8 +1358,7 @@ The following default values are used for the different actions:
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>reload</summary>
@@ -1411,8 +1386,7 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>select</summary>
@@ -1512,8 +1486,7 @@ To statically select "Gamma" in this case:
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>setscript</summary>
@@ -1535,8 +1508,7 @@ Set the load script for the current app. To load the data from the script, use t
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>setscriptvar</summary>
@@ -1771,8 +1743,7 @@ Dissecting the first array construction action. The `join` command takes the ele
     }
 }
  ```
----
-</details>
+<hr></details>
 
 <details>
 <summary>setsensevariable</summary>
@@ -1794,8 +1765,7 @@ Set a variable to 2000
      "value": "2000"
 }
 ```
----
-</details>
+<hr></details>
 
 <details>
 <summary>sheetchanger</summary>
@@ -1818,8 +1788,7 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>smartsearch</summary>
@@ -1978,8 +1947,7 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>subscribeobjects</summary>
@@ -2020,8 +1988,7 @@ Subscribe to an additional single object (or a list of objects) in the currently
     }
 }
 ```
----
-</details>
+<hr></details>
 
 <details>
 <summary>thinktime</summary>
@@ -2072,8 +2039,7 @@ This simulates a think time of 5 seconds.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>unpublishbookmark</summary>
@@ -2115,8 +2081,7 @@ Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser"
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>unpublishsheet</summary>
@@ -2141,8 +2106,7 @@ Unpublish sheets in the current app.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>unsubscribeobjects</summary>
@@ -2181,11 +2145,9 @@ Unsubscribe from all currently subscribed objects.
     }
 }
 ```
----
-</details>
+<hr></details>
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>
@@ -2215,8 +2177,7 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>generateodag</summary>
@@ -2238,8 +2199,7 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>openhub</summary>
@@ -2258,11 +2218,9 @@ Open the hub in a QSEoW environment.
 }
 ```
 
----
-</details>
+<hr></details>
 
----
-</details>
+<hr></details>
 
 
 ## Session variables
@@ -2348,8 +2306,7 @@ The following functions are supported:
 </details>
 
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>scheduler</summary>
@@ -2443,8 +2400,7 @@ Simple scheduler set to attempt re-connection in case of an unexpected WebSocket
 }
 ```
 
----
-</details>
+<hr></details>
 
 <details>
 <summary>settings</summary>
@@ -2504,6 +2460,5 @@ This section of the JSON file contains timeout and logging settings for the load
 }
 ```
 
----
-</details>
+<hr></details>
 

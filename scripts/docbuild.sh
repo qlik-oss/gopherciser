@@ -4,7 +4,7 @@ set -eox pipefail
 BIN=${1:-build}
 USER=$(id -u)
 PROJECTFOLDER=${2:-.}
-PANDOCVERSION=pandoc/core:2.15
+PANDOCVERSION=pandoc/core:2.17
 
 echo PROJECTFOLDER:"$PROJECTFOLDER"
 echo PANDOCVERSION:"$PANDOCVERSION"
@@ -38,7 +38,7 @@ if [[ -x $(command -v docker) ]]; then
     for f in $(find docs -iname "*.md"); do
         echo Generating "${f%.*}".html...
         docker cp "$f" "$GOPHERCISERDATAVOLUME":/data/"$f"
-        docker exec "$PANDOCCONTAINER" pandoc /data/"$f" -o /data/build/"${f%.*}".html --lua-filter=/data/docfilter.lua
+        docker exec "$PANDOCCONTAINER" pandoc /data/"$f" -f markdown-yaml_metadata_block -t html5 -o /data/build/"${f%.*}".html --lua-filter=/data/docfilter.lua
     done
 
     echo "copying generated files from volume to $BIN..."
