@@ -105,6 +105,7 @@ jobs:
 
   publish-github:
     <<: *defaults
+    working_directory: /go/src/github.com/qlik-oss/gopherciser/
     docker:
       - image: golang:alpine
     steps:
