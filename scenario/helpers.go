@@ -172,15 +172,10 @@ func (execute executeFunc) Validate() ([]string, error) {
 	return nil, nil
 }
 
-var internalSetThinkTimeError = errors.New("internal error: can not set thinkTime if **ThinkTimeSettings is nil")
-
-func setThinkTimeIfNotSet(thinkTime **ThinkTimeSettings, fallback *ThinkTimeSettings) error {
-	if thinkTime == nil {
-		return internalSetThinkTimeError
+func thinkTimeWithFallback(thinkTime *ThinkTimeSettings, fallback ThinkTimeSettings) *ThinkTimeSettings {
+	if thinkTime == nil || thinkTime.Type == helpers.StaticDistribution && thinkTime.Delay == 0 {
+		return &fallback
 	}
-	if *thinkTime == nil || (*thinkTime).Type == helpers.StaticDistribution && (*thinkTime).Delay == 0 {
-		*thinkTime = fallback
-		return nil
-	}
-	return nil
+	aCopy := *thinkTime
+	return &aCopy
 }

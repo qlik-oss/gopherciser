@@ -8,19 +8,13 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
-func checkThinkTimeEquality(expected, actual *ThinkTimeSettings) error {
-	if expected != actual || !reflect.DeepEqual(expected, actual) {
-		return errors.Errorf("expected address<%p> value<%#v>, got address<%p> value<%#v>", expected, expected, actual, actual)
+func checkThinkTimeEquality(expected, actual ThinkTimeSettings) error {
+	if !reflect.DeepEqual(expected, actual) {
+		return errors.Errorf("expected value<%#v>, got value<%#v>", expected, actual)
 	}
 	return nil
 }
 func TestSetThinkTimeIfNotSet(t *testing.T) {
-	shallBeInternalSetThinkTimeError := func(err error) error {
-		if err != internalSetThinkTimeError {
-			return errors.Errorf("expected error %s, got error %s", internalSetThinkTimeError, err)
-		}
-		return nil
-	}
 	defaultThinkTime := &ThinkTimeSettings{}
 	var nilThinkTime *ThinkTimeSettings
 	nonDefaultThinkTime := &ThinkTimeSettings{
@@ -30,57 +24,41 @@ func TestSetThinkTimeIfNotSet(t *testing.T) {
 		},
 	}
 	cases := []struct {
-		name     string
-		input    **ThinkTimeSettings
-		fallback *ThinkTimeSettings
-		checkErr func(actualErr error) error
-		shallSet bool
+		name        string
+		input       *ThinkTimeSettings
+		fallback    ThinkTimeSettings
+		useFallback bool
 	}{
 		{
-			name:     "nil input",
-			input:    nil,
-			fallback: &askHubAdvisorDefaultThinktimeSettings,
-			checkErr: shallBeInternalSetThinkTimeError,
+			name:        "use fallback, cause default",
+			input:       defaultThinkTime,
+			fallback:    askHubAdvisorDefaultThinktimeSettings,
+			useFallback: true,
 		},
 		{
-			name:     "use fallback, cause default",
-			input:    &defaultThinkTime,
-			fallback: &askHubAdvisorDefaultThinktimeSettings,
-			shallSet: true,
-		},
-		{
-			name:     "use fallback, cause nil",
-			input:    &nilThinkTime,
-			fallback: &askHubAdvisorDefaultThinktimeSettings,
-			shallSet: true,
+			name:        "use fallback, cause nil",
+			input:       nilThinkTime,
+			fallback:    askHubAdvisorDefaultThinktimeSettings,
+			useFallback: true,
 		},
 		{
 			name:     "use input",
-			input:    &nonDefaultThinkTime,
-			fallback: &askHubAdvisorDefaultThinktimeSettings,
+			input:    nonDefaultThinkTime,
+			fallback: askHubAdvisorDefaultThinktimeSettings,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			var inputBefore *ThinkTimeSettings
-			if c.input != nil {
-				inputBefore = *c.input
+			result := thinkTimeWithFallback(c.input, c.fallback)
+			if result == c.input {
+				t.Errorf("return and argument has the same address: %p == %p>", result, c.input)
 			}
-			setThinkTimeErr := setThinkTimeIfNotSet(c.input, c.fallback)
-			if c.checkErr != nil {
-				if err := c.checkErr(setThinkTimeErr); err != nil {
-					t.Error(err)
-				}
-			}
-			if setThinkTimeErr != nil {
-				return
-			}
-			if c.shallSet {
-				if err := checkThinkTimeEquality(*c.input, c.fallback); err != nil {
+			if c.useFallback {
+				if err := checkThinkTimeEquality(*result, c.fallback); err != nil {
 					t.Error(errors.Wrap(err, "not using fallback when should have"))
 				}
 			} else {
-				if err := checkThinkTimeEquality(*c.input, inputBefore); err != nil {
+				if err := checkThinkTimeEquality(*result, *result); err != nil {
 					t.Error(errors.Wrap(err, "not using input when should have"))
 				}
 			}

@@ -235,10 +235,10 @@ func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 	if err != nil {
 		return err
 	}
-	err = setThinkTimeIfNotSet(&settings.AskHubAdvisorSettingsCore.ThinkTimeSettings, &askHubAdvisorDefaultThinktimeSettings)
-	if err != nil {
-		return err
-	}
+	settings.AskHubAdvisorSettingsCore.ThinkTimeSettings = thinkTimeWithFallback(
+		settings.AskHubAdvisorSettingsCore.ThinkTimeSettings,
+		askHubAdvisorDefaultThinktimeSettings,
+	)
 	switch settings.QuerySource {
 	case QueryFromFile:
 		if settings.FileName == "" {

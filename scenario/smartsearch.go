@@ -150,10 +150,10 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 	if err != nil {
 		return err
 	}
-	err = setThinkTimeIfNotSet(&settings.SmartSearchSettingsCore.SelectionThinkTime, &smartSearchDefaultThinktimeSettings)
-	if err != nil {
-		return err
-	}
+	settings.SmartSearchSettingsCore.SelectionThinkTime = thinkTimeWithFallback(
+		settings.SmartSearchSettingsCore.SelectionThinkTime,
+		smartSearchDefaultThinktimeSettings,
+	)
 	switch settings.SearchTextSource {
 	case SearchTextSourceList:
 	case SearchTextSourceFile:
