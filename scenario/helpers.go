@@ -9,6 +9,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -169,4 +170,17 @@ func (execute executeFunc) Validate() ([]string, error) {
 		return nil, errors.New("executeFunc is nil")
 	}
 	return nil, nil
+}
+
+var internalSetThinkTimeError = errors.New("internal error: can not set thinkTime if **ThinkTimeSettings is nil")
+
+func setThinkTimeIfNotSet(thinkTime **ThinkTimeSettings, fallback *ThinkTimeSettings) error {
+	if thinkTime == nil {
+		return internalSetThinkTimeError
+	}
+	if *thinkTime == nil || (*thinkTime).Type == helpers.StaticDistribution && (*thinkTime).Delay == 0 {
+		*thinkTime = fallback
+		return nil
+	}
+	return nil
 }
