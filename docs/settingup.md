@@ -432,7 +432,7 @@ Perform a query in the Qlik Sense hub insight advisor.
 * `app`: Optional name of app to pick in followup queries. If not set, a random app is picked.
 * `saveimages`: Save images of charts to file.
 * `saveimagefile`: File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables).
-* `thinktime`: Settings for the `thinktime` action, which is automatically inserted before each followup.
+* `thinktime`: Settings for the `thinktime` action, which is automatically inserted before each followup. Defaults to a uniform distribution with mean=8 and deviation=4.
   * `type`: Type of think time
       * `static`: Static think time, defined by `delay`.
       * `uniform`: Random think time with uniform distribution, defined by `mean` and `dev`.

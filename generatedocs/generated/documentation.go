@@ -177,7 +177,7 @@ var (
 		"askhubadvisor.querysource":                       {"The source from which queries will be randomly picked.", "`file`: Read queries from file defined by `file`.", "`querylist`: Read queries from list defined by `querylist`."},
 		"askhubadvisor.saveimagefile":                     {"File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables)."},
 		"askhubadvisor.saveimages":                        {"Save images of charts to file."},
-		"askhubadvisor.thinktime":                         {"Settings for the `thinktime` action, which is automatically inserted before each followup."},
+		"askhubadvisor.thinktime":                         {"Settings for the `thinktime` action, which is automatically inserted before each followup. Defaults to a uniform distribution with mean=8 and deviation=4."},
 		"bookmark.id":                                     {"ID of the bookmark."},
 		"bookmark.title":                                  {"Name of the bookmark (supports the use of [variables](#session_variables))."},
 		"changesheet.id":                                  {"GUID of the sheet to change to."},
