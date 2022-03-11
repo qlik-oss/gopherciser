@@ -9,7 +9,6 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -172,10 +171,10 @@ func (execute executeFunc) Validate() ([]string, error) {
 	return nil, nil
 }
 
-func thinkTimeWithFallback(thinkTime *ThinkTimeSettings, fallback ThinkTimeSettings) *ThinkTimeSettings {
-	if thinkTime == nil || thinkTime.Type == helpers.StaticDistribution && thinkTime.Delay == 0 {
-		return &fallback
+func thinkTimeWithFallback(thinkTime ThinkTimeSettings, fallback ThinkTimeSettings) ThinkTimeSettings {
+	zeroThinkTime := ThinkTimeSettings{}
+	if thinkTime == zeroThinkTime {
+		return fallback
 	}
-	aCopy := *thinkTime
-	return &aCopy
+	return thinkTime
 }

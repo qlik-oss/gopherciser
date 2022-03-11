@@ -1808,7 +1808,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 * `makeselection`: Select a random search result.
     * `true`
     * `false`
-* `selectionthinktime`: Optional think time before selection is made.
+* `selectionthinktime`: Think time before selection if `makeselection` is `true`, defaults to a 1 second delay.
   * `type`: Type of think time
       * `static`: Static think time, defined by `delay`.
       * `uniform`: Random think time with uniform distribution, defined by `mean` and `dev`.

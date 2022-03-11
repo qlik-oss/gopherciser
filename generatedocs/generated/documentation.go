@@ -316,7 +316,7 @@ var (
 		"smartsearch.searchtextfile":                      {"File path to file with one search string per line."},
 		"smartsearch.searchtextlist":                      {"List of of strings used for searching."},
 		"smartsearch.searchtextsource":                    {"Source for list of strings used for searching.", "`searchtextlist` (default)", "`searchtextfile`"},
-		"smartsearch.selectionthinktime":                  {"Optional think time before selection is made."},
+		"smartsearch.selectionthinktime":                  {"Think time before selection if `makeselection` is `true`, defaults to a 1 second delay."},
 		"subscribeobjects.clear":                          {"Remove any previously subscribed objects from the subscription list."},
 		"subscribeobjects.ids":                            {"List of object IDs to subscribe to."},
 		"thinktime.delay":                                 {"Delay (seconds), used with type `static`."},

@@ -620,6 +620,6 @@
         "`false`"
     ],
     "smartsearch.selectionthinktime": [
-        "Optional think time before selection is made."
+        "Think time before selection if `makeselection` is `true`, defaults to a 1 second delay."
     ]
 }
