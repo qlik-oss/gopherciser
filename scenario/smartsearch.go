@@ -167,6 +167,13 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 	}
 	return nil
 }
+func (settings SmartSearchSettings) MarshalJSON() ([]byte, error) {
+	settings.SelectionThinkTime = thinkTimeWithFallback(
+		settings.SelectionThinkTime,
+		smartSearchDefaultThinktimeSettings,
+	)
+	return json.Marshal(settings)
+}
 
 func (settings *SmartSearchSettings) IsContainerAction() {}
 
