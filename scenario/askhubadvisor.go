@@ -267,11 +267,11 @@ func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 }
 
 func (settings AskHubAdvisorSettings) MarshalJSON() ([]byte, error) {
-	settings.ThinkTimeSettings = thinkTimeWithFallback(
+	settings.AskHubAdvisorSettingsCore.ThinkTimeSettings = thinkTimeWithFallback(
 		settings.ThinkTimeSettings,
 		askHubAdvisorDefaultThinktimeSettings,
 	)
-	return json.Marshal(settings)
+	return json.Marshal(settings.AskHubAdvisorSettingsCore)
 }
 
 func (value *AdvisorQuerySourceEnum) UnmarshalJSON(arg []byte) error {
