@@ -911,3 +911,10 @@ func ParseWeightedQueries(reader io.Reader) ([]WeightedQuery, error) {
 	}
 	return wqs, nil
 }
+
+func (AskHubAdvisorSettings) DefaultValuesForGUI() ActionSettings {
+	newSettings := &AskHubAdvisorSettings{}
+	defaultThinkTime := askHubAdvisorDefaultThinktimeSettings
+	newSettings.ThinkTimeSettings = &defaultThinkTime
+	return newSettings
+}

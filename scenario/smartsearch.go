@@ -176,6 +176,13 @@ func (settings SmartSearchSettings) MarshalJSON() ([]byte, error) {
 
 func (settings *SmartSearchSettings) IsContainerAction() {}
 
+func (SmartSearchSettings) DefaultValuesForGUI() ActionSettings {
+	newSettings := &SmartSearchSettings{}
+	defaultThinkTime := smartSearchDefaultThinktimeSettings
+	newSettings.SelectionThinkTime = &defaultThinkTime
+	return newSettings
+}
+
 // Validate implements ActionSettings interface
 func (settings SmartSearchSettings) Validate() ([]string, error) {
 	var warnings []string
