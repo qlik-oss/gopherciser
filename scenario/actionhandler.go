@@ -61,6 +61,10 @@ type (
 		AffectsAppObjectsAction(appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool)
 	}
 
+	DefaultValuesForGUI interface {
+		DefaultValuesForGUI() ActionSettings
+	}
+
 	// ****************************************************************
 
 	ActionCore struct {
