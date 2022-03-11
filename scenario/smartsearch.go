@@ -178,8 +178,7 @@ func (settings *SmartSearchSettings) IsContainerAction() {}
 
 func (SmartSearchSettings) DefaultValuesForGUI() ActionSettings {
 	newSettings := &SmartSearchSettings{}
-	defaultThinkTime := smartSearchDefaultThinktimeSettings
-	newSettings.SelectionThinkTime = &defaultThinkTime
+	newSettings.SelectionThinkTime = smartSearchDefaultThinktimeSettings
 	return newSettings
 }
 
