@@ -905,3 +905,11 @@ func ParseWeightedQueries(reader io.Reader) ([]WeightedQuery, error) {
 	}
 	return wqs, nil
 }
+
+func (settings AskHubAdvisorSettings) DefaultValuesForGUI() ActionSettings {
+	action := NewActionsSettings("askhubadvisor")
+	castAction := action.(*AskHubAdvisorSettings)
+	castAction.ThinkTimeSettings = &ThinkTimeSettings{}
+	castAction.ThinkTimeSettings.Delay = 1
+	return castAction
+}
