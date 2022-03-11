@@ -60,7 +60,7 @@
         "Path to query file."
     ],
     "askhubadvisor.thinktime": [
-        "Settings for the `thinktime` action, which is automatically inserted before each followup."
+        "Settings for the `thinktime` action, which is automatically inserted before each followup. Defaults to a uniform distribution with mean=8 and deviation=4."
     ],
     "askhubadvisor.saveimages": [
         "Save images of charts to file."
@@ -620,6 +620,6 @@
         "`false`"
     ],
     "smartsearch.selectionthinktime": [
-        "Optional think time before selection is made."
+        "Think time before selection if `makeselection` is `true`, defaults to a 1 second delay."
     ]
 }
