@@ -845,7 +845,6 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			_, _ = os.Stderr.WriteString(fmt.Sprint("failed to marshal summary file:", err))
 			return
 		}
-		// TODO make summary file name configurable
 		fileName := DefaultSummaryFilename
 		if summaryFilename != "" {
 			fileName = summaryFilename
