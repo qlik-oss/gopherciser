@@ -827,7 +827,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 		summaryData = append(summaryData, []SummaryEntry{
 			{"Total users", "TotUsers", strconv.FormatUint(counters.Users.Current(), 10), ansiBoldBlue},
 			{"Total threads", "TotThreads", strconv.FormatUint(counters.Threads.Current(), 10), ansiBoldBlue},
-			{"Total sessions", "TotSesssions", strconv.FormatUint(counters.Sessions.Current(), 10), ansiBoldBlue},
+			{"Total sessions", "TotSessions", strconv.FormatUint(counters.Sessions.Current(), 10), ansiBoldBlue},
 			{"Total apps opened", "OpenedApps", strconv.FormatUint(counters.StatisticsCollector.OpenedApps(), 10), ansiBoldBlue},
 			{"Total apps created", "CreatedApps", strconv.FormatUint(counters.StatisticsCollector.CreatedApps(), 10), ansiBoldBlue},
 		}...)
