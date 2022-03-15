@@ -24,15 +24,15 @@ func TestConfigSummary(t *testing.T) {
 	// clean summaries
 
 	fmt.Println("simple (clean):")
-	summary(log, SummaryTypeSimple, startTime, counters)
+	summary(log, SummaryTypeSimple, startTime, counters, "")
 	fmt.Println()
 
 	fmt.Println("extended (clean):")
-	summary(log, SummaryTypeExtended, startTime, counters)
+	summary(log, SummaryTypeExtended, startTime, counters, "")
 	fmt.Println()
 
 	fmt.Println("full (clean):")
-	summary(log, SummaryTypeFull, startTime, counters)
+	summary(log, SummaryTypeFull, startTime, counters, "")
 	fmt.Println()
 
 	// "dirty" summaries
@@ -67,11 +67,11 @@ func TestConfigSummary(t *testing.T) {
 	chStats.Requests.Add(123)
 
 	fmt.Println("simple (dirty):")
-	summary(log, SummaryTypeSimple, startTime, counters)
+	summary(log, SummaryTypeSimple, startTime, counters, "")
 	fmt.Println()
 
 	fmt.Println("extended (dirty):")
-	summary(log, SummaryTypeExtended, startTime, counters)
+	summary(log, SummaryTypeExtended, startTime, counters, "")
 	fmt.Println()
 
 	if err := counters.StatisticsCollector.SetLevel(statistics.StatsLevelFull); err != nil {
@@ -83,7 +83,7 @@ func TestConfigSummary(t *testing.T) {
 	usersStats.Sent.Add(432)
 
 	fmt.Println("full (dirty):")
-	summary(log, SummaryTypeFull, startTime, counters)
+	summary(log, SummaryTypeFull, startTime, counters, "")
 	fmt.Println()
 
 	// Reset global counter to not effect other tests
