@@ -72,13 +72,14 @@ type (
 
 	// LogSettings settings for logging
 	LogSettings struct {
-		Traffic        bool            `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
-		Debug          bool            `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
-		TrafficMetrics bool            `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
-		Regression     bool            `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
-		FileName       synced.Template `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
-		Format         LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
-		Summary        SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		Traffic         bool            `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
+		Debug           bool            `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
+		TrafficMetrics  bool            `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression      bool            `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
+		FileName        synced.Template `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
+		Format          LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
+		Summary         SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		SummaryFileName string          `json:"summaryFilename,omitempty" displayname:"Name of summary file" doc-key:"config.settings.logs.summaryfile"`
 	}
 
 	// OutputsSettings settings for produced outputs (if any)
@@ -185,6 +186,8 @@ const (
 	SummaryTypeFull
 	SummaryTypeFile
 )
+
+const DefaultSummaryFilename = "summary.json"
 
 var (
 	ansiWriter = ansicolor.NewAnsiColorWriter(os.Stdout)
@@ -635,7 +638,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	}
 
 	// Log test summary after test is done
-	defer summary(log, summaryType, time.Now(), &cfg.Counters)
+	defer summary(log, summaryType, time.Now(), &cfg.Counters, cfg.Settings.LogSettings.SummaryFileName)
 
 	if cfg.Settings.MaxErrorCount > 0 {
 		var once sync.Once
@@ -770,7 +773,7 @@ func (summary *SummaryType) EntryEnd() string {
 	}
 }
 
-func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters *statistics.ExecutionCounters) {
+func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters *statistics.ExecutionCounters, summaryFilename string) {
 	testDuration := time.Since(startTime)
 
 	entry := logger.NewLogEntry(log)
@@ -843,7 +846,11 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			return
 		}
 		// TODO make summary file name configurable
-		if err := ioutil.WriteFile("summary.json", jsn, 0644); err != nil {
+		fileName := DefaultSummaryFilename
+		if summaryFilename != "" {
+			fileName = summaryFilename
+		}
+		if err := ioutil.WriteFile(fileName, jsn, 0644); err != nil {
 			_, _ = os.Stderr.WriteString(fmt.Sprint("failed write summary file:", err))
 		}
 		return
