@@ -139,8 +139,8 @@ type (
 
 	//SummaryEntry title, value and color combo for summary printout
 	SummaryEntry struct {
-		LongTitle  string // used in extended and full summary
-		ShortTitle string `json:"short` // used in simple summary
+		LongTitle  string `json:"longTitle"`  // used in extended and full summary
+		ShortTitle string `json:"shortTitle"` // used in simple summary
 		Value      string `json:"value"`
 		Color      string `json:"-"`
 	}
