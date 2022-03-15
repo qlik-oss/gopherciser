@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -71,13 +72,14 @@ type (
 
 	// LogSettings settings for logging
 	LogSettings struct {
-		Traffic        bool            `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
-		Debug          bool            `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
-		TrafficMetrics bool            `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
-		Regression     bool            `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
-		FileName       synced.Template `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
-		Format         LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
-		Summary        SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		Traffic         bool            `json:"traffic,omitempty" displayname:"Traffic log" doc-key:"config.settings.logs.traffic"`
+		Debug           bool            `json:"debug,omitempty" displayname:"Debug log" doc-key:"config.settings.logs.debug"`
+		TrafficMetrics  bool            `json:"metrics,omitempty" displayname:"Traffic metrics log" doc-key:"config.settings.logs.metrics"`
+		Regression      bool            `json:"regression,omitempty" displayname:"Regression log" doc-key:"config.settings.logs.regression"`
+		FileName        synced.Template `json:"filename" displayname:"Log filename" displayelement:"savefile" doc-key:"config.settings.logs.filename"`
+		Format          LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
+		Summary         SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
+		SummaryFileName string          `json:"summaryFilename,omitempty" displayname:"Name of summary file" doc-key:"config.settings.logs.summaryfile"`
 	}
 
 	// OutputsSettings settings for produced outputs (if any)
@@ -138,10 +140,10 @@ type (
 
 	//SummaryEntry title, value and color combo for summary printout
 	SummaryEntry struct {
-		longTitle  string // used in extended and full summary
-		shortTitle string // used in simple summary
-		Value      string
-		Color      string
+		LongTitle  string `json:"longTitle"`  // used in extended and full summary
+		ShortTitle string `json:"shortTitle"` // used in simple summary
+		Value      string `json:"value"`
+		Color      string `json:"-"`
 	}
 )
 
@@ -182,7 +184,10 @@ const (
 	SummaryTypeSimple
 	SummaryTypeExtended
 	SummaryTypeFull
+	SummaryTypeFile
 )
+
+const DefaultSummaryFilename = "summary.json"
 
 var (
 	ansiWriter = ansicolor.NewAnsiColorWriter(os.Stdout)
@@ -210,6 +215,7 @@ func (value SummaryType) GetEnumMap() *enummap.EnumMap {
 		"simple":   int(SummaryTypeSimple),
 		"extended": int(SummaryTypeExtended),
 		"full":     int(SummaryTypeFull),
+		"file":     int(SummaryTypeFile),
 	})
 
 	return summaryTypeEnum
@@ -632,7 +638,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	}
 
 	// Log test summary after test is done
-	defer summary(log, summaryType, time.Now(), &cfg.Counters)
+	defer summary(log, summaryType, time.Now(), &cfg.Counters, cfg.Settings.LogSettings.SummaryFileName)
 
 	if cfg.Settings.MaxErrorCount > 0 {
 		var once sync.Once
@@ -691,7 +697,7 @@ func (cfg *Config) PopulateHookData() {
 
 func (cfg *Config) SetupStatistics(summary SummaryType) error {
 	switch summary {
-	case SummaryTypeExtended:
+	case SummaryTypeExtended, SummaryTypeFile:
 		cfg.Counters.StatisticsCollector = statistics.NewCollector()
 		return errors.WithStack(cfg.Counters.StatisticsCollector.SetLevel(statistics.StatsLevelOn))
 	case SummaryTypeFull:
@@ -725,19 +731,15 @@ func (settings *LogSettings) getSummaryType() SummaryType {
 	switch settings.Summary {
 	case SummaryTypeDefault:
 		return SummaryTypeSimple
-	case SummaryTypeNone:
-		return settings.Summary
-	case SummaryTypeSimple:
-		return settings.Summary
-	case SummaryTypeExtended:
-		return settings.Summary
-	case SummaryTypeFull:
-		return settings.Summary
-	default: // ifSummaryTypeUndefined or illegal value
-		if !settings.shouldLogStatus() {
-			return SummaryTypeNone
+	default:
+		if _, err := settings.Summary.GetEnumMap().String(int(settings.Summary)); err != nil {
+			// illegal value used, default to none or simple
+			if !settings.shouldLogStatus() {
+				return SummaryTypeNone
+			}
+			return SummaryTypeSimple
 		}
-		return SummaryTypeSimple
+		return settings.Summary
 	}
 }
 
@@ -745,9 +747,9 @@ func (settings *LogSettings) getSummaryType() SummaryType {
 func (entry *SummaryEntry) Title(summary SummaryType) string {
 	switch summary {
 	case SummaryTypeSimple:
-		return entry.shortTitle
+		return entry.ShortTitle
 	default:
-		return fmt.Sprintf("%-20s", entry.longTitle)
+		return fmt.Sprintf("%-20s", entry.LongTitle)
 	}
 }
 
@@ -771,7 +773,7 @@ func (summary *SummaryType) EntryEnd() string {
 	}
 }
 
-func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters *statistics.ExecutionCounters) {
+func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters *statistics.ExecutionCounters, summaryFilename string) {
 	testDuration := time.Since(startTime)
 
 	entry := logger.NewLogEntry(log)
@@ -824,17 +826,33 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	case SummaryTypeNone:
 		//Don't log summary to stdout
 		return
-	case SummaryTypeFull, SummaryTypeExtended:
+	case SummaryTypeFull, SummaryTypeExtended, SummaryTypeFile:
 		summaryData = append(summaryData, []SummaryEntry{
 			{"Total users", "TotUsers", strconv.FormatUint(counters.Users.Current(), 10), ansiBoldBlue},
 			{"Total threads", "TotThreads", strconv.FormatUint(counters.Threads.Current(), 10), ansiBoldBlue},
-			{"Total sessions", "TotSesssions", strconv.FormatUint(counters.Sessions.Current(), 10), ansiBoldBlue},
+			{"Total sessions", "TotSessions", strconv.FormatUint(counters.Sessions.Current(), 10), ansiBoldBlue},
 			{"Total apps opened", "OpenedApps", strconv.FormatUint(counters.StatisticsCollector.OpenedApps(), 10), ansiBoldBlue},
 			{"Total apps created", "CreatedApps", strconv.FormatUint(counters.StatisticsCollector.CreatedApps(), 10), ansiBoldBlue},
 		}...)
 	default:
 		// default to simple summary
 		summary = SummaryTypeSimple
+	}
+
+	if summary == SummaryTypeFile {
+		jsn, err := json.Marshal(summaryData)
+		if err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprint("failed to marshal summary file:", err))
+			return
+		}
+		fileName := DefaultSummaryFilename
+		if summaryFilename != "" {
+			fileName = summaryFilename
+		}
+		if err := ioutil.WriteFile(fileName, jsn, 0644); err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprint("failed write summary file:", err))
+		}
+		return
 	}
 
 	buf.WriteString(ansiReset)

@@ -270,6 +270,9 @@
         "`3` or `extended`: Extended summary that includes statistics on each unique combination of action, label and app GUID",
         "`4` or `full`: Same as extended, but with statistics on each unique combination of method and endpoint added"
     ],
+    "config.settings.logs.summaryfile": [
+        "Name of summary file, only used when using summary type `file`. Defaults to `summary.json`"
+    ],
     "config.settings.outputs": [
         "Used by some actions to save results to a file."
     ],
