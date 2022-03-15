@@ -90,6 +90,7 @@ Flags:
   * `2` or `simple`: Simple, single-row summary
   * `3` or `extended`: Extended summary that includes statistics on each unique combination of `action`, `label` and `app GUID`
   * `4` or `full`: Same as `extended`, but with statistics on each unique combination of `method` and `endpoint` added
+  * `5` or `file`: Saves basic counters to a file `summary.json`.
 * `-t`, `--traffic`: Log traffic information. **Note:** This should only be used for debugging purposes as traffic logging is resource-consuming.
 * `-m`, `--trafficmetrics`: Log metrics information.
 
@@ -179,6 +180,7 @@ Sub-commands:
   * `2` or `simple`: Simple summary, includes the number of objects and warnings and lists all warnings.
   * `3` or `extended`: Extended summary, includes a list of all objects in the structure.
   * `4` or `full`: Currently the same as the `extended` summary, includes a list of all objects in the structure.
+  * `5` or `file`: Saves basic counters to a file `summary.json`.
 * `-t`, `--traffic`: Log traffic information.
 * `-m`, `--trafficmetrics`: Log metrics information.
 * `-s`, `--set`: Override a value in script with key.path=value. See [Using script overrides](#using-script-overrides) for further explanation.

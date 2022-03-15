@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -138,10 +139,10 @@ type (
 
 	//SummaryEntry title, value and color combo for summary printout
 	SummaryEntry struct {
-		longTitle  string // used in extended and full summary
-		shortTitle string // used in simple summary
-		Value      string
-		Color      string
+		LongTitle  string // used in extended and full summary
+		ShortTitle string `json:"short` // used in simple summary
+		Value      string `json:"value"`
+		Color      string `json:"-"`
 	}
 )
 
@@ -182,6 +183,7 @@ const (
 	SummaryTypeSimple
 	SummaryTypeExtended
 	SummaryTypeFull
+	SummaryTypeFile
 )
 
 var (
@@ -210,6 +212,7 @@ func (value SummaryType) GetEnumMap() *enummap.EnumMap {
 		"simple":   int(SummaryTypeSimple),
 		"extended": int(SummaryTypeExtended),
 		"full":     int(SummaryTypeFull),
+		"file":     int(SummaryTypeFile),
 	})
 
 	return summaryTypeEnum
@@ -691,7 +694,7 @@ func (cfg *Config) PopulateHookData() {
 
 func (cfg *Config) SetupStatistics(summary SummaryType) error {
 	switch summary {
-	case SummaryTypeExtended:
+	case SummaryTypeExtended, SummaryTypeFile:
 		cfg.Counters.StatisticsCollector = statistics.NewCollector()
 		return errors.WithStack(cfg.Counters.StatisticsCollector.SetLevel(statistics.StatsLevelOn))
 	case SummaryTypeFull:
@@ -725,19 +728,15 @@ func (settings *LogSettings) getSummaryType() SummaryType {
 	switch settings.Summary {
 	case SummaryTypeDefault:
 		return SummaryTypeSimple
-	case SummaryTypeNone:
-		return settings.Summary
-	case SummaryTypeSimple:
-		return settings.Summary
-	case SummaryTypeExtended:
-		return settings.Summary
-	case SummaryTypeFull:
-		return settings.Summary
-	default: // ifSummaryTypeUndefined or illegal value
-		if !settings.shouldLogStatus() {
-			return SummaryTypeNone
+	default:
+		if _, err := settings.Summary.GetEnumMap().String(int(settings.Summary)); err != nil {
+			// illegal value used, default to none or simple
+			if !settings.shouldLogStatus() {
+				return SummaryTypeNone
+			}
+			return SummaryTypeSimple
 		}
-		return SummaryTypeSimple
+		return settings.Summary
 	}
 }
 
@@ -745,9 +744,9 @@ func (settings *LogSettings) getSummaryType() SummaryType {
 func (entry *SummaryEntry) Title(summary SummaryType) string {
 	switch summary {
 	case SummaryTypeSimple:
-		return entry.shortTitle
+		return entry.ShortTitle
 	default:
-		return fmt.Sprintf("%-20s", entry.longTitle)
+		return fmt.Sprintf("%-20s", entry.LongTitle)
 	}
 }
 
@@ -824,7 +823,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	case SummaryTypeNone:
 		//Don't log summary to stdout
 		return
-	case SummaryTypeFull, SummaryTypeExtended:
+	case SummaryTypeFull, SummaryTypeExtended, SummaryTypeFile:
 		summaryData = append(summaryData, []SummaryEntry{
 			{"Total users", "TotUsers", strconv.FormatUint(counters.Users.Current(), 10), ansiBoldBlue},
 			{"Total threads", "TotThreads", strconv.FormatUint(counters.Threads.Current(), 10), ansiBoldBlue},
@@ -835,6 +834,19 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	default:
 		// default to simple summary
 		summary = SummaryTypeSimple
+	}
+
+	if summary == SummaryTypeFile {
+		jsn, err := json.Marshal(summaryData)
+		if err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprint("failed to marshal summary file:", err))
+			return
+		}
+		// TODO make summary file name configurable
+		if err := ioutil.WriteFile("summary.json", jsn, 0644); err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprint("failed write summary file:", err))
+		}
+		return
 	}
 
 	buf.WriteString(ansiReset)
