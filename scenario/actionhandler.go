@@ -180,7 +180,7 @@ func RegisterActionsOverride(customActionMap map[string]ActionSettings) error {
 	return errors.WithStack(registerActions(true, customActionMap))
 }
 
-// RegisterAction register a custom action and override any existing with same name
+// RegisterAction register a custom action any existing with same name
 // This should be done as early as possible and must be done before unmarshaling actions
 func RegisterAction(act string, settings ActionSettings) error {
 	return errors.WithStack(registerAction(false, act, settings))

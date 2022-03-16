@@ -156,12 +156,12 @@ func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration
 }
 
 // RequireScenario report that scheduler requires a scenario
-func (sched *SimpleScheduler) RequireScenario() bool {
+func (sched SimpleScheduler) RequireScenario() bool {
 	return true
 }
 
 // PopulateHookData populate map with data to be used with hooks
-func (sched *SimpleScheduler) PopulateHookData(data map[string]interface{}) {
+func (sched SimpleScheduler) PopulateHookData(data map[string]interface{}) {
 	data["ConcurrentUsers"] = sched.Settings.ConcurrentUsers
 	data["ExecutionTime"] = sched.Settings.ExecutionTime
 	data["Iterations"] = sched.Settings.Iterations
