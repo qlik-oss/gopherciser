@@ -106,7 +106,7 @@ func cpSchedulerHandlerToEnumMap() (*enummap.EnumMap, error) {
 	return schedEnum, nil
 }
 
-// RegisterScheduler register a custom scheduler any existing with same name
+// RegisterScheduler register a custom scheduler, this will fail if scheduler with same name exists
 // This should be done as early as possible and must be done before unmarshaling config
 func RegisterScheduler(sched string, scheduler IScheduler) error {
 	return errors.WithStack(registerScheduler(false, sched, scheduler))
