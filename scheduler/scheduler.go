@@ -55,8 +55,8 @@ type (
 		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
 		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings"`
 
-		connectionSettings *connection.ConnectionSettings
-		continueOnErrors   bool
+		ConnectionSettings *connection.ConnectionSettings `json:"-"`
+		ContinueOnErrors   bool                           `json:"-"`
 	}
 
 	schedulerTmp struct {
@@ -196,11 +196,11 @@ func (sched *Scheduler) SetContinueOnErrors(enabled bool) error {
 	if sched == nil {
 		return errors.New("scheduler is nil")
 	}
-	sched.continueOnErrors = enabled
+	sched.ContinueOnErrors = enabled
 	return nil
 }
 
-func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
+func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
 	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) error {
 
 	sessionID := counters.Sessions.Inc()
@@ -210,7 +210,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	}
 	var iteration int
 
-	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.connectionSettings.VirtualProxy, onlyInstanceSeed, counters)
+	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.ConnectionSettings.VirtualProxy, onlyInstanceSeed, counters)
 	sessionState.ReconnectSettings = sched.ReconnectSettings
 
 	userName := ""
@@ -244,7 +244,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 
 		setLogEntry(sessionState, log, sessionID, thread, userName)
 
-		if err := setupRESTHandler(sessionState, sched.connectionSettings); err != nil {
+		if err := setupRESTHandler(sessionState, sched.ConnectionSettings); err != nil {
 			return errors.WithStack(err)
 		}
 
@@ -289,7 +289,7 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 	defer logErrReport(sessionState)
 
 	for _, v := range userScenario {
-		err := v.Execute(sessionState, sched.connectionSettings)
+		err := v.Execute(sessionState, sched.ConnectionSettings)
 		if isAborted, _ := scenario.CheckActionError(err); isAborted {
 			return nil
 		}
@@ -299,7 +299,7 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 				logEntry.Action = nil
 				logEntry.LogError(errors.Wrap(errTimeBuf, "time buffer in-between sequences failed"))
 			}
-			if !sched.continueOnErrors {
+			if !sched.ContinueOnErrors {
 				return errors.WithStack(err)
 			}
 		}
