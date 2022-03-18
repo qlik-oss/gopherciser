@@ -51,7 +51,7 @@ type (
 		// TimeBuf add wait time in between iterations
 		TimeBuf TimeBuffer `json:"iterationtimebuffer" doc-key:"config.scheduler.iterationtimebuffer" displayname:"Iteration time buffer"`
 		// InstanceNumber used to ensure different randomizations when running script in multiple different instances
-		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"  displayname:"instance"`
+		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"  displayname:"Instance"`
 		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
 		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings" displayname:"Reconnection settings"`
 
