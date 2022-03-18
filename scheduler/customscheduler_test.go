@@ -33,7 +33,9 @@ func (sched CustomScheduler) RequireScenario() bool {
 func (sched CustomScheduler) PopulateHookData(data map[string]interface{}) {}
 
 func TestCustomScheduler(t *testing.T) {
-	scheduler.RegisterScheduler("custom", CustomScheduler{})
+	if err := scheduler.RegisterScheduler("custom", CustomScheduler{}); err != nil {
+		t.Fatal(err)
+	}
 
 	rawJson := `{
 		"type" : "custom",
