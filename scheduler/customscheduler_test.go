@@ -57,4 +57,21 @@ func TestCustomScheduler(t *testing.T) {
 	if customSched.SchedType != "custom" {
 		t.Errorf("type<%s> expected<custom>", customSched.SchedType)
 	}
+
+	m := customSched.SchedType.GetEnumMap()
+	if m == nil {
+		t.Fatal("SchedType enumMap is empty")
+	}
+
+	found := false
+	m.ForEach(func(k int, v string) {
+		t.Logf("scheduler enum entry key<%d> value<%s>", k, v)
+		if v == "custom" {
+			found = true
+		}
+	})
+
+	if !found {
+		t.Error("custom scheduler not found in enum map")
+	}
 }
