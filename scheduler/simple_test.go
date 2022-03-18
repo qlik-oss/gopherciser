@@ -78,7 +78,7 @@ func TestOnlyInstanceSeed(t *testing.T) {
 		Scheduler: Scheduler{
 			SchedType:      SchedSimple,
 			InstanceNumber: 2,
-			connectionSettings: &connection.ConnectionSettings{
+			ConnectionSettings: &connection.ConnectionSettings{
 				Server: "localhost",
 				Mode:   connection.WS,
 			},
@@ -129,7 +129,7 @@ func TestReuseUserRandomizer(t *testing.T) {
 		Scheduler: Scheduler{
 			SchedType:      SchedSimple,
 			InstanceNumber: 1,
-			connectionSettings: &connection.ConnectionSettings{
+			ConnectionSettings: &connection.ConnectionSettings{
 				Server: "localhost",
 				Mode:   connection.WS,
 			},

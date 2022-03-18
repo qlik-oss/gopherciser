@@ -5,14 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qlik-oss/gopherciser/statistics"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/scenario"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -61,7 +60,7 @@ func (sched SimpleScheduler) Validate() ([]string, error) {
 func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeout time.Duration, scenario []scenario.Action, outputsDir string,
 	users users.UserGenerator, connectionSettings *connection.ConnectionSettings, counters *statistics.ExecutionCounters) (err error) {
 
-	sched.connectionSettings = connectionSettings
+	sched.ConnectionSettings = connectionSettings
 
 	if sched.Settings.ExecutionTime > 0 {
 		var cancel context.CancelFunc
@@ -146,7 +145,7 @@ func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration
 		}
 
 		user := users.GetNext(counters)
-		err = sched.startNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed, counters)
+		err = sched.StartNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed, counters)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}
@@ -156,12 +155,12 @@ func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration
 }
 
 // RequireScenario report that scheduler requires a scenario
-func (sched *SimpleScheduler) RequireScenario() bool {
+func (sched SimpleScheduler) RequireScenario() bool {
 	return true
 }
 
 // PopulateHookData populate map with data to be used with hooks
-func (sched *SimpleScheduler) PopulateHookData(data map[string]interface{}) {
+func (sched SimpleScheduler) PopulateHookData(data map[string]interface{}) {
 	data["ConcurrentUsers"] = sched.Settings.ConcurrentUsers
 	data["ExecutionTime"] = sched.Settings.ExecutionTime
 	data["Iterations"] = sched.Settings.Iterations

@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -21,8 +24,6 @@ import (
 )
 
 type (
-	// Type type of scheduler
-	Type int
 	// IScheduler interface of scheduler
 	IScheduler interface {
 		Validate() ([]string, error)
@@ -41,80 +42,109 @@ type (
 		PopulateHookData(data map[string]interface{})
 	}
 
+	SchedulerType string
+
 	// Scheduler common core of schedulers
 	Scheduler struct {
 		// SchedType type of scheduler
-		SchedType Type `json:"type" doc-key:"config.scheduler.type"`
+		SchedType SchedulerType `json:"type" doc-key:"config.scheduler.type" displayname:"Scheduler type"`
 		// TimeBuf add wait time in between iterations
 		TimeBuf TimeBuffer `json:"iterationtimebuffer" doc-key:"config.scheduler.iterationtimebuffer"`
 		// InstanceNumber used to ensure different randomizations when running script in multiple different instances
-		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"`
+		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"  displayname:"Instance number"`
 		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
 		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings"`
 
-		connectionSettings *connection.ConnectionSettings
-		continueOnErrors   bool
+		ConnectionSettings *connection.ConnectionSettings `json:"-"`
+		ContinueOnErrors   bool                           `json:"-"`
 	}
 
 	schedulerTmp struct {
-		SchedType Type `json:"type"`
+		SchedType string `json:"type"`
 	}
 )
 
+// Core schedulers
 const (
-	// SchedUnknown unknown scheduler
-	SchedUnknown Type = iota
-	// SchedSimple simple scheduler
-	SchedSimple
+	SchedSimple = "simple"
 )
 
+// Schedulers need an entry in schedulerHandler
 var (
-	schedulerTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-		"simple": int(SchedSimple),
-	})
+	schedulerHandler map[string]IScheduler
+	shLock           sync.Mutex
 )
 
-func (value Type) GetEnumMap() *enummap.EnumMap {
-	return schedulerTypeEnumMap
-}
-
-// SchedHandler get scheduler instance of type
-// Todo change to logic allowing for external schedulers
-func SchedHandler(scheduler Type) interface{} {
-	switch scheduler {
-	case SchedUnknown:
-		return nil
-	case SchedSimple:
-		return &SimpleScheduler{}
-	default:
-		return nil
+func init() {
+	if err := RegisterScheduler(SchedSimple, SimpleScheduler{}); err != nil {
+		panic(fmt.Sprint("failed to register simple scheduler", err))
 	}
 }
 
-// UnmarshalJSON unmarshal scheduler type from json
-func (value *Type) UnmarshalJSON(arg []byte) error {
-	i, err := value.GetEnumMap().UnMarshal(arg)
+// GetEnumMap fakes a scheduler enum for GUI
+func (typ SchedulerType) GetEnumMap() *enummap.EnumMap {
+	m, err := cpSchedulerHandlerToEnumMap()
 	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal Type")
+		os.Stderr.WriteString(fmt.Sprint("failed to convery scheduler handler to enum map:", err))
+		return nil
+	}
+	return m
+}
+
+func cpSchedulerHandlerToEnumMap() (*enummap.EnumMap, error) {
+	shLock.Lock()
+	defer shLock.Unlock()
+
+	schedEnum := enummap.New()
+	i := -1
+	for schedulerName := range schedulerHandler {
+		i++
+		if err := schedEnum.Add(schedulerName, i); err != nil {
+			return nil, err
+		}
+	}
+	return schedEnum, nil
+}
+
+// RegisterScheduler register a custom scheduler, this will fail if scheduler with same name exists
+// This should be done as early as possible and must be done before unmarshaling config
+func RegisterScheduler(sched string, scheduler IScheduler) error {
+	return errors.WithStack(registerScheduler(false, sched, scheduler))
+}
+
+// RegisterSchedulerOverride register a custom scheduler and override any existing with same name
+// This should be done as early as possible and must be done before unmarshaling config
+func RegisterSchedulerOverride(sched string, scheduler IScheduler) error {
+	return errors.WithStack(registerScheduler(true, sched, scheduler))
+}
+
+func registerScheduler(override bool, sched string, scheduler IScheduler) error {
+	shLock.Lock()
+	defer shLock.Unlock()
+
+	if schedulerHandler == nil {
+		schedulerHandler = make(map[string]IScheduler)
 	}
 
-	*value = Type(i)
+	sched = strings.ToLower(sched)
 
+	if !override && schedulerHandler[sched] != nil {
+		return errors.Errorf("scheduler<%s> already registered as type<%T>", sched, schedulerHandler[sched])
+	}
+	schedulerHandler[sched] = scheduler
 	return nil
 }
 
-// MarshalJSON marshal scheduler type to json
-func (value Type) MarshalJSON() ([]byte, error) {
-	str, err := (*value.GetEnumMap()).String(int(value))
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get scheduler type")
-	}
+// SchedHandler get scheduler instance of type
+func SchedHandler(scheduler string) interface{} {
+	shLock.Lock()
+	defer shLock.Unlock()
 
-	if str == "" {
-		return nil, errors.Errorf("Unknown scheduler type<%v>", value)
+	schedType := schedulerHandler[scheduler]
+	if schedType == nil {
+		return nil
 	}
-
-	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+	return reflect.New(reflect.TypeOf(schedType)).Interface()
 }
 
 func setLogEntry(sessionState *session.State, log *logger.Log, session, thread uint64, user string) {
@@ -166,11 +196,11 @@ func (sched *Scheduler) SetContinueOnErrors(enabled bool) error {
 	if sched == nil {
 		return errors.New("scheduler is nil")
 	}
-	sched.continueOnErrors = enabled
+	sched.ContinueOnErrors = enabled
 	return nil
 }
 
-func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
+func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
 	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) error {
 
 	sessionID := counters.Sessions.Inc()
@@ -180,7 +210,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 	}
 	var iteration int
 
-	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.connectionSettings.VirtualProxy, onlyInstanceSeed, counters)
+	sessionState := session.New(ctx, outputsDir, timeout, user, sessionID, instanceID, sched.ConnectionSettings.VirtualProxy, onlyInstanceSeed, counters)
 	sessionState.ReconnectSettings = sched.ReconnectSettings
 
 	userName := ""
@@ -214,7 +244,7 @@ func (sched *Scheduler) startNewUser(ctx context.Context, timeout time.Duration,
 
 		setLogEntry(sessionState, log, sessionID, thread, userName)
 
-		if err := setupRESTHandler(sessionState, sched.connectionSettings); err != nil {
+		if err := setupRESTHandler(sessionState, sched.ConnectionSettings); err != nil {
 			return errors.WithStack(err)
 		}
 
@@ -259,7 +289,7 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 	defer logErrReport(sessionState)
 
 	for _, v := range userScenario {
-		err := v.Execute(sessionState, sched.connectionSettings)
+		err := v.Execute(sessionState, sched.ConnectionSettings)
 		if isAborted, _ := scenario.CheckActionError(err); isAborted {
 			return nil
 		}
@@ -269,7 +299,7 @@ func (sched *Scheduler) runIteration(userScenario []scenario.Action, sessionStat
 				logEntry.Action = nil
 				logEntry.LogError(errors.Wrap(errTimeBuf, "time buffer in-between sequences failed"))
 			}
-			if !sched.continueOnErrors {
+			if !sched.ContinueOnErrors {
 				return errors.WithStack(err)
 			}
 		}
@@ -299,12 +329,12 @@ func UnmarshalScheduler(raw []byte) (IScheduler, error) {
 
 	schedType := SchedHandler(tmp.SchedType)
 	if err := json.Unmarshal(raw, schedType); err != nil {
-		return nil, errors.Wrap(err, "failed unmarshaling scheduler ")
+		return nil, errors.Wrapf(err, "failed unmarshaling scheduler ")
 	}
 
 	if sched, ok := schedType.(IScheduler); ok {
 		return sched, nil
 	}
 
-	return nil, errors.Errorf("Failed casting scheduler<%v> to IScheduler", tmp.SchedType)
+	return nil, errors.Errorf("Failed casting scheduler<%T><%v> to IScheduler", schedType, tmp.SchedType)
 }
