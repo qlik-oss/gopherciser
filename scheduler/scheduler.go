@@ -47,13 +47,13 @@ type (
 	// Scheduler common core of schedulers
 	Scheduler struct {
 		// SchedType type of scheduler
-		SchedType SchedulerType `json:"type" doc-key:"config.scheduler.type"`
+		SchedType SchedulerType `json:"type" doc-key:"config.scheduler.type" displayname:"Type"`
 		// TimeBuf add wait time in between iterations
-		TimeBuf TimeBuffer `json:"iterationtimebuffer" doc-key:"config.scheduler.iterationtimebuffer"`
+		TimeBuf TimeBuffer `json:"iterationtimebuffer" doc-key:"config.scheduler.iterationtimebuffer" displayname:"Iteration time buffer"`
 		// InstanceNumber used to ensure different randomizations when running script in multiple different instances
-		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"`
+		InstanceNumber uint64 `json:"instance" doc-key:"config.scheduler.instance"  displayname:"instance"`
 		// ReconnectSettings settings for re-connecting websocket on unexpected disconnect
-		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings"`
+		ReconnectSettings session.ReconnectSettings `json:"reconnectsettings" doc-key:"config.scheduler.reconnectsettings" displayname:"Reconnection settings"`
 
 		ConnectionSettings *connection.ConnectionSettings `json:"-"`
 		ContinueOnErrors   bool                           `json:"-"`
