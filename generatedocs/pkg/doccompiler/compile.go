@@ -98,6 +98,7 @@ func (data *docData) CompileToFile(fileName string) {
 
 func (data *docData) AddDataFromGenerated(actions, schedulers, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
 	prepareDocEntries(actions)
+	prepareDocEntries(schedulers)
 	prepareDocEntries(config)
 	prepareDocEntries(extra)
 	prepareGroupDocEntries(groups)
