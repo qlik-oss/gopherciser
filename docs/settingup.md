@@ -2315,6 +2315,16 @@ The following functions are supported:
 
 This section of the JSON file contains scheduler settings for the users in the load scenario.
 
+
+
+
+<details>
+<summary>simple</summary>
+
+## Simple scheduler
+
+Settings specific to the `simple` scheduler.
+
 * `type`: Type of scheduler
     * `simple`: Standard scheduler
 * `iterationtimebuffer`: 
@@ -2399,6 +2409,8 @@ Simple scheduler set to attempt re-connection in case of an unexpected WebSocket
     }
 }
 ```
+
+<hr></details>
 
 <hr></details>
 

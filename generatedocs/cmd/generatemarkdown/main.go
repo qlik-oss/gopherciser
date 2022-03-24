@@ -7,10 +7,11 @@ import (
 
 func main() {
 	genmd.GenerateMarkdown(&genmd.CompiledDocs{
-		Actions: generated.Actions,
-		Params:  generated.Params,
-		Config:  generated.Config,
-		Groups:  generated.Groups,
-		Extra:   generated.Extra,
+		Actions:    generated.Actions,
+		Schedulers: generated.Schedulers,
+		Params:     generated.Params,
+		Config:     generated.Config,
+		Groups:     generated.Groups,
+		Extra:      generated.Extra,
 	})
 }

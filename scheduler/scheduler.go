@@ -147,6 +147,20 @@ func SchedHandler(scheduler string) interface{} {
 	return reflect.New(reflect.TypeOf(schedType)).Interface()
 }
 
+// RegisteredActions returns a list of currently registered actions
+func RegisteredSchedulers() []string {
+	shLock.Lock()
+	defer shLock.Unlock()
+
+	schedulerList := make([]string, len(schedulerHandler))
+	i := 0
+	for registeredScheduler := range schedulerHandler {
+		schedulerList[i] = registeredScheduler
+		i++
+	}
+	return schedulerList
+}
+
 func setLogEntry(sessionState *session.State, log *logger.Log, session, thread uint64, user string) {
 	sessionState.SetLogEntry(log.NewLogEntry())
 	sessionState.LogEntry.AddInterceptor(logger.ErrorLevel, onError(sessionState))

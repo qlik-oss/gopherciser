@@ -41,6 +41,13 @@ var (
         },{{end}}{{end}}
     }
 
+    Schedulers = map[string]common.DocEntry{ {{range $scheduler := $data.Schedulers}}{{with $schedulerEntry := index $data.SchedulerMap $scheduler}}
+        "{{$scheduler}}": {
+            Description: "{{$schedulerEntry.Description}}",
+            Examples: "{{$schedulerEntry.Examples}}",
+        },{{end}}{{end}}
+    }
+
     Params = map[string][]string{ {{range $param := params $data.ParamMap}}
         "{{.}}": { "{{join (index $data.ParamMap $param) "\",\""}}"  },  {{end}}
     }
