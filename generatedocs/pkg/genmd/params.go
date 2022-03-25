@@ -47,6 +47,9 @@ func handleValue(value reflect.Value, paramDocs map[string][]string, buf *bytes.
 	fieldLoop:
 		for i := 0; i < value.NumField(); i++ {
 			field := reflect.Indirect(value).Type().Field(i)
+			if _, ignore := common.JsonTagName(field.Tag); ignore {
+				continue fieldLoop
+			}
 
 			// stop if recursive data type
 			for _, flag := range strings.Split(field.Tag.Get("doc-key"), ",")[1:] {

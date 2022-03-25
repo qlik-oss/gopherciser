@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/scenario"
+	"github.com/qlik-oss/gopherciser/scheduler"
 )
 
 type (
@@ -65,6 +66,17 @@ func Actions() map[string]interface{} {
 	return actionMap
 }
 
+func Schedulers() map[string]interface{} {
+	scheds := scheduler.RegisteredSchedulers()
+	schedulerMap := make(map[string]interface{}, len(scheds))
+
+	for _, sched := range scheds {
+		schedulerMap[sched] = scheduler.SchedHandler(sched)
+	}
+
+	return schedulerMap
+}
+
 // FieldsString config fields sections
 func FieldsString() ([]string, error) {
 	fields, err := Fields()
@@ -95,6 +107,7 @@ func Fields() (map[string]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+		emptyConfig.Scheduler = DummyScheduler{}
 	}
 
 	cfgValue := reflect.Indirect(reflect.ValueOf(emptyConfig))
@@ -120,18 +133,28 @@ func handleConfigValue(field reflect.StructField, value reflect.Value, configFie
 		return // not exported value
 	}
 
-	jsonTag := field.Tag.Get("json")
-	if len(jsonTag) > 0 {
-		jsonTag = strings.Split(jsonTag, ",")[0]
-		if jsonTag == "-" {
-			return // field marked to be skipped
-		}
-	} else {
+	jsonTag, ignore := JsonTagName(field.Tag)
+	if ignore {
+		return // field marked to be skipped
+	}
+	if jsonTag == "" {
 		jsonTag = field.Name
 	}
 
 	// todo check duplicate
 	configFields[jsonTag] = value.Interface()
+}
+
+func JsonTagName(tag reflect.StructTag) (string, bool) {
+	jsonTag := tag.Get("json")
+	if len(jsonTag) > 0 {
+		jsonTag = strings.Split(jsonTag, ",")[0]
+		if jsonTag == "-" {
+			return "", true // field marked to be skipped
+		}
+		return jsonTag, false
+	}
+	return "", false
 }
 
 // ReadFile into memory

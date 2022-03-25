@@ -2,7 +2,6 @@ package doccompiler
 
 import (
 	"bytes"
-	"github.com/goccy/go-json"
 	"fmt"
 	"go/format"
 	"io/ioutil"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
@@ -42,6 +42,8 @@ type (
 		Groups       []common.GroupsEntry
 		Actions      []string
 		ActionMap    map[string]common.DocEntry
+		Schedulers   []string
+		SchedulerMap map[string]common.DocEntry
 		ConfigFields []string
 		ConfigMap    map[string]common.DocEntry
 		Extra        []string
@@ -56,7 +58,7 @@ type (
 		// Add documentation data from directory
 		AddDataFromDir(dir string)
 		// Add documentation data from variables in generated code
-		AddDataFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry)
+		AddDataFromGenerated(actions, schedulers, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry)
 	}
 )
 
@@ -94,8 +96,9 @@ func (data *docData) CompileToFile(fileName string) {
 	fmt.Printf("Compiled documentation to %s\n", fileName)
 }
 
-func (data *docData) AddDataFromGenerated(actions, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
+func (data *docData) AddDataFromGenerated(actions, schedulers, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {
 	prepareDocEntries(actions)
+	prepareDocEntries(schedulers)
 	prepareDocEntries(config)
 	prepareDocEntries(extra)
 	prepareGroupDocEntries(groups)
@@ -105,6 +108,8 @@ func (data *docData) AddDataFromGenerated(actions, config, extra map[string]comm
 			Groups:       groups,
 			Actions:      common.Keys(actions),
 			ActionMap:    actions,
+			Schedulers:   common.Keys(schedulers),
+			SchedulerMap: schedulers,
 			ConfigFields: common.Keys(config),
 			ConfigMap:    config,
 			Extra:        common.Keys(extra),
@@ -124,6 +129,8 @@ func newData() *docData {
 		Groups:       []common.GroupsEntry{},
 		Actions:      []string{},
 		ActionMap:    map[string]common.DocEntry{},
+		Schedulers:   []string{},
+		SchedulerMap: make(map[string]common.DocEntry),
 		ConfigFields: []string{},
 		ConfigMap:    map[string]common.DocEntry{},
 		Extra:        []string{},
@@ -136,6 +143,7 @@ func (data *docData) sort() {
 		return data.Groups[i].Name < data.Groups[j].Name
 	})
 	sort.Strings(data.Actions)
+	sort.Strings(data.Schedulers)
 	sort.Strings(data.ConfigFields)
 	sort.Strings(data.Extra)
 }
@@ -251,6 +259,9 @@ func (baseData *docData) overload(newData *docData) {
 	// overload actions
 	overloadDocMap(baseData.ActionMap, newData.ActionMap, &baseData.Actions, newData.Actions)
 
+	// overload schedulers
+	overloadDocMap(baseData.SchedulerMap, newData.SchedulerMap, &baseData.Schedulers, newData.Schedulers)
+
 	// overload config
 	overloadDocMap(baseData.ConfigMap, newData.ConfigMap, &baseData.ConfigFields, newData.ConfigFields)
 
@@ -312,6 +323,7 @@ func loadData(dataRoot string) *docData {
 	}
 
 	populateDocMap(dataRoot, "actions", data.ActionMap, &data.Actions)
+	populateDocMap(dataRoot, "schedulers", data.SchedulerMap, &data.Schedulers)
 	populateDocMap(dataRoot, "config", data.ConfigMap, &data.ConfigFields)
 	populateDocMap(dataRoot, "extra", data.ExtraMap, &data.Extra)
 

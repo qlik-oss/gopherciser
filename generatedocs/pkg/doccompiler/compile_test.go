@@ -1,7 +1,6 @@
 package doccompiler
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"go/format"
 	"io/ioutil"
@@ -9,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 	generated "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output"
 )
@@ -33,7 +33,7 @@ func TestCompile(t *testing.T) {
 			name: "from generated",
 			compiler: func() DocCompiler {
 				docData := New()
-				docData.AddDataFromGenerated(generated.Actions, generated.Config, generated.Extra, generated.Params, generated.Groups)
+				docData.AddDataFromGenerated(generated.Actions, generated.Schedulers, generated.Config, generated.Extra, generated.Params, generated.Groups)
 				return docData
 			},
 		},
@@ -93,6 +93,8 @@ func TestOverload(t *testing.T) {
 				"action1": {},
 				"action2": {},
 			},
+			Schedulers:   []string{},
+			SchedulerMap: make(map[string]common.DocEntry),
 			ConfigFields: []string{"configField1", "configField2"},
 			ConfigMap: map[string]common.DocEntry{
 				"configField1": {},

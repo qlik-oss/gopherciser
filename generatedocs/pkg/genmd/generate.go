@@ -40,11 +40,12 @@ type (
 	}
 
 	CompiledDocs struct {
-		Actions map[string]common.DocEntry
-		Params  map[string][]string
-		Config  map[string]common.DocEntry
-		Groups  []common.GroupsEntry
-		Extra   map[string]common.DocEntry
+		Actions    map[string]common.DocEntry
+		Schedulers map[string]common.DocEntry
+		Params     map[string][]string
+		Config     map[string]common.DocEntry
+		Groups     []common.GroupsEntry
+		Extra      map[string]common.DocEntry
 	}
 )
 
@@ -144,11 +145,11 @@ func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, acti
 }
 
 func addGroups(node DocNode, compiledDocs *CompiledDocs) {
-	actionSettigns := common.Actions()
+	actionSettings := common.Actions()
 	for _, group := range compiledDocs.Groups {
 		groupNode := NewFoldedDocNode(group.Title, DocEntry(group.DocEntry))
 		node.AddChild(groupNode)
-		addActions(groupNode, compiledDocs, group.Actions, actionSettigns)
+		addActions(groupNode, compiledDocs, group.Actions, actionSettings)
 	}
 	ungroupedActions := UngroupedActions(compiledDocs.Groups)
 	if unitTestMode {
@@ -163,9 +164,35 @@ func addGroups(node DocNode, compiledDocs *CompiledDocs) {
 	if len(ungroupedActions) > 0 {
 		ungroupedGroup := NewFoldedDocNode("Ungrouped actions", EmptyDocEntry{})
 		node.AddChild(ungroupedGroup)
-		addActions(ungroupedGroup, compiledDocs, ungroupedActions, actionSettigns)
+		addActions(ungroupedGroup, compiledDocs, ungroupedActions, actionSettings)
 	}
 
+}
+
+func addSchedulers(node DocNode, compiledDocs *CompiledDocs) {
+	schedulerSettings := common.Schedulers()
+	schedulers := make([]string, 0, len(schedulerSettings))
+	for sched := range schedulerSettings {
+		schedulers = append(schedulers, sched)
+	}
+	sort.Strings(schedulers)
+	for _, sched := range schedulers {
+		compiledEntry, ok := compiledDocs.Schedulers[sched]
+		if !ok {
+			compiledEntry.Description = "*Missing description*\n"
+		}
+		schedParams := schedulerSettings[sched]
+		if schedParams == nil {
+			os.Stderr.WriteString(fmt.Sprintf("%s gives nil schedparams, skipping...\n", sched))
+			continue
+		}
+		schedEntry := &DocEntryWithParams{
+			DocEntry: DocEntry(compiledEntry),
+			Params:   MarkdownParams(schedParams, compiledDocs.Params),
+		}
+		newNode := NewFoldedDocNode(sched, schedEntry)
+		node.AddChild(newNode)
+	}
 }
 
 func addExtra(node DocNode, compiledDocs *CompiledDocs, name string) {
@@ -187,6 +214,9 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 		fieldEntry.Params = MarkdownParams(configStruct, compiledDocs.Params)
 		newNode := NewFoldedDocNode(name, fieldEntry)
 		node.AddChild(newNode)
+		if name == "scheduler" {
+			addSchedulers(newNode, compiledDocs)
+		}
 		if name == "scenario" {
 			addGroups(newNode, compiledDocs)
 			addExtra(newNode, compiledDocs, "sessionvariables")
