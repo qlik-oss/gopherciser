@@ -338,10 +338,6 @@ var (
 		"unpublishsheet.sheetIds":                         {"(optional) Array of sheet IDs for the `sheetids` mode."},
 		"unsubscribeobjects.clear":                        {"Remove any previously subscribed objects from the subscription list."},
 		"unsubscribeobjects.ids":                          {"List of object IDs to unsubscribe from."},
-		"uploaddata.filename":                             {"Name of the local file to send as payload."},
-		"uploaddata.replace":                              {"Set to true to replace existing file. If set to false, a warning of existing file will be reported and file will not be replaced."},
-		"uploaddata.spaceid":                              {"(optional) Space ID of space where to upload the data. Leave blank to upload to personal space."},
-		"uploaddata.title":                                {"(optional) Set custom title of file on upload. Defaults to file name (excluding extension). (supports the use of [session variables](#session_variables))"},
 	}
 
 	Config = map[string]common.DocEntry{
