@@ -126,7 +126,7 @@ var (
 )
 
 // NewRestHandler new instance of RestHandler
-func NewRestHandler(ctx context.Context, size int, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
+func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
 	return &RestHandler{
 		reqCounter:     0,
 		reqCounterCond: sync.NewCond(&sync.Mutex{}),
@@ -273,6 +273,16 @@ func (handler *RestHandler) GetSync(url string, actionState *action.State, logEn
 	return handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)
 }
 
+// GetSyncOnce same as GetSync but only called once in the same session
+func (handler *RestHandler) GetSyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions, uniqueString string) (*RestRequest, error) {
+	var req *RestRequest
+	var err error
+	sessionState.Once(fmt.Sprintf("%sGET%s", uniqueString, url), func() {
+		req, err = handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)
+	})
+	return req, err
+}
+
 // GetSyncWithCallback sends synchronous GET request with options and callback, using options=nil default options are used
 func (handler *RestHandler) GetSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
 	var reqErr error
@@ -295,6 +305,15 @@ func (handler *RestHandler) GetSyncWithCallback(url string, actionState *action.
 // GetAsync send async GET request with options, using options=nil default options are used
 func (handler *RestHandler) GetAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
 	return handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
+// GetAsyncOnce same as GetAsync but only called once in the same session
+func (handler *RestHandler) GetAsyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions, uniqueString string) *RestRequest {
+	var req *RestRequest
+	sessionState.Once(fmt.Sprintf("%sGET%s", uniqueString, url), func() {
+		req = handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+	})
+	return req
 }
 
 // GetWithHeadersAsync send async GET request with headers and options, using options=nil default options are used

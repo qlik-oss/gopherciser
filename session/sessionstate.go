@@ -278,7 +278,7 @@ func (state *State) SetLogEntry(entry *logger.LogEntry) {
 		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter(state.Counters)
 	}
 
-	state.Rest = NewRestHandler(state.ctx, 64, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
 }
 
 // TrafficLogger returns the current trafficLogger
@@ -1026,6 +1026,17 @@ func (state *State) GetCustomState(key string) (interface{}, bool) {
 
 	value, exist := state.customStates[key]
 	return value, exist
+}
+
+// Once executes the function with matching string once (per session)
+func (state *State) Once(key string, f func()) bool {
+	_, exists := state.GetCustomState(key)
+	if exists {
+		return false
+	}
+	state.AddCustomState(key, struct{}{})
+	f()
+	return true
 }
 
 // SetVariableValue to session variable map

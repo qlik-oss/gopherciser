@@ -30,7 +30,7 @@ func TestResthandler(t *testing.T) {
 
 	actionState := action.State{}
 
-	restHandler := NewRestHandler(context.Background(), 32, &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second)
+	restHandler := NewRestHandler(context.Background(), &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second)
 	restHandler.Client = http.DefaultClient
 	getRequest := RestRequest{
 		Method:      GET,
