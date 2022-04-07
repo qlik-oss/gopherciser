@@ -126,7 +126,7 @@ var (
 )
 
 // NewRestHandler new instance of RestHandler
-func NewRestHandler(ctx context.Context, size int, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
+func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
 	return &RestHandler{
 		reqCounter:     0,
 		reqCounterCond: sync.NewCond(&sync.Mutex{}),
