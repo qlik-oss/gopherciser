@@ -274,10 +274,10 @@ func (handler *RestHandler) GetSync(url string, actionState *action.State, logEn
 }
 
 // GetSyncOnce same as GetSync but only called once in the same session
-func (handler *RestHandler) GetSyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
+func (handler *RestHandler) GetSyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions, uniqueString string) (*RestRequest, error) {
 	var req *RestRequest
 	var err error
-	sessionState.Once(fmt.Sprintf("GET %s", url), func() {
+	sessionState.Once(fmt.Sprintf("%sGET%s", uniqueString, url), func() {
 		req, err = handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)
 	})
 	return req, err
@@ -308,9 +308,9 @@ func (handler *RestHandler) GetAsync(url string, actionState *action.State, logE
 }
 
 // GetAsyncOnce same as GetAsync but only called once in the same session
-func (handler *RestHandler) GetAsyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
+func (handler *RestHandler) GetAsyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions, uniqueString string) *RestRequest {
 	var req *RestRequest
-	sessionState.Once(fmt.Sprintf("GET %s", url), func() {
+	sessionState.Once(fmt.Sprintf("%sGET%s", uniqueString, url), func() {
 		req = handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
 	})
 	return req
