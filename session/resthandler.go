@@ -273,6 +273,16 @@ func (handler *RestHandler) GetSync(url string, actionState *action.State, logEn
 	return handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)
 }
 
+// GetSyncOnce same as GetSync but only called once in the same session
+func (handler *RestHandler) GetSyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
+	var req *RestRequest
+	var err error
+	sessionState.Once(fmt.Sprintf("GET %s", url), func() {
+		req, err = handler.GetSyncWithCallback(url, actionState, logEntry, options, nil)
+	})
+	return req, err
+}
+
 // GetSyncWithCallback sends synchronous GET request with options and callback, using options=nil default options are used
 func (handler *RestHandler) GetSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
 	var reqErr error
@@ -298,8 +308,7 @@ func (handler *RestHandler) GetAsync(url string, actionState *action.State, logE
 }
 
 // GetAsyncOnce same as GetAsync but only called once in the same session
-func (handler *RestHandler) GetAsyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry,
-	options *ReqOptions) *RestRequest {
+func (handler *RestHandler) GetAsyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
 	var req *RestRequest
 	sessionState.Once(fmt.Sprintf("GET %s", url), func() {
 		req = handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
