@@ -297,6 +297,16 @@ func (handler *RestHandler) GetAsync(url string, actionState *action.State, logE
 	return handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
 }
 
+// GetAsyncOnce same as GetAsync but only called once in the same session
+func (handler *RestHandler) GetAsyncOnce(url string, actionState *action.State, sessionState *State, logEntry *logger.LogEntry,
+	options *ReqOptions) *RestRequest {
+	var req *RestRequest
+	sessionState.Once(fmt.Sprintf("GET %s", url), func() {
+		req = handler.getAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+	})
+	return req
+}
+
 // GetWithHeadersAsync send async GET request with headers and options, using options=nil default options are used
 func (handler *RestHandler) GetWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	return handler.getAsyncWithCallback(url, actionState, logEntry, headers, options, callback)

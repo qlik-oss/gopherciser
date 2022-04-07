@@ -1028,6 +1028,17 @@ func (state *State) GetCustomState(key string) (interface{}, bool) {
 	return value, exist
 }
 
+// Once executes the function with matching string once (per session)
+func (state *State) Once(key string, f func()) bool {
+	_, exists := state.GetCustomState(key)
+	if exists {
+		return false
+	}
+	state.AddCustomState(key, struct{}{})
+	f()
+	return true
+}
+
 // SetVariableValue to session variable map
 func (state *State) SetVariableValue(variable string, value interface{}) {
 	state.variablesLock.Lock()
