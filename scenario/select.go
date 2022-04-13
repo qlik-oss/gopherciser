@@ -904,6 +904,12 @@ func doSelect(sessionState *session.State, actionState *action.State, genObj *en
 
 	if len(selectPos) < 1 && len(selectBins) < 1 {
 		sessionState.LogEntry.Logf(logger.WarningLevel, "Nothing to select in object<%s>", gob.ID)
+		if wrap {
+			// Abort Selections
+			sessionState.QueueRequest(func(ctx context.Context) error {
+				return genObj.EndSelections(ctx, false)
+			}, actionState, true, "End selections failed")
+		}
 		return
 	}
 

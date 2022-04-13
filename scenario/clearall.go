@@ -32,18 +32,21 @@ func (settings ClearAllSettings) Execute(sessionState *session.State, actionStat
 		return
 	}
 
+	// Send GetApplayout request, synchronously or otherwise it will be aborted by clearall request (and re-sent)
+	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		_, err := app.Doc.GetAppLayout(ctx)
+		return errors.WithStack(err)
+	})
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "GetAppLayout request failed"))
+	}
+
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		if err := app.Doc.ClearAll(ctx, false, ""); err != nil {
 			return errors.WithStack(err)
 		}
 		return nil
 	}, actionState, true, "Failed to clear all")
-
-	// Send GetApplayout request
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := app.Doc.GetAppLayout(ctx)
-		return errors.WithStack(err)
-	}, actionState, false, "GetAppLayout request failed")
 
 	sessionState.Wait(actionState)
 }
