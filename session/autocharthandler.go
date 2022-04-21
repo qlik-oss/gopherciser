@@ -41,11 +41,10 @@ func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *State, actio
 
 func (instance *AutoChartInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
 	// Checking if selectable
-	if instance.ObjectDef.Select != nil {
-		return instance.ObjectDef.Select.Path, instance.ObjectDef.Select.Type, instance.ObjectDef.DataDef.Type, nil
+	if instance.ObjectDef.Select == nil {
+		return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.New("Autochart object has no selectable option")
 	}
-	//Nothing selectable
-	return "", senseobjdef.SelectTypeUnknown, senseobjdef.DataDefUnknown, errors.New("Autochart object has no selectable option")
+	return instance.ObjectDef.Select.Path, instance.ObjectDef.Select.Type, instance.ObjectDef.DataDef.Type, nil
 }
 
 func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionState *action.State, autochartObj *enigmahandlers.Object, autochartGen *enigma.GenericObject) {
