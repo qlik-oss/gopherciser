@@ -34,14 +34,14 @@ func (settings DeleteOdagSettings) Validate() ([]string, error) {
 func (settings DeleteOdagSettings) Execute(sessionState *session.State, actionState *action.State,
 	connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	odagEndpoint := WindowsOdagEndpointConfiguration
-	err := DeleteOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint)
+	err := DeleteOdag(sessionState, settings, actionState, connectionSettings, odagEndpoint, "")
 	if err != nil {
 		actionState.AddErrors(err)
 	}
 }
 
 // DeleteOdag delete ODAG app
-func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration) error {
+func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, actionState *action.State, connectionSettings *connection.ConnectionSettings, odagEndpoint OdagEndpointConfiguration, selectionAppId string) error {
 	odagLinkName, err := sessionState.ReplaceSessionVariables(&settings.Name)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 	}
 
 	// first, find the ID of the ODAG link we want
-	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main, "")
+	odagLink, err := getOdagLinkByName(odagLinkName, host, sessionState, actionState, odagEndpoint.Main, selectionAppId)
 	if err != nil {
 		return errors.Wrap(err, "failed to find ODAG link")
 	}
