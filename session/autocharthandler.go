@@ -40,8 +40,14 @@ func (instance *AutoChartInstance) SetObjectAndEvents(sessionState *State, actio
 }
 
 func (instance *AutoChartInstance) GetObjectDefinition(objectType string) (string, senseobjdef.SelectType, senseobjdef.DataDefType, error) {
-	// Todo error checking
-	return instance.ObjectDef.Select.Path, instance.ObjectDef.Select.Type, instance.ObjectDef.DataDef.Type, nil
+	selectType := senseobjdef.SelectTypeUnknown
+	selectPath := ""
+	// Checking if selectable
+	if instance.ObjectDef.Select != nil {
+		selectPath = instance.ObjectDef.Select.Path
+		selectType = instance.ObjectDef.Select.Type
+	}
+	return selectPath, selectType, instance.ObjectDef.DataDef.Type, nil
 }
 
 func (instance *AutoChartInstance) handleAutoChart(sessionState *State, actionState *action.State, autochartObj *enigmahandlers.Object, autochartGen *enigma.GenericObject) {
