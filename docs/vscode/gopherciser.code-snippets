@@ -39,6 +39,7 @@
 			"func (settings ${1:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}}Settings) Validate() ([]string, error) {",
 			"\t// Add validation checks for the action here, Validate will be run before starting a simulation or",
 			"\t// when the script validate command is issued",
+			"\t// Return a list of warnings and/or validation error",
 			"\treturn nil, nil",
 			"}",
 			"",
