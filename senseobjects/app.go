@@ -20,6 +20,7 @@ type (
 		variablelist      *VariableList
 		storylist         *StoryList
 		loadmodellist     *LoadModelList
+		fieldlist         *FieldList
 	}
 
 	// App sense app object
@@ -344,6 +345,47 @@ func (app *App) GetAggregatedSelectionFields() string {
 	return strings.Join(fields, ",")
 }
 
+// GetFieldList session object containing list of fields
+func (app *App) GetFieldList(sessionState SessionState, actionState *action.State) (*FieldList, error) {
+	if app.fieldlist != nil {
+		return app.fieldlist, nil
+	}
+
+	// Create session object
+	updateFieldList := func(ctx context.Context) error {
+		fl, err := CreateFieldListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setFieldList(sessionState, fl)
+		return nil
+	}
+	if err := sessionState.SendRequest(actionState, updateFieldList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// Get layout
+	if err := sessionState.SendRequest(actionState, updateFieldList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// Get data
+	if err := sessionState.SendRequest(actionState, app.fieldlist.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err := sessionState.SendRequest(actionState, app.fieldlist.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// setup automatic data update
+	onFieldListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.fieldlist.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.fieldlist.enigmaObject.Handle, onFieldListChanged, nil, true)
+
+	return app.fieldlist, nil
+}
+
 // GetCurrentSelections create current selection session object and add to list
 func (app *App) GetCurrentSelections(sessionState SessionState, actionState *action.State) (*CurrentSelections, error) {
 	if app.currentSelections != nil {
@@ -406,4 +448,13 @@ func (app *App) setCurrentSelections(sessionState SessionState, cs *CurrentSelec
 		sessionState.DeRegisterEvent(app.currentSelections.enigmaObject.Handle)
 	}
 	app.currentSelections = cs
+}
+
+func (app *App) setFieldList(SessionState SessionState, fl *FieldList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.fieldlist != nil && app.fieldlist.enigmaObject != nil && app.fieldlist.enigmaObject.Handle > 0 && fl != app.fieldlist {
+		SessionState.DeRegisterEvent(app.fieldlist.enigmaObject.Handle)
+	}
+	app.fieldlist = fl
 }

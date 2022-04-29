@@ -87,10 +87,45 @@ func (settings ObjectSearchSettings) Validate() ([]string, error) {
 func (settings ObjectSearchSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	uplink := sessionState.Connection.Sense()
 
+	var genObj *enigma.GenericObject
+	var getDimInfo func() *enigma.NxDimensionInfo
 	switch settings.SearchType {
 	case ObjectSearchTypeField:
-		actionState.AddErrors(errors.New("field search not yet implemented"))
-		return
+		app, err := sessionState.CurrentSenseApp()
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		fieldList, err := app.GetFieldList(sessionState, actionState)
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		if fieldList.Layout() == nil || fieldList.Layout().FieldList == nil {
+			actionState.NewErrorf("no fieldlist layout")
+			return
+		}
+
+		listbox, err := fieldList.GetOrCreateSessionListboxSync(sessionState, actionState, uplink.CurrentApp.Doc, settings.ID)
+		if err != nil {
+			// TODO if FieldNotFoundError, check dimensionlist instead
+			actionState.AddErrors(err)
+			return
+		}
+		genObj = listbox.EnigmaObject
+
+		// Create 7 listboxes from fields and dimensions to simulate opening "selectors"?
+
+		getDimInfo = func() *enigma.NxDimensionInfo {
+			var dimInfo *enigma.NxDimensionInfo
+			sessionState.SendRequest(actionState, func(ctx context.Context) error {
+				listObject := listbox.ListObject(ctx)
+				dimInfo = listObject.DimensionInfo
+				return nil
+			})
+
+			return dimInfo
+		}
 	case ObjectSearchTypeListbox:
 		objectID := sessionState.IDMap.Get(settings.ID)
 		gob, err := uplink.Objects.GetObjectByID(objectID)
@@ -109,87 +144,87 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 		}
 		switch t := gob.EnigmaObject.(type) {
 		case *enigma.GenericObject:
-			genObj := gob.EnigmaObject.(*enigma.GenericObject)
-			objInstance := sessionState.GetObjectHandlerInstance(genObj.GenericId, genObj.GenericType)
-			selectPath, _, _, err := objInstance.GetObjectDefinition(genObj.GenericType)
-			if err != nil {
-				actionState.AddErrors(errors.Wrapf(err, "failed to get object definition"))
-				return
-			}
-
-			if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-				return genObj.BeginSelections(ctx, []string{selectPath})
-			}); err != nil {
-				actionState.AddErrors(err)
-			}
-
-			searchChunks, err := newSearchTextChunks(sessionState.Randomizer(), settings.SearchTerm, false)
-			if err != nil {
-				actionState.AddErrors(err)
-				return
-			}
-			termChan := searchChunks.simulate(sessionState.BaseContext(), func(errors ...error) {
-				for _, err := range errors {
-					actionState.AddErrors(err)
-				}
-			})
-
-			for i := 0; i < cap(termChan)-1; i++ {
-				doSearch(sessionState, actionState, genObj, selectPath, <-termChan, false)
-			}
-			doSearch(sessionState, actionState, genObj, selectPath, <-termChan, true)
-
-			if sessionState.Wait(actionState) {
-				return // an error occured
-			}
-
-			listobject := gob.ListObject()
-			if listobject == nil {
-				actionState.AddErrors(errors.New("listobject is nil"))
-				return
-			}
-			dimInfo := listobject.DimensionInfo
-			if dimInfo == nil {
-				actionState.AddErrors(errors.New("listobject dimension info is nil"))
-				return
-			}
-
-			abort := func() {
-				if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-					return genObj.AbortListObjectSearch(ctx, selectPath)
-				}); err != nil {
-					actionState.AddErrors(err)
-				}
-			}
-
-			end := func(accept bool) {
-				sessionState.QueueRequest(func(ctx context.Context) error {
-					return genObj.EndSelections(ctx, accept)
-				}, actionState, true, "end selections failed")
-			}
-
-			if dimInfo.Cardinal < 1 {
-				abort()
-				end(false)
-				if settings.ErrorOnEmpty {
-					actionState.AddErrors(errors.New("no search results found"))
-				}
-			} else {
-				err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-					return genObj.AcceptListObjectSearch(ctx, selectPath, true, false)
-				})
-				if err != nil {
-					actionState.AddErrors(err)
-					return
-				}
-				abort() // yes abort is sent after accept
-				end(true)
-			}
+			genObj = gob.EnigmaObject.(*enigma.GenericObject)
 		default:
 			actionState.AddErrors(errors.Errorf("Unknown object type<%T>", t))
 			return
 		}
+
+		getDimInfo = func() *enigma.NxDimensionInfo {
+			listobject := gob.ListObject()
+			if listobject == nil {
+				return nil
+			}
+			return listobject.DimensionInfo
+		}
 	}
+
+	objInstance := sessionState.GetObjectHandlerInstance(genObj.GenericId, genObj.GenericType)
+	selectPath, _, _, err := objInstance.GetObjectDefinition(genObj.GenericType)
+	if err != nil {
+		actionState.AddErrors(errors.Wrapf(err, "failed to get object definition"))
+		return
+	}
+
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		return genObj.BeginSelections(ctx, []string{selectPath})
+	}); err != nil {
+		actionState.AddErrors(err)
+	}
+
+	searchChunks, err := newSearchTextChunks(sessionState.Randomizer(), settings.SearchTerm, false)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+	termChan := searchChunks.simulate(sessionState.BaseContext(), func(errors ...error) {
+		for _, err := range errors {
+			actionState.AddErrors(err)
+		}
+	})
+
+	for i := 0; i < cap(termChan)-1; i++ {
+		doSearch(sessionState, actionState, genObj, selectPath, <-termChan, false)
+	}
+	doSearch(sessionState, actionState, genObj, selectPath, <-termChan, true)
+
+	if sessionState.Wait(actionState) {
+		return // an error occured
+	}
+
+	dimInfo := getDimInfo()
+	if dimInfo == nil {
+		actionState.AddErrors(errors.New("listobject dimension info is nil"))
+		return
+	}
+
+	accept := true
+	if dimInfo.Cardinal < 1 {
+		accept = false
+		if settings.ErrorOnEmpty {
+			actionState.AddErrors(errors.New("no search results found"))
+			return
+		}
+	} else {
+		err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+			return genObj.AcceptListObjectSearch(ctx, selectPath, true, false)
+		})
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+	}
+	// yes, abort is sent also after accept
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		return genObj.AbortListObjectSearch(ctx, selectPath)
+	}); err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+	// end modal mode
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		return genObj.EndSelections(ctx, accept)
+	}, actionState, true, "end selections failed")
 
 	sessionState.Wait(actionState) // Await all async requests, e.g. those triggered on changed objects
 }
