@@ -88,7 +88,7 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 	uplink := sessionState.Connection.Sense()
 
 	var genObj *enigma.GenericObject
-	var getDimInfo func() *enigma.NxDimensionInfo
+	var getDimInfo func() (*enigma.NxDimensionInfo, error)
 	switch settings.SearchType {
 	case ObjectSearchTypeField:
 		app, err := sessionState.CurrentSenseApp()
@@ -116,15 +116,20 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 
 		// Create 7 listboxes from fields and dimensions to simulate opening "selectors"?
 
-		getDimInfo = func() *enigma.NxDimensionInfo {
+		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
 			var dimInfo *enigma.NxDimensionInfo
-			sessionState.SendRequest(actionState, func(ctx context.Context) error {
-				listObject := listbox.ListObject(ctx)
+			if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+				listObject, err := listbox.ListObject(ctx)
+				if err != nil {
+					return errors.WithStack(err)
+				}
 				dimInfo = listObject.DimensionInfo
 				return nil
-			})
+			}); err != nil {
+				return nil, err
+			}
 
-			return dimInfo
+			return dimInfo, nil
 		}
 	case ObjectSearchTypeListbox:
 		objectID := sessionState.IDMap.Get(settings.ID)
@@ -150,12 +155,12 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 			return
 		}
 
-		getDimInfo = func() *enigma.NxDimensionInfo {
+		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
 			listobject := gob.ListObject()
 			if listobject == nil {
-				return nil
+				return nil, errors.Errorf("listobject is nil")
 			}
-			return listobject.DimensionInfo
+			return listobject.DimensionInfo, nil
 		}
 	}
 
@@ -192,7 +197,11 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 		return // an error occured
 	}
 
-	dimInfo := getDimInfo()
+	dimInfo, err := getDimInfo()
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
 	if dimInfo == nil {
 		actionState.AddErrors(errors.New("listobject dimension info is nil"))
 		return

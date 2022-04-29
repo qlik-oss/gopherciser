@@ -124,21 +124,25 @@ func (listBox *ListBox) getListObjectData(ctx context.Context, lock bool) ([]*en
 		return nil, err
 	}
 
-	listBox.setDataPages(datapages, lock)
+	if err := listBox.setDataPages(datapages, lock); err != nil {
+		return nil, errors.WithStack(err)
+	}
 
 	return datapages, nil
 }
 
 // Layout for listBox, if layout needs updating this will lock object and update synchronously
-func (listBox *ListBox) Layout(ctx context.Context) *enigma.GenericObjectLayout {
+func (listBox *ListBox) Layout(ctx context.Context) (*enigma.GenericObjectLayout, error) {
 	listBox.mutex.Lock()
 	defer listBox.mutex.Unlock()
 
 	if listBox.Dirty {
-		listBox.updateLayout(ctx, false)
+		if err := listBox.updateLayout(ctx, false); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
-	return listBox.layout
+	return listBox.layout, nil
 }
 
 // Properties for listBox
@@ -149,14 +153,16 @@ func (listBox *ListBox) Properties() *ListBoxProperties {
 }
 
 // ListObject for listBox
-func (listBox *ListBox) ListObject(ctx context.Context) *enigma.ListObject {
+func (listBox *ListBox) ListObject(ctx context.Context) (*enigma.ListObject, error) {
 	listBox.mutex.Lock()
 	defer listBox.mutex.Unlock()
 
 	if listBox.Dirty {
-		listBox.updateLayout(ctx, false)
+		if err := listBox.updateLayout(ctx, false); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
-	return listBox.listobject
+	return listBox.listobject, nil
 }
 
 // CreateListBoxObject create listbox session object
