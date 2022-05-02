@@ -14,21 +14,18 @@ import (
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-// TODO support session variables
-// TODO add documentation
-
 type (
-	ObjectSearchType int
-	ObjectSearchMode int
+	ObjectSearchType   int
+	ObjectSearchSource int
 
 	// ObjectSearchSettings ObjectSearch search listbox, field or master dimension
 	ObjectSearchSettings struct {
-		ID           string           `json:"id" doc-key:"objectsearch.id"`
-		SearchTerms  []string         `json:"searchterms" doc-key:"objectsearch.searchterms"`
-		SearchType   ObjectSearchType `json:"type" doc-key:"objectsearch.type"`
-		SearchMode   ObjectSearchMode `json:"mode" doc-key:"objectsearch.mod"`
-		ErrorOnEmpty bool             `json:"erroronempty" doc-key:"objectsearch.erroronempty"`
-		Filename     helpers.RowFile  `json:"searchtermsfile" doc-key:"objectsearch.searchterms"`
+		ID           string             `json:"id" doc-key:"objectsearch.id"`
+		SearchTerms  []string           `json:"searchterms" doc-key:"objectsearch.searchterms"`
+		SearchType   ObjectSearchType   `json:"type" doc-key:"objectsearch.type"`
+		SearchSource ObjectSearchSource `json:"source" doc-key:"objectsearch.source"`
+		ErrorOnEmpty bool               `json:"erroronempty" doc-key:"objectsearch.erroronempty"`
+		Filename     helpers.RowFile    `json:"searchtermsfile" doc-key:"objectsearch.searchtermsfile"`
 	}
 )
 
@@ -45,15 +42,15 @@ var objectSearchTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"dimension": int(ObjectSearchTypeDimension),
 })
 
-// ObjectSearchMode
+// ObjectSearchSource
 const (
-	ObjectSearchModeFromList ObjectSearchMode = iota
-	ObjectSearchModeFromFile
+	ObjectSearchSourceFromList ObjectSearchSource = iota
+	ObjectSearchSourceFromFile
 )
 
-var objectSearchModeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-	"fromlist": int(ObjectSearchModeFromList),
-	"fromfile": int(ObjectSearchModeFromFile),
+var objectSearchSourceEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"fromlist": int(ObjectSearchSourceFromList),
+	"fromfile": int(ObjectSearchSourceFromFile),
 })
 
 // UnmarshalJSON unmarshal objectsearch type
@@ -76,27 +73,27 @@ func (value ObjectSearchType) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
-// UnmarshalJSON unmarshal objectsearch mode
-func (value *ObjectSearchMode) UnmarshalJSON(arg []byte) error {
-	i, err := objectSearchModeEnumMap.UnMarshal(arg)
+// UnmarshalJSON unmarshal objectsearch source
+func (value *ObjectSearchSource) UnmarshalJSON(arg []byte) error {
+	i, err := objectSearchSourceEnumMap.UnMarshal(arg)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal ObjectSearchMode")
+		return errors.Wrap(err, "Failed to unmarshal ObjectSearchSource")
 	}
 
-	*value = ObjectSearchMode(i)
+	*value = ObjectSearchSource(i)
 	return nil
 }
 
 // String implements Stringer interface
-func (value ObjectSearchMode) String() string {
-	return objectSearchModeEnumMap.StringDefault(int(value), strconv.Itoa(int(value)))
+func (value ObjectSearchSource) String() string {
+	return objectSearchSourceEnumMap.StringDefault(int(value), strconv.Itoa(int(value)))
 }
 
-// MarshalJSON marshal objectsearch mode
-func (value ObjectSearchMode) MarshalJSON() ([]byte, error) {
-	str, err := objectSearchModeEnumMap.String(int(value))
+// MarshalJSON marshal objectsearch source
+func (value ObjectSearchSource) MarshalJSON() ([]byte, error) {
+	str, err := objectSearchSourceEnumMap.String(int(value))
 	if err != nil {
-		return nil, errors.Errorf("Unknown ObjectSearchMode<%d>", value)
+		return nil, errors.Errorf("Unknown ObjectSearchSource<%d>", value)
 	}
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
@@ -120,22 +117,22 @@ func (settings ObjectSearchSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
 		return nil, errors.Errorf("%s no id defined", ActionObjectSearch)
 	}
-	switch settings.SearchMode {
-	case ObjectSearchModeFromList:
+	switch settings.SearchSource {
+	case ObjectSearchSourceFromList:
 		if len(settings.SearchTerms) < 1 {
 			return nil, errors.Errorf("%s no search terms defined", ActionObjectSearch)
 		}
-	case ObjectSearchModeFromFile:
+	case ObjectSearchSourceFromFile:
 		if settings.Filename.IsEmpty() {
-			return nil, errors.Errorf("%s search mode<%s> defined, but no searchtermsfile<%s> found or no filename set",
-				ActionObjectSearch, settings.SearchMode, settings.Filename)
+			return nil, errors.Errorf("%s search source<%s> defined, but no searchtermsfile<%s> found or no filename set",
+				ActionObjectSearch, settings.SearchSource, settings.Filename)
 		}
 		if len(settings.Filename.Rows()) < 1 {
-			return nil, errors.Errorf("%s search mode<%s> defined, but searchtermsfile<%s> contains no search terms",
-				ActionObjectSearch, settings.SearchMode, settings.Filename)
+			return nil, errors.Errorf("%s search source<%s> defined, but searchtermsfile<%s> contains no search terms",
+				ActionObjectSearch, settings.SearchSource, settings.Filename)
 		}
 	default:
-		return nil, errors.Errorf("%s mode<%s> not supported", ActionObjectSearch, settings.SearchMode)
+		return nil, errors.Errorf("%s source<%s> not supported", ActionObjectSearch, settings.SearchSource)
 	}
 	return nil, nil
 }
@@ -261,13 +258,13 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 	}
 
 	searchTerm := ""
-	switch settings.SearchMode {
-	case ObjectSearchModeFromList:
+	switch settings.SearchSource {
+	case ObjectSearchSourceFromList:
 		searchTerm, err = getRandomSearchTerm(sessionState, settings.SearchTerms)
-	case ObjectSearchModeFromFile:
+	case ObjectSearchSourceFromFile:
 		searchTerm, err = getRandomSearchTerm(sessionState, settings.Filename.Rows())
 	default:
-		err = errors.Errorf("mode<%s> not supported", settings.SearchMode)
+		err = errors.Errorf("source<%s> not supported", settings.SearchSource)
 	}
 	if err != nil {
 		actionState.AddErrors(err)

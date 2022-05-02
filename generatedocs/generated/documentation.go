@@ -86,6 +86,10 @@ var (
 			Description: "## ListBoxSelect action\n\nPerform list object specific selectiontypes in listbox.\n\n",
 			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"ListBoxSelect\",\n     \"action\": \"ListBoxSelect\",\n     \"settings\": {\n         \"id\": \"951e2eee-ad49-4f6a-bdfe-e9e3dddeb2cd\",\n         \"type\": \"all\",\n         \"wrap\": true,\n         \"accept\": true\n     }\n}\n```\n",
 		},
+		"objectsearch": {
+			Description: "## ObjectSearch action\n\nPerform a search select in a listbox, field or master dimension.\n\n",
+			Examples:    "### Examples\n\nSearch a listbox object, all users searches for same thing and gets an error if no result found\n\n```json\n{\n    \"label\": \"Search and select Sweden in listbox\",\n    \"action\": \"objectsearch\",\n    \"settings\": {\n        \"id\": \"maesVjgte\",\n        \"searchterms\": [\"Sweden\"],\n        \"type\": \"listbox\",\n        \"erroronempty\": true\n    }\n}\n```\n\nSearch a field, users randomly uses one search term from the `searchterms` list.\n\n```json\n{\n    \"label\": \"Search field\",\n    \"action\": \"objectsearch\",\n    \"disabled\": false,\n    \"settings\": {\n        \"id\": \"Countries\",\n        \"searchterms\": [\n            \"Sweden\",\n            \"Germany\",\n            \"Liechtenstein\"\n        ],\n        \"type\": \"field\"\n    }\n}\n```\n\nSearch a master object dimension using search terms from a file.\n\n```json\n{\n    \"label\": \"Search dimension\",\n    \"action\": \"objectsearch\",\n    \"disabled\": false,\n    \"settings\": {\n        \"id\": \"Dim1M\",\n        \"type\": \"dimension\",\n        \"erroronempty\": true,\n        \"source\": \"fromfile\",\n        \"searchtermsfile\": \"./resources/objectsearchterms.txt\",\n    }\n}\n```\n",
+		},
 		"openapp": {
 			Description: "## OpenApp action\n\nOpen an app.\n\n**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.\n",
 			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"guid\",\n         \"app\": \"7967af99-68b6-464a-86de-81de8937dd56\"\n     }\n}\n```\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"randomguidfromlist\",\n         \"list\": [\"7967af99-68b6-464a-86de-81de8937dd56\", \"ca1a9720-0f42-48e5-baa5-597dd11b6cad\"]\n     }\n}\n```\n",
@@ -288,6 +292,12 @@ var (
 		"listboxselect.id":                                {"ID of the listbox in which to select values."},
 		"listboxselect.type":                              {"Selection type.", "`all`: Select all values.", "`alternative`: Select alternative values.", "`excluded`: Select excluded values.", "`possible`: Select possible values."},
 		"listboxselect.wrap":                              {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
+		"objectsearch.erroronempty":                       {"If set to true and the object search yields an empty result, the action will result in an error. Defaults to false."},
+		"objectsearch.id":                                 {"ID of listbox object, name of field or title of masterobject dimension."},
+		"objectsearch.searchterms":                        {"List of search terms to search for."},
+		"objectsearch.searchtermsfile":                    {"Path to search terms file when using `source` of type `fromfile`. File should contain one term per row."},
+		"objectsearch.source":                             {"Source of search terms", "`fromlist`: (Default) Use search terms from `searchterms` array.", "`fromfile`: Use search term from file defined by `searchtermsfile`"},
+		"objectsearch.type":                               {"Type of object to search", "`listbox`: (Default) `id` is the ID of a listbox.", "`field`: `id` is the name of a field.", "`dimension`: `id` is the title of a master object dimension."},
 		"openapp.externalhost":                            {"(optional) Sets an external host to be used instead of `server` configured in connection settings."},
 		"openapp.unique":                                  {"Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."},
 		"productversion.log":                              {"Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."},
@@ -375,7 +385,7 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "setscriptvar", "setsensevariable", "sheetchanger", "smartsearch", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "objectsearch", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "setscriptvar", "setsensevariable", "sheetchanger", "smartsearch", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable for most types of Qlik Sense deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",

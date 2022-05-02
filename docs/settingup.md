@@ -1123,6 +1123,81 @@ Open an app.
 <hr></details>
 
 <details>
+<summary>objectsearch</summary>
+
+## ObjectSearch action
+
+Perform a search select in a listbox, field or master dimension.
+
+
+* `id`: ID of listbox object, name of field or title of masterobject dimension.
+* `searchterms`: List of search terms to search for.
+* `type`: Type of object to search
+    * `listbox`: (Default) `id` is the ID of a listbox.
+    * `field`: `id` is the name of a field.
+    * `dimension`: `id` is the title of a master object dimension.
+* `source`: Source of search terms
+    * `fromlist`: (Default) Use search terms from `searchterms` array.
+    * `fromfile`: Use search term from file defined by `searchtermsfile`
+* `erroronempty`: If set to true and the object search yields an empty result, the action will result in an error. Defaults to false.
+* `searchtermsfile`: Path to search terms file when using `source` of type `fromfile`. File should contain one term per row.
+
+### Examples
+
+Search a listbox object, all users searches for same thing and gets an error if no result found
+
+```json
+{
+    "label": "Search and select Sweden in listbox",
+    "action": "objectsearch",
+    "settings": {
+        "id": "maesVjgte",
+        "searchterms": ["Sweden"],
+        "type": "listbox",
+        "erroronempty": true
+    }
+}
+```
+
+Search a field, users randomly uses one search term from the `searchterms` list.
+
+```json
+{
+    "label": "Search field",
+    "action": "objectsearch",
+    "disabled": false,
+    "settings": {
+        "id": "Countries",
+        "searchterms": [
+            "Sweden",
+            "Germany",
+            "Liechtenstein"
+        ],
+        "type": "field"
+    }
+}
+```
+
+Search a master object dimension using search terms from a file.
+
+```json
+{
+    "label": "Search dimension",
+    "action": "objectsearch",
+    "disabled": false,
+    "settings": {
+        "id": "Dim1M",
+        "type": "dimension",
+        "erroronempty": true,
+        "source": "fromfile",
+        "searchtermsfile": "./resources/objectsearchterms.txt",
+    }
+}
+```
+
+<hr></details>
+
+<details>
 <summary>productversion</summary>
 
 ## ProductVersion action
