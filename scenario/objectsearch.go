@@ -10,24 +10,29 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
-// TODO support term from file
 // TODO support session variables
 // TODO add documentation
 
 type (
 	ObjectSearchType int
+	ObjectSearchMode int
+
 	// ObjectSearchSettings ObjectSearch search listbox, field or master dimension
 	ObjectSearchSettings struct {
 		ID           string           `json:"id" doc-key:"objectsearch.id"`
-		SearchTerm   string           `json:"searchterm" doc-key:"objectsearch.searchterm"`
+		SearchTerms  []string         `json:"searchterms" doc-key:"objectsearch.searchterms"`
 		SearchType   ObjectSearchType `json:"type" doc-key:"objectsearch.type"`
+		SearchMode   ObjectSearchMode `json:"mode" doc-key:"objectsearch.mod"`
 		ErrorOnEmpty bool             `json:"erroronempty" doc-key:"objectsearch.erroronempty"`
+		Filename     helpers.RowFile  `json:"searchtermsfile" doc-key:"objectsearch.searchterms"`
 	}
 )
 
+// ObjectSearchType
 const (
 	ObjectSearchTypeListbox ObjectSearchType = iota
 	ObjectSearchTypeField
@@ -38,6 +43,17 @@ var objectSearchTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"listbox":   int(ObjectSearchTypeListbox),
 	"field":     int(ObjectSearchTypeField),
 	"dimension": int(ObjectSearchTypeDimension),
+})
+
+// ObjectSearchMode
+const (
+	ObjectSearchModeFromList ObjectSearchMode = iota
+	ObjectSearchModeFromFile
+)
+
+var objectSearchModeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
+	"fromlist": int(ObjectSearchModeFromList),
+	"fromfile": int(ObjectSearchModeFromFile),
 })
 
 // UnmarshalJSON unmarshal objectsearch type
@@ -60,6 +76,31 @@ func (value ObjectSearchType) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
 }
 
+// UnmarshalJSON unmarshal objectsearch mode
+func (value *ObjectSearchMode) UnmarshalJSON(arg []byte) error {
+	i, err := objectSearchModeEnumMap.UnMarshal(arg)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal ObjectSearchMode")
+	}
+
+	*value = ObjectSearchMode(i)
+	return nil
+}
+
+// String implements Stringer interface
+func (value ObjectSearchMode) String() string {
+	return objectSearchModeEnumMap.StringDefault(int(value), strconv.Itoa(int(value)))
+}
+
+// MarshalJSON marshal objectsearch mode
+func (value ObjectSearchMode) MarshalJSON() ([]byte, error) {
+	str, err := objectSearchModeEnumMap.String(int(value))
+	if err != nil {
+		return nil, errors.Errorf("Unknown ObjectSearchMode<%d>", value)
+	}
+	return []byte(fmt.Sprintf(`"%s"`, str)), nil
+}
+
 // String representation of ObjectSearchType
 func (value ObjectSearchType) String() string {
 	sType, err := objectSearchTypeEnumMap.String(int(value))
@@ -77,10 +118,24 @@ func (value ObjectSearchType) GetEnumMap() *enummap.EnumMap {
 // Validate ObjectSearchSettings action (Implements ActionSettings interface)
 func (settings ObjectSearchSettings) Validate() ([]string, error) {
 	if settings.ID == "" {
-		return nil, errors.Errorf("no id defined in  %s", ActionObjectSearch)
+		return nil, errors.Errorf("%s no id defined", ActionObjectSearch)
 	}
-	if settings.SearchTerm == "" {
-		return nil, errors.Errorf("no search term defined in %s", ActionObjectSearch)
+	switch settings.SearchMode {
+	case ObjectSearchModeFromList:
+		if len(settings.SearchTerms) < 1 {
+			return nil, errors.Errorf("%s no search terms defined", ActionObjectSearch)
+		}
+	case ObjectSearchModeFromFile:
+		if settings.Filename.IsEmpty() {
+			return nil, errors.Errorf("%s search mode<%s> defined, but no searchtermsfile<%s> found or no filename set",
+				ActionObjectSearch, settings.SearchMode, settings.Filename)
+		}
+		if len(settings.Filename.Rows()) < 1 {
+			return nil, errors.Errorf("%s search mode<%s> defined, but searchtermsfile<%s> contains no search terms",
+				ActionObjectSearch, settings.SearchMode, settings.Filename)
+		}
+	default:
+		return nil, errors.Errorf("%s mode<%s> not supported", ActionObjectSearch, settings.SearchMode)
 	}
 	return nil, nil
 }
@@ -205,7 +260,21 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 		actionState.AddErrors(err)
 	}
 
-	searchChunks, err := newSearchTextChunks(sessionState.Randomizer(), settings.SearchTerm, false)
+	searchTerm := ""
+	switch settings.SearchMode {
+	case ObjectSearchModeFromList:
+		searchTerm, err = getRandomSearchTerm(sessionState, settings.SearchTerms)
+	case ObjectSearchModeFromFile:
+		searchTerm, err = getRandomSearchTerm(sessionState, settings.Filename.Rows())
+	default:
+		err = errors.Errorf("mode<%s> not supported", settings.SearchMode)
+	}
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	searchChunks, err := newSearchTextChunks(sessionState.Randomizer(), searchTerm, false)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
@@ -287,4 +356,17 @@ func getListObjectDataSize(listObject *enigma.ListObject) int {
 		size += len(dataPage.Matrix)
 	}
 	return size
+}
+
+// getRandomSearchTerm returns a random entry from list, chosen by a uniform distribution
+func getRandomSearchTerm(sessionState *session.State, terms []string) (string, error) {
+	n := len(terms)
+	if n < 1 {
+		return "", fmt.Errorf("specified terms list is empty: Nothing to select from")
+	}
+
+	randomIndex := sessionState.Randomizer().Rand(n)
+	selectedTerm := terms[randomIndex]
+
+	return selectedTerm, nil
 }
