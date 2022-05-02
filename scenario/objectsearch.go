@@ -15,10 +15,11 @@ import (
 
 // TODO support term from file
 // TODO support session variables
+// TODO add documentation
 
 type (
 	ObjectSearchType int
-	// ObjectSearchSettings ObjectSearch search listbox or field
+	// ObjectSearchSettings ObjectSearch search listbox, field or master dimension
 	ObjectSearchSettings struct {
 		ID           string           `json:"id" doc-key:"objectsearch.id"`
 		SearchTerm   string           `json:"searchterm" doc-key:"objectsearch.searchterm"`
@@ -95,7 +96,7 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 	}
 
 	var genObj *enigma.GenericObject
-	var getDimInfo func() (*enigma.NxDimensionInfo, error)
+	var getDataSize func() (int, error)
 	switch settings.SearchType {
 	case ObjectSearchTypeField:
 		fieldList, err := app.GetFieldList(sessionState, actionState)
@@ -115,20 +116,18 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 		}
 		genObj = listbox.EnigmaObject
 
-		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
-			var dimInfo *enigma.NxDimensionInfo
-			if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		getDataSize = func() (int, error) {
+			size := 0
+			err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 				listObject, err := listbox.ListObject(ctx)
 				if err != nil {
 					return errors.WithStack(err)
 				}
-				dimInfo = listObject.DimensionInfo
-				return nil
-			}); err != nil {
-				return nil, err
-			}
 
-			return dimInfo, nil
+				size = getListObjectDataSize(listObject)
+				return nil
+			})
+			return size, err
 		}
 	case ObjectSearchTypeDimension:
 		dimensionList, err := app.GetDimensionList(sessionState, actionState)
@@ -147,20 +146,17 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 		}
 		genObj = listbox.EnigmaObject
 
-		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
-			var dimInfo *enigma.NxDimensionInfo
-			if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		getDataSize = func() (int, error) {
+			size := 0
+			err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 				listObject, err := listbox.ListObject(ctx)
 				if err != nil {
 					return errors.WithStack(err)
 				}
-				dimInfo = listObject.DimensionInfo
+				size = getListObjectDataSize(listObject)
 				return nil
-			}); err != nil {
-				return nil, err
-			}
-
-			return dimInfo, nil
+			})
+			return size, err
 		}
 	case ObjectSearchTypeListbox:
 		objectID := sessionState.IDMap.Get(settings.ID)
@@ -186,12 +182,13 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 			return
 		}
 
-		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
-			listobject := gob.ListObject()
-			if listobject == nil {
-				return nil, errors.Errorf("listobject is nil")
+		getDataSize = func() (int, error) {
+			listObject := gob.ListObject()
+			if listObject == nil {
+				return 0, errors.Errorf("listobject is nil")
 			}
-			return listobject.DimensionInfo, nil
+
+			return getListObjectDataSize(listObject), nil
 		}
 	}
 
@@ -228,18 +225,14 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 		return // an error occured
 	}
 
-	dimInfo, err := getDimInfo()
+	dataPageSize, err := getDataSize()
 	if err != nil {
 		actionState.AddErrors(err)
 		return
 	}
-	if dimInfo == nil {
-		actionState.AddErrors(errors.New("listobject dimension info is nil"))
-		return
-	}
 
 	accept := true
-	if dimInfo.Cardinal < 1 {
+	if dataPageSize < 1 {
 		accept = false
 		if settings.ErrorOnEmpty {
 			actionState.AddErrors(errors.New("no search results found"))
@@ -283,4 +276,15 @@ func doSearch(sessionState *session.State, actionState *action.State, genObj *en
 		return nil
 
 	}, actionState, true, "object search failed")
+}
+
+func getListObjectDataSize(listObject *enigma.ListObject) int {
+	if listObject == nil {
+		return 0
+	}
+	size := 0
+	for _, dataPage := range listObject.DataPages {
+		size += len(dataPage.Matrix)
+	}
+	return size
 }
