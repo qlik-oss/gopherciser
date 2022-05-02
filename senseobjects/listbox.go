@@ -29,6 +29,10 @@ type (
 	}
 )
 
+var (
+	DefaultListboxInitialDataFetch = []*enigma.NxPage{{Height: 20, Width: 1}}
+)
+
 func (listBox *ListBox) setLayout(layout *enigma.GenericObjectLayout, lock bool) {
 	if lock {
 		listBox.mutex.Lock()
@@ -165,19 +169,31 @@ func (listBox *ListBox) ListObject(ctx context.Context) (*enigma.ListObject, err
 	return listBox.listobject, nil
 }
 
-// CreateListBoxObject create listbox session object
-func CreateListBoxObject(ctx context.Context, doc *enigma.Doc, name string) (*ListBox, error) {
+// CreateFieldListBoxObject create listbox session object
+func CreateFieldListBoxObject(ctx context.Context, doc *enigma.Doc, name string) (*ListBox, error) {
+	return createListBoxObject(ctx, doc, &enigma.ListObjectDef{
+		Def: &enigma.NxInlineDimensionDef{
+			FieldDefs:   []string{name},
+			FieldLabels: []string{name},
+		},
+		InitialDataFetch: DefaultListboxInitialDataFetch,
+	})
+}
+
+// CreateLibraryBoxObject create listbox session object from library ID
+func CreateLibraryBoxObject(ctx context.Context, doc *enigma.Doc, id string) (*ListBox, error) {
+	return createListBoxObject(ctx, doc, &enigma.ListObjectDef{
+		LibraryId:        id,
+		InitialDataFetch: DefaultListboxInitialDataFetch,
+	})
+}
+
+func createListBoxObject(ctx context.Context, doc *enigma.Doc, objDef *enigma.ListObjectDef) (*ListBox, error) {
 	properties := &enigma.GenericObjectProperties{
 		Info: &enigma.NxInfo{
 			Type: "listbox",
 		},
-		ListObjectDef: &enigma.ListObjectDef{
-			Def: &enigma.NxInlineDimensionDef{
-				FieldDefs:   []string{name},
-				FieldLabels: []string{name},
-			},
-			InitialDataFetch: []*enigma.NxPage{{Height: 20, Width: 1}},
-		},
+		ListObjectDef: objDef,
 	}
 
 	obj, err := doc.CreateSessionObjectRaw(ctx, properties)

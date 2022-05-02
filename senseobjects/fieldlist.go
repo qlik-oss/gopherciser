@@ -143,7 +143,7 @@ func (fieldlist *FieldList) createListbox(sessionState SessionState, actionState
 	var listbox *ListBox
 	createListBox := func(ctx context.Context) error {
 		var err error
-		listbox, err = CreateListBoxObject(ctx, doc, fieldName)
+		listbox, err = CreateFieldListBoxObject(ctx, doc, fieldName)
 		return errors.WithStack(err)
 	}
 	if err := sessionState.SendRequest(actionState, createListBox); err != nil {

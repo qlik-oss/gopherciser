@@ -15,7 +15,6 @@ import (
 
 // TODO support term from file
 // TODO support session variables
-// TODO supprt field search
 
 type (
 	ObjectSearchType int
@@ -31,11 +30,13 @@ type (
 const (
 	ObjectSearchTypeListbox ObjectSearchType = iota
 	ObjectSearchTypeField
+	ObjectSearchTypeDimension
 )
 
 var objectSearchTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-	"listbox": int(ObjectSearchTypeListbox),
-	"field":   int(ObjectSearchTypeField),
+	"listbox":   int(ObjectSearchTypeListbox),
+	"field":     int(ObjectSearchTypeField),
+	"dimension": int(ObjectSearchTypeDimension),
 })
 
 // UnmarshalJSON unmarshal objectsearch type
@@ -87,15 +88,16 @@ func (settings ObjectSearchSettings) Validate() ([]string, error) {
 func (settings ObjectSearchSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	uplink := sessionState.Connection.Sense()
 
+	app, err := sessionState.CurrentSenseApp()
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
 	var genObj *enigma.GenericObject
 	var getDimInfo func() (*enigma.NxDimensionInfo, error)
 	switch settings.SearchType {
 	case ObjectSearchTypeField:
-		app, err := sessionState.CurrentSenseApp()
-		if err != nil {
-			actionState.AddErrors(err)
-			return
-		}
 		fieldList, err := app.GetFieldList(sessionState, actionState)
 		if err != nil {
 			actionState.AddErrors(err)
@@ -108,13 +110,42 @@ func (settings ObjectSearchSettings) Execute(sessionState *session.State, action
 
 		listbox, err := fieldList.GetOrCreateSessionListboxSync(sessionState, actionState, uplink.CurrentApp.Doc, settings.ID)
 		if err != nil {
-			// TODO if FieldNotFoundError, check dimensionlist instead
 			actionState.AddErrors(err)
 			return
 		}
 		genObj = listbox.EnigmaObject
 
-		// Create 7 listboxes from fields and dimensions to simulate opening "selectors"?
+		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
+			var dimInfo *enigma.NxDimensionInfo
+			if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+				listObject, err := listbox.ListObject(ctx)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				dimInfo = listObject.DimensionInfo
+				return nil
+			}); err != nil {
+				return nil, err
+			}
+
+			return dimInfo, nil
+		}
+	case ObjectSearchTypeDimension:
+		dimensionList, err := app.GetDimensionList(sessionState, actionState)
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		if dimensionList.Layout() == nil || dimensionList.Layout().DimensionList == nil {
+			actionState.NewErrorf("no dimensionList layout")
+			return
+		}
+		listbox, err := dimensionList.GetOrCreateSessionListboxSync(sessionState, actionState, uplink.CurrentApp.Doc, settings.ID)
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		genObj = listbox.EnigmaObject
 
 		getDimInfo = func() (*enigma.NxDimensionInfo, error) {
 			var dimInfo *enigma.NxDimensionInfo

@@ -21,6 +21,7 @@ type (
 		storylist         *StoryList
 		loadmodellist     *LoadModelList
 		fieldlist         *FieldList
+		dimensionList     *DimensionList
 	}
 
 	// App sense app object
@@ -345,6 +346,40 @@ func (app *App) GetAggregatedSelectionFields() string {
 	return strings.Join(fields, ",")
 }
 
+func (app *App) GetDimensionList(sessionState SessionState, actionState *action.State) (*DimensionList, error) {
+	if app.dimensionList != nil {
+		return app.dimensionList, nil
+	}
+	updateDimensionList := func(ctx context.Context) error {
+		dl, err := CreateDimensionListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setDimensionList(sessionState, dl)
+		return nil
+	}
+	if err := sessionState.SendRequest(actionState, updateDimensionList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// Get data
+	if err := sessionState.SendRequest(actionState, app.dimensionList.UpdateLayout); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err := sessionState.SendRequest(actionState, app.dimensionList.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// setup automatic data update
+	onDimensionListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.dimensionList.UpdateLayout(ctx))
+	}
+	sessionState.RegisterEvent(app.dimensionList.enigmaObject.Handle, onDimensionListChanged, nil, true)
+
+	return app.dimensionList, nil
+
+}
+
 // GetFieldList session object containing list of fields
 func (app *App) GetFieldList(sessionState SessionState, actionState *action.State) (*FieldList, error) {
 	if app.fieldlist != nil {
@@ -360,11 +395,6 @@ func (app *App) GetFieldList(sessionState SessionState, actionState *action.Stat
 		app.setFieldList(sessionState, fl)
 		return nil
 	}
-	if err := sessionState.SendRequest(actionState, updateFieldList); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	// Get layout
 	if err := sessionState.SendRequest(actionState, updateFieldList); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -457,4 +487,13 @@ func (app *App) setFieldList(SessionState SessionState, fl *FieldList) {
 		SessionState.DeRegisterEvent(app.fieldlist.enigmaObject.Handle)
 	}
 	app.fieldlist = fl
+}
+
+func (app *App) setDimensionList(SessionState SessionState, dl *DimensionList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.dimensionList != nil && app.dimensionList.enigmaObject != nil && app.dimensionList.enigmaObject.Handle > 0 && dl != app.dimensionList {
+		SessionState.DeRegisterEvent(app.dimensionList.enigmaObject.Handle)
+	}
+	app.dimensionList = dl
 }
