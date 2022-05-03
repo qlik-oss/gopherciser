@@ -15,7 +15,7 @@ Search a listbox object, all users searches for same thing and gets an error if 
 }
 ```
 
-Search a field, users randomly uses one search term from the `searchterms` list.
+Search a field. Users use one random search term from the `searchterms` list.
 
 ```json
 {
