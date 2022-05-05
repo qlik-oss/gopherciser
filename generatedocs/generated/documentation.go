@@ -293,7 +293,7 @@ var (
 		"listboxselect.type":                              {"Selection type.", "`all`: Select all values.", "`alternative`: Select alternative values.", "`excluded`: Select excluded values.", "`possible`: Select possible values."},
 		"listboxselect.wrap":                              {"Wrap selection with Begin / End selection requests (`true` / `false`)."},
 		"objectsearch.erroronempty":                       {"If set to true and the object search yields an empty result, the action will result in an error. Defaults to false."},
-		"objectsearch.id":                                 {"ID of listbox object, name of field or title of masterobject dimension."},
+		"objectsearch.id":                                 {"Identifier for the object, this would differ depending on `type`.", "`listbox`: Use the ID of listbox object", "`field`: Use the name of the field", "`dimension`: Use the title of the dimension masterobject."},
 		"objectsearch.searchterms":                        {"List of search terms to search for."},
 		"objectsearch.searchtermsfile":                    {"Path to search terms file when using `source` of type `fromfile`. File should contain one term per row."},
 		"objectsearch.source":                             {"Source of search terms", "`fromlist`: (Default) Use search terms from `searchterms` array.", "`fromfile`: Use search term from file defined by `searchtermsfile`"},

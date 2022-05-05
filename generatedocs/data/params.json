@@ -614,7 +614,10 @@
         "Think time before selection if `makeselection` is `true`, defaults to a 1 second delay."
     ],
     "objectsearch.id": [
-        "ID of listbox object, name of field or title of masterobject dimension."
+        "Identifier for the object, this would differ depending on `type`.",
+        "`listbox`: Use the ID of listbox object",
+        "`field`: Use the name of the field",
+        "`dimension`: Use the title of the dimension masterobject."
     ],
     "objectsearch.searchterms":[
         "List of search terms to search for."

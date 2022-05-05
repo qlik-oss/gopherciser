@@ -1130,7 +1130,10 @@ Open an app.
 Perform a search select in a listbox, field or master dimension.
 
 
-* `id`: ID of listbox object, name of field or title of masterobject dimension.
+* `id`: Identifier for the object, this would differ depending on `type`.
+    * `listbox`: Use the ID of listbox object
+    * `field`: Use the name of the field
+    * `dimension`: Use the title of the dimension masterobject.
 * `searchterms`: List of search terms to search for.
 * `type`: Type of object to search
     * `listbox`: (Default) `id` is the ID of a listbox.
