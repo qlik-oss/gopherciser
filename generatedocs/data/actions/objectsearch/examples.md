@@ -46,7 +46,7 @@ Search a master object dimension using search terms from a file.
         "type": "dimension",
         "erroronempty": true,
         "source": "fromfile",
-        "searchtermsfile": "./resources/objectsearchterms.txt",
+        "searchtermsfile": "./resources/objectsearchterms.txt"
     }
 }
 ```
