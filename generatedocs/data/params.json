@@ -612,5 +612,31 @@
     ],
     "smartsearch.selectionthinktime": [
         "Think time before selection if `makeselection` is `true`, defaults to a 1 second delay."
+    ],
+    "objectsearch.id": [
+        "Identifier for the object, this would differ depending on `type`.",
+        "`listbox`: Use the ID of listbox object",
+        "`field`: Use the name of the field",
+        "`dimension`: Use the title of the dimension masterobject."
+    ],
+    "objectsearch.searchterms":[
+        "List of search terms to search for."
+    ],
+    "objectsearch.type":[
+        "Type of object to search",
+        "`listbox`: (Default) `id` is the ID of a listbox.",
+        "`field`: `id` is the name of a field.",
+        "`dimension`: `id` is the title of a master object dimension."
+    ],
+    "objectsearch.source":[
+        "Source of search terms",
+        "`fromlist`: (Default) Use search terms from `searchterms` array.",
+        "`fromfile`: Use search term from file defined by `searchtermsfile`"
+    ],
+    "objectsearch.erroronempty": [
+        "If set to true and the object search yields an empty result, the action will result in an error. Defaults to false."
+    ],
+    "objectsearch.searchtermsfile":[
+        "Path to search terms file when using `source` of type `fromfile`. File should contain one term per row."
     ]
 }

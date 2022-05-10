@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
@@ -13,7 +14,7 @@ type (
 		mu sync.RWMutex
 	}
 
-	//State holder for an action
+	// State holder for an action
 	State struct {
 		errors
 		// Failed an error occurred during execution of action
@@ -27,7 +28,7 @@ type (
 	}
 )
 
-//AddErrors to error list
+// AddErrors to error list
 func (as *State) AddErrors(errs ...error) {
 	as.errors.mu.Lock()
 	defer as.mu.Unlock()
@@ -38,7 +39,12 @@ func (as *State) AddErrors(errs ...error) {
 	}
 }
 
-//Errors return action error
+// NewErrorf add new action error
+func (as *State) NewErrorf(format string, args ...interface{}) {
+	as.AddErrors(pkgerrors.Errorf(format, args...))
+}
+
+// Errors return action error
 func (as *State) Errors() error {
 	if as == nil {
 		return nil

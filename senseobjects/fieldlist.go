@@ -2,10 +2,12 @@ package senseobjects
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/gopherciser/action"
 )
 
 type (
@@ -13,9 +15,16 @@ type (
 		enigmaObject *enigma.GenericObject
 		layout       *enigma.GenericObjectLayout
 		properties   *enigma.GenericObjectProperties
+		listboxes    map[string]*ListBox
 		mutex        sync.Mutex
 	}
+
+	FieldNotFoundError string
 )
+
+func (err FieldNotFoundError) Error() string {
+	return fmt.Sprintf("field<%s> not found", string(err))
+}
 
 // CreateFieldListObject create fieldlist session object
 func CreateFieldListObject(ctx context.Context, doc *enigma.Doc) (*FieldList, error) {
@@ -88,4 +97,80 @@ func (fieldlist *FieldList) Properties() *enigma.GenericObjectProperties {
 	fieldlist.mutex.Lock()
 	defer fieldlist.mutex.Unlock()
 	return fieldlist.properties
+}
+
+// GetField searches field list and returns field with name if it exists
+func (fieldlist *FieldList) GetField(fieldName string) (*enigma.NxFieldDescription, error) {
+	fieldlist.mutex.Lock()
+	defer fieldlist.mutex.Unlock()
+
+	if fieldlist.layout == nil || fieldlist.layout.FieldList == nil {
+		return nil, errors.Errorf("no fieldlist layout")
+	}
+
+	for _, field := range fieldlist.layout.FieldList.Items {
+		if field == nil {
+			continue
+		}
+		if field.Name == fieldName {
+			return field, nil
+		}
+	}
+
+	return nil, FieldNotFoundError(fieldName)
+}
+
+// GetOrCreateSessionListbox
+func (fieldlist *FieldList) GetOrCreateSessionListboxSync(sessionState SessionState, actionState *action.State, doc *enigma.Doc, fieldName string) (*ListBox, error) {
+	field, err := fieldlist.GetField(fieldName)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if field == nil {
+		return nil, FieldNotFoundError(fieldName)
+	}
+
+	if fieldlist.listboxes == nil || fieldlist.listboxes[fieldName] == nil {
+		if err = fieldlist.createListbox(sessionState, actionState, doc, fieldName); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	return fieldlist.listboxes[fieldName], nil
+}
+
+func (fieldlist *FieldList) createListbox(sessionState SessionState, actionState *action.State, doc *enigma.Doc, fieldName string) error {
+	var listbox *ListBox
+	createListBox := func(ctx context.Context) error {
+		var err error
+		listbox, err = CreateFieldListBoxObject(ctx, doc, fieldName)
+		return errors.WithStack(err)
+	}
+	if err := sessionState.SendRequest(actionState, createListBox); err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, listbox.UpdateProperties); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := sessionState.SendRequest(actionState, listbox.UpdateLayout); err != nil {
+		return errors.WithStack(err)
+	}
+
+	// mark dirty on update, don't update automatically since only updated when "selectors" are open
+	onListboxChanged := func(ctx context.Context, actionState *action.State) error {
+		listbox.Dirty = true
+		return nil
+	}
+	sessionState.RegisterEvent(listbox.EnigmaObject.Handle, onListboxChanged, nil, true)
+
+	fieldlist.mutex.Lock()
+	defer fieldlist.mutex.Unlock()
+
+	if fieldlist.listboxes == nil {
+		fieldlist.listboxes = make(map[string]*ListBox, 1)
+	}
+
+	fieldlist.listboxes[fieldName] = listbox
+	return nil
 }

@@ -11,12 +11,6 @@ import (
 )
 
 type (
-	// ListBoxLayout listbox layout
-	ListBoxLayout struct {
-		enigma.GenericObjectLayout
-		AppObjectList *enigma.ListObject `json:"qListBox,omitempty"`
-	}
-
 	// ListBoxProperties listbox properties
 	ListBoxProperties struct {
 		Info    enigma.NxInfo    `json:"qInfo,omitempty"`
@@ -25,17 +19,27 @@ type (
 
 	// ListBox container with listbox in sense app
 	ListBox struct {
-		enigmaObject *enigma.GenericObject
-		layout       *ListBoxLayout
+		Dirty bool // Set flag to have object update before accessing layout next time
+
+		EnigmaObject *enigma.GenericObject
+		layout       *enigma.GenericObjectLayout
+		listobject   *enigma.ListObject
 		properties   *ListBoxProperties
 		mutex        sync.Mutex
 	}
 )
 
-func (listBox *ListBox) setLayout(layout *ListBoxLayout) {
-	listBox.mutex.Lock()
-	defer listBox.mutex.Unlock()
+var (
+	DefaultListboxInitialDataFetch = []*enigma.NxPage{{Height: 20, Width: 1}}
+)
+
+func (listBox *ListBox) setLayout(layout *enigma.GenericObjectLayout, lock bool) {
+	if lock {
+		listBox.mutex.Lock()
+		defer listBox.mutex.Unlock()
+	}
 	listBox.layout = layout
+	listBox.listobject = layout.ListObject
 }
 
 func (listBox *ListBox) setProperties(properties *ListBoxProperties) {
@@ -44,34 +48,53 @@ func (listBox *ListBox) setProperties(properties *ListBoxProperties) {
 	listBox.properties = properties
 }
 
+func (listBox *ListBox) setDataPages(datapages []*enigma.NxDataPage, lock bool) error {
+	if lock {
+		listBox.mutex.Lock()
+		defer listBox.mutex.Unlock()
+	}
+	if listBox.listobject == nil {
+		return errors.Errorf("listbox has no listobject")
+	}
+	listBox.listobject.DataPages = datapages
+	return nil
+}
+
 // UpdateLayout get and set a new layout for listbox
 func (listBox *ListBox) UpdateLayout(ctx context.Context) error {
-	if listBox.enigmaObject == nil {
+	return listBox.updateLayout(ctx, true)
+}
+
+// UpdateLayout get and set a new layout for listbox
+func (listBox *ListBox) updateLayout(ctx context.Context, lock bool) error {
+	if listBox.EnigmaObject == nil {
 		return errors.Errorf("listBox enigma object is nil")
 	}
 
-	layoutRaw, err := listBox.enigmaObject.GetLayoutRaw(ctx)
+	layoutRaw, err := listBox.EnigmaObject.GetLayoutRaw(ctx)
 	if err != nil {
 		return errors.Wrap(err, "Failed to get listBox layout")
 	}
 
-	var layout ListBoxLayout
+	var layout enigma.GenericObjectLayout
 	err = json.Unmarshal(layoutRaw, &layout)
 	if err != nil {
 		return errors.Wrap(err, "Failed to unmarshal listBox layout")
 	}
 
-	listBox.setLayout(&layout)
-	return nil
+	listBox.setLayout(&layout, lock)
+
+	_, err = listBox.getListObjectData(ctx, lock)
+	return errors.WithStack(err)
 }
 
 // UpdateProperties get and set properties for listBox
 func (listBox *ListBox) UpdateProperties(ctx context.Context) error {
-	if listBox.enigmaObject == nil {
+	if listBox.EnigmaObject == nil {
 		return errors.Errorf("listBox enigma object is nil")
 	}
 
-	propertiesRaw, err := listBox.enigmaObject.GetEffectivePropertiesRaw(ctx)
+	propertiesRaw, err := listBox.EnigmaObject.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal listBox properties")
 	}
@@ -87,40 +110,90 @@ func (listBox *ListBox) UpdateProperties(ctx context.Context) error {
 }
 
 // GetListObjectData get datapages
-func (listBox *ListBox) GetListObjectData(ctx context.Context) ([]*enigma.NxDataPage, error) {
+func (listBox *ListBox) getListObjectData(ctx context.Context, lock bool) ([]*enigma.NxDataPage, error) {
 	objDef, err := senseobjdef.GetObjectDef("listbox")
 	if err != nil {
 		return nil, err
 	}
 
-	return listBox.enigmaObject.GetListObjectData(ctx, string(objDef.Data[0].Requests[0].Path), []*enigma.NxPage{
+	datapages, err := listBox.EnigmaObject.GetListObjectData(ctx, string(objDef.Data[0].Requests[0].Path), []*enigma.NxPage{
 		{
 			Left:   0,
 			Top:    0,
 			Width:  1,
-			Height: listBox.layout.GenericObjectLayout.ListObject.Size.Cy,
+			Height: listBox.layout.ListObject.Size.Cy,
 		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := listBox.setDataPages(datapages, lock); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return datapages, nil
+}
+
+// Layout for listBox, if layout needs updating this will lock object and update synchronously
+func (listBox *ListBox) Layout(ctx context.Context) (*enigma.GenericObjectLayout, error) {
+	listBox.mutex.Lock()
+	defer listBox.mutex.Unlock()
+
+	if listBox.Dirty {
+		if err := listBox.updateLayout(ctx, false); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	return listBox.layout, nil
+}
+
+// Properties for listBox
+func (listBox *ListBox) Properties() *ListBoxProperties {
+	listBox.mutex.Lock()
+	defer listBox.mutex.Unlock()
+	return listBox.properties
+}
+
+// ListObject for listBox
+func (listBox *ListBox) ListObject(ctx context.Context) (*enigma.ListObject, error) {
+	listBox.mutex.Lock()
+	defer listBox.mutex.Unlock()
+
+	if listBox.Dirty {
+		if err := listBox.updateLayout(ctx, false); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	return listBox.listobject, nil
+}
+
+// CreateFieldListBoxObject create listbox session object
+func CreateFieldListBoxObject(ctx context.Context, doc *enigma.Doc, name string) (*ListBox, error) {
+	return createListBoxObject(ctx, doc, &enigma.ListObjectDef{
+		Def: &enigma.NxInlineDimensionDef{
+			FieldDefs:   []string{name},
+			FieldLabels: []string{name},
+		},
+		InitialDataFetch: DefaultListboxInitialDataFetch,
 	})
 }
 
-// Layout for listBox
-func (listBox *ListBox) Layout() *ListBoxLayout {
-	return listBox.layout //TODO DECISION: wait for write lock?
+// CreateLibraryBoxObject create listbox session object from library ID
+func CreateLibraryBoxObject(ctx context.Context, doc *enigma.Doc, id string) (*ListBox, error) {
+	return createListBoxObject(ctx, doc, &enigma.ListObjectDef{
+		LibraryId:        id,
+		InitialDataFetch: DefaultListboxInitialDataFetch,
+	})
 }
 
-// CreateListBoxObject create listbox session object
-func CreateListBoxObject(ctx context.Context, doc *enigma.Doc, name string) (*ListBox, error) {
+func createListBoxObject(ctx context.Context, doc *enigma.Doc, objDef *enigma.ListObjectDef) (*ListBox, error) {
 	properties := &enigma.GenericObjectProperties{
 		Info: &enigma.NxInfo{
-			Type: "ListBox",
+			Type: "listbox",
 		},
-		ListObjectDef: &enigma.ListObjectDef{
-			Def: &enigma.NxInlineDimensionDef{
-				FieldDefs:   []string{name},
-				FieldLabels: []string{name},
-			},
-			InitialDataFetch: []*enigma.NxPage{{Height: 20, Width: 1}},
-		},
+		ListObjectDef: objDef,
 	}
 
 	obj, err := doc.CreateSessionObjectRaw(ctx, properties)
@@ -129,6 +202,6 @@ func CreateListBoxObject(ctx context.Context, doc *enigma.Doc, name string) (*Li
 	}
 
 	return &ListBox{
-		enigmaObject: obj,
+		EnigmaObject: obj,
 	}, nil
 }
