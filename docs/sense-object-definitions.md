@@ -286,7 +286,7 @@ An object that sends different data requests depending on the size of the data:
           {
             "type": "hypercubedata",
             "path": "/qHyperCubeDef",
-            "height": 1000
+            "height": 2000
           }
         ]
       }
