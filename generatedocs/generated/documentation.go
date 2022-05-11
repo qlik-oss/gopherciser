@@ -313,6 +313,7 @@ var (
 		"reconnectsettings.reconnect":                     {"Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`."},
 		"reload.log":                                      {"Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large."},
 		"reload.mode":                                     {"Error handling during the reload operation", "`default`: Use the default error handling.", "`abend`: Stop reloading the script, if an error occurs.", "`ignore`: Continue reloading the script even if an error is detected in the script."},
+		"reload.nosave":                                   {"Do not send a save request for the app after the reload is done. Defaults to saving the app."},
 		"reload.partial":                                  {"Enable partial reload (`true` / `false`). This allows you to add data to an app without reloading all data. Defaults to `false`, if omitted."},
 		"select.accept":                                   {"Accept or abort selection after selection (only used with `wrap`) (`true` / `false`)."},
 		"select.dim":                                      {"Dimension / column in which to select."},
