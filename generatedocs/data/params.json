@@ -493,6 +493,9 @@
     "reload.log": [
         "Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large."
     ],
+    "reload.nosave": [
+        "Do not send a save request for the app after the reload is done. Defaults to saving the app."
+    ],
     "select.id": [
         "ID of the object in which to select values."
     ],

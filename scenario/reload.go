@@ -23,6 +23,7 @@ type (
 		ReloadMode ReloadModeEnum `json:"mode" displayname:"Reload mode" doc-key:"reload.mode"`
 		Partial    bool           `json:"partial" displayname:"Partial reload" doc-key:"reload.partial"`
 		SaveLog    bool           `json:"log" displayname:"Save log" doc-key:"reload.log"`
+		NoSave     bool           `json:"nosave" displayname:"Disable app save" doc-key:"reload.nosave"`
 	}
 )
 
@@ -146,7 +147,7 @@ func (settings ReloadSettings) Execute(sessionState *session.State,
 	if !status {
 		actionState.AddErrors(errors.Errorf("Reload failed"))
 		// don't return so ReloadLog will be save
-	} else {
+	} else if !settings.NoSave {
 		// save the app after reload if it was successful
 		if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 			return connection.CurrentApp.Doc.DoSave(ctx, "")
