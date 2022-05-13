@@ -20,12 +20,12 @@ type (
 
 	// ObjectSearchSettings ObjectSearch search listbox, field or master dimension
 	ObjectSearchSettings struct {
-		ID           string             `json:"id" doc-key:"objectsearch.id"`
-		SearchTerms  []string           `json:"searchterms" doc-key:"objectsearch.searchterms"`
-		SearchType   ObjectSearchType   `json:"type" doc-key:"objectsearch.type"`
-		SearchSource ObjectSearchSource `json:"source" doc-key:"objectsearch.source"`
-		ErrorOnEmpty bool               `json:"erroronempty" doc-key:"objectsearch.erroronempty"`
-		Filename     helpers.RowFile    `json:"searchtermsfile" doc-key:"objectsearch.searchtermsfile"`
+		ID           string             `json:"id" doc-key:"objectsearch.id" displayname:"ID"`
+		SearchTerms  []string           `json:"searchterms" doc-key:"objectsearch.searchterms" displayname:"Search terms"`
+		SearchType   ObjectSearchType   `json:"type" doc-key:"objectsearch.type" displayname:"Search type"`
+		SearchSource ObjectSearchSource `json:"source" doc-key:"objectsearch.source" displayname:"Search source"`
+		ErrorOnEmpty bool               `json:"erroronempty" doc-key:"objectsearch.erroronempty" displayname:"Throw error if no search results"`
+		Filename     helpers.RowFile    `json:"searchtermsfile" doc-key:"objectsearch.searchtermsfile" displayname:"Search terms filename" displayelement:"file"`
 	}
 )
 
@@ -110,6 +110,11 @@ func (value ObjectSearchType) String() string {
 // GetEnumMap returns objectsearch type enum map to GUI
 func (value ObjectSearchType) GetEnumMap() *enummap.EnumMap {
 	return objectSearchTypeEnumMap
+}
+
+// GetEnumMap returns objectsearch source enum map to GUI
+func (value ObjectSearchSource) GetEnumMap() *enummap.EnumMap {
+	return objectSearchSourceEnumMap
 }
 
 // Validate ObjectSearchSettings action (Implements ActionSettings interface)
