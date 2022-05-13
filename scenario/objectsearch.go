@@ -25,7 +25,7 @@ type (
 		SearchType   ObjectSearchType   `json:"type" doc-key:"objectsearch.type" displayname:"Search type"`
 		SearchSource ObjectSearchSource `json:"source" doc-key:"objectsearch.source" displayname:"Search source"`
 		ErrorOnEmpty bool               `json:"erroronempty" doc-key:"objectsearch.erroronempty" displayname:"Throw error if no search results"`
-		Filename     helpers.RowFile    `json:"searchtermsfile" doc-key:"objectsearch.searchtermsfile" displayname:"Filename"`
+		Filename     helpers.RowFile    `json:"searchtermsfile" doc-key:"objectsearch.searchtermsfile" displayname:"Search terms filename" displayelement:"file"`
 	}
 )
 
