@@ -334,11 +334,7 @@ func (act *Action) Validate() ([]string, error) {
 	if act.Disabled {
 		return nil, nil // skip validating disabled actions
 	}
-	s, ok := act.Settings.(ActionSettings)
-	if !ok {
-		return nil, errors.Errorf("Failed to convert action settings to ActionSettings")
-	}
-	return s.Validate()
+	return act.Settings.Validate()
 }
 
 // Execute scenario action

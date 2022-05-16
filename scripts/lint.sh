@@ -32,7 +32,7 @@ set -eu
 
 export GO111MODULE=on
 
-GLVERSION=1.40.1
+GLVERSION=1.46.1
 CURVER=NULL
 
 # Determine OS and act accordingly to extract MD5 sum as an override due to -version being missing in golangci-lint CLI

@@ -1,7 +1,6 @@
 package scenario
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/goccy/go-json"
@@ -138,7 +137,7 @@ func TestRandomActionOverrideSettings(t *testing.T) {
 	// Test if interface implemented correctly
 	_, ok := selectedAction.itemSettings.(ActionSettings)
 	if !ok {
-		t.Fatal(fmt.Sprintf("settings<%T> not of type ActionSettings", origSettings))
+		t.Fatalf("settings<%T> not of type ActionSettings", origSettings)
 	}
 
 	// Test overide select type
