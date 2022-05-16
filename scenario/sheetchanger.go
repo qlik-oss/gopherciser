@@ -6,15 +6,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
 	// SheetChangerSettings loop through sheets in an app
-	SheetChangerSettings struct {
-		actionEntry *logger.ActionEntry
-	}
+	SheetChangerSettings struct{}
 )
 
 // Validate implements ActionSettings interface
@@ -25,9 +22,6 @@ func (settings SheetChangerSettings) Validate() ([]string, error) {
 // Execute implements ActionSettings interface
 func (settings SheetChangerSettings) Execute(sessionState *session.State,
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-
-	// set action entry to be logged when container action entry is logged
-	settings.actionEntry = sessionState.LogEntry.Action
 
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment"))

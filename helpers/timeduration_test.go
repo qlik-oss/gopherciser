@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -16,7 +15,7 @@ func TestMarshalTimeDuration(t *testing.T) {
 	if err != nil {
 		t.Errorf("got error during marshal <%s>", err)
 	}
-	if fmt.Sprintf("%s", json) != expected {
+	if string(json) != expected {
 		t.Errorf("expected<%s> got %s", expected, json)
 	}
 }
