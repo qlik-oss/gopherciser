@@ -2,8 +2,16 @@
 #set -eo pipefail
 
 PROJECT=${1:-.}
+# TODO default to temp folder
+LICENSEFOLDER=${2:-$(mktemp -d)}
 
 echoerr() { cat <<< "$@" 1>&2; }
+
+function rmlicensefolder() {
+	if [[ -d "$LICENSEFOLDER" ]]; then
+		rm -rf "$LICENSEFOLDER"
+	fi
+}
 
 if [[ ! -x $(command -v go-licenses) ]]; then
   echoerr go-licenses not found, please install https://github.com/google/go-licenses
@@ -15,19 +23,19 @@ if ! go list "$PROJECT" >/dev/null 2>&1; then
   exit 2
 fi
 
+echo "Saving licenses to $LICENSEFOLDER"
+
+rmlicensefolder
+trap rmlicensefolder EXIT
+
 echo "THE FOLLOWING SETS FORTH ATTRIBUTION NOTICES FOR THIRD PARTY SOFTWARE THAT MAY BE CONTAINED IN PORTIONS OF THE GOPHERCISER PRODUCT." > licenses.txt
 { echo; echo "------";  } >> licenses.txt
 
-LICENSES=$(go-licenses csv "$PROJECT" 2>/dev/null | grep -vi unknown)
+go-licenses save --save_path "$LICENSEFOLDER" "$PROJECT"
 
-for i in $LICENSES; do
-  # todo get from mod cache instead
-  MOD=$(echo "$i" | cut -f 1 -d,)
-  FP=$(echo "$i" | cut -f 2 -d, | sed 's/github.com/raw.githubusercontent.com/g' | sed 's/blob\/master/master/g' | sed 's/master\/.*\/LICENSE/master\/LICENSE/g')
-  LICENSE=$(curl -s --fail "$FP")
-  if [[ $? -eq 0 ]]; then
-     { echo ; echo "$MOD"; echo ; echo "$LICENSE"; echo ; echo "------";} >> licenses.txt
-    else
-      echoerr curl of "$FP" failed
-  fi
+echo "Collecting license files..."
+for p in $(find "$LICENSEFOLDER" -type f -iname "*license*"|sort); do
+	TITLE=${p#"$LICENSEFOLDER/"}
+	echo "Adding $TITLE..."
+	{ echo ; echo "PROJECT: $TITLE" ; echo ; cat "$p"; echo ; echo "------";} >> licenses.txt
 done
