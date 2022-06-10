@@ -6,7 +6,7 @@ require (
 	github.com/InVisionApp/tabular v0.3.0
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/buger/jsonparser v1.1.1
-	github.com/eventials/go-tus v0.0.0-20211022131811-252c8454f2dc
+	github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571
 	github.com/gobwas/ws v1.1.0
 	github.com/goccy/go-json v0.9.7
 	github.com/golang-jwt/jwt/v4 v4.4.1

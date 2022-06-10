@@ -120,6 +120,8 @@ github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7
 github.com/envoyproxy/protoc-gen-validate v0.6.2/go.mod h1:2t7qjJNvHPx8IjnBOzl9E9/baC+qXE/TeeyBRzgJDws=
 github.com/eventials/go-tus v0.0.0-20211022131811-252c8454f2dc h1:hTnYsrpmAwdWP94knQerKlv9cnvBZ3lsGNxCSuMh1qg=
 github.com/eventials/go-tus v0.0.0-20211022131811-252c8454f2dc/go.mod h1:XYuK1S5+kS6FGhlIUFuZFPvWiSrOIoLk6+ro33Xce3Y=
+github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571 h1:0i+Y7klNNqXwzAQ2qlIWeZyiMtDB/rf5fSaFzIW7lsk=
+github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571/go.mod h1:XYuK1S5+kS6FGhlIUFuZFPvWiSrOIoLk6+ro33Xce3Y=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
