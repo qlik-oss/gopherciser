@@ -3,20 +3,22 @@ package users
 import (
 	"errors"
 	"sync"
+
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
 	User struct {
-		UserName  string   `json:"username" displayname:"Username"`
-		Password  Password `json:"password,omitempty" displayname:"Password"`
-		Directory string   `json:"directory,omitempty" displayname:"User directory"`
+		UserName  string           `json:"username" displayname:"Username"`
+		Password  helpers.Password `json:"password,omitempty" displayname:"Password"`
+		Directory string           `json:"directory,omitempty" displayname:"User directory"`
 	}
 
 	CircularUsers struct {
 		mtx       *sync.Mutex
-		UserList  []*User  `json:"userlist" displayname:"User list"`
-		Password  Password `json:"password,omitempty" displayname:"Password"`
-		Directory string   `json:"directory,omitempty" displayname:"User directory"`
+		UserList  []*User          `json:"userlist" displayname:"User list"`
+		Password  helpers.Password `json:"password,omitempty" displayname:"Password"`
+		Directory string           `json:"directory,omitempty" displayname:"User directory"`
 	}
 )
 

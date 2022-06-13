@@ -11,9 +11,9 @@ import (
 
 type (
 	CircularUsersFileCore struct {
-		Filename  helpers.RowFile `json:"filename" displayname:"Filename"  displayelement:"file"`
-		Password  Password        `json:"password,omitempty" displayname:"Password"`
-		Directory string          `json:"directory,omitempty" displayname:"User directory"`
+		Filename  helpers.RowFile  `json:"filename" displayname:"Filename"  displayelement:"file"`
+		Password  helpers.Password `json:"password,omitempty" displayname:"Password"`
+		Directory string           `json:"directory,omitempty" displayname:"User directory"`
 	}
 
 	CircularUsersFile struct {
@@ -79,7 +79,7 @@ func (users *CircularUsersFile) parseUserList() error {
 	return errParse
 }
 
-func parseRow(row, defaultDirectory string, defaultPassword Password) (*User, error) {
+func parseRow(row, defaultDirectory string, defaultPassword helpers.Password) (*User, error) {
 	if row == "" {
 		return nil, errors.New("row is empty")
 	}
@@ -96,7 +96,7 @@ func parseRow(row, defaultDirectory string, defaultPassword Password) (*User, er
 	}
 
 	if len(subStrs) > 2 && len(subStrs[2]) > 0 {
-		user.Password = Password(subStrs[2])
+		user.Password = helpers.Password(subStrs[2])
 	} else {
 		user.Password = defaultPassword
 	}

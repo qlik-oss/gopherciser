@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +26,7 @@ func createUserList(userNames []string, password string) []*User {
 	for idx, uName := range userNames {
 		users[idx] = &User{
 			UserName: uName,
-			Password: Password(password),
+			Password: helpers.Password(password),
 		}
 	}
 	return users

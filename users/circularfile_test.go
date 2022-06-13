@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/goccy/go-json"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 func TestUsersFromFile(t *testing.T) {
@@ -39,14 +40,14 @@ testuser_8;MyDir;Pass;;2323;`)
 	}
 
 	expects := []*User{
-		{UserName: "testuser_1", Password: Password("DefaultPass"), Directory: "NOTDEF"},
-		{UserName: "testuser_2", Password: Password("DefaultPass"), Directory: "DefaultDir"},
-		{UserName: "testuser_3", Password: Password("DefaultPass"), Directory: "DefaultDir"},
-		{UserName: "testuser_4", Password: Password("DefaultPass"), Directory: "NOTDEF"},
-		{UserName: "testuser_5", Password: Password("PassWort"), Directory: "NOTDEF"},
-		{UserName: "testuser_6", Password: Password("MYPass"), Directory: "DefaultDir"},
-		{UserName: "testuser_7", Password: Password(";;2323;"), Directory: "MyDir"},
-		{UserName: "testuser_8", Password: Password("Pass;;2323;"), Directory: "MyDir"},
+		{UserName: "testuser_1", Password: helpers.Password("DefaultPass"), Directory: "NOTDEF"},
+		{UserName: "testuser_2", Password: helpers.Password("DefaultPass"), Directory: "DefaultDir"},
+		{UserName: "testuser_3", Password: helpers.Password("DefaultPass"), Directory: "DefaultDir"},
+		{UserName: "testuser_4", Password: helpers.Password("DefaultPass"), Directory: "NOTDEF"},
+		{UserName: "testuser_5", Password: helpers.Password("PassWort"), Directory: "NOTDEF"},
+		{UserName: "testuser_6", Password: helpers.Password("MYPass"), Directory: "DefaultDir"},
+		{UserName: "testuser_7", Password: helpers.Password(";;2323;"), Directory: "MyDir"},
+		{UserName: "testuser_8", Password: helpers.Password("Pass;;2323;"), Directory: "MyDir"},
 	}
 
 	if len(usergen.userList) != len(expects) {
