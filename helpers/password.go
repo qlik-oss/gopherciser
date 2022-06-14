@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// This helper will confuscate a password field when unmarshaled for logfiles.
 type (
 	// Password
 	Password string
