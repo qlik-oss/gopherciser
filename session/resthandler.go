@@ -167,6 +167,10 @@ func (method RestMethod) String() string {
 	return str
 }
 
+func (method RestMethod) GetEnumMap() *enummap.EnumMap {
+	return restMethodEnumMap
+}
+
 // WaitForPending uses double locking of mutex to wait until mutex is unlocked by
 // loop listening for pending req/resp
 func (handler *RestHandler) WaitForPending() {
