@@ -169,6 +169,13 @@ func (connectionSettings *ConnectionSettings) GetHeaders(state *session.State, e
 
 	state.HeaderJar.SetHeader(host, header)
 
+	dataMutationHeaders := state.HeaderJar.GetHeaderForMethod(host, session.POST)
+	if dataMutationHeaders == nil {
+		dataMutationHeaders = make(http.Header, len(connectionSettings.Headers))
+	}
+	dataMutationHeaders.Add("Origin", host)
+	state.HeaderJar.SetHeaderForMethods(host, dataMutationHeaders, []session.RestMethod{session.POST, session.DELETE, session.PUT, session.PATCH})
+
 	return header, nil
 }
 

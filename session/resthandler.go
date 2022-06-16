@@ -506,11 +506,11 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		}
 
 		if request.ContentReader == nil {
-			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
+			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeaderForMethod(host, request.Method)); errRequest != nil {
 				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
 			}
 		} else {
-			if errRequest = handler.postWithReader(handler.ctx, request, handler.Client, logEntry, handler.headers.GetHeader(host)); errRequest != nil {
+			if errRequest = handler.postWithReader(handler.ctx, request, handler.Client, logEntry, handler.headers.GetHeaderForMethod(host, request.Method)); errRequest != nil {
 				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
 			}
 		}

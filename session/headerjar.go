@@ -18,7 +18,8 @@ type hostMethodPair struct {
 	method RestMethod
 }
 
-func (hmp *hostMethodPair) string() string {
+// String returns string interpretation of this hostMethodPair
+func (hmp *hostMethodPair) String() string {
 	return fmt.Sprintf("%s:%s", hmp.host, hmp.method.String())
 }
 
@@ -60,7 +61,7 @@ func (hj *HeaderJar) GetHeader(host string) http.Header {
 // GetHeaderForMethod returns the header for the given host and specific method
 func (hj *HeaderJar) GetHeaderForMethod(host string, method RestMethod) http.Header {
 	hmp := hostMethodPair{host, method}
-	value, found := hj.headers.Load(hmp)
+	value, found := hj.headers.Load(hmp.String())
 	if !found {
 		return nil
 	}
