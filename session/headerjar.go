@@ -49,7 +49,7 @@ func (hj *HeaderJar) SetHeader(host string, header http.Header) {
 func (hj *HeaderJar) SetHeaderForMethods(host string, header http.Header, methods []RestMethod) {
 	for _, method := range methods {
 		hmp := hostMethodPair{host, method}
-		hj.headers.Store(hmp, header)
+		hj.headers.Store(hmp.String(), header)
 	}
 }
 
