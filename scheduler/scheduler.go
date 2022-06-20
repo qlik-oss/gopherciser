@@ -278,15 +278,19 @@ func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration,
 }
 
 func setupRESTHandler(sessionState *session.State, connectionSettings *connection.ConnectionSettings) error {
-	headers, err := connectionSettings.GetHeaders(sessionState, "")
-	if err != nil {
-		return errors.Wrap(err, "failed to get connection settings headers")
-	}
 	host, err := connectionSettings.GetHost()
 	if err != nil {
 		return errors.Wrap(err, "failed to extract hostname")
 	}
-	sessionState.HeaderJar.SetHeader(host, headers)
+
+	_, err = connectionSettings.GetHeaders(sessionState, "")
+	if err != nil {
+		return errors.Wrap(err, "failed to get connection settings headers")
+	}
+	_, err = connectionSettings.GetHeaders(sessionState, host)
+	if err != nil {
+		return errors.Wrap(err, "failed to get connection settings headers")
+	}
 
 	client, err := session.DefaultClient(connectionSettings.Allowuntrusted, sessionState)
 	if err != nil {

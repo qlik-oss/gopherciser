@@ -49,7 +49,32 @@ func (hj *HeaderJar) SetHeader(host string, header http.Header) {
 func (hj *HeaderJar) SetHeaderForMethods(host string, header http.Header, methods []RestMethod) {
 	for _, method := range methods {
 		hmp := hostMethodPair{host, method}
+		hj.headers.Store(hmp.String(), header.Clone())
+	}
+}
+
+// AppendToHeader adds a key-value pair to the header (for all methods)
+func (hj *HeaderJar) AppendToHeader(host string, key string, value string) {
+	for _, method := range hj.allRestMethods {
+		hmp := hostMethodPair{host, method}
+		header, found := hj.headers.Load(hmp.String())
+		if !found || len(header.(http.Header)) == 0 {
+			header = make(http.Header, 1)
+		}
+		header.(http.Header).Add(key, value)
 		hj.headers.Store(hmp.String(), header)
+	}
+}
+
+// DeleteFromHeader removes a key-value pair from the header by its key
+func (hj *HeaderJar) DeleteFromHeader(host string, key string) {
+	for _, method := range hj.allRestMethods {
+		hmp := hostMethodPair{host, method}
+		header, found := hj.headers.Load(hmp.String())
+		if !found {
+			continue
+		}
+		header.(http.Header).Del(key)
 	}
 }
 
