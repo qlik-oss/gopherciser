@@ -146,7 +146,7 @@ jobs:
           command: |
             for envvar in \
                 GITHUB_USER  \
-                GITHUB_TOKEN  
+                GITHUB_TOKEN
             do
               if [ -z "${!envvar}" ]; then
                 echo "\$${envvar} is not set!"
@@ -184,11 +184,11 @@ workflows:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - test-go-version:
-          name: "Test Go 1.15"
-          version: "1.15"
-      - test-go-version:
           name: "Test Go 1.16"
           version: "1.16"
+      - test-go-version:
+          name: "Test Go 1.18"
+          version: "1.18"
       - publish-github:
           requires:
             - build
