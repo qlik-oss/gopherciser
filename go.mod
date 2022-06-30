@@ -7,6 +7,7 @@ require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/buger/jsonparser v1.1.1
 	github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571
+	github.com/gizak/termui/v3 v3.1.0
 	github.com/gobwas/ws v1.1.0
 	github.com/goccy/go-json v0.9.7
 	github.com/golang-jwt/jwt/v4 v4.4.2
@@ -15,6 +16,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0
+	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2

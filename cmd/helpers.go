@@ -222,6 +222,10 @@ func ConfigOverrideLogSettings(cfg *config.Config) error {
 		cfg.SetRegressionLogging()
 	}
 
+	if tuiOutput {
+		cfg.DisableStatusOutput()
+	}
+
 	if logFormat != "" {
 		var errLogformat error
 		cfg.Settings.LogSettings.Format, errLogformat = resolveLogFormat(logFormat)

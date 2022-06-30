@@ -80,6 +80,7 @@ type (
 		Format          LogFormatType   `json:"format,omitempty" displayname:"Log format" doc-key:"config.settings.logs.format"`
 		Summary         SummaryType     `json:"summary,omitempty" displayname:"Summary type" doc-key:"config.settings.logs.summary"`
 		SummaryFileName string          `json:"summaryFilename,omitempty" displayname:"Name of summary file" doc-key:"config.settings.logs.summaryfile"`
+		DisableStatus   bool            `json:"disablestatus,omitempty" displayname:"Disable Status output" doc-key:"config.settings.logs.disableoutput"`
 	}
 
 	// OutputsSettings settings for produced outputs (if any)
@@ -471,6 +472,11 @@ func (cfg *Config) SetRegressionLogging() {
 	cfg.Settings.LogSettings.Regression = true
 }
 
+// DisableStatusOutput disables continous status output to stdout
+func (cfg *Config) DisableStatusOutput() {
+	cfg.Settings.LogSettings.DisableStatus = true
+}
+
 func (cfg *Config) validateScheduler() error {
 	if cfg.Scheduler == nil {
 		if cfg.Options.AcceptNoScheduler {
@@ -710,6 +716,9 @@ func (cfg *Config) SetupStatistics(summary SummaryType) error {
 func (settings *LogSettings) shouldLogStatus() bool {
 	if settings == nil {
 		return true
+	}
+	if settings.DisableStatus {
+		return false
 	}
 	switch settings.Format {
 	case LogFormatNoLogs:

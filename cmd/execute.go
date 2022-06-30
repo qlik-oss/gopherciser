@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gizak/termui/v3"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
@@ -21,6 +22,7 @@ import (
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
+	"github.com/qlik-oss/gopherciser/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -56,6 +58,7 @@ var (
 	profTyp          string
 	objDefFile       string
 	regression       bool
+	tuiOutput        bool
 )
 
 // *** Custom errors ***
@@ -221,6 +224,9 @@ func init() {
 
 	// profiling
 	executeCmd.Flags().StringVar(&profTyp, "profile", "", profile.Help())
+
+	// Visual progress output
+	executeCmd.Flags().BoolVar(&tuiOutput, "tui", false, profile.Help())
 }
 
 func execute() error {
@@ -333,6 +339,29 @@ func execute() error {
 	cfg.Cancel = func(msg string) {
 		msgErrorReachedMsg = &msg
 		cancel()
+	}
+
+	if tuiOutput {
+		if err := termui.Init(); err != nil {
+			return err // TODO specific error
+		}
+		defer termui.Close()
+
+		err := tui.StartProgressTui(ctx, cancel, &cfg.Counters)
+		if err != nil {
+			return errors.Wrap(err, "error starting tui")
+		}
+
+		uiEvents := termui.PollEvents()
+		go func() {
+			for {
+				e := <-uiEvents
+				switch e.ID {
+				case "q", "<C-c>":
+					cancel()
+				}
+			}
+		}()
 	}
 
 	err := cfg.Execute(ctx, templateData)
