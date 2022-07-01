@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gizak/termui/v3"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
@@ -342,26 +341,10 @@ func execute() error {
 	}
 
 	if tuiOutput {
-		if err := termui.Init(); err != nil {
-			return err // TODO specific error
-		}
-		defer termui.Close()
-
 		err := tui.StartProgressTui(ctx, cancel, &cfg.Counters)
 		if err != nil {
 			return errors.Wrap(err, "error starting tui")
 		}
-
-		uiEvents := termui.PollEvents()
-		go func() {
-			for {
-				e := <-uiEvents
-				switch e.ID {
-				case "q", "<C-c>":
-					cancel()
-				}
-			}
-		}()
 	}
 
 	err := cfg.Execute(ctx, templateData)

@@ -2,11 +2,21 @@ package tui
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
+	"github.com/hashicorp/go-multierror"
+	"github.com/mum4k/termdash"
+	"github.com/mum4k/termdash/cell"
+	"github.com/mum4k/termdash/container"
+	"github.com/mum4k/termdash/keyboard"
+	"github.com/mum4k/termdash/linestyle"
+	"github.com/mum4k/termdash/terminal/termbox"
+	"github.com/mum4k/termdash/terminal/terminalapi"
+	"github.com/mum4k/termdash/widgets/linechart"
+	"github.com/mum4k/termdash/widgets/text"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/statistics"
 )
 
@@ -32,12 +42,13 @@ type (
 
 	Progress struct {
 		Values        map[string][]float64
+		Updaters      []func() error
 		pushedCounter int
 	}
 )
 
 const (
-	// MaxX = 100
+	// MaxX = 300
 
 	Threads     = "threads"
 	Sessions    = "sessions"
@@ -46,6 +57,10 @@ const (
 	Requests    = "requests"
 	ActiveUsers = "activeusers"
 	Errors      = "errors"
+
+	DefaultAxesColor   = cell.ColorNavy
+	DefaultLabelColor  = cell.ColorGreen
+	DefaultBorderColor = cell.ColorWhite
 )
 
 func StartProgressTui(ctx context.Context, cancel func(), counters *statistics.ExecutionCounters) error {
@@ -54,20 +69,72 @@ func StartProgressTui(ctx context.Context, cancel func(), counters *statistics.E
 	}
 
 	progress := NewProgress()
-	startTextBox := widgets.NewParagraph()
-	startTextBox.Title = "Gopherciser"
-	startTextBox.Text = "Load test starting up..."
 
-	startTextBox.SetRect(5, 5, 50, 25)
-	startTextBox.BorderStyle.Fg = termui.ColorWhite
-	termui.Render(startTextBox)
+	throughputGraph, err := progress.LineGraph("Throughput", []string{Requests}, []cell.Color{cell.ColorCyan})
+	if err != nil {
+		return err
+	}
+	errWarnGraph, err := progress.LineGraph("Errors/Warnings", []string{Errors, Warnings}, []cell.Color{cell.ColorRed, cell.ColorYellow})
+	if err != nil {
+		return err
+	}
+	sessionsGraph, err := progress.LineGraph("Current sessions", []string{ActiveUsers}, []cell.Color{cell.ColorCyan})
+	if err != nil {
+		return err
+	}
+
+	countersList, err := progress.List("Counters",
+		[]string{Threads, Sessions, Users, ActiveUsers, Requests, Warnings, Errors},
+		[]cell.Color{cell.ColorCyan, cell.ColorCyan, cell.ColorCyan, cell.ColorCyan, cell.ColorCyan, cell.ColorYellow, cell.ColorRed},
+	)
+	if err != nil {
+		return err
+	}
+
+	layout := []container.Option{
+		container.SplitHorizontal(
+			container.Top(
+				container.SplitVertical(
+					container.Left(throughputGraph),
+					container.Right(errWarnGraph),
+				),
+			),
+			container.Bottom(
+				container.SplitVertical(
+					container.Left(sessionsGraph),
+					container.Right(countersList...),
+				),
+			),
+		),
+	}
+
+	t, err := termbox.New(termbox.ColorMode(terminalapi.ColorMode256))
+	if err != nil {
+		return err
+	}
+
+	c, err := container.New(t, container.ID("root"))
+	if err != nil {
+		return err
+	}
+
+	c.Update("root", layout...)
+
+	quitter := func(k *terminalapi.Keyboard) {
+		if k.Key == keyboard.Key('q') || k.Key == keyboard.KeyCtrlC {
+			cancel()
+		}
+	}
+
+	// TODO handle Run error
+	go termdash.Run(ctx, t, c, termdash.RedrawInterval(time.Second), termdash.KeyboardSubscriber(quitter))
 
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Second):
+			case <-time.After(time.Second): // TODO make a ticker
 				progress.pushValues(Values{
 					Threads:     counters.Threads.Current(),
 					Sessions:    counters.Sessions.Current(),
@@ -77,6 +144,9 @@ func StartProgressTui(ctx context.Context, cancel func(), counters *statistics.E
 					ActiveUsers: counters.ActiveUsers.Current(),
 					Errors:      counters.Errors.Current(),
 				})
+				if err := progress.Update(); err != nil {
+					// TODO handle error
+				}
 			}
 		}
 	}()
@@ -90,26 +160,29 @@ func NewProgress() *Progress {
 	}
 }
 
+func (progess *Progress) Update() error {
+	var mErr *multierror.Error
+	for _, updater := range progess.Updaters {
+		if err := updater(); err != nil {
+			multierror.Append(err)
+		}
+	}
+	return helpers.FlattenMultiError(mErr)
+}
+
 func (progess *Progress) pushValues(values Values) {
 	progess.pushedCounter++
 
-	termWidth, termHeight := termui.TerminalDimensions()
-
-	maxData := termWidth/2 - 5
-	if maxData < 5 {
-		maxData = 5
-	}
-
-	if progess.pushedCounter > maxData {
-		// need to wrap all arrays to size before adding new values
-		for k, v := range progess.Values {
-			lenV := len(v)
-			if lenV > maxData {
-				lenV = maxData
-			}
-			progess.Values[k] = v[1:lenV]
-		}
-	}
+	// if progess.pushedCounter > MaxX {
+	// 	// need to wrap all arrays to size before adding new values
+	// 	for k, v := range progess.Values {
+	// 		lenV := len(v)
+	// 		if lenV > MaxX {
+	// 			lenV = MaxX
+	// 		}
+	// 		progess.Values[k] = v[1:lenV]
+	// 	}
+	// }
 
 	progess.Values[Threads] = append(progess.Values[Threads], float64(values.Threads))
 	progess.Values[Sessions] = append(progess.Values[Sessions], float64(values.Sessions))
@@ -118,70 +191,89 @@ func (progess *Progress) pushValues(values Values) {
 	progess.Values[Requests] = append(progess.Values[Requests], float64(values.Requests))
 	progess.Values[ActiveUsers] = append(progess.Values[ActiveUsers], float64(values.ActiveUsers))
 	progess.Values[Errors] = append(progess.Values[Errors], float64(values.Errors))
-
-	progess.Render(termWidth, termHeight)
 }
 
-var (
-	RedYellowTheme = []termui.Color{
-		termui.ColorRed,
-		termui.ColorYellow,
+func (progress *Progress) LineGraph(title string, labels []string, colors []cell.Color) (container.Option, error) {
+
+	if len(labels) != len(colors) {
+		return nil, errors.Errorf("labels<%d> and colors<%d> most have same length", len(labels), len(colors))
 	}
 
-	DefaultTheme = []termui.Color{
-		termui.ColorBlue,
-		termui.ColorGreen,
-		termui.ColorCyan,
-		termui.ColorMagenta,
-		termui.ColorYellow,
-		termui.ColorWhite,
-		termui.ColorRed,
-	}
-)
-
-func (progress *Progress) Render(termWidth, termHeight int) {
-	if progress.pushedCounter < 2 {
-		return
+	linegraph, err := linechart.New(
+		linechart.AxesCellOpts(cell.FgColor(DefaultAxesColor)),
+		linechart.YLabelCellOpts(cell.FgColor(DefaultLabelColor)),
+		linechart.XLabelCellOpts(cell.FgColor(DefaultLabelColor)),
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	grid := termui.NewGrid()
-	grid.SetRect(0, 0, termWidth, termHeight)
+	if progress.Updaters == nil {
+		progress.Updaters = make([]func() error, 0, 1)
+	}
 
-	grid.Set(
-		termui.NewRow(.5,
-			termui.NewCol(.5, LineGraph("Throughput", []string{Requests}, [][]float64{progress.Values[Requests]}, termWidth/2, termHeight/2, DefaultTheme)),
-			termui.NewCol(.5, LineGraph("Errors/Warnings", []string{Errors, Warnings}, [][]float64{progress.Values[Errors], progress.Values[Warnings]}, termWidth/2, termHeight/2, RedYellowTheme)),
-		),
-		termui.NewRow(.5,
-			termui.NewCol(.5, LineGraph("Users", []string{Users, ActiveUsers}, [][]float64{progress.Values[Users], progress.Values[ActiveUsers]}, termWidth/2, termHeight/2, DefaultTheme)),
-		),
+	legendWidget, err := text.New()
+
+	progress.Updaters = append(progress.Updaters, func() error {
+		var mErr *multierror.Error
+
+		legendWidget.Reset()
+		for i, label := range labels {
+			if err := linegraph.Series(label, progress.Values[label], linechart.SeriesCellOpts(cell.FgColor(colors[i]))); err != nil {
+				multierror.Append(err)
+			}
+			legendText := ""
+			if i > 0 {
+				legendText = " "
+			}
+			legendText += fmt.Sprintf("%s %0.2f", label, progress.Values[label][len(progress.Values[label])-1])
+			if err := legendWidget.Write(legendText, text.WriteCellOpts(cell.FgColor(colors[i]))); err != nil {
+				multierror.Append(err)
+			}
+		}
+		return helpers.FlattenMultiError(mErr)
+	})
+
+	containerOption := container.SplitHorizontal(
+		container.Top(container.PlaceWidget(linegraph), container.Border(linestyle.Light), container.BorderTitle(title), container.BorderColor(DefaultBorderColor)),
+		container.Bottom(container.PlaceWidget(legendWidget)),
+		container.SplitPercent(98),
 	)
 
-	termui.Render(grid)
+	return containerOption, err
 }
 
-func LineGraph(title string, labels []string, values [][]float64, maxX, maxY int, colors []termui.Color) *widgets.Plot {
-	linegraph := widgets.NewPlot()
-	linegraph.Title = title
-	linegraph.Data = values
-	linegraph.AxesColor = termui.ColorWhite
-	linegraph.LineColors = colors
-	linegraph.ShowAxes = false
-	return linegraph
-}
+func (progress *Progress) List(title string, labels []string, colors []cell.Color) ([]container.Option, error) {
+	if len(labels) != len(colors) {
+		return nil, errors.Errorf("labels<%d> and colors<%d> most have same length", len(labels), len(colors))
+	}
 
-// func InvisibleTextBox(text string, color termui.Color, rect Rect) *widgets.List {
-// 	// tb := widgets.NewParagraph()
-// 	// tb.Text = text
-// 	tb := widgets.NewList()
-// 	tb.Border = false
-// 	tb.TextStyle.Fg = color
-// 	tb.SetRect(rect.x1, rect.y1, rect.x2, rect.y2)
-// 	tb.Rows
-// 	// tb.PaddingBottom = 0
-// 	// tb.PaddingLeft = 0
-// 	// tb.PaddingRight = 0
-// 	// tb.PaddingTop = 0
-// 	// tb.Min = image.Pt(rect.x1, rect.y1)
-// 	return tb
-// }
+	listWidget, err := text.New()
+	if err != nil {
+		return nil, err
+	}
+	containerOptions := []container.Option{
+		container.PlaceWidget(listWidget),
+		container.Border(linestyle.Light),
+		container.BorderTitle(title),
+	}
+
+	if progress.Updaters == nil {
+		progress.Updaters = make([]func() error, 0, 1)
+	}
+	progress.Updaters = append(progress.Updaters, func() error {
+		listWidget.Reset()
+		for i, label := range labels {
+			listText := ""
+			if i > 0 {
+				listText += "\n"
+			}
+			listText += fmt.Sprintf("%s %0.2f", label, progress.Values[label][len(progress.Values[label])-1])
+			if err := listWidget.Write(listText, text.WriteCellOpts(cell.FgColor(colors[i]))); err != nil {
+				multierror.Append(err)
+			}
+		}
+		return nil
+	})
+	return containerOptions, nil
+}

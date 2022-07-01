@@ -804,6 +804,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			return
 		}
 
+		ansiWriter.Write([]byte("\n\n"))
 		buf.WriteTo(ansiWriter)
 		if buf.Error != nil {
 			fmt.Printf("Summary: Errors<%d> Warnings<%d>\n", errs, warnings) // fallback to fmt
