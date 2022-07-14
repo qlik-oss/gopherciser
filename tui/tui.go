@@ -48,8 +48,6 @@ type (
 )
 
 const (
-	// MaxX = 300
-
 	Threads     = "threads"
 	Sessions    = "sessions"
 	Users       = "users"
@@ -61,6 +59,7 @@ const (
 	DefaultAxesColor   = cell.ColorNavy
 	DefaultLabelColor  = cell.ColorGreen
 	DefaultBorderColor = cell.ColorWhite
+	DefaultLineColor   = cell.ColorCyan
 )
 
 func StartProgressTui(ctx context.Context, cancel func(), counters *statistics.ExecutionCounters) error {
@@ -70,7 +69,7 @@ func StartProgressTui(ctx context.Context, cancel func(), counters *statistics.E
 
 	progress := NewProgress()
 
-	throughputGraph, err := progress.LineGraph("Throughput", []string{Requests}, []cell.Color{cell.ColorCyan})
+	throughputGraph, err := progress.LineGraph("Throughput", []string{Requests}, []cell.Color{DefaultLineColor})
 	if err != nil {
 		return err
 	}
@@ -78,14 +77,14 @@ func StartProgressTui(ctx context.Context, cancel func(), counters *statistics.E
 	if err != nil {
 		return err
 	}
-	sessionsGraph, err := progress.LineGraph("Current sessions", []string{ActiveUsers}, []cell.Color{cell.ColorCyan})
+	sessionsGraph, err := progress.LineGraph("Current sessions", []string{ActiveUsers}, []cell.Color{DefaultLineColor})
 	if err != nil {
 		return err
 	}
 
 	countersList, err := progress.List("Counters",
 		[]string{Threads, Sessions, Users, ActiveUsers, Requests, Warnings, Errors},
-		[]cell.Color{cell.ColorCyan, cell.ColorCyan, cell.ColorCyan, cell.ColorCyan, cell.ColorCyan, cell.ColorYellow, cell.ColorRed},
+		[]cell.Color{DefaultLineColor, DefaultLineColor, DefaultLineColor, DefaultLineColor, DefaultLineColor, cell.ColorYellow, cell.ColorRed},
 	)
 	if err != nil {
 		return err
@@ -172,17 +171,6 @@ func (progess *Progress) Update() error {
 
 func (progess *Progress) pushValues(values Values) {
 	progess.pushedCounter++
-
-	// if progess.pushedCounter > MaxX {
-	// 	// need to wrap all arrays to size before adding new values
-	// 	for k, v := range progess.Values {
-	// 		lenV := len(v)
-	// 		if lenV > MaxX {
-	// 			lenV = MaxX
-	// 		}
-	// 		progess.Values[k] = v[1:lenV]
-	// 	}
-	// }
 
 	progess.Values[Threads] = append(progess.Values[Threads], float64(values.Threads))
 	progess.Values[Sessions] = append(progess.Values[Sessions], float64(values.Sessions))
