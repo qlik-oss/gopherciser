@@ -67,7 +67,10 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 	publishAction := func(sheet *senseobjects.Sheet, ctx context.Context) error {
 		if publishSheetSettings.IgnorePublished {
 			if sheet.Layout.Meta.Published {
-				sessionState.LogDebugf(`not publishing sheet<%s> "%s" since it is already published`, sheet.ID, sheet.Layout.Meta.Title)
+				sessionState.LogDebugf(
+					`not publishing sheet<%s> "%s" since it is already published`,
+					sheet.ID, sheet.Layout.Meta.Title,
+				)
 				return nil
 			}
 		}
@@ -78,11 +81,15 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 
 		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title)
 
-		return errors.Wrapf(
-			sheet.GenericObject.Publish(ctx),
-			`failed to publish %s sheet<%s> "%s"`,
-			sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title,
-		)
+		err := sheet.GenericObject.Publish(ctx)
+		if err != nil {
+			return errors.Wrapf(
+				err,
+				`failed to publish %s sheet<%s> "%s"`,
+				sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title,
+			)
+		}
+		return nil
 	}
 
 	executePubUnPubAction(publishSheetSettings.Mode, publishSheetSettings.SheetIDs,
