@@ -1288,6 +1288,7 @@ Publish sheets in the current app.
     * `allsheets`: Publish all sheets in the app.
     * `sheetids`: Only publish the sheets specified by the `sheetIds` array.
 * `sheetIds`: (optional) Array of sheet IDs for the `sheetids` mode.
+* `ignorePublished`: Do not try to publish already published sheets.
 
 ### Example
 ```json

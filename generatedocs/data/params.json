@@ -449,6 +449,9 @@
     "publishsheet.sheetIds": [
         "(optional) Array of sheet IDs for the `sheetids` mode."
     ],
+    "publishsheet.ignorePublished": [
+        "Do not try to publish already published sheets."
+    ],
     "randomaction.iterations": [
         "Number of random actions to perform."
     ],

@@ -18,8 +18,9 @@ type (
 	PublishSheetMode int
 	// PublishSheetSettings contains details for publishing sheet(s)
 	PublishSheetSettings struct {
-		Mode     PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
-		SheetIDs []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
+		Mode            PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
+		SheetIDs        []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
+		IgnorePublished bool             `json:"ignorePublished" displayname:"Ignore publishing already published sheets" doc-key:"publishsheet.ignorePublished"`
 	}
 )
 
@@ -64,7 +65,24 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
 	publishAction := func(sheet *senseobjects.Sheet, ctx context.Context) error {
-		return sheet.GenericObject.Publish(ctx)
+		if publishSheetSettings.IgnorePublished {
+			if sheet.Layout.Meta.Published {
+				sessionState.LogDebugf(`not publishing sheet<%s> "%s" since it is already published`, sheet.ID, sheet.Layout.Meta.Title)
+				return nil
+			}
+		}
+		sheetAccessLevel := "private"
+		if sheet.Layout.Meta.Published {
+			sheetAccessLevel = "public"
+		}
+
+		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title)
+
+		return errors.Wrapf(
+			sheet.GenericObject.Publish(ctx),
+			`failed to publish %s sheet<%s> "%s"`,
+			sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title,
+		)
 	}
 
 	executePubUnPubAction(publishSheetSettings.Mode, publishSheetSettings.SheetIDs,
