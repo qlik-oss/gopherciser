@@ -65,28 +65,33 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
 	publishAction := func(sheet *senseobjects.Sheet, ctx context.Context) error {
-		if publishSheetSettings.IgnorePublished {
-			if sheet.Layout.Meta.Published {
-				sessionState.LogDebugf(
-					`not publishing sheet<%s> "%s" since it is already published`,
-					sheet.ID, sheet.Layout.Meta.Title,
-				)
-				return nil
-			}
+		sheetLayout, err := sheet.GetLayout(ctx)
+		if err != nil {
+			return errors.Wrapf(err, `failed get layout of sheet<%s>`, sheet.ID)
 		}
-		sheetAccessLevel := "private"
-		if sheet.Layout.Meta.Published {
-			sheetAccessLevel = "public"
+		published := sheetLayout.Meta.Published
+		title := sheetLayout.Meta.Title
+		accessLevel := "private"
+		if published {
+			accessLevel = "public"
 		}
 
-		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title)
+		if publishSheetSettings.IgnorePublished && published {
+			sessionState.LogDebugf(
+				`not publishing sheet<%s> "%s" since it is already %s`,
+				sheet.ID, title, accessLevel,
+			)
+			return nil
+		}
 
-		err := sheet.GenericObject.Publish(ctx)
+		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, accessLevel, sheet.ID, title)
+
+		err = sheet.GenericObject.Publish(ctx)
 		if err != nil {
 			return errors.Wrapf(
 				err,
 				`failed to publish %s sheet<%s> "%s"`,
-				sheetAccessLevel, sheet.ID, sheet.Layout.Meta.Title,
+				accessLevel, sheet.ID, title,
 			)
 		}
 		return nil
