@@ -301,6 +301,7 @@ var (
 		"openapp.externalhost":                            {"(optional) Sets an external host to be used instead of `server` configured in connection settings."},
 		"openapp.unique":                                  {"Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."},
 		"productversion.log":                              {"Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted."},
+		"publishsheet.includePublished":                   {"Try to publish already published sheets."},
 		"publishsheet.mode":                               {"", "`allsheets`: Publish all sheets in the app.", "`sheetids`: Only publish the sheets specified by the `sheetIds` array."},
 		"publishsheet.sheetIds":                           {"(optional) Array of sheet IDs for the `sheetids` mode."},
 		"randomaction.actions":                            {"List of actions from which to randomly pick an action to execute. Each item has a number of possible parameters."},

@@ -9,6 +9,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -18,8 +19,9 @@ type (
 	PublishSheetMode int
 	// PublishSheetSettings contains details for publishing sheet(s)
 	PublishSheetSettings struct {
-		Mode     PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
-		SheetIDs []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
+		Mode             PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
+		SheetIDs         []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
+		IncludePublished bool             `json:"includePublished" displayname:"Try to publish already published sheets" doc-key:"publishsheet.includePublished"`
 	}
 )
 
@@ -64,7 +66,43 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
 	publishAction := func(sheet *senseobjects.Sheet, ctx context.Context) error {
-		return sheet.GenericObject.Publish(ctx)
+		sheetLayout, err := sheet.GetLayout(ctx)
+		if err != nil {
+			return errors.Wrapf(err, `failed get layout of sheet<%s>`, sheet.ID)
+		}
+		published := sheetLayout.Meta.Published
+		title := sheetLayout.Meta.Title
+		accessLevel := "private"
+		if published {
+			accessLevel = "public"
+		}
+
+		if published {
+			if !publishSheetSettings.IncludePublished {
+				sessionState.LogDebugf(
+					`not publishing sheet<%s> "%s" since it is already %s`,
+					sheet.ID, title, accessLevel,
+				)
+				return nil
+			}
+			sessionState.LogEntry.Logf(
+				logger.WarningLevel,
+				`trying to publish already published sheet<%s> "%s"`,
+				sheet.ID, title,
+			)
+		}
+
+		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, accessLevel, sheet.ID, title)
+
+		err = sheet.GenericObject.Publish(ctx)
+		if err != nil {
+			return errors.Wrapf(
+				err,
+				`failed to publish %s sheet<%s> "%s"`,
+				accessLevel, sheet.ID, title,
+			)
+		}
+		return nil
 	}
 
 	executePubUnPubAction(publishSheetSettings.Mode, publishSheetSettings.SheetIDs,
