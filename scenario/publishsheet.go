@@ -9,6 +9,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 )
@@ -18,9 +19,9 @@ type (
 	PublishSheetMode int
 	// PublishSheetSettings contains details for publishing sheet(s)
 	PublishSheetSettings struct {
-		Mode            PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
-		SheetIDs        []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
-		IgnorePublished bool             `json:"ignorePublished" displayname:"Ignore publishing already published sheets" doc-key:"publishsheet.ignorePublished"`
+		Mode             PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
+		SheetIDs         []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
+		IncludePublished bool             `json:"includePublished" displayname:"Try to publish already published sheets" doc-key:"publishsheet.includePublished"`
 	}
 )
 
@@ -76,12 +77,19 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 			accessLevel = "public"
 		}
 
-		if publishSheetSettings.IgnorePublished && published {
-			sessionState.LogDebugf(
-				`not publishing sheet<%s> "%s" since it is already %s`,
-				sheet.ID, title, accessLevel,
+		if published {
+			if !publishSheetSettings.IncludePublished {
+				sessionState.LogDebugf(
+					`not publishing sheet<%s> "%s" since it is already %s`,
+					sheet.ID, title, accessLevel,
+				)
+				return nil
+			}
+			sessionState.LogEntry.Logf(
+				logger.WarningLevel,
+				`trying to publish already published sheet<%s> "%s"`,
+				sheet.ID, title,
 			)
-			return nil
 		}
 
 		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, accessLevel, sheet.ID, title)
