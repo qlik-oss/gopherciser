@@ -10,7 +10,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.18
     steps:
       - checkout
       - setup_remote_docker
@@ -75,7 +75,7 @@ jobs:
     parameters:
       version:
         type: string
-        default: "1.15"
+        default: "1.17"
     docker:
       - image: cimg/go:<< parameters.version >>
     steps:
@@ -184,11 +184,11 @@ workflows:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - test-go-version:
-          name: "Test Go 1.16"
-          version: "1.16"
+          name: "Test Go 1.17"
+          version: "1.17"
       - test-go-version:
-          name: "Test Go 1.18"
-          version: "1.18"
+          name: "Test Go 1.19"
+          version: "1.19"
       - publish-github:
           requires:
             - build
