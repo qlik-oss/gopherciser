@@ -32,13 +32,13 @@ set -eu
 
 export GO111MODULE=on
 
-GLVERSION=1.46.1
+GLVERSION=1.48.0
 CURVER=NULL
 
 # Determine OS and act accordingly to extract MD5 sum as an override due to -version being missing in golangci-lint CLI
 
 # Check if linter is installed
-CURVER=$("$GOPATH"/bin/golangci-lint --version | cut -f 4 -d\ )
+CURVER=$("$GOPATH"/bin/golangci-lint version | cut -f 4 -d\ )
 
 # Check if we have the correct version, otherwise install it
 echo detected lint version "$CURVER"

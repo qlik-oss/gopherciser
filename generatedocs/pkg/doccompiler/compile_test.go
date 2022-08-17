@@ -3,19 +3,54 @@ package doccompiler
 import (
 	"fmt"
 	"go/format"
-	"io/ioutil"
+	"os"
 	"reflect"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/andreyvit/diff"
 	"github.com/goccy/go-json"
+	"github.com/hashicorp/go-version"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
-	generated "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output"
+	generatedV1 "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output/V1"
+	generatedV2 "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output/V2"
 )
 
 func TestCompile(t *testing.T) {
 	docDataRoot := "testdata/base/data"
-	expectedOutput := "testdata/base/expected-output/documentation.go"
+	expectedOutputV1 := "testdata/base/expected-output/V1/documentation.go"
+	expectedOutputV2 := "testdata/base/expected-output/V2/documentation.go"
+
+	goVersionString := runtime.Version()
+	goVersionString = strings.TrimPrefix(goVersionString, "go")
+	goVersion, err := version.NewVersion(goVersionString)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go19, err := version.NewVersion("1.19")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generatedActions := generatedV2.Actions
+	generatedSchedulers := generatedV2.Schedulers
+	generatedConfig := generatedV2.Config
+	generatedExtra := generatedV2.Extra
+	generatedParams := generatedV2.Params
+	generatedGroups := generatedV2.Groups
+
+	expectedOutput := expectedOutputV2
+	if goVersion.LessThan(go19) {
+		generatedActions = generatedV1.Actions
+		generatedSchedulers = generatedV1.Schedulers
+		generatedConfig = generatedV1.Config
+		generatedExtra = generatedV1.Extra
+		generatedParams = generatedV1.Params
+		generatedGroups = generatedV1.Groups
+		expectedOutput = expectedOutputV1
+	}
 
 	for _, tc := range []struct {
 		name     string
@@ -33,7 +68,7 @@ func TestCompile(t *testing.T) {
 			name: "from generated",
 			compiler: func() DocCompiler {
 				docData := New()
-				docData.AddDataFromGenerated(generated.Actions, generated.Schedulers, generated.Config, generated.Extra, generated.Params, generated.Groups)
+				docData.AddDataFromGenerated(generatedActions, generatedSchedulers, generatedConfig, generatedExtra, generatedParams, generatedGroups)
 				return docData
 			},
 		},
@@ -41,7 +76,7 @@ func TestCompile(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			generatedDocs := tc.compiler().Compile()
-			expectedDocs, err := ioutil.ReadFile(expectedOutput)
+			expectedDocs, err := os.ReadFile(expectedOutput)
 			if err != nil {
 				t.Fatal(err)
 			}

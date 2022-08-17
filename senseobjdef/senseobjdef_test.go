@@ -1,11 +1,12 @@
 package senseobjdef
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/helpers"
-	"io/ioutil"
+	"os"
 	"testing"
+
+	"github.com/goccy/go-json"
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 var (
@@ -291,7 +292,7 @@ func TestDeprecatedConfig(t *testing.T) {
 
 func TestOverideFromFile(t *testing.T) {
 	// test unmarshaling from file
-	odf, err := ioutil.TempFile("", "objdef")
+	odf, err := os.CreateTemp("", "objdef")
 	if err != nil {
 		t.Fatal("failed to create temporary file", err)
 	}

@@ -1,7 +1,7 @@
 package genmd
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	generated "github.com/qlik-oss/gopherciser/generatedocs/pkg/genmd/testdata"
@@ -20,7 +20,7 @@ func TestGenerateMarkDown(t *testing.T) {
 	mdBytes := generateFromCompiled(compiledDocs)
 
 	markdown := string(mdBytes)
-	expectedMDBytes, err := ioutil.ReadFile("testdata/settingup.md")
+	expectedMDBytes, err := os.ReadFile("testdata/settingup.md")
 	if err != nil {
 		t.Error(err)
 	}

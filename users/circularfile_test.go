@@ -2,7 +2,7 @@ package users
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/goccy/go-json"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestUsersFromFile(t *testing.T) {
-	f, err := ioutil.TempFile("", "Users*.txt")
+	f, err := os.CreateTemp("", "Users*.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

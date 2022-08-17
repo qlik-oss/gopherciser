@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	tmpKeyFile, err := ioutil.TempFile("", "priv.pem")
+	tmpKeyFile, err := os.CreateTemp("", "priv.pem")
 	if err != nil {
 		t.Fatal(err)
 	}

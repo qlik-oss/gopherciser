@@ -1,18 +1,17 @@
 package helpers_test
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 func Test_RowFile_Marshal(t *testing.T) {
-	dir, err := ioutil.TempDir("", "rowfile")
+	dir, err := os.MkdirTemp("", "rowfile")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +37,7 @@ func Test_RowFile_Marshal(t *testing.T) {
 	}
 
 	// prepare test file
-	if err := ioutil.WriteFile(filepath, []byte(strings.Join(testData, "\n")), 0644); err != nil {
+	if err := os.WriteFile(filepath, []byte(strings.Join(testData, "\n")), 0644); err != nil {
 		t.Fatal(err)
 	}
 

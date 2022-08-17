@@ -1,7 +1,6 @@
 package common
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
@@ -159,7 +158,7 @@ func JsonTagName(tag reflect.StructTag) (string, bool) {
 
 // ReadFile into memory
 func ReadFile(path string) ([]byte, error) {
-	file, err := ioutil.ReadFile(path)
+	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Errorf("failed to open file<%s>: %v\n", path, err)
 	}
