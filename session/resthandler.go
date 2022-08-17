@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -520,7 +519,7 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			request.ResponseStatus = request.response.Status
 			request.ResponseStatusCode = request.response.StatusCode
 			request.ResponseHeaders = request.response.Header
-			request.ResponseBody, errRequest = ioutil.ReadAll(request.response.Body)
+			request.ResponseBody, errRequest = io.ReadAll(request.response.Body)
 		}
 	}()
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -849,7 +848,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 		if summaryFilename != "" {
 			fileName = summaryFilename
 		}
-		if err := ioutil.WriteFile(fileName, jsn, 0644); err != nil {
+		if err := os.WriteFile(fileName, jsn, 0644); err != nil {
 			_, _ = os.Stderr.WriteString(fmt.Sprint("failed write summary file:", err))
 		}
 		return

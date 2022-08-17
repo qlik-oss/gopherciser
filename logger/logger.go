@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -371,7 +370,7 @@ func CreateStdoutLogger() *Logger {
 
 // CreateDummyLogger auto discarding all entries
 func CreateDummyLogger() *Logger {
-	dummyWriter := NewTSVWriter(nil, ioutil.Discard)
+	dummyWriter := NewTSVWriter(nil, io.Discard)
 	dummyLogger := NewLogger(dummyWriter)
 	return dummyLogger
 }

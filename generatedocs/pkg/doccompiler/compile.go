@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"log"
 	"os"
 	"sort"
@@ -90,7 +89,7 @@ func (data *docData) Compile() []byte {
 
 func (data *docData) CompileToFile(fileName string) {
 	docs := data.Compile()
-	if err := ioutil.WriteFile(fileName, docs, 0644); err != nil {
+	if err := os.WriteFile(fileName, docs, 0644); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 	fmt.Printf("Compiled documentation to %s\n", fileName)
@@ -274,7 +273,7 @@ func init() {
 }
 
 func subDirs(path string) []string {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil && !os.IsNotExist(err) {
 		common.Exit(err, ExitCodeFailedListDir)
 	}

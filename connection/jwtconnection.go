@@ -2,9 +2,9 @@ package connection
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
+	"os"
 	"strings"
 	"sync"
 
@@ -217,7 +217,7 @@ func (connectJWT *ConnectJWTSettings) getPrivateKey() ([]byte, error) {
 	// read private key into memory
 	var readKeyErr error
 	connectJWT.readKey.Do(func() {
-		connectJWT.key, readKeyErr = ioutil.ReadFile(connectJWT.KeyPath)
+		connectJWT.key, readKeyErr = os.ReadFile(connectJWT.KeyPath)
 	})
 
 	if readKeyErr != nil {

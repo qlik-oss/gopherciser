@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
@@ -23,7 +22,7 @@ func WriteToFile(filePath string, data []byte) error {
 			return errors.Errorf("could not create directory<%s>: %v", dir, err)
 		}
 	}
-	if err := ioutil.WriteFile(filePath, data, 0644); err != nil {
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return errors.Errorf("could not write to file<%s>: %v", filePath, err)
 	}
 	return nil
