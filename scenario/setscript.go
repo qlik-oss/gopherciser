@@ -48,6 +48,7 @@ func (settings SetScriptSettings) Execute(sessionState *session.State,
 
 	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error { return app.Doc.DoSave(ctx, "") }); err != nil {
 		actionState.AddErrors(errors.Wrap(err, "failed to save app"))
+		return
 	}
 
 	sessionState.Wait(actionState)
