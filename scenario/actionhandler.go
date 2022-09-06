@@ -147,6 +147,7 @@ const (
 	ActionSetScriptVar          = "setscriptvar"
 	ActionSmartSearch           = "smartsearch"
 	ActionObjectSearch          = "objectsearch"
+	ActionGetScript             = "getscript"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -257,6 +258,7 @@ func ResetDefaultActions() {
 		ActionSetScriptVar:          SetScriptVarSettings{},
 		ActionSmartSearch:           SmartSearchSettings{},
 		ActionObjectSearch:          ObjectSearchSettings{},
+		ActionGetScript:             GetscriptSettings{},
 	}
 }
 

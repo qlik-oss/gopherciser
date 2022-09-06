@@ -357,6 +357,9 @@
     "generateodag.linkname": [
         "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
     ],
+    "getscript.savelog" : [
+        "Save load script to log file under the INFO log labelled *LoadScript*"
+    ],
     "hook.content" : [
         "(optional) Content of request."
     ],

@@ -78,6 +78,10 @@ var (
 			Description: "## GenerateOdag action\n\nGenerate an on-demand app from an existing On-Demand App Generation (ODAG) link.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"GenerateOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
 		},
+		"getscript": {
+			Description: "## GetScript action\n\nGet the load script for the app.\n\n",
+			Examples:    "### Example\n\nGet the load script for the app\n\n```json\n{\n    \"action\": \"getscript\"\n}\n```\n\nGet the load script for the app and save to log file\n\n```json\n{\n    \"action\": \"getscript\",\n    \"settings\": {\n        \"savelog\" : true\n    }\n}\n```\n",
+		},
 		"iterated": {
 			Description: "## Iterated action\n\nLoop one or more actions.\n\n**Note:** This action does not require an app context (that is, it does not have to be prepended with an `openapp` action).\n",
 			Examples:    "### Example\n\n```json\n//Visit all sheets twice\n{\n     \"action\": \"iterated\",\n     \"label\": \"\",\n     \"settings\": {\n         \"iterations\" : 2,\n         \"actions\" : [\n            {\n                 \"action\": \"sheetchanger\"\n            },\n            {\n                \"action\": \"thinktime\",\n                \"settings\": {\n                    \"type\": \"static\",\n                    \"delay\": 5\n                }\n            }\n         ]\n     }\n}\n```\n",
@@ -271,6 +275,7 @@ var (
 		"duplicatesheet.id":                               {"ID of the sheet to clone."},
 		"duplicatesheet.save":                             {"Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted."},
 		"generateodag.linkname":                           {"Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
+		"getscript.savelog":                               {"Save load script to log file under the INFO log labelled *LoadScript*"},
 		"hook.content":                                    {"(optional) Content of request."},
 		"hook.contenttype":                                {"Request content-type header. Defaults to application/json."},
 		"hook.extractor.faillevel":                        {"Defines how to report data extraction or validation failure.", "`none`: Do nothing.", "`info`: Log an info log row.", "`warning`: Log a warning log row.", "`error`: Log a error row and abort script."},
@@ -387,7 +392,7 @@ var (
 		{
 			Name:    "commonActions",
 			Title:   "Common actions",
-			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "iterated", "listboxselect", "openapp", "objectsearch", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "setscriptvar", "setsensevariable", "sheetchanger", "smartsearch", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
+			Actions: []string{"applybookmark", "askhubadvisor", "changesheet", "clearall", "clearfield", "clickactionbutton", "containertab", "createbookmark", "createsheet", "deletebookmark", "deletesheet", "disconnectapp", "disconnectenvironment", "dosave", "duplicatesheet", "getscript", "iterated", "listboxselect", "objectsearch", "openapp", "productversion", "publishbookmark", "publishsheet", "randomaction", "reload", "select", "setscript", "setscriptvar", "setsensevariable", "sheetchanger", "smartsearch", "subscribeobjects", "thinktime", "unpublishbookmark", "unpublishsheet", "unsubscribeobjects"},
 			DocEntry: common.DocEntry{
 				Description: "# Common actions\n\nThese actions are applicable for most types of Qlik Sense deployments.\n\n**Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).\n",
 				Examples:    "",
