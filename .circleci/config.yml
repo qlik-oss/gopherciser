@@ -20,7 +20,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.17{{ checksum "go.sum" }}
+          key: dependency-cache-1.18{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -34,7 +34,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.17{{ checksum "go.sum" }}
+          key: dependency-cache-1.18{{ checksum "go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"
       - run:
