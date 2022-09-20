@@ -500,14 +500,8 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			return
 		}
 
-		if request.ContentReader == nil {
-			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
-				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
-			}
-		} else {
-			if errRequest = handler.postWithReader(handler.ctx, request, handler.Client, logEntry, handler.headers.GetHeader(host)); errRequest != nil {
-				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
-			}
+		if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
+			WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
 		}
 
 		if request.response != nil {
@@ -590,17 +584,17 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 			return errors.Wrapf(err, "Failed to create HTTP request")
 		}
 	case POST:
-		req, err = http.NewRequest(http.MethodPost, request.Destination, bytes.NewReader(request.Content))
+		req, err = http.NewRequest(http.MethodPost, request.Destination, getRequestReader(request))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
 	case PUT:
-		req, err = http.NewRequest(http.MethodPut, request.Destination, bytes.NewReader(request.Content))
+		req, err = http.NewRequest(http.MethodPut, request.Destination, getRequestReader(request))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
 	case PATCH:
-		req, err = http.NewRequest(http.MethodPatch, request.Destination, bytes.NewReader(request.Content))
+		req, err = http.NewRequest(http.MethodPatch, request.Destination, getRequestReader(request))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create HTTP request")
 		}
@@ -618,6 +612,13 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 	return nil
 }
 
+func getRequestReader(request *RestRequest) io.Reader {
+	if request.ContentReader == nil {
+		return request.ContentReader
+	}
+	return bytes.NewReader(request.Content)
+}
+
 func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestRequest, reqHeader http.Header) {
 	//Set user-agent as special "gopherciser version". version is set from the version package during build.
 	reqHeader.Set("User-Agent", globals.UserAgent())
@@ -629,33 +630,6 @@ func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestReque
 	for k, v := range request.ExtraHeaders {
 		reqHeader.Set(k, v)
 	}
-}
-
-func (handler *RestHandler) postWithReader(ctx context.Context, request *RestRequest, client *http.Client, logEntry *logger.LogEntry, headers http.Header) error {
-	var method string
-	switch request.Method {
-	case POST:
-		method = http.MethodPost
-	case PUT:
-		method = http.MethodPut
-	case PATCH:
-		method = http.MethodPatch
-	default:
-		return errors.Errorf("Can only send io.Reader payload with a POST or PUT request. Method<%v>", request.Method)
-	}
-
-	req, err := http.NewRequest(method, request.Destination, request.ContentReader)
-	if err != nil {
-		return errors.Wrap(err, "Failed to create HTTP request")
-	}
-	req = req.WithContext(ctx)
-	handler.newHeader(headers, request, req.Header)
-	res, err := client.Do(req)
-	request.response = res
-	if err != nil {
-		return errors.Wrap(err, "HTTP request fail")
-	}
-	return nil
 }
 
 // RoundTrip implement RoundTripper interface
