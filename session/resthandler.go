@@ -613,7 +613,7 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 }
 
 func getRequestReader(request *RestRequest) io.Reader {
-	if request.ContentReader == nil {
+	if request.ContentReader != nil {
 		return request.ContentReader
 	}
 	return bytes.NewReader(request.Content)
