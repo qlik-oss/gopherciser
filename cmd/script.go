@@ -113,18 +113,19 @@ var validateCmd = &cobra.Command{
 		cfg, err := unmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			return
+			os.Exit(ExitCodeJSONParseError)
 		}
 
 		if err := validateConfigAndPrintWarnings(cfg); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			return
+			os.Exit(ExitCodeJSONValidateError)
 		}
 
 		if printJSON {
 			result, err := json.MarshalIndent(cfg, "", "  ")
 			if err != nil {
 				_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to marshal result JSON, err: %v\n", err))
+				os.Exit(ExitCodeJSONParseError)
 			}
 			fmt.Println(string(result))
 		}
