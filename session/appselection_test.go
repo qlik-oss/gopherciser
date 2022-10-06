@@ -1,6 +1,7 @@
 package session_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/goccy/go-json"
@@ -56,5 +57,39 @@ func verifyRoundPos(t *testing.T, appSelection session.AppSelection, result stri
 	t.Helper()
 	if result != appSelection.AppList[pos] {
 		t.Errorf("app selection mode<%s> failed expected<%s> got<%s>", appSelection.AppMode, appSelection.AppList[pos], result)
+	}
+}
+
+func Test_AppSelection_RoundRobin2(t *testing.T) {
+	sessionState := &session.State{
+		User: &users.User{
+			UserName:  "mytestuser_1",
+			Directory: "mydirectory",
+		},
+		LogEntry: &logger.LogEntry{
+			Session: &logger.SessionEntry{},
+			Action:  &logger.ActionEntry{},
+		},
+	}
+
+	appSelection, err := session.NewAppSelection(session.AppModeRoundGUIDFromList, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 1; i < 101; i++ {
+		appSelection.AppList = append(appSelection.AppList, strconv.Itoa(i))
+	}
+
+	for j := 0; j < 2; j++ {
+		for i := 1; i < 101; i++ {
+			entry, err := appSelection.Select(sessionState)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if entry.ID != strconv.Itoa(i) {
+				t.Errorf("expected<%d> got<%s>", i, entry.ID)
+			}
+		}
 	}
 }
