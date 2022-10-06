@@ -270,6 +270,8 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 	sessionState.LogEntry.Session.AppGUID = entry.ID
 	sessionState.CurrentApp = entry
 
+	sessionState.LogEntry.LogDebugf("selected app: %+v", entry)
+
 	return entry, nil
 }
 
