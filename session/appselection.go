@@ -6,10 +6,10 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/gopherciser/atomichandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/synced"
+	syncedcounter "github.com/qlik-oss/gopherciser/syncedCounter"
 )
 
 type (
@@ -31,8 +31,9 @@ type (
 	// AppSelection contains the selected app for the current session
 	AppSelection struct {
 		AppSelectionCore
+
 		//listCounter is used for round robin from list, should be shared by all users, but unique for each AppSelection instance
-		listCounter *atomichandlers.AtomicCounter
+		listCounter *syncedcounter.Counter
 	}
 )
 
@@ -109,7 +110,7 @@ func (appSelection *AppSelection) UnmarshalJSON(arg []byte) error {
 	}
 	*appSelection = AppSelection{
 		AppSelectionCore: core,
-		listCounter:      &atomichandlers.AtomicCounter{},
+		listCounter:      &syncedcounter.Counter{},
 	}
 	return nil
 }
@@ -126,14 +127,14 @@ func NewAppSelection(appMode AppSelectionModeEnum, app string, list []string) (*
 			App:     *tmpl,
 			AppList: list,
 		},
-		listCounter: &atomichandlers.AtomicCounter{},
+		listCounter: &syncedcounter.Counter{},
 	}, nil
 }
 
 // getRoundAppListEntry returns round robin entry from appList, based on local counter
 func (appSelection *AppSelection) getRoundAppListEntry(sessionState *State, appList []string) string {
 	appNumber := appSelection.listCounter.Inc() - 1
-	return appList[appNumber%uint64(len(appList))]
+	return appList[appNumber%len(appList)]
 }
 
 // getRandomAppListEntry returns a random entry from list, chosen by a uniform distribution
