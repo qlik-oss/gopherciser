@@ -116,6 +116,10 @@ func (am *ArtifactMap) Sort(resourceType string) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
+	am.sortNoLock(resourceType)
+}
+
+func (am *ArtifactMap) sortNoLock(resourceType string) {
 	if am.resourceMap[resourceType].Len() < 1 {
 		return
 	}
@@ -277,6 +281,8 @@ func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error)
 	if n < 1 {
 		return ArtifactEntry{}, errors.New("cannot select app round robin: ArtifactMap is empty")
 	}
+
+	am.sortNoLock(ResourceTypeApp)
 
 	return *am.resourceMap[ResourceTypeApp].list[appNumber%uint64(n)], nil
 }
