@@ -31,7 +31,6 @@ type (
 	// AppSelection contains the selected app for the current session
 	AppSelection struct {
 		AppSelectionCore
-
 		//listCounter is used for round robin from list, should be shared by all users, but unique for each AppSelection instance
 		listCounter *atomichandlers.AtomicCounter
 	}
@@ -269,8 +268,6 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 	sessionState.LogEntry.Session.AppName = entry.Name
 	sessionState.LogEntry.Session.AppGUID = entry.ID
 	sessionState.CurrentApp = entry
-
-	sessionState.LogEntry.LogDebugf("selected app: %+v", entry)
 
 	return entry, nil
 }
