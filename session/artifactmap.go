@@ -71,7 +71,7 @@ func (d *ArtifactList) Len() int {
 }
 
 func (d ArtifactList) Less(i, j int) bool {
-	return d.list[i].Name < d.list[j].Name
+	return d.list[i].ID < d.list[j].ID
 }
 
 func (d ArtifactList) Swap(i, j int) {
