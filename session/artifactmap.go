@@ -256,10 +256,10 @@ func (am *ArtifactMap) getAppEntry(appName string) (*ArtifactEntry, error) {
 
 // GetRandomApp returns a random app for the map, chosen by a uniform distribution
 func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) {
-	am.Sort(ResourceTypeApp)
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+	am.sortNoLock(ResourceTypeApp)
 
 	n := am.resourceMap[ResourceTypeApp].Len()
 	if n < 1 {
@@ -271,18 +271,16 @@ func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) 
 
 // GetRoundRobin returns a app round robin for the map
 func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error) {
-	am.Sort(ResourceTypeApp)
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+	am.sortNoLock(ResourceTypeApp)
 
 	appNumber := sessionState.Counters.AppCounter.Inc() - 1
 	n := am.resourceMap[ResourceTypeApp].Len()
 	if n < 1 {
 		return ArtifactEntry{}, errors.New("cannot select app round robin: ArtifactMap is empty")
 	}
-
-	am.sortNoLock(ResourceTypeApp)
 
 	return *am.resourceMap[ResourceTypeApp].list[appNumber%uint64(n)], nil
 }
