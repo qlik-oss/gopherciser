@@ -71,7 +71,7 @@ func (d *ArtifactList) Len() int {
 }
 
 func (d ArtifactList) Less(i, j int) bool {
-	return d.list[i].Name < d.list[j].Name
+	return d.list[i].ID < d.list[j].ID
 }
 
 func (d ArtifactList) Swap(i, j int) {
@@ -116,6 +116,10 @@ func (am *ArtifactMap) Sort(resourceType string) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
+	am.sortNoLock(resourceType)
+}
+
+func (am *ArtifactMap) sortNoLock(resourceType string) {
 	if am.resourceMap[resourceType].Len() < 1 {
 		return
 	}
@@ -252,10 +256,10 @@ func (am *ArtifactMap) getAppEntry(appName string) (*ArtifactEntry, error) {
 
 // GetRandomApp returns a random app for the map, chosen by a uniform distribution
 func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) {
-	am.Sort(ResourceTypeApp)
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+	am.sortNoLock(ResourceTypeApp)
 
 	n := am.resourceMap[ResourceTypeApp].Len()
 	if n < 1 {
@@ -267,10 +271,10 @@ func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) 
 
 // GetRoundRobin returns a app round robin for the map
 func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error) {
-	am.Sort(ResourceTypeApp)
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+	am.sortNoLock(ResourceTypeApp)
 
 	appNumber := sessionState.Counters.AppCounter.Inc() - 1
 	n := am.resourceMap[ResourceTypeApp].Len()
