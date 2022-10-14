@@ -664,7 +664,13 @@ func (state *State) WSFailed() {
 
 			panicErr := helpers.RecoverWithErrorFunc(func() {
 				if err := state.Reconnect(); err != nil {
-					state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
+					err = errors.Wrap(err, "failed to reconnect websocket and app")
+					actionState := state.CurrentActionState
+					if actionState != nil {
+						actionState.AddErrors(err)
+					} else {
+						state.LogEntry.LogError(err)
+					}
 					state.Cancel()
 					return
 				}
@@ -853,7 +859,7 @@ func (state *State) IsSenseWebsocketDisconnected(err error) bool {
 	return false
 }
 
-//CurrentSenseApp returns currently set sense app or error if none found
+// CurrentSenseApp returns currently set sense app or error if none found
 func (state *State) CurrentSenseApp() (*senseobjects.App, error) {
 	uplink, err := state.CurrentSenseUplink()
 	if err != nil {
