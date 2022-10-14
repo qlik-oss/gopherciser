@@ -32,11 +32,11 @@ type (
 		VarCache   VarCache
 		Traffic    ITrafficLogger
 
-		ctx                context.Context
-		cancel             context.CancelFunc
-		logEntry           *logger.LogEntry
-		trafficMetrics     *requestmetrics.RequestMetrics
-		failedConnectFuncs []func()
+		ctx               context.Context
+		cancel            context.CancelFunc
+		logEntry          *logger.LogEntry
+		trafficMetrics    *requestmetrics.RequestMetrics
+		failedConnectFunc func()
 
 		MockMode bool
 	}
@@ -309,20 +309,14 @@ func (uplink *SenseUplink) OnUnexpectedDisconnect(f func()) {
 		return
 	}
 
-	if uplink.failedConnectFuncs == nil {
-		uplink.failedConnectFuncs = make([]func(), 0, 1)
-	}
-
-	uplink.failedConnectFuncs = append(uplink.failedConnectFuncs, f)
+	uplink.failedConnectFunc = f
 }
 
 func (uplink *SenseUplink) executeFailedConnectFuncs() {
-	if uplink == nil || len(uplink.failedConnectFuncs) < 1 {
+	if uplink == nil || uplink.failedConnectFunc == nil {
 		return
 	}
-	for _, f := range uplink.failedConnectFuncs {
-		f()
-	}
+	uplink.failedConnectFunc()
 }
 
 // LogMetric async log metric, this is injected into the enigma dialer and is responsible for recording
