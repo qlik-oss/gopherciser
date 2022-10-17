@@ -64,12 +64,19 @@ type (
 	}
 
 	doNotRetry struct{}
+
+	NoSessionOnReconnectError struct{}
 )
 
 const (
 	//MaxRetries when engine aborts request
 	MaxRetries = 3
 )
+
+// Error to be returned on reconnect without session attached
+func (err NoSessionOnReconnectError) Error() string {
+	return "websocket connected, but no session to attached"
+}
 
 // ContextWithoutRetries creates a new context which disables retires for
 // aborted ws requests.
@@ -123,7 +130,7 @@ func (connection *SenseConnection) Sense() *SenseUplink {
 }
 
 // Connect connect to sense environment
-func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http.Header, cookieJar http.CookieJar, allowUntrusted bool, timeout time.Duration) error {
+func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http.Header, cookieJar http.CookieJar, allowUntrusted bool, timeout time.Duration, reconnect bool) error {
 	if uplink.Global != nil {
 		uplink.Global.DisconnectFromServer()
 		uplink.Global = nil
@@ -210,36 +217,37 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 
 		mustAuthenticate, onConnectedSessionState, otherTopics := emptyMsgChan(connectMsgChan, uplink.logEntry)
 
-		if connectErr != nil { // couldn't get version check authentication information
-			if mustAuthenticate != nil && *mustAuthenticate {
-				return errors.Errorf("websocket connected, but authentication failed")
-			}
+		if mustAuthenticate != nil && *mustAuthenticate {
+			return errors.Errorf("websocket connected, but authentication failed")
+		}
 
-			if onConnectedSessionState == nil && len(otherTopics) < 1 {
-				return errors.Errorf("websocket connected, but no state created")
-			}
-
-			if onConnectedSessionState != nil {
-				switch *onConnectedSessionState {
-				case constant.OnConnectedSessionCreated, constant.OnConnectedSessionAttached:
-					return nil // connected ok
-				case constant.OnConnectedSessionErrorNoLicense, constant.OnConnectedSessionErrorLicenseReNew, constant.OnConnectedSessionErrorLimitExceeded,
-					constant.OnConnectedSessionErrorSecurityHeaderChanged, constant.OnConnectedSessionAccessControlSetupFailure, constant.OnConnectedSessionErrorAppAccessDenied,
-					constant.OnConnectedSessionErrorAppFailure: // known error states
-					return errors.Errorf("error connecting to engine: %s", *onConnectedSessionState)
-				default:
-					uplink.logEntry.Logf(logger.WarningLevel, "unknown engine session state: %s", *onConnectedSessionState)
+		if onConnectedSessionState != nil {
+			switch *onConnectedSessionState {
+			case constant.OnConnectedSessionCreated, constant.OnConnectedSessionAttached:
+				if reconnect && *onConnectedSessionState != constant.OnConnectedSessionAttached {
+					return NoSessionOnReconnectError{}
 				}
+				return nil // connected ok
+			case constant.OnConnectedSessionErrorNoLicense, constant.OnConnectedSessionErrorLicenseReNew, constant.OnConnectedSessionErrorLimitExceeded,
+				constant.OnConnectedSessionErrorSecurityHeaderChanged, constant.OnConnectedSessionAccessControlSetupFailure, constant.OnConnectedSessionErrorAppAccessDenied,
+				constant.OnConnectedSessionErrorAppFailure: // known error states
+				return errors.Errorf("error connecting to engine: %s", *onConnectedSessionState)
+			default:
+				uplink.logEntry.Logf(logger.WarningLevel, "unknown engine session state: %s", *onConnectedSessionState)
 			}
+		}
 
-			// No OnConnected received, return list of "other topics
-			if len(otherTopics) > 0 {
-				return errors.Errorf("websocket connected, but received error topic/-s: %s", strings.Join(otherTopics, ","))
-			}
+		// No OnConnected received, return list of "other topics
+		if len(otherTopics) > 0 {
+			return errors.Errorf("websocket connected, but received error topic/-s: %s", strings.Join(otherTopics, ","))
+		}
 
+		if connectErr != nil {
 			// no mustAuthenticate, no onConnectedSessionState, and no other topics, post the connectErr (although it's most likely just EOF...)
 			return errors.Errorf("websocket connected, but got error on requesting version: %v", connectErr)
 		}
+
+		return errors.Errorf("websocket connected, but no state created or attach")
 	}
 
 	return nil
@@ -251,9 +259,11 @@ func emptyMsgChan(msgChan chan enigma.SessionMessage, logEntry *logger.LogEntry)
 	var onConnectedSessionState *string = nil
 	otherTopics := make([]string, 0, 1)
 
-	for {
+	recievedAtLeastOne := false
+	for i := 0; i < 100; i++ { // Waiting up to 100 ms for a session message to be be pushed, checking each 1ms
 		select {
 		case event, ok := <-msgChan:
+			recievedAtLeastOne = true
 			if !ok {
 				return mustAuthenticate, onConnectedSessionState, otherTopics
 			}
@@ -272,9 +282,13 @@ func emptyMsgChan(msgChan chan enigma.SessionMessage, logEntry *logger.LogEntry)
 				otherTopics = append(otherTopics, event.Topic)
 			}
 		default: // nothing more in channel
-			return mustAuthenticate, onConnectedSessionState, otherTopics
+			if recievedAtLeastOne {
+				return mustAuthenticate, onConnectedSessionState, otherTopics
+			}
+			<-time.After(time.Millisecond)
 		}
 	}
+	return mustAuthenticate, onConnectedSessionState, otherTopics
 }
 
 func handleOnAuthenticationInformation(content json.RawMessage, logEntry *logger.LogEntry) *bool {

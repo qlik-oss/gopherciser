@@ -118,7 +118,7 @@ func (connectionSettings *ConnectionSettings) Validate() error {
 }
 
 // GetConnectFunc Get function for connecting to sense
-func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (func() (string, error), error) {
+func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (func(bool) (string, error), error) {
 	header, err := connectionSettings.GetHeaders(state, externalhost)
 	if err != nil {
 		return nil, errors.WithStack(err)

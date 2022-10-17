@@ -181,7 +181,18 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 		data = append(data, m.Payload...)
 	}
 
-	if err == io.EOF {
+	disconnected := false
+	switch err := err.(type) {
+	// We might want to check sub errors, but have seen both net.ErrClosed and os.SyscallError on disconnect to handling all OpErrors as disconnects for now
+	case *net.OpError:
+		disconnected = true
+	default:
+		if err == io.EOF {
+			disconnected = true
+		}
+	}
+
+	if disconnected {
 		if dialer.OnUnexpectedDisconnect != nil {
 			dialer.OnUnexpectedDisconnect()
 		}

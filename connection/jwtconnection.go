@@ -53,8 +53,8 @@ type (
 )
 
 // GetConnectFunc which establishes a connection to Qlik Sense
-func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connection *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) func() (string, error) {
-	connectFunc := func() (string, error) {
+func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connection *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) func(bool) (string, error) {
+	connectFunc := func(reconnect bool) (string, error) {
 		url, err := connection.GetURL(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
@@ -90,7 +90,7 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 		for k, v := range customHeaders {
 			connectHeaders[k] = v
 		}
-		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout); err != nil {
+		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
 
