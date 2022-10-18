@@ -212,9 +212,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 	uplink.Global = global
 
 	if !uplink.MockMode {
-		// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed
-		_, connectErr := global.EngineVersion(uplink.ctx)
-
 		mustAuthenticate, onConnectedSessionState, otherTopics := emptyMsgChan(connectMsgChan, uplink.logEntry)
 
 		if mustAuthenticate != nil && *mustAuthenticate {
@@ -242,6 +239,8 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 			return errors.Errorf("websocket connected, but received error topic/-s: %s", strings.Join(otherTopics, ","))
 		}
 
+		// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed
+		_, connectErr := global.EngineVersion(uplink.ctx)
 		if connectErr != nil {
 			// no mustAuthenticate, no onConnectedSessionState, and no other topics, post the connectErr (although it's most likely just EOF...)
 			return errors.Errorf("websocket connected, but got error on requesting version: %v", connectErr)
