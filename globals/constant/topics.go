@@ -22,6 +22,8 @@ const (
 
 // EventTopicOnConnected possible states
 const (
+	OnConnectedSessionSessionParseFailed = "SessionStateParseFailed" // Not actually sent by engine but set when parsing of message failed
+
 	OnConnectedSessionCreated                    = "SESSION_CREATED"
 	OnConnectedSessionAttached                   = "SESSION_ATTACHED"
 	OnConnectedSessionErrorNoLicense             = "SESSION_ERROR_NO_LICENSE"

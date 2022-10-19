@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	neturl "net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -51,18 +50,6 @@ type (
 		*SenseUplink
 	}
 
-	// OnAuthenticationInformation content structure of OnAuthenticationInformation event
-	OnAuthenticationInformation struct {
-		// MustAuthenticate tells us if we are authenticated
-		MustAuthenticate bool `json:"mustAuthenticate"`
-	}
-
-	// OnConnected content structure of EventTopicOnConnected event
-	OnConnected struct {
-		// SessionState received session state, possible states listed as constants in constant.EventTopicOnConnected*
-		SessionState string `json:"qSessionState"`
-	}
-
 	doNotRetry struct{}
 
 	NoSessionOnReconnectError struct{}
@@ -75,7 +62,7 @@ const (
 
 // Error to be returned on reconnect without session attached
 func (err NoSessionOnReconnectError) Error() string {
-	return "websocket connected, but no session to attached"
+	return "websocket connected, but no session attached"
 }
 
 // ContextWithoutRetries creates a new context which disables retires for
@@ -169,6 +156,7 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		return errors.Wrap(err, "Error connecting to Sense")
 	}
 	postDialTimestamp := time.Now()
+	uplink.Global = global
 
 	// Setup
 	connectMsgChan := global.SessionMessageChannel(globals.EventTopics...)
@@ -178,18 +166,12 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		return errors.WithStack(err)
 	}
 
-	u, err := neturl.Parse(url)
-	if err != nil {
-		uplink.logEntry.Logf(logger.WarningLevel, "error<%v> resolving url<%s>", err, url)
-	} else if dialer.Jar != nil {
-		// fake http/s else cookie jar won't return cookie
-		switch u.Scheme {
-		case "wss":
-			u.Scheme = "https"
-		case "ws":
-			u.Scheme = "http"
-		}
+	if uplink.MockMode {
+		return nil
 	}
+
+	topicshandler := NewTopicsHandler(connectMsgChan)
+	topicshandler.Start(uplink.logEntry)
 
 	// setup logging of traffic metrics for pushed events
 	go func() {
@@ -210,94 +192,21 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		}
 	}()
 
-	uplink.Global = global
-
-	if !uplink.MockMode {
-		mustAuthenticate, onConnectedSessionState, otherTopics := emptyMsgChan(connectMsgChan, uplink.logEntry)
-
-		if mustAuthenticate != nil && *mustAuthenticate {
-			return errors.Errorf("websocket connected, but authentication failed")
-		}
-
-		if onConnectedSessionState != nil {
-			switch *onConnectedSessionState {
-			case constant.OnConnectedSessionCreated, constant.OnConnectedSessionAttached:
-				if reconnect && *onConnectedSessionState != constant.OnConnectedSessionAttached {
-					return NoSessionOnReconnectError{}
-				}
-				return nil // connected ok
-			case constant.OnConnectedSessionErrorNoLicense, constant.OnConnectedSessionErrorLicenseReNew, constant.OnConnectedSessionErrorLimitExceeded,
-				constant.OnConnectedSessionErrorSecurityHeaderChanged, constant.OnConnectedSessionAccessControlSetupFailure, constant.OnConnectedSessionErrorAppAccessDenied,
-				constant.OnConnectedSessionErrorAppFailure: // known error states
-				return errors.Errorf("error connecting to engine: %s", *onConnectedSessionState)
-			default:
-				uplink.logEntry.Logf(logger.WarningLevel, "unknown engine session state: %s", *onConnectedSessionState)
-			}
-		}
-
-		// No OnConnected received, return list of "other topics
-		if len(otherTopics) > 0 {
-			return errors.Errorf("websocket connected, but received error topic/-s: %s", strings.Join(otherTopics, ","))
-		}
-
-		// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed
-		_, connectErr := global.EngineVersion(uplink.ctx)
-		if connectErr != nil {
-			// no mustAuthenticate, no onConnectedSessionState, and no other topics, post the connectErr (although it's most likely just EOF...)
-			return errors.Errorf("websocket connected, but got error on requesting version: %v", connectErr)
-		}
-
+	select {
+	case <-topicshandler.OnConnectedReceived:
+	case <-time.After(30 * time.Second):
 		return errors.Errorf("websocket connected, but no state created or attach")
 	}
 
-	return nil
-}
+	// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed
+	_, connectErr := global.EngineVersion(uplink.ctx)
 
-// emptyMsgChan returns *mustAuthenticate, *onConnectedSessionState
-func emptyMsgChan(msgChan chan enigma.SessionMessage, logEntry *logger.LogEntry) (*bool, *string, []string) {
-	var mustAuthenticate *bool = nil
-	var onConnectedSessionState *string = nil
-	otherTopics := make([]string, 0, 1)
-
-	recievedAtLeastOne := false
-	for i := 0; i < 30*1000; i++ { // Waiting up to 30 s for a session message to be be pushed, checking each 1ms
-		select {
-		case event, ok := <-msgChan:
-			recievedAtLeastOne = true
-			if !ok {
-				return mustAuthenticate, onConnectedSessionState, otherTopics
-			}
-			switch event.Topic {
-			case constant.EventTopicOnConnected:
-				var onConnected OnConnected
-				if err := json.Unmarshal(event.Content, &onConnected); err != nil {
-					logEntry.Log(logger.WarningLevel, "failed to unmarshal pushed onConnected message")
-					return mustAuthenticate, onConnectedSessionState, otherTopics
-				}
-				logEntry.LogInfo("OnConnected", string(event.Content))
-				onConnectedSessionState = &onConnected.SessionState
-			case constant.EventTopicOnAuthenticationInformation:
-				mustAuthenticate = handleOnAuthenticationInformation(event.Content, logEntry)
-			default:
-				otherTopics = append(otherTopics, event.Topic)
-			}
-		default: // nothing more in channel
-			if recievedAtLeastOne {
-				return mustAuthenticate, onConnectedSessionState, otherTopics
-			}
-			<-time.After(time.Millisecond)
-		}
+	// By now topics should be received, first check topic errors, before errors on version message
+	if err := topicshandler.IsErrorState(reconnect, uplink.logEntry); err != nil {
+		return errors.WithStack(err)
 	}
-	return mustAuthenticate, onConnectedSessionState, otherTopics
-}
 
-func handleOnAuthenticationInformation(content json.RawMessage, logEntry *logger.LogEntry) *bool {
-	var onAuthInfo OnAuthenticationInformation
-	if err := json.Unmarshal(content, &onAuthInfo); err != nil {
-		logEntry.Log(logger.WarningLevel, "failed to unmarshal pushed OnAuthenticationInformation message")
-		return nil
-	}
-	return &onAuthInfo.MustAuthenticate
+	return errors.Wrap(connectErr, "websocket connected, but got error on requesting version")
 }
 
 // Disconnect Sense connection
