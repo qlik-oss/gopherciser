@@ -259,7 +259,7 @@ func emptyMsgChan(msgChan chan enigma.SessionMessage, logEntry *logger.LogEntry)
 	otherTopics := make([]string, 0, 1)
 
 	recievedAtLeastOne := false
-	for i := 0; i < 500; i++ { // Waiting up to 500 ms for a session message to be be pushed, checking each 1ms
+	for i := 0; i < 30*1000; i++ { // Waiting up to 30 s for a session message to be be pushed, checking each 1ms
 		select {
 		case event, ok := <-msgChan:
 			recievedAtLeastOne = true
