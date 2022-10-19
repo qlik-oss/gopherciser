@@ -168,6 +168,15 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 	if err != nil {
 		return errors.Wrap(err, "Error connecting to Sense")
 	}
+	postDialTimestamp := time.Now()
+
+	// Setup
+	connectMsgChan := global.SessionMessageChannel(globals.EventTopics...)
+	defer global.CloseSessionMessageChannel(connectMsgChan)
+
+	if err := uplink.trafficMetrics.Update(startTimestamp, postDialTimestamp, 0, 0); err != nil {
+		return errors.WithStack(err)
+	}
 
 	u, err := neturl.Parse(url)
 	if err != nil {
@@ -181,14 +190,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 			u.Scheme = "http"
 		}
 	}
-
-	if err := uplink.trafficMetrics.Update(startTimestamp, time.Now(), 0, 0); err != nil {
-		return errors.WithStack(err)
-	}
-
-	// Setup
-	connectMsgChan := global.SessionMessageChannel(globals.EventTopics...)
-	defer global.CloseSessionMessageChannel(connectMsgChan)
 
 	// setup logging of traffic metrics for pushed events
 	go func() {
