@@ -66,6 +66,7 @@ func (handler *topicsHandler) Start(logEntry *logger.LogEntry) {
 				}
 				handler.mustAuthenticate = &onAuthInfo.MustAuthenticate
 			default:
+				logEntry.LogDebugf("unhandled connect topic<%s> content<%s>", event.Topic, string(event.Content))
 				handler.otherTopics = append(handler.otherTopics, event.Topic)
 			}
 		}

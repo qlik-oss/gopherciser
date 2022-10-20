@@ -216,7 +216,7 @@ func (uplink *SenseUplink) Disconnect() {
 	if uplink.logEntry != nil {
 		uplink.logEntry.LogDebugf("Disconnect websocket connected: %v", isConnected)
 	}
-	if uplink.Global != nil && uplink.IsConnected() {
+	if uplink.Global != nil {
 		uplink.Global.DisconnectFromServer()
 	}
 }

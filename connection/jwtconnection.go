@@ -69,7 +69,6 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 
 		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger())
 		sessionState.Connection.SetSense(sense)
-		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
 		// Connect
 		ctx, cancel := sessionState.ContextWithTimeout(sessionState.BaseContext())
@@ -93,6 +92,7 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
+		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
 		return appGUID, nil
 	}
