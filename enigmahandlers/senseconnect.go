@@ -212,8 +212,21 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 // Disconnect Sense connection
 func (uplink *SenseUplink) Disconnect() {
 	uplink.cancel()
-	if uplink.Global != nil {
+	if uplink.Global != nil && uplink.IsConnected() {
 		uplink.Global.DisconnectFromServer()
+	}
+}
+
+// IsConnected returns true if uplink is live
+func (uplink *SenseUplink) IsConnected() bool {
+	if uplink == nil || uplink.Global == nil {
+		return false
+	}
+	select {
+	case <-uplink.Global.Disconnected():
+		return false
+	default:
+		return true
 	}
 }
 
