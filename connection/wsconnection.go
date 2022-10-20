@@ -29,7 +29,6 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 
 		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger())
 		sessionState.Connection.SetSense(sense)
-		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
 		url, err := connectionSettings.GetURL(appGUID, externalhost)
 		if err != nil {
@@ -59,6 +58,8 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 		if err := sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
 			return appGUID, errors.Wrap(err, "Failed connecting to sense server")
 		}
+
+		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
 		return appGUID, nil
 	}
