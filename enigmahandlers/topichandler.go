@@ -1,7 +1,7 @@
 package enigmahandlers
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ type (
 		OnConnectedReceived     chan struct{}
 		mustAuthenticate        *bool
 		onConnectedSessionState *string
-		otherTopics             []string
+		otherTopics             map[string]string
 	}
 )
 
@@ -37,7 +37,7 @@ func NewTopicsHandler(channel chan enigma.SessionMessage) *topicsHandler {
 	return &topicsHandler{
 		msgChannel:          channel,
 		OnConnectedReceived: make(chan struct{}),
-		otherTopics:         make([]string, 0),
+		otherTopics:         make(map[string]string),
 	}
 }
 
@@ -66,8 +66,7 @@ func (handler *topicsHandler) Start(logEntry *logger.LogEntry) {
 				}
 				handler.mustAuthenticate = &onAuthInfo.MustAuthenticate
 			default:
-				logEntry.LogDebugf("unhandled connect topic<%s> content<%s>", event.Topic, string(event.Content))
-				handler.otherTopics = append(handler.otherTopics, event.Topic)
+				handler.otherTopics[event.Topic] = string(event.Content)
 			}
 		}
 	}()
@@ -98,7 +97,11 @@ func (handler *topicsHandler) IsErrorState(reconnect bool, logEntry *logger.LogE
 
 	// No OnConnected received, return list of "other" topics
 	if len(handler.otherTopics) > 0 {
-		return errors.Errorf("websocket connected, but received error topic/-s: %s", strings.Join(handler.otherTopics, ","))
+		var msg string
+		for key, value := range handler.otherTopics {
+			msg += fmt.Sprintf("<%s>(%s)", key, value)
+		}
+		return errors.Errorf("websocket connected, but received error topic/-s: %s", msg)
 	}
 
 	return nil

@@ -212,10 +212,6 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 // Disconnect Sense connection
 func (uplink *SenseUplink) Disconnect() {
 	uplink.cancel()
-	isConnected := uplink.IsConnected()
-	if uplink.logEntry != nil {
-		uplink.logEntry.LogDebugf("Disconnect websocket connected: %v", isConnected)
-	}
 	if uplink.Global != nil {
 		uplink.Global.DisconnectFromServer()
 	}
