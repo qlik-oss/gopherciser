@@ -48,6 +48,10 @@ type (
 		syncTemplates sync.Once
 		templates     map[string]*template.Template
 	}
+
+	// ConnectFunc connects to a sense environment, set reconnect to true if it's a reconnect and session in engine
+	// is expected. Returns App GUID.
+	ConnectFunc func(reconnect bool) (string, error)
 )
 
 const (
@@ -118,7 +122,7 @@ func (connectionSettings *ConnectionSettings) Validate() error {
 }
 
 // GetConnectFunc Get function for connecting to sense
-func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (func() (string, error), error) {
+func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (ConnectFunc, error) {
 	header, err := connectionSettings.GetHeaders(state, externalhost)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -28,7 +28,7 @@ type (
 	}
 
 	connectWsSettings struct {
-		ConnectFunc func() (string, error)
+		ConnectFunc func(bool) (string, error)
 	}
 )
 
@@ -197,7 +197,7 @@ func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID st
 	return uplink.SetCurrentApp(appGUID, doc)
 }
 
-func (openApp OpenAppSettings) GetConnectWsAction(wsLabel string, connectFunc func() (string, error)) Action {
+func (openApp OpenAppSettings) GetConnectWsAction(wsLabel string, connectFunc func(bool) (string, error)) Action {
 	connectWs := Action{
 		ActionCore{
 			Type:  ActionConnectWs,
@@ -219,7 +219,7 @@ func (openApp OpenAppSettings) AppStructureAction() (*AppStructureInfo, []Action
 }
 
 func (connectWs connectWsSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-	appGUID, err := connectWs.ConnectFunc()
+	appGUID, err := connectWs.ConnectFunc(false)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "Failed connecting to sense server"))
 		return

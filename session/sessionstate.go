@@ -122,7 +122,7 @@ type (
 	ReconnectInfo struct {
 		err                 error
 		pendingReconnection pending.Handler
-		reconnectFunc       func() (string, error)
+		reconnectFunc       func(bool) (string, error)
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -664,7 +664,8 @@ func (state *State) WSFailed() {
 
 			panicErr := helpers.RecoverWithErrorFunc(func() {
 				if err := state.Reconnect(); err != nil {
-					state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
+					err = errors.Wrap(err, "failed to reconnect websocket and app")
+					state.LogEntry.LogError(err) // report error directly since errors on "Cancel" will be igonored
 					state.Cancel()
 					return
 				}
@@ -774,9 +775,15 @@ reconnectLoop:
 		reConnectActionState := &action.State{}
 
 		attempts = i + 1
-		if _, err := state.reconnect.reconnectFunc(); err != nil {
-			state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
-			continue reconnectLoop
+		if _, err := state.reconnect.reconnectFunc(true); err != nil {
+			switch helpers.TrueCause(err).(type) {
+			case enigmahandlers.NoSessionOnReconnectError:
+				state.reconnect.err = errors.WithStack(err)
+				break reconnectLoop
+			default:
+				state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
+				continue reconnectLoop
+			}
 		}
 
 		if err := state.SetupChangeChan(); err != nil {
@@ -786,7 +793,7 @@ reconnectLoop:
 
 		upLink := state.Connection.Sense()
 
-		doc, err := state.GetActiveDoc(reConnectActionState, upLink)
+		doc, err := state.ReOpenDoc(reConnectActionState, upLink)
 		if err != nil {
 			state.reconnect.err = errors.WithStack(err)
 			break reconnectLoop // no active doc, don't try re connecting again
@@ -832,7 +839,7 @@ reconnectLoop:
 }
 
 // SetReconnectFunc sets current app re-connect function
-func (state *State) SetReconnectFunc(f func() (string, error)) {
+func (state *State) SetReconnectFunc(f func(bool) (string, error)) {
 	if state == nil {
 		return
 	}
@@ -850,10 +857,11 @@ func (state *State) IsSenseWebsocketDisconnected(err error) bool {
 	if ok && disconnectErr.Type == enigmahandlers.SenseWsType {
 		return true
 	}
+
 	return false
 }
 
-//CurrentSenseApp returns currently set sense app or error if none found
+// CurrentSenseApp returns currently set sense app or error if none found
 func (state *State) CurrentSenseApp() (*senseobjects.App, error) {
 	uplink, err := state.CurrentSenseUplink()
 	if err != nil {
