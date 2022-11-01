@@ -231,7 +231,7 @@
         "This section of the JSON file contains timeout and logging settings for the load scenario"
     ],
     "config.settings.timeout": [
-        "Timeout setting (seconds) for WebSocket requests."
+        "Timeout setting (seconds) for requests."
     ],
     "config.settings.logs.traffic": [
         "Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding."

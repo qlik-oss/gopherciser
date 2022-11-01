@@ -88,7 +88,7 @@ type (
 
 	// Settings Config settings struct
 	Settings struct {
-		Timeout         int             `json:"timeout" displayname:"WebSocket timeout" doc-key:"config.settings.timeout"` // Timeout in seconds
+		Timeout         int             `json:"timeout" displayname:"Request timeout" doc-key:"config.settings.timeout"` // Timeout in seconds
 		LogSettings     LogSettings     `json:"logs" doc-key:"config.settings.logs"`
 		OutputsSettings OutputsSettings `json:"outputs,omitempty" doc-key:"config.settings.outputs"`
 		MaxErrorCount   uint64          `json:"maxerrors,omitempty" doc-key:"config.settings.maxerrors" displayname:"Max errors"`
