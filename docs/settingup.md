@@ -2534,7 +2534,7 @@ Simple scheduler set to attempt re-connection in case of an unexpected WebSocket
 
 This section of the JSON file contains timeout and logging settings for the load scenario.
 
-* `timeout`: Timeout setting (seconds) for WebSocket requests.
+* `timeout`: Timeout setting (seconds) for requests.
 * `logs`: Log settings
   * `traffic`: Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
   * `debug`: Log debug information (`true` / `false`). Defaults to `false`, if omitted.
