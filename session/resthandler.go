@@ -104,6 +104,8 @@ const (
 	PUT
 	// PATCH RestMethod
 	PATCH
+	// HEAD RestMethod
+	HEAD
 )
 
 var (
@@ -113,6 +115,7 @@ var (
 		"delete": int(DELETE),
 		"put":    int(PUT),
 		"patch":  int(PATCH),
+		"head":  int(HEAD),
 	})
 
 	defaultReqOptions = ReqOptions{
