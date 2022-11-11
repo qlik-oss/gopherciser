@@ -576,6 +576,11 @@ func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRe
 	var err error
 
 	switch request.Method {
+	case HEAD:
+		req, err = http.NewRequest(http.MethodHead, request.Destination, nil)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to create HTTP request")
+		}
 	case GET:
 		req, err = http.NewRequest(http.MethodGet, request.Destination, nil)
 		if err != nil {
