@@ -19,6 +19,8 @@ type (
 	StreamsState map[string]string
 )
 
+const StreamsStateKey = "streamsState"
+
 // Validate open app scenario item
 func (openHub OpenHubSettings) Validate() ([]string, error) {
 	return nil, nil
@@ -138,25 +140,9 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 				continue
 			}
 			streamsState[data.Attributes.Name] = data.ID
-			// TODO this should move to a "changestream" action
-			// sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-			// 	if err != nil {
-			// 		return
-			// 	}
-			// 	var stream structs.Stream
-			// 	if err = json.Unmarshal(req.ResponseBody, &stream); err != nil {
-			// 		actionState.AddErrors(err)
-			// 		return
-			// 	}
-
-			// 	if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
-			// 		actionState.AddErrors(err)
-			// 		return
-			// 	}
-			// })
 		}
 
-		sessionState.AddCustomState("streamsState", streamsState)
+		sessionState.AddCustomState(StreamsStateKey, &streamsState)
 	})
 }
 

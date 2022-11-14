@@ -22,6 +22,10 @@ var (
 			Description: "## ChangeSheet action\n\nChange to a new sheet, unsubscribe to the currently subscribed objects, and subscribe to all objects on the new sheet.\n\nThe action supports getting data from the following objects:\n\n* Listbox\n* Filter pane\n* Bar chart\n* Scatter plot\n* Map (only the first layer)\n* Combo chart\n* Table\n* Pivot table\n* Line chart\n* Pie chart\n* Tree map\n* Text-Image\n* KPI\n* Gauge\n* Box plot\n* Distribution plot\n* Histogram\n* Auto chart (including any support generated visualization from this list)\n* Waterfall chart\n",
 			Examples:    "### Example\n\n```json\n{\n     \"label\": \"Change Sheet Dashboard\",\n     \"action\": \"ChangeSheet\",\n     \"settings\": {\n         \"id\": \"TFJhh\"\n     }\n}\n```\n",
 		},
+		"changestream": {
+			Description: "## ChangeStream action\n\nChange to specified stream. This makes the apps in the specified stream selectable by actions such as `openapp`.",
+			Examples:    "### Example\n\nMake apps in stream `Everyone` selectable by subsequent actions.\n\n```json\n{\n     \"label\": \"ChangeStream Everyone\",\n     \"action\": \"changestream\",\n     \"settings\": {\n         \"mode\": \"name\",\n         \"stream\" : \"Everyone\"\n     }\n}\n```\n\nMake  apps in stream with id `ABSCDFSDFSDFO1231234` selectable subsequent actions.\n\n```json\n{\n     \"label\": \"ChangeStream Test1\",\n     \"action\": \"changestream\",\n     \"settings\": {\n         \"mode\": \"id\",\n         \"stream\" : \"ABSCDFSDFSDFO1231234\"\n     }\n}\n```\n",
+		},
 		"clearall": {
 			Description: "## ClearAll action\n\nClear all selections in an app.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"clearall\",\n    \"label\": \"Clear all selections (1)\"\n}\n```\n",
@@ -196,6 +200,8 @@ var (
 		"bookmark.id":                                     {"ID of the bookmark."},
 		"bookmark.title":                                  {"Name of the bookmark (supports the use of [variables](#session_variables))."},
 		"changesheet.id":                                  {"GUID of the sheet to change to."},
+		"changestream.mode":                               {"Decides what kind of value the `stream` field contains. Defaults to `name`.", "`name`: `stream` is the name of the stream.", "`id`: `stream` is the ID if the stream."},
+		"changestream.stream":                             {""},
 		"clearfield.name":                                 {"Name of field to clear."},
 		"clickactionbutton.id":                            {"ID of the action-button to click."},
 		"config.connectionSettings.allowuntrusted":        {"Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."},
@@ -401,7 +407,7 @@ var (
 		{
 			Name:    "qseowActions",
 			Title:   "Qlik Sense Enterprise on Windows (QSEoW) actions",
-			Actions: []string{"deleteodag", "generateodag", "openhub"},
+			Actions: []string{"deleteodag", "generateodag", "openhub", "changestream"},
 			DocEntry: common.DocEntry{
 				Description: "## Qlik Sense Enterprise on Windows (QSEoW) actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.\n",
 				Examples:    "",

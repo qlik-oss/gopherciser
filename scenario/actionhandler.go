@@ -148,6 +148,7 @@ const (
 	ActionSmartSearch           = "smartsearch"
 	ActionObjectSearch          = "objectsearch"
 	ActionGetScript             = "getscript"
+	ActionChangeSteam           = "changestream"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -259,6 +260,7 @@ func ResetDefaultActions() {
 		ActionSmartSearch:           SmartSearchSettings{},
 		ActionObjectSearch:          ObjectSearchSettings{},
 		ActionGetScript:             GetscriptSettings{},
+		ActionChangeSteam:           ChangestreamSettings{},
 	}
 }
 
