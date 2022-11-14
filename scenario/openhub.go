@@ -15,6 +15,8 @@ import (
 type (
 	// OpenHubSettings settings for OpenHub
 	OpenHubSettings struct{}
+
+	StreamsState map[string]string
 )
 
 // Validate open app scenario item
@@ -65,11 +67,12 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	}, nil, nil)
 
 	// These requests will warn only instead of error in case of failure
-
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/custombannermessages", host), actionState, sessionState.LogEntry, reqNoError)
-	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry) // Client does this twice, so we do it twice
+
+	// Client requests features twice, so we do it twice
+	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
 
 	sessionState.Wait(actionState)
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
@@ -128,27 +131,32 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 			return
 		}
 
+		streamsState := make(StreamsState)
+
 		for _, data := range streams.Data {
 			if data.Type != structs.StreamsTypeStream {
 				continue
 			}
+			streamsState[data.Attributes.Name] = data.ID
+			// TODO this should move to a "changestream" action
+			// sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+			// 	if err != nil {
+			// 		return
+			// 	}
+			// 	var stream structs.Stream
+			// 	if err = json.Unmarshal(req.ResponseBody, &stream); err != nil {
+			// 		actionState.AddErrors(err)
+			// 		return
+			// 	}
 
-			sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-				if err != nil {
-					return
-				}
-				var stream structs.Stream
-				if err = json.Unmarshal(req.ResponseBody, &stream); err != nil {
-					actionState.AddErrors(err)
-					return
-				}
-
-				if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
-					actionState.AddErrors(err)
-					return
-				}
-			})
+			// 	if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
+			// 		actionState.AddErrors(err)
+			// 		return
+			// 	}
+			// })
 		}
+
+		sessionState.AddCustomState("streamsState", streamsState)
 	})
 }
 
