@@ -83,7 +83,7 @@ func (handler *topicsHandler) IsErrorState(reconnect bool, logEntry *logger.LogE
 			return errors.New("failed to parse OnConnected pushed message")
 		case constant.OnConnectedSessionCreated, constant.OnConnectedSessionAttached:
 			if reconnect && *handler.onConnectedSessionState != constant.OnConnectedSessionAttached {
-				return NoSessionOnReconnectError{}
+				return NoSessionOnConnectError{}
 			}
 			return nil // connected ok
 		case constant.OnConnectedSessionErrorNoLicense, constant.OnConnectedSessionErrorLicenseReNew, constant.OnConnectedSessionErrorLimitExceeded,

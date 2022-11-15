@@ -777,7 +777,7 @@ reconnectLoop:
 		attempts = i + 1
 		if _, err := state.reconnect.reconnectFunc(true); err != nil {
 			switch helpers.TrueCause(err).(type) {
-			case enigmahandlers.NoSessionOnReconnectError:
+			case enigmahandlers.NoSessionOnConnectError:
 				state.reconnect.err = errors.WithStack(err)
 				break reconnectLoop
 			default:
