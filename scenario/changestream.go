@@ -70,12 +70,17 @@ func (mode ChangeStreamModeEnum) String() string {
 func (settings ChangestreamSettings) Validate() ([]string, error) {
 	switch settings.Mode {
 	case ChangeStreamModeName:
-		return nil, errors.Errorf("Changestream mode<%s> no stream name provided in stream field", settings.Mode)
+		if settings.Stream == "" {
+			return nil, errors.Errorf("Changestream mode<%s> no stream name provided in stream field", settings.Mode)
+		}
 	case ChangestreamModeID:
-		return nil, errors.Errorf("Changestream mode<%s> no stream ID provided in stream field", settings.Mode)
+		if settings.Stream == "" {
+			return nil, errors.Errorf("Changestream mode<%s> no stream ID provided in stream field", settings.Mode)
+		}
 	default:
 		return nil, errors.Errorf("Changestream mode<%s> not supported", settings.Mode)
 	}
+	return nil, nil
 }
 
 // Execute ChangestreamSettings action (Implements ActionSettings interface)
