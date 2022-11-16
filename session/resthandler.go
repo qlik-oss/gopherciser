@@ -115,7 +115,7 @@ var (
 		"delete": int(DELETE),
 		"put":    int(PUT),
 		"patch":  int(PATCH),
-		"head":  int(HEAD),
+		"head":   int(HEAD),
 	})
 
 	defaultReqOptions = ReqOptions{
