@@ -2319,7 +2319,7 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 
 ## OpenHub action
 
-Open the hub in a QSEoW environment.
+Open the hub in a QSEoW environment. This also makes the apps included in the response for the users `myspace` available for use by subsequent actions. The action `changestream` can be used to only select from apps in a specific stream.
 
 
 ### Example
@@ -2328,6 +2328,47 @@ Open the hub in a QSEoW environment.
 {
      "action": "OpenHub",
      "label": "Open the hub"
+}
+```
+
+<hr></details>
+
+<details>
+<summary>changestream</summary>
+
+## ChangeStream action
+
+Change to specified stream. This makes the apps in the specified stream selectable by actions such as `openapp`.
+* `mode`: Decides what kind of value the `stream` field contains. Defaults to `name`.
+    * `name`: `stream` is the name of the stream.
+    * `id`: `stream` is the ID if the stream.
+* `stream`: 
+
+### Example
+
+Make apps in stream `Everyone` selectable by subsequent actions.
+
+```json
+{
+     "label": "ChangeStream Everyone",
+     "action": "changestream",
+     "settings": {
+         "mode": "name",
+         "stream" : "Everyone"
+     }
+}
+```
+
+Make  apps in stream with id `ABSCDFSDFSDFO1231234` selectable subsequent actions.
+
+```json
+{
+     "label": "ChangeStream Test1",
+     "action": "changestream",
+     "settings": {
+         "mode": "id",
+         "stream" : "ABSCDFSDFSDFO1231234"
+     }
 }
 ```
 

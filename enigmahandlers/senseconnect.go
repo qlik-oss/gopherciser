@@ -52,7 +52,7 @@ type (
 
 	doNotRetry struct{}
 
-	NoSessionOnReconnectError struct{}
+	NoSessionOnConnectError struct{}
 )
 
 const (
@@ -61,7 +61,7 @@ const (
 )
 
 // Error to be returned on reconnect without session attached
-func (err NoSessionOnReconnectError) Error() string {
+func (err NoSessionOnConnectError) Error() string {
 	return "websocket connected, but no session attached"
 }
 
@@ -194,8 +194,10 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 
 	select {
 	case <-topicshandler.OnConnectedReceived:
-	case <-time.After(30 * time.Second):
-		return errors.Errorf("websocket connected, but no state created or attach")
+	case <-time.After(timeout):
+		return errors.Errorf("websocket connected, but no state created or attach (timeout)")
+	case <-uplink.ctx.Done():
+		return errors.Errorf("websocket connected, but no state created or attach (context cancelled)")
 	}
 
 	// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed

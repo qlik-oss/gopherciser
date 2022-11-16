@@ -15,7 +15,11 @@ import (
 type (
 	// OpenHubSettings settings for OpenHub
 	OpenHubSettings struct{}
+
+	StreamsState map[string]string
 )
+
+const StreamsStateKey = "streamsState"
 
 // Validate open app scenario item
 func (openHub OpenHubSettings) Validate() ([]string, error) {
@@ -48,9 +52,12 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
 	fillArtifactsFromStreamsAsync(sessionState, actionState, host)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil) // Send second streams request because client does
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/favorites", host), actionState, sessionState.LogEntry, nil)
+
 	virtualProxy := ""
 	if connectionSettings.VirtualProxy != "" {
 		virtualProxy = fmt.Sprintf("/%s", connectionSettings.VirtualProxy)
@@ -63,9 +70,12 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	}, nil, nil)
 
 	// These requests will warn only instead of error in case of failure
-
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, reqNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/custombannermessages", host), actionState, sessionState.LogEntry, reqNoError)
+
+	// Client requests features twice, so we do it twice
+	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
 
 	sessionState.Wait(actionState)
 	if err := sessionState.ArtifactMap.LogMap(sessionState.LogEntry); err != nil {
@@ -98,6 +108,21 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 		}
 	})
 
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/myspace", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil {
+			return
+		}
+		var stream structs.Stream
+		if err := json.Unmarshal(req.ResponseBody, &stream); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+	})
+
 	// Get all apps from other streams
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
@@ -109,27 +134,16 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 			return
 		}
 
+		streamsState := make(StreamsState)
+
 		for _, data := range streams.Data {
 			if data.Type != structs.StreamsTypeStream {
 				continue
 			}
-
-			sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, data.ID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
-				if err != nil {
-					return
-				}
-				var stream structs.Stream
-				if err = json.Unmarshal(req.ResponseBody, &stream); err != nil {
-					actionState.AddErrors(err)
-					return
-				}
-
-				if err := sessionState.ArtifactMap.FillAppsUsingStream(stream); err != nil {
-					actionState.AddErrors(err)
-					return
-				}
-			})
+			streamsState[data.Attributes.Name] = data.ID
 		}
+
+		sessionState.AddCustomState(StreamsStateKey, &streamsState)
 	})
 }
 

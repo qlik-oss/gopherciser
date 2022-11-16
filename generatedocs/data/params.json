@@ -303,6 +303,12 @@
     "changesheet.id": [
         "GUID of the sheet to change to."
     ],
+    "changestream.mode" : [
+        "Decides what kind of value the `stream` field contains. Defaults to `name`.",
+        "`name`: `stream` is the name of the stream.",
+        "`id`: `stream` is the ID if the stream."
+    ],
+    "changestream.stream": [],
     "createbookmark.description": [
         "(optional) Description of the bookmark to create."
     ],

@@ -47,7 +47,8 @@
         "actions": [
             "deleteodag",
             "generateodag",
-            "openhub"
+            "openhub",
+            "changestream"
         ]
     }
 ]
