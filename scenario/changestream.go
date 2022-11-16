@@ -121,7 +121,8 @@ func (settings ChangestreamSettings) Execute(sessionState *session.State, action
 		return
 	}
 
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, streamID), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	streamsUrl := fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, streamID)
+	sessionState.Rest.GetAsyncWithCallback(streamsUrl, actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
 		}
@@ -136,6 +137,9 @@ func (settings ChangestreamSettings) Execute(sessionState *session.State, action
 			return
 		}
 	})
+
+	// Same request again for api compliance
+	sessionState.Rest.GetAsync(streamsUrl, actionState, sessionState.LogEntry, nil)
 
 	sessionState.Wait(actionState)
 }
