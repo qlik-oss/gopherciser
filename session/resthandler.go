@@ -332,6 +332,49 @@ func (handler *RestHandler) getAsyncWithCallback(url string, actionState *action
 	return handler.sendAsyncWithCallback(GET, url, actionState, logEntry, nil, headers, options, callback)
 }
 
+// HeadSync sends synchronous HEAD request with options, using options=nil default options are used
+func (handler *RestHandler) HeadSync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
+	return handler.HeadSyncWithCallback(url, actionState, logEntry, options, nil)
+}
+
+// HeadSyncWithCallback sends synchronous HEAD request with options and callback, using options=nil default options are used
+func (handler *RestHandler) HeadSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	var reqErr error
+	var request *RestRequest
+	var wg sync.WaitGroup
+	wg.Add(1)
+	syncCallback := func(err error, req *RestRequest) {
+		defer wg.Done()
+		reqErr = err
+		request = req
+		if callback != nil {
+			callback(err, req)
+		}
+	}
+	handler.headAsyncWithCallback(url, actionState, logEntry, nil, options, syncCallback)
+	wg.Wait()
+	return request, reqErr
+}
+
+// HeadAsync send async HEAD request with options, using options=nil default options are used
+func (handler *RestHandler) HeadAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
+	return handler.headAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
+// HeadWithHeadersAsync send async HEAD request with headers and options, using options=nil default options are used
+func (handler *RestHandler) HeadWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.headAsyncWithCallback(url, actionState, logEntry, headers, options, callback)
+}
+
+// HeadAsyncWithCallback send async HEAD request with options and callback, with options=nil default options are used
+func (handler *RestHandler) HeadAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.headAsyncWithCallback(url, actionState, logEntry, nil, options, callback)
+}
+
+func (handler *RestHandler) headAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(HEAD, url, actionState, logEntry, nil, headers, options, callback)
+}
+
 // PutAsync send async PUT request with options, using options=nil default options are used
 func (handler *RestHandler) PutAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
 	return handler.PutAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
