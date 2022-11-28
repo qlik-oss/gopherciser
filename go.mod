@@ -16,7 +16,7 @@ require (
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
-	github.com/qlik-oss/enigma-go/v3 v3.4.0
+	github.com/qlik-oss/enigma-go/v3 v3.5.0
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
 	github.com/rs/zerolog v1.28.0
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
@@ -47,7 +47,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tus/tusd v1.3.0 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
