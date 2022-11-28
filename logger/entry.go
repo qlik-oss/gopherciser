@@ -89,7 +89,7 @@ func (entry *LogEntry) Log(level LogLevel, args ...interface{}) {
 }
 
 // LogTrafficMetric log traffic metric entry
-func (entry *LogEntry) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType string) {
+func (entry *LogEntry) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType, msg string) {
 	if entry == nil || entry.logger == nil || !entry.logger.Settings.Metrics {
 		return
 	}
@@ -115,7 +115,7 @@ func (entry *LogEntry) LogTrafficMetric(responseTime int64, sent, received uint6
 		details = buf.String()
 	}
 
-	entry.log(MetricsLevel, "", &ephemeralEntry{
+	entry.log(MetricsLevel, msg, &ephemeralEntry{
 		ResponseTime: responseTime,
 		Sent:         sent,
 		Received:     received,
@@ -270,7 +270,7 @@ func (entry *LogEntry) queueWrite(msg *LogChanMsg) {
 	entry.logger.logChan <- msg
 }
 
-//SetSessionEntry set new session entry
+// SetSessionEntry set new session entry
 func (entry *LogEntry) SetSessionEntry(s *SessionEntry) {
 	if entry == nil {
 		return
@@ -282,7 +282,7 @@ func (entry *LogEntry) SetSessionEntry(s *SessionEntry) {
 	entry.Session = s
 }
 
-//SetActionEntry set new session entry
+// SetActionEntry set new session entry
 func (entry *LogEntry) SetActionEntry(a *ActionEntry) {
 	if entry == nil {
 		return

@@ -977,7 +977,7 @@ func (lgr *EventMetricsLogger) SocketOpenMetric(url *neturl.URL, duration time.D
 		path = url.Path
 	}
 
-	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS")
+	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS", "")
 }
 
 // ClearObjectSubscriptions and currently subscribed objects
@@ -1084,8 +1084,8 @@ func (state *State) LogInfo(infoType, msg string) {
 }
 
 // LogTrafficMetric traffic metric log using current LogEntry
-func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType string) {
+func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType, msg string) {
 	if state.LogEntry != nil {
-		state.LogEntry.LogTrafficMetric(responseTime, sent, received, requestID, method, params, trafficType)
+		state.LogEntry.LogTrafficMetric(responseTime, sent, received, requestID, method, params, trafficType, msg)
 	}
 }

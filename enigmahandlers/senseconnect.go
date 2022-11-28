@@ -294,7 +294,7 @@ func (uplink *SenseUplink) LogMetric(invocation *enigma.Invocation, metrics *eni
 
 	if uplink.Traffic != nil {
 		uplink.logEntry.LogTrafficMetric(metrics.SocketReadTimestamp.Sub(metrics.SocketWriteTimestamp).Nanoseconds(),
-			uint64(metrics.RequestMessageSize), uint64(metrics.ResponseMessageSize), requestID, method, params, "WS")
+			uint64(metrics.RequestMessageSize), uint64(metrics.ResponseMessageSize), requestID, method, params, "WS", "")
 	}
 
 	reqStall := metrics.SocketWriteTimestamp.Sub(metrics.InvocationRequestTimestamp)

@@ -785,7 +785,17 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 				query = req.URL.RawQuery
 			}
 
-			transport.LogEntry.LogTrafficMetric(recTS.Sub(sentTS).Nanoseconds(), sent, received, -1, buf.String(), query, "REST")
+			// Add trace ID to metric message if exist as header
+			traceID := ""
+			if req.Response != nil && req.Response.Header != nil {
+				traceID = req.Response.Header.Get("x-b3-traceid")
+			}
+			msg := ""
+			if traceID != "" {
+				msg = fmt.Sprintf("traceID:%s", traceID)
+			}
+
+			transport.LogEntry.LogTrafficMetric(recTS.Sub(sentTS).Nanoseconds(), sent, received, -1, buf.String(), query, "REST", msg)
 		}
 	}
 
