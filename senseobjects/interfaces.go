@@ -22,6 +22,6 @@ type (
 		LogDetail(level logger.LogLevel, msg, detail string)
 		LogError(err error)
 		LogInfo(infoType, msg string)
-		LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType string)
+		LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType, msg string)
 	}
 )
