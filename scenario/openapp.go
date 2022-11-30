@@ -139,22 +139,6 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appEntry.ID))
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		version, versionErr := uplink.Global.EngineVersion(ctx)
-		if versionErr != nil {
-			return errors.Wrap(versionErr, "Failed to get engine version")
-		}
-
-		sessionState.LogEntry.LogInfo("EngineVersion", version.ComponentVersion)
-		return nil
-	}, actionState, false, "Failed getting engine version")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		idm, desktopErr := uplink.Global.IsDesktopMode(ctx)
-		sessionState.LogEntry.LogInfo("IsDesktopMode", fmt.Sprintf("%v", idm))
-		return desktopErr
-	}, actionState, true, "Failed getting authenticated user")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
 		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
 		return errors.WithStack(err)
 	}, actionState, true, "")
