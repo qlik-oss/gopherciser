@@ -59,10 +59,6 @@ func (app *App) GetSheetList(sessionState SessionState, actionState *action.Stat
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.sheetList.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	// update sheetList layout when sheetList has a change event
 	onSheetListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.sheetList.UpdateLayout(ctx))

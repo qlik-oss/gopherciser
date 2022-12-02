@@ -129,6 +129,12 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}
 	sessionState.LogEntry.LogInfo("AuthenticatedUser", authUser)
 
+	// send another AuthenticatedUser for api compliance
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.GetAuthenticatedUser(ctx)
+		return err
+	}, actionState, true, "")
+
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		layout, applyOutErr := doc.GetAppLayout(ctx)
 		if applyOutErr != nil {
@@ -152,6 +158,21 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
 		return errors.WithStack(err)
 	}, actionState, true, "")
+
+	for i := 0; i < 2; i++ {
+		sessionState.QueueRequestRaw(uplink.CurrentApp.Doc.GetAppPropertiesRaw, actionState, true, "failed to get AppProperties")
+	}
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.GetBaseBNFHash(ctx, "S")
+		return err
+	}, actionState, true, "")
+
+	// Send GetConfiguration request 5 times
+	for i := 0; i < 5; i++ {
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			return errors.WithStack(uplink.Global.RPC(ctx, "GetConfiguration", nil))
+		}, actionState, false, "GetConfiguration request failed")
+	}
 
 	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {

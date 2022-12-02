@@ -2,10 +2,11 @@ package senseobjects
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/goccy/go-json"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
@@ -84,7 +85,6 @@ type (
 	SheetList struct {
 		enigmaObject *enigma.GenericObject
 		layout       *SheetListLayout
-		properties   *SheetListProperties
 		mutex        sync.Mutex
 	}
 
@@ -144,42 +144,9 @@ func (sheetList *SheetList) UpdateLayout(ctx context.Context) error {
 	return nil
 }
 
-// UpdateProperties get and set properties for sheetlist
-func (sheetList *SheetList) UpdateProperties(ctx context.Context) error {
-	if sheetList.enigmaObject == nil {
-		return errors.Errorf("sheetlist enigma object is nil")
-	}
-
-	propertiesRaw, err := sheetList.enigmaObject.GetEffectivePropertiesRaw(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to unmarshal sheetlist properties")
-	}
-
-	var properties SheetListProperties
-	err = json.Unmarshal(propertiesRaw, &properties)
-	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal sheetlist properties")
-	}
-
-	sheetList.setProperties(&properties)
-
-	return nil
-}
-
-func (sheetList *SheetList) setProperties(properties *SheetListProperties) {
-	sheetList.mutex.Lock()
-	defer sheetList.mutex.Unlock()
-	sheetList.properties = properties
-}
-
 // Layout for sheetlist
 func (sheetList *SheetList) Layout() *SheetListLayout {
 	return sheetList.layout //TODO DECISION: wait for write lock?
-}
-
-// Properties for sheetlist
-func (sheetList *SheetList) Properties() *SheetListProperties {
-	return sheetList.properties
 }
 
 // GetSheetEntry Get sheet entry from sheet list
