@@ -22,6 +22,7 @@ type (
 		loadmodellist     *LoadModelList
 		fieldlist         *FieldList
 		dimensionList     *DimensionList
+		appPropsList      *AppPropsList
 	}
 
 	// App sense app object
@@ -175,6 +176,53 @@ func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
 		sessionState.DeRegisterEvent(app.variablelist.enigmaObject.Handle)
 	}
 	app.variablelist = vl
+}
+
+// GetAppsPropsList create or return AppsPropsList
+func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.State) (*AppPropsList, error) {
+	if app.appPropsList != nil {
+		return app.appPropsList, nil
+	}
+
+	createAppPropsList := func(ctx context.Context) error {
+		al, err := CreateAppPropsListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setAppPropsList(sessionState, al)
+		return nil
+	}
+
+	if err := sessionState.SendRequest(actionState, createAppPropsList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, app.appPropsList.UpdateProperties); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		return app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
+	}); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	onAppPropsListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState))
+	}
+	sessionState.RegisterEvent(app.appPropsList.enigmaObject.Handle, onAppPropsListChanged, nil, true)
+
+	return app.appPropsList, nil
+}
+
+func (app *App) setAppPropsList(sessionState SessionState, al *AppPropsList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.appPropsList != nil && app.appPropsList.enigmaObject != nil && app.appPropsList.enigmaObject.Handle > 0 && al != app.appPropsList {
+		sessionState.DeRegisterEvent(app.appPropsList.enigmaObject.Handle)
+		app.appPropsList.RemoveAllItems(sessionState)
+	}
+	app.appPropsList = al
 }
 
 // GetStoryList create or return existing story list session object

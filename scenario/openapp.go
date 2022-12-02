@@ -149,7 +149,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}, actionState, true, "")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetLoadModelList(sessionState, actionState)
+		_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
 		return errors.WithStack(err)
 	}, actionState, true, "")
 
