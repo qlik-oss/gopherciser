@@ -9,7 +9,7 @@ require (
 	github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571
 	github.com/gobwas/ws v1.1.0
 	github.com/goccy/go-json v0.9.11
-	github.com/golang-jwt/jwt/v4 v4.4.2
+	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
