@@ -2,7 +2,6 @@ package senseobjects
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/goccy/go-json"
@@ -97,7 +96,6 @@ func (appPropsList *AppPropsList) UpdateLayout(ctx context.Context, doc *enigma.
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	fmt.Println(string(layoutRaw))
 
 	var layout enigma.GenericObjectLayout
 	err = json.Unmarshal(layoutRaw, &layout)
