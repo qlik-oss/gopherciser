@@ -371,6 +371,15 @@ func (state *State) QueueRequest(f func(ctx context.Context) error, actionState 
 	state.QueueRequestWithCallback(f, actionState, failOnError, errMsg, nil)
 }
 
+// QueueRequestRaw same as QueueRequestAsync but accepts function returning  (json.RawMessage, error), to be used when sending Raw functions
+// where the response is not actually used
+func (state *State) QueueRequestRaw(f func(ctx context.Context) (json.RawMessage, error), actionState *action.State, failOnError bool, errMsg string) {
+	state.QueueRequestWithCallback(func(ctx context.Context) error {
+		_, err := f(ctx)
+		return err
+	}, actionState, failOnError, errMsg, nil)
+}
+
 // QueueRequestWithCallback Async request, add error to action state or log as warning depending on failOnError flag.
 // This method adds timeout and ChangeList to ctx context and auto triggers changes. Thus ctx should not be used
 // when having multiple request in a QueueRequest function, instead use SendRequest and SendRequestRaw internally in f.

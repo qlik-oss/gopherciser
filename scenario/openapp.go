@@ -129,6 +129,12 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}
 	sessionState.LogEntry.LogInfo("AuthenticatedUser", authUser)
 
+	// send another AuthenticatedUser for api compliance
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.GetAuthenticatedUser(ctx)
+		return err
+	}, actionState, true, "")
+
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		layout, applyOutErr := doc.GetAppLayout(ctx)
 		if applyOutErr != nil {
@@ -137,22 +143,6 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		uplink.CurrentApp.Layout = layout
 		return nil
 	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appEntry.ID))
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		version, versionErr := uplink.Global.EngineVersion(ctx)
-		if versionErr != nil {
-			return errors.Wrap(versionErr, "Failed to get engine version")
-		}
-
-		sessionState.LogEntry.LogInfo("EngineVersion", version.ComponentVersion)
-		return nil
-	}, actionState, false, "Failed getting engine version")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		idm, desktopErr := uplink.Global.IsDesktopMode(ctx)
-		sessionState.LogEntry.LogInfo("IsDesktopMode", fmt.Sprintf("%v", idm))
-		return desktopErr
-	}, actionState, true, "Failed getting authenticated user")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
@@ -165,9 +155,24 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}, actionState, true, "")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetLoadModelList(sessionState, actionState)
+		_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
 		return errors.WithStack(err)
 	}, actionState, true, "")
+
+	for i := 0; i < 2; i++ {
+		sessionState.QueueRequestRaw(uplink.CurrentApp.Doc.GetAppPropertiesRaw, actionState, true, "failed to get AppProperties")
+	}
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.GetBaseBNFHash(ctx, "S")
+		return err
+	}, actionState, true, "")
+
+	// Send GetConfiguration request 5 times
+	for i := 0; i < 5; i++ {
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			return errors.WithStack(uplink.Global.RPC(ctx, "GetConfiguration", nil))
+		}, actionState, false, "GetConfiguration request failed")
+	}
 
 	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {

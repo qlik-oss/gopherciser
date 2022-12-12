@@ -201,14 +201,19 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 	}
 
 	// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed
-	_, connectErr := global.EngineVersion(uplink.ctx)
+	version, connectErr := global.EngineVersion(uplink.ctx)
 
 	// By now topics should be received, first check topic errors, before errors on version message
 	if err := topicshandler.IsErrorState(reconnect, uplink.logEntry); err != nil {
 		return errors.WithStack(err)
 	}
 
-	return errors.Wrap(connectErr, "websocket connected, but got error on requesting version")
+	if connectErr != nil {
+		return errors.Wrap(connectErr, "websocket connected, but got error on requesting version")
+	}
+	uplink.logEntry.LogInfo("EngineVersion", version.ComponentVersion)
+
+	return nil
 }
 
 // Disconnect Sense connection
