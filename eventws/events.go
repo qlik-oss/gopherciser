@@ -23,12 +23,14 @@ const (
 	OperationResult            = "result"
 	OperationUpdated           = "updated"
 	OperationCreated           = "created"
+	OperationExecuted          = "executed"
 )
 
 // Constants for known ResourceType
 const (
-	ResourceTypeApp        = "app"
-	ResourceTypeReload     = "reload"
-	ResourceTypeEvaluation = "evaluation"
-	ResourceTypeItems      = "items"
+	ResourceTypeApp         = "app"
+	ResourceTypeReload      = "reload"
+	ResourceTypeEvaluation  = "evaluation"
+	ResourceTypeItems       = "items"
+	ResourceTypeSharingTask = "sharing-task"
 )
