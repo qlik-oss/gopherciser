@@ -190,7 +190,7 @@ Will save one .structure file per app in script in the folder defined by output 
 			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
 		case nil:
 		default:
-			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(ExitCodeAppStructure)
 		}
 	},

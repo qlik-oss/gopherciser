@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/InVisionApp/tabular"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -336,6 +336,10 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	if genObj.Handle < 1 {
+		structure.warn(fmt.Sprintf("object with id<%s> does not exist", id))
+		return nil
+	}
 
 	obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
 	if err != nil {
@@ -351,6 +355,10 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 		extendedObject, err := structure.getObject(ctx, app, obj.ExtendsId, obj.Type)
 		if err != nil {
 			return errors.WithStack(err)
+		}
+		if extendedObject.Handle < 1 {
+			structure.warn(fmt.Sprintf("Master object with id<%s> linked in object<%s> does not exist", obj.ExtendsId, id))
+			return nil
 		}
 		obj.RawExtendedProperties, err = extendedObject.GetPropertiesRaw(ctx)
 		if err != nil {
