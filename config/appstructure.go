@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -40,10 +41,17 @@ type (
 		report        AppStructureReport
 		structureLock sync.Mutex
 	}
+
+	AppStructureContainer struct {
+		Structures []*GeneratedAppStructure
+
+		mu sync.Mutex
+	}
 )
 
-func (cfg *Config) getAppStructureScenario(includeRaw bool, summary SummaryType) []scenario.Action {
-	return evaluateActionList(cfg.Scenario, includeRaw, summary)
+func (cfg *Config) getAppStructureScenario(includeRaw bool) ([]scenario.Action, *AppStructureContainer) {
+	appStructureContainer := &AppStructureContainer{}
+	return evaluateActionList(cfg.Scenario, includeRaw, appStructureContainer), appStructureContainer
 }
 
 func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileName string) {
@@ -136,7 +144,7 @@ func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileNa
 	}
 }
 
-func evaluateActionList(actions []scenario.Action, includeRaw bool, summary SummaryType) []scenario.Action {
+func evaluateActionList(actions []scenario.Action, includeRaw bool, appStructureContainer *AppStructureContainer) []scenario.Action {
 	appStructureScenario := make([]scenario.Action, 0, len(actions))
 	for _, act := range actions {
 		if act.Disabled {
@@ -154,14 +162,14 @@ func evaluateActionList(actions []scenario.Action, includeRaw bool, summary Summ
 						Label: "Get app structure",
 					},
 					Settings: &getAppStructureSettings{
-						IncludeRaw: includeRaw,
-						Summary:    summary,
+						IncludeRaw:    includeRaw,
+						AppStructures: appStructureContainer,
 					},
 				})
 
 			}
 			if len(subActions) > 0 {
-				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw, summary)...)
+				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw, appStructureContainer)...)
 			}
 		}
 	}
@@ -171,7 +179,7 @@ func evaluateActionList(actions []scenario.Action, includeRaw bool, summary Summ
 // GetAppStructures for all apps in scenario
 func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error {
 	// find all auth and actions
-	appStructureScenario := cfg.getAppStructureScenario(includeRaw, cfg.Settings.LogSettings.getSummaryType())
+	appStructureScenario, appStructureContainer := cfg.getAppStructureScenario(includeRaw)
 	if len(appStructureScenario) < 1 {
 		return appstructure.AppStructureNoScenarioActionsError{}
 	}
@@ -198,6 +206,9 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	if outputsDir != "" && outputsDir[len(outputsDir)-1:] != "/" {
+		outputsDir += "/"
+	}
 
 	logSettings := cfg.Settings.LogSettings
 
@@ -221,6 +232,30 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
 	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters); err != nil {
 		return errors.WithStack(err)
+	}
+
+	for i, structure := range appStructureContainer.Structures {
+		raw, err := json.MarshalIndent(structure, "", "  ")
+		if err != nil {
+			return errors.Wrap(err, "error marshaling app structure") // TODO add app id to error
+		}
+
+		// TODO make write into func to close file quicker
+		fileName := fmt.Sprintf("%s%d.structure", outputsDir, i /*app.GUID*/)
+		structureFile, err := os.Create(fileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to create structure file")
+		}
+		defer func() {
+			if err := structureFile.Close(); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "failed to close file<%v> successfully: %v\n", structureFile, err)
+			}
+		}()
+
+		if _, err = structureFile.Write(raw); err != nil {
+			return errors.Wrapf(err, "error while writing to structure file<%s>", fileName)
+		}
+		structure.printSummary(cfg.Settings.LogSettings.getSummaryType(), fileName)
 	}
 
 	return nil
@@ -357,7 +392,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 			return errors.WithStack(err)
 		}
 		if extendedObject.Handle < 1 {
-			structure.warn(fmt.Sprintf("Master object with id<%s> linked in object<%s> does not exist", obj.ExtendsId, id))
+			structure.warn(fmt.Sprintf("master object with id<%s> linked in object<%s> does not exist", obj.ExtendsId, id))
 			return nil
 		}
 		obj.RawExtendedProperties, err = extendedObject.GetPropertiesRaw(ctx)
@@ -890,4 +925,16 @@ func (report *AppStructureReport) AddWarning(warning string) {
 	}
 
 	report.warnings = append(report.warnings, warning)
+}
+
+func (container *AppStructureContainer) AddStructure(structure *GeneratedAppStructure) {
+	container.mu.Lock()
+	defer container.mu.Unlock()
+
+	if container.Structures == nil {
+		container.Structures = []*GeneratedAppStructure{structure}
+		return
+	}
+
+	container.Structures = append(container.Structures, structure)
 }
