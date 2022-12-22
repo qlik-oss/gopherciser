@@ -42,16 +42,17 @@ type (
 		structureLock sync.Mutex
 	}
 
-	AppStructureContainer struct {
-		Structures []*GeneratedAppStructure
-
-		mu sync.Mutex
+	// Appstructure and warnings in consumable form
+	Appstructure struct {
+		Guid      string
+		Warnings  []string
+		Structure *appstructure.AppStructure
 	}
 )
 
-func (cfg *Config) getAppStructureScenario(includeRaw bool) ([]scenario.Action, *AppStructureContainer) {
-	appStructureContainer := &AppStructureContainer{}
-	return evaluateActionList(cfg.Scenario, includeRaw, appStructureContainer), appStructureContainer
+func (cfg *Config) getAppStructureScenario(includeRaw bool) ([]scenario.Action, map[string]*GeneratedAppStructure) {
+	appStructureMap := make(map[string]*GeneratedAppStructure, 1)
+	return evaluateActionList(cfg.Scenario, includeRaw, appStructureMap), appStructureMap
 }
 
 func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileName string) {
@@ -144,7 +145,7 @@ func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileNa
 	}
 }
 
-func evaluateActionList(actions []scenario.Action, includeRaw bool, appStructureContainer *AppStructureContainer) []scenario.Action {
+func evaluateActionList(actions []scenario.Action, includeRaw bool, appStructureMap map[string]*GeneratedAppStructure) []scenario.Action {
 	appStructureScenario := make([]scenario.Action, 0, len(actions))
 	for _, act := range actions {
 		if act.Disabled {
@@ -163,25 +164,24 @@ func evaluateActionList(actions []scenario.Action, includeRaw bool, appStructure
 					},
 					Settings: &getAppStructureSettings{
 						IncludeRaw:    includeRaw,
-						AppStructures: appStructureContainer,
+						AppStructures: appStructureMap,
 					},
 				})
 
 			}
 			if len(subActions) > 0 {
-				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw, appStructureContainer)...)
+				appStructureScenario = append(appStructureScenario, evaluateActionList(subActions, includeRaw, appStructureMap)...)
 			}
 		}
 	}
 	return appStructureScenario
 }
 
-// GetAppStructures for all apps in scenario
-func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error {
+func (cfg *Config) getAppStructureMap(ctx context.Context, includeRaw bool) (map[string]*GeneratedAppStructure, error) {
 	// find all auth and actions
-	appStructureScenario, appStructureContainer := cfg.getAppStructureScenario(includeRaw)
+	appStructureScenario, appStructureMap := cfg.getAppStructureScenario(includeRaw)
 	if len(appStructureScenario) < 1 {
-		return appstructure.AppStructureNoScenarioActionsError{}
+		return nil, appstructure.AppStructureNoScenarioActionsError{}
 	}
 
 	// Replace scheduler with 1 iteration 1 user simple scheduler
@@ -198,16 +198,7 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	}
 
 	if _, err := cfg.Scheduler.Validate(); err != nil {
-		return errors.WithStack(err)
-	}
-
-	// Setup outputs folder
-	outputsDir, err := setupOutputs(cfg.Settings.OutputsSettings)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if outputsDir != "" && outputsDir[len(outputsDir)-1:] != "/" {
-		outputsDir += "/"
+		return nil, errors.WithStack(err)
 	}
 
 	logSettings := cfg.Settings.LogSettings
@@ -217,31 +208,64 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	appStructureLogPath := fmt.Sprintf("%s-appstructure%s", strings.TrimSuffix(fileName, ext), ext)
 	stmpl, err := synced.New(appStructureLogPath)
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	logSettings.FileName = *stmpl
 
 	log, err := setupLogging(ctx, logSettings, nil, nil, &cfg.Counters)
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
-
-	logEntry := log.NewLogEntry()
-	logEntry.Log(logger.DebugLevel, fmt.Sprintf("outputs folder: %s", outputsDir))
 
 	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
-	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, outputsDir, cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters); err != nil {
+	if err := cfg.Scheduler.Execute(ctx, log, timeout, appStructureScenario, "", cfg.LoginSettings, &cfg.ConnectionSettings, &cfg.Counters); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return appStructureMap, nil
+}
+
+func (cfg *Config) GetAppStructuresAndWarnings(ctx context.Context, includeRaw bool) ([]*Appstructure, error) {
+	appStructureMap, err := cfg.getAppStructureMap(ctx, includeRaw)
+	if err != nil {
+		return nil, err
+	}
+	structures := make([]*Appstructure, 0, len(appStructureMap))
+	for appGUID, generatedStructure := range appStructureMap {
+		structures = append(structures, &Appstructure{
+			Guid:      appGUID,
+			Warnings:  generatedStructure.report.warnings,
+			Structure: &generatedStructure.AppStructure,
+		})
+	}
+	return structures, nil
+}
+
+// GetAppStructures for all apps in scenario
+func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error {
+	appStructureMap, err := cfg.getAppStructureMap(ctx, includeRaw)
+	if err != nil {
+		return err
+	}
+
+	// Setup outputs folder
+	outputsDir, err := setupOutputs(cfg.Settings.OutputsSettings)
+	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	for i, structure := range appStructureContainer.Structures {
+	if outputsDir != "" && !strings.HasSuffix(outputsDir, "/") {
+		outputsDir += "/"
+	}
+
+	for appGUID, structure := range appStructureMap {
 		raw, err := json.MarshalIndent(structure, "", "  ")
 		if err != nil {
-			return errors.Wrap(err, "error marshaling app structure") // TODO add app id to error
+			return errors.Wrapf(err, "error marshaling app<%s> structure", appGUID)
 		}
 
 		// TODO make write into func to close file quicker
-		fileName := fmt.Sprintf("%s%d.structure", outputsDir, i /*app.GUID*/)
+		fileName := fmt.Sprintf("%s%s.structure", outputsDir, appGUID)
 		structureFile, err := os.Create(fileName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create structure file")
@@ -925,16 +949,4 @@ func (report *AppStructureReport) AddWarning(warning string) {
 	}
 
 	report.warnings = append(report.warnings, warning)
-}
-
-func (container *AppStructureContainer) AddStructure(structure *GeneratedAppStructure) {
-	container.mu.Lock()
-	defer container.mu.Unlock()
-
-	if container.Structures == nil {
-		container.Structures = []*GeneratedAppStructure{structure}
-		return
-	}
-
-	container.Structures = append(container.Structures, structure)
 }

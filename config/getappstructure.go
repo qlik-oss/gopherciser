@@ -15,7 +15,7 @@ import (
 type (
 	getAppStructureSettings struct {
 		IncludeRaw    bool `json:"includeRaw,omitempty"`
-		AppStructures *AppStructureContainer
+		AppStructures map[string]*GeneratedAppStructure
 	}
 )
 
@@ -98,5 +98,5 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 		return
 	}
 
-	settings.AppStructures.AddStructure(structure)
+	settings.AppStructures[app.GUID] = structure
 }
