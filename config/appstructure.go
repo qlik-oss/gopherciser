@@ -27,9 +27,17 @@ import (
 )
 
 type (
+	AppStructureWarning struct {
+		ObjectID            string
+		ObjectType          string
+		ObjectVisualization string
+		Warningtype         string
+		Message             string
+	}
+
 	// AppStructureReport reports warnings and fetched objects for app structure
 	AppStructureReport struct {
-		warnings     []string
+		warnings     []AppStructureWarning
 		warningsLock sync.Mutex
 	}
 
@@ -45,10 +53,28 @@ type (
 	// Appstructure and warnings in consumable form
 	Appstructure struct {
 		Guid      string
-		Warnings  []string
+		Warnings  []AppStructureWarning
 		Structure *appstructure.AppStructure
 	}
 )
+
+const (
+	AppStructureWarningObjectNotExists          = "ObjectNotExists"
+	AppStructureWarningMasterObjectNotExists    = "MasterObjectNotExists"
+	AppStructureWarningUnsupportedVisualization = "UnsupportedVisualization"
+	AppStructureWarningMissingDimMeasure        = "MissingDimMeasure"
+	AppStructureWarningMeasureNotFound          = "MeasureNotFound"
+	AppStructureWarningMetaInformationNotFound  = "MetaInformationNotFound"
+	AppStructureWarningDimensionNotFound        = "DimensionNotFound"
+	AppStructureWarningPropertiesError          = "PropertiesError"
+	AppStructureWarningChildError               = "ChildError"
+	AppStructureWarningSnapshotError            = "SnapshotError"
+)
+
+// String implements Stringer interface
+func (warning AppStructureWarning) String() string {
+	return fmt.Sprintf("object<%s> type<%s> visualization<%s> warning: %s", warning.ObjectID, warning.ObjectType, warning.ObjectVisualization, warning.Message)
+}
 
 func (cfg *Config) getAppStructureScenario(includeRaw bool) ([]scenario.Action, map[string]*GeneratedAppStructure) {
 	appStructureMap := make(map[string]*GeneratedAppStructure, 1)
@@ -100,7 +126,7 @@ func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileNa
 
 	for _, warning := range structure.report.warnings {
 		buf.WriteString(ansiBoldYellow)
-		buf.WriteString(warning)
+		buf.WriteString(warning.String())
 		buf.WriteString("\n")
 	}
 
@@ -308,15 +334,15 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 		// handle some special types
 		switch objectType {
 		case appstructure.ObjectTypeDimension:
-			if err := structure.handleDimension(ctx, app, id, &obj); err != nil {
+			if err := structure.handleDimension(ctx, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
 			}
 		case appstructure.ObjectTypeMeasure:
-			if err := structure.handleMeasure(ctx, app, id, &obj); err != nil {
+			if err := structure.handleMeasure(ctx, app, id, typ, &obj); err != nil {
 				return errors.WithStack(err)
 			}
 		case appstructure.ObjectTypeBookmark:
-			if err := structure.handleBookmark(ctx, app, id, includeRaw); err != nil {
+			if err := structure.handleBookmark(ctx, app, id, typ, includeRaw); err != nil {
 				return errors.WithStack(err)
 			}
 			return nil
@@ -383,10 +409,17 @@ func (structure *GeneratedAppStructure) AddStoryObject(object appstructure.AppSt
 	structure.StoryObjects[object.Id] = object
 }
 
-func (structure *GeneratedAppStructure) warn(warning string) {
+func (structure *GeneratedAppStructure) warn(objectID, objectType, objectVisualization, warningType, message string) {
+	warning := AppStructureWarning{
+		ObjectID:            objectID,
+		ObjectType:          objectType,
+		ObjectVisualization: objectVisualization,
+		Warningtype:         warningType,
+		Message:             message,
+	}
 	structure.report.AddWarning(warning)
 	if structure.logEntry != nil {
-		structure.logEntry.Log(logger.WarningLevel, warning)
+		structure.logEntry.Log(logger.WarningLevel, warning.String())
 	}
 }
 
@@ -396,7 +429,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 		return errors.WithStack(err)
 	}
 	if genObj.Handle < 1 {
-		structure.warn(fmt.Sprintf("object with id<%s> does not exist", id))
+		structure.warn(id, "", "", AppStructureWarningObjectNotExists, "object does not exist")
 		return nil
 	}
 
@@ -416,7 +449,7 @@ func (structure *GeneratedAppStructure) handleDefaultObject(ctx context.Context,
 			return errors.WithStack(err)
 		}
 		if extendedObject.Handle < 1 {
-			structure.warn(fmt.Sprintf("master object with id<%s> linked in object<%s> does not exist", obj.ExtendsId, id))
+			structure.warn(id, "", "", AppStructureWarningMasterObjectNotExists, fmt.Sprintf("master object with id<%s> does not exist", obj.ExtendsId))
 			return nil
 		}
 		obj.RawExtendedProperties, err = extendedObject.GetPropertiesRaw(ctx)
@@ -523,7 +556,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	if err != nil {
 		switch errors.Cause(err).(type) {
 		case senseobjdef.NoDefError:
-			structure.warn(fmt.Sprintf("Object type<%s> not supported", vis))
+			structure.warn(obj.Id, typ, vis, AppStructureWarningUnsupportedVisualization, "unsupported visualization")
 			return nil
 		default:
 			return errors.WithStack(err)
@@ -613,8 +646,8 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	}
 
 	if obj.Selectable && (len(obj.Dimensions)+len(obj.Measures)) < 1 {
-		// object defined as selectable both doesn't have any data definitions found
-		structure.warn(fmt.Sprintf("object<%s> visualization<%s> type<%s> is expected to have data, but no measures or dimensions were found", obj.Id, vis, typ))
+		// object defined as selectable, but doesn't have any data definitions found
+		structure.warn(obj.Id, typ, vis, AppStructureWarningMissingDimMeasure, "object expected to have data, but no measures or dimensions were found")
 	}
 
 	// no dimension = not selectable
@@ -630,7 +663,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	return nil
 }
 
-func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
 	genMeasure, err := app.Doc.GetMeasure(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -645,7 +678,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	measurePath := helpers.NewDataPath("/qMeasure")
 	rawMeasure, err := measurePath.Lookup(obj.RawBaseProperties)
 	if err != nil {
-		structure.warn(fmt.Sprintf("measure<%s> definition not found", id))
+		structure.warn(id, typ, "measure", AppStructureWarningMeasureNotFound, "measure definition not found")
 	} else {
 		if err := json.Unmarshal(rawMeasure, &measure); err != nil {
 			return errors.WithStack(err)
@@ -657,7 +690,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	metaPath := helpers.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
-		structure.warn(fmt.Sprintf("measure<%s> has not meta information", id))
+		structure.warn(id, typ, "measure", AppStructureWarningMetaInformationNotFound, "measure has not meta information")
 	} else {
 		if err := json.Unmarshal(rawMeta, &meta); err != nil {
 			return errors.WithStack(err)
@@ -675,7 +708,7 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	return nil
 }
 
-func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app *senseobjects.App, id string, obj *appstructure.AppStructureObject) error {
+func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
 	genDim, err := app.Doc.GetDimension(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -690,7 +723,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	dimensionPath := helpers.NewDataPath("/qDim")
 	rawDimension, err := dimensionPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
-		structure.warn(fmt.Sprintf("dimension<%s> defintion not found", id))
+		structure.warn(id, typ, "dimension", AppStructureWarningDimensionNotFound, "dimension defintion not found")
 	} else {
 		if err := json.Unmarshal(rawDimension, &dimension); err != nil {
 			return errors.WithStack(err)
@@ -702,7 +735,7 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	metaPath := helpers.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
-		structure.warn(fmt.Sprintf("dimension<%s> has not meta information", id))
+		structure.warn(id, typ, "dimension", AppStructureWarningMetaInformationNotFound, "dimension has not meta information")
 	} else {
 		if err := json.Unmarshal(rawMeta, &meta); err != nil {
 			return errors.WithStack(err)
@@ -747,13 +780,13 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 
 	obj, err := structure.getObject(ctx, app, id, typ)
 	if err != nil {
-		structure.warn(err.Error())
+		structure.warn(id, typ, "", AppStructureWarningObjectNotExists, err.Error())
 		return
 	}
 
 	storyObject.RawProperties, err = obj.GetPropertiesRaw(ctx)
 	if err != nil {
-		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to return properties error<%s>", id, typ, err))
+		structure.warn(id, typ, "", AppStructureWarningPropertiesError, fmt.Sprintf("failed to return properties error: %s", err))
 		return
 	}
 	defer func() {
@@ -769,20 +802,20 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 	_ = json.Unmarshal(rawVisualization, &storyObject.Visualization)
 
 	if err := handleChildren(ctx, obj, &storyObject.AppStructureObjectChildren); err != nil {
-		structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get object children error<%s>", id, typ, err))
+		structure.warn(id, typ, "", AppStructureWarningChildError, fmt.Sprintf("failed to get object children error: %s", err))
 		return
 	}
 
 	if storyObject.Visualization == appstructure.ObjectTypeEnumMap.StringDefault(int(appstructure.ObjectSnapshot), "snapshot") {
 		snapShotObj, err := obj.GetSnapshotObject(ctx)
 		if err != nil {
-			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get connected snapshot object", id, typ))
+			structure.warn(id, typ, "snapshot", AppStructureWarningSnapshotError, "failed to get connected snapshot object")
 			return
 		}
 		storyObject.SnapshotID = snapShotObj.GenericId
 		storyObject.RawSnapShotProperties, err = snapShotObj.GetPropertiesRaw(ctx)
 		if err != nil {
-			structure.warn(fmt.Sprintf("id<%s> type<%s> failed to get snapshot properties", snapShotObj.GenericId, snapShotObj.GenericType))
+			structure.warn(snapShotObj.GenericId, snapShotObj.GenericType, "snapshot", AppStructureWarningPropertiesError, "failed to get snapshot properties")
 			return
 		}
 
@@ -792,7 +825,7 @@ func (structure *GeneratedAppStructure) handleStories(ctx context.Context, app *
 	}
 }
 
-func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id string, includeRaw bool) error {
+func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app *senseobjects.App, id, typ string, includeRaw bool) error {
 	bookmark, err := app.Doc.GetBookmark(ctx, id)
 	if err != nil {
 		return errors.WithStack(err)
@@ -813,10 +846,10 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	metaPath := helpers.NewDataPath("/qMetaDef")
 	rawMeta, err := metaPath.Lookup(properties)
 	if err != nil {
-		structure.warn(fmt.Sprintf("bookmark<%s> has no meta information", id))
+		structure.warn(id, typ, "", AppStructureWarningMetaInformationNotFound, "bookmark has no meta information")
 	} else {
 		if err = json.Unmarshal(rawMeta, &meta); err != nil {
-			structure.warn(fmt.Sprintf("bookmark<%s> failed to unmarshal meta information: %v", id, err))
+			structure.warn(id, typ, "", AppStructureWarningMetaInformationNotFound, fmt.Sprintf("bookmark failed to unmarshal meta information: %s", err))
 		}
 	}
 
@@ -940,12 +973,12 @@ func stringFromDataPath(path string, data json.RawMessage) string {
 }
 
 // AddWarning to app structure report
-func (report *AppStructureReport) AddWarning(warning string) {
+func (report *AppStructureReport) AddWarning(warning AppStructureWarning) {
 	report.warningsLock.Lock()
 	defer report.warningsLock.Unlock()
 
 	if report.warnings == nil {
-		report.warnings = make([]string, 0, 1)
+		report.warnings = make([]AppStructureWarning, 0, 1)
 	}
 
 	report.warnings = append(report.warnings, warning)
