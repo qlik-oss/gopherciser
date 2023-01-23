@@ -1,10 +1,12 @@
 package wsdialer
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	neturl "net/url"
@@ -12,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gobwas/ws"
 	gobwas "github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/pkg/errors"
@@ -170,11 +173,51 @@ func (dialer *WsDialer) WriteMessage(messageType int, data []byte) error {
 	return wsutil.WriteClientMessage(dialer, gobwas.OpCode(messageType), data)
 }
 
+// readMessage is copied from github.com/gobwas/wsutil package and modified
+func readMessage(r io.Reader, m []wsutil.Message) ([]wsutil.Message, error) {
+	rd := wsutil.Reader{
+		Source:    r,
+		State:     ws.StateClientSide,
+		CheckUTF8: true,
+		OnIntermediate: func(hdr ws.Header, src io.Reader) error {
+			bts, err := ioutil.ReadAll(src)
+			if err != nil {
+				return err
+			}
+			m = append(m, wsutil.Message{OpCode: hdr.OpCode, Payload: bts})
+			return nil
+		},
+		MaxFrameSize: 2 ^ 25,
+	}
+	h, err := rd.NextFrame()
+	if err != nil {
+		return m, err
+	}
+	var p []byte
+	if h.Fin {
+		// No more frames will be read. Use fixed sized buffer to read payload.
+		p = make([]byte, h.Length)
+		// It is not possible to receive io.EOF here because Reader does not
+		// return EOF if frame payload was successfully fetched.
+		// Thus we consistent here with io.Reader behavior.
+		_, err = io.ReadFull(&rd, p)
+	} else {
+		// Frame is fragmented, thus use ioutil.ReadAll behavior.
+		var buf bytes.Buffer
+		_, err = buf.ReadFrom(&rd)
+		p = buf.Bytes()
+	}
+	if err != nil {
+		return m, err
+	}
+	return append(m, wsutil.Message{OpCode: h.OpCode, Payload: p}), nil
+}
+
 // ReadMessage Read one entire message from websocket
 func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	var msg []wsutil.Message
 	var err error
-	msg, err = wsutil.ReadServerMessage(dialer, msg)
+	msg, err = readMessage(dialer, msg)
 	var data []byte
 
 	for _, m := range msg {
