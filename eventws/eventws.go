@@ -34,7 +34,7 @@ const WsType = "EventWebsocket"
 // SetupEventSocket to listen for events, event listening will stop at listenContext done.
 func SetupEventSocket(dialContext context.Context, listenContext context.Context, timeout time.Duration, cookieJar http.CookieJar, trafficLogger TrafficLogger, metricsLogger TrafficMetricsLogger,
 	url *neturl.URL, httpHeader http.Header, allowUntrusted bool, requestMetrics *requestmetrics.RequestMetrics, currentActionState func() *action.State) (*EventWebsocket, error) {
-	dialer, err := wsdialer.New(url, httpHeader, cookieJar, timeout, allowUntrusted, WsType)
+	dialer, err := wsdialer.New(url, httpHeader, cookieJar, timeout, allowUntrusted, WsType, 0)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -54,6 +54,7 @@ type (
 		Reconnect ReConnectSettings
 		// OnUnexpectedDisconnect triggers on disconnect of websocket
 		OnUnexpectedDisconnect func()
+		MaxFrameSize           int64
 
 		url       *neturl.URL
 		closed    chan struct{}
@@ -88,7 +89,7 @@ func (err DisconnectError) Error() string {
 }
 
 // New Create new websocket dialer, use type to define a specific type which would be reported when getting a DisconnectError
-func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, timeout time.Duration, allowUntrusted bool, wstype string) (*WsDialer, error) {
+func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, timeout time.Duration, allowUntrusted bool, wstype string, maxFrameSize int64) (*WsDialer, error) {
 	if timeout.Nanoseconds() < 1 {
 		timeout = DefaultTimeout
 	}
@@ -147,9 +148,10 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 				InsecureSkipVerify: allowUntrusted,
 			},
 		},
-		url:    url,
-		Type:   wstype,
-		closed: make(chan struct{}),
+		url:          url,
+		Type:         wstype,
+		closed:       make(chan struct{}),
+		MaxFrameSize: maxFrameSize,
 	}
 
 	return &dialer, nil
@@ -173,8 +175,8 @@ func (dialer *WsDialer) WriteMessage(messageType int, data []byte) error {
 	return wsutil.WriteClientMessage(dialer, gobwas.OpCode(messageType), data)
 }
 
-// readMessage is copied from github.com/gobwas/wsutil package and modified
-func readMessage(r io.Reader, m []wsutil.Message) ([]wsutil.Message, error) {
+// readMessage is copied from github.com/gobwas/wsutil package and modified with maxframesize parameter
+func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.Message, error) {
 	rd := wsutil.Reader{
 		Source:    r,
 		State:     ws.StateClientSide,
@@ -187,7 +189,7 @@ func readMessage(r io.Reader, m []wsutil.Message) ([]wsutil.Message, error) {
 			m = append(m, wsutil.Message{OpCode: hdr.OpCode, Payload: bts})
 			return nil
 		},
-		MaxFrameSize: 2 ^ 25,
+		MaxFrameSize: maxFrameSize,
 	}
 	h, err := rd.NextFrame()
 	if err != nil {
@@ -217,7 +219,7 @@ func readMessage(r io.Reader, m []wsutil.Message) ([]wsutil.Message, error) {
 func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	var msg []wsutil.Message
 	var err error
-	msg, err = readMessage(dialer, msg)
+	msg, err = readMessage(dialer, msg, dialer.MaxFrameSize)
 	var data []byte
 
 	for _, m := range msg {

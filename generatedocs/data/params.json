@@ -82,6 +82,9 @@
     "clickactionbutton.id": [
         "ID of the action-button to click."
     ],
+    "config.connectionSettings.maxframesize" : [
+        "(Default 0 - No limit). Max size in bytes allowed to be read on sense websocket."
+    ],
     "config.connectionSettings.mode": [
         "Authentication mode",
         "`jwt`: JSON Web Token",

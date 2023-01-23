@@ -27,7 +27,7 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 			sessionState.Disconnect()
 		}
 
-		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger())
+		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger(), connectionSettings.MaxFrameSize)
 		sessionState.Connection.SetSense(sense)
 
 		url, err := connectionSettings.GetURL(appGUID, externalhost)

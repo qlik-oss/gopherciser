@@ -53,9 +53,9 @@ type (
 )
 
 // GetConnectFunc which establishes a connection to Qlik Sense
-func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connection *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) ConnectFunc {
+func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) ConnectFunc {
 	connectFunc := func(reconnect bool) (string, error) {
-		url, err := connection.GetURL(appGUID, externalhost)
+		url, err := connectionSettings.GetURL(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
 		}
@@ -67,7 +67,7 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 			sessionState.Disconnect()
 		}
 
-		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger())
+		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger(), connectionSettings.MaxFrameSize)
 		sessionState.Connection.SetSense(sense)
 
 		// Connect
@@ -89,7 +89,7 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 		for k, v := range customHeaders {
 			connectHeaders[k] = v
 		}
-		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
+		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
 		sense.OnUnexpectedDisconnect(sessionState.WSFailed)

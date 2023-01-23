@@ -24,12 +24,13 @@ import (
 type (
 	// SenseUplink handle sense connection for a user
 	SenseUplink struct {
-		Global     *enigma.Global
-		CurrentApp *senseobjects.App
-		Objects    ObjectsMap
-		FieldCache FieldCache
-		VarCache   VarCache
-		Traffic    ITrafficLogger
+		Global       *enigma.Global
+		CurrentApp   *senseobjects.App
+		Objects      ObjectsMap
+		FieldCache   FieldCache
+		VarCache     VarCache
+		Traffic      ITrafficLogger
+		MaxFrameSize int64
 
 		ctx               context.Context
 		cancel            context.CancelFunc
@@ -77,7 +78,7 @@ func retriesDisabled(ctx context.Context) bool {
 }
 
 // NewSenseUplink SenseUplink constructor
-func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *requestmetrics.RequestMetrics, trafficLogger ITrafficLogger) *SenseUplink {
+func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *requestmetrics.RequestMetrics, trafficLogger ITrafficLogger, maxFrameSize int64) *SenseUplink {
 	cCtx, cancel := context.WithCancel(ctx)
 
 	return &SenseUplink{
@@ -88,6 +89,7 @@ func NewSenseUplink(ctx context.Context, logentry *logger.LogEntry, metrics *req
 		Traffic:        trafficLogger,
 		FieldCache:     NewFieldCache(),
 		VarCache:       NewVarCache(),
+		MaxFrameSize:   maxFrameSize,
 	}
 }
 
@@ -147,7 +149,7 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		uplink.executeFailedConnectFuncs()
 	}
 
-	setupDialer(&dialer, timeout, uplink.logEntry, onUnexpectedDisconnect)
+	setupDialer(&dialer, timeout, uplink.logEntry, onUnexpectedDisconnect, uplink.MaxFrameSize)
 
 	// TODO somehow get better values for connect time
 	startTimestamp := time.Now()
