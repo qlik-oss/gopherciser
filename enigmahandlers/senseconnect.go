@@ -188,6 +188,8 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 				}
 			case <-uplink.ctx.Done():
 				return
+			case <-global.Closed():
+				return
 			}
 		}
 	}()
@@ -198,6 +200,8 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		return errors.Errorf("websocket connected, but no state created or attach (timeout)")
 	case <-uplink.ctx.Done():
 		return errors.Errorf("websocket connected, but no state created or attach (context cancelled)")
+	case <-global.Closed():
+		return errors.Errorf("websocket unexpectedly closed during connection attempt")
 	}
 
 	// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed

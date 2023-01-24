@@ -1,6 +1,7 @@
 package wsdialer
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -60,6 +61,7 @@ type (
 	// DisconnectError is sent on websocket disconnect
 	DisconnectError struct {
 		Type string
+		Err  error
 	}
 )
 
@@ -81,7 +83,7 @@ func init() {
 
 // Error implements error interface
 func (err DisconnectError) Error() string {
-	return fmt.Sprintf("Websocket<%s> disconnected", err.Type)
+	return fmt.Sprintf("Websocket<%s> disconnected (%s)", err.Type, err.Err)
 }
 
 // New Create new websocket dialer, use type to define a specific type which would be reported when getting a DisconnectError
@@ -161,7 +163,11 @@ func (dialer *WsDialer) Dial(ctx context.Context) error {
 	}
 
 	var err error
-	dialer.Conn, _ /*br*/, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
+	var br *bufio.Reader
+	dialer.Conn, br, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
+	if br != nil {
+		gobwas.PutReader(br)
+	}
 	return errors.WithStack(err)
 }
 
@@ -197,7 +203,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 			dialer.OnUnexpectedDisconnect()
 		}
 		if !dialer.Reconnect.AutoReconnect {
-			err = DisconnectError{Type: dialer.Type}
+			err = DisconnectError{Type: dialer.Type, Err: err}
 		} else {
 			var motherContext context.Context
 			if dialer.Reconnect.GetContext != nil {
@@ -214,7 +220,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 			}
 
 			if isClosed() {
-				return len(data), data, DisconnectError{Type: dialer.Type}
+				return len(data), data, DisconnectError{Type: dialer.Type, Err: err}
 			}
 
 			err = dialer.reconnect(motherContext, isClosed)
