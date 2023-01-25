@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -226,8 +227,13 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	msg, err = readMessage(dialer, msg, dialer.MaxFrameSize)
 	var data []byte
 
+	var closeMsg []byte
 	for _, m := range msg {
-		data = append(data, m.Payload...)
+		if m.OpCode == gobwas.OpClose {
+			closeMsg = append(closeMsg, m.Payload...)
+		} else {
+			data = append(data, m.Payload...)
+		}
 	}
 
 	disconnected := false
@@ -239,6 +245,13 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 		if err == io.EOF {
 			disconnected = true
 		}
+	}
+
+	if len(closeMsg) > 3 {
+		closeStatusCode := binary.BigEndian.Uint16(closeMsg[:2])
+		closeReason := closeMsg[2:]
+		err = fmt.Errorf("websocket closed with code<%d> and reason<%s>", closeStatusCode, closeReason)
+		disconnected = true
 	}
 
 	if disconnected {

@@ -203,7 +203,9 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 	case <-uplink.ctx.Done():
 		return errors.Errorf("websocket connected, but no state created or attach (context cancelled)")
 	case <-global.Closed():
-		return errors.Errorf("websocket unexpectedly closed during connection attempt")
+		// TODO currently there's no way to get close state, but subsequent EngineVersion will get the error message
+		// once a method to get close state (requires changes to enigma-go) this should be checked and returned here instead
+		// return errors.Errorf("websocket unexpectedly closed during connection attempt")
 	}
 
 	// send a quick request, after this OnConnected and EventTopicOnAuthenticationInformation has been done and websocket possibly force closed
