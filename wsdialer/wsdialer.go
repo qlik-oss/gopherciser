@@ -1,12 +1,12 @@
 package wsdialer
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	neturl "net/url"
@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gobwas/ws"
 	gobwas "github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/pkg/errors"
@@ -64,6 +63,7 @@ type (
 	// DisconnectError is sent on websocket disconnect
 	DisconnectError struct {
 		Type string
+		Err  error
 	}
 )
 
@@ -85,7 +85,7 @@ func init() {
 
 // Error implements error interface
 func (err DisconnectError) Error() string {
-	return fmt.Sprintf("Websocket<%s> disconnected", err.Type)
+	return fmt.Sprintf("Websocket<%s> disconnected (%s)", err.Type, err.Err)
 }
 
 // New Create new websocket dialer, use type to define a specific type which would be reported when getting a DisconnectError
@@ -166,7 +166,11 @@ func (dialer *WsDialer) Dial(ctx context.Context) error {
 	}
 
 	var err error
-	dialer.Conn, _ /*br*/, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
+	var br *bufio.Reader
+	dialer.Conn, br, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
+	if br != nil {
+		gobwas.PutReader(br)
+	}
 	return errors.WithStack(err)
 }
 
@@ -179,10 +183,10 @@ func (dialer *WsDialer) WriteMessage(messageType int, data []byte) error {
 func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.Message, error) {
 	rd := wsutil.Reader{
 		Source:    r,
-		State:     ws.StateClientSide,
+		State:     gobwas.StateClientSide,
 		CheckUTF8: true,
-		OnIntermediate: func(hdr ws.Header, src io.Reader) error {
-			bts, err := ioutil.ReadAll(src)
+		OnIntermediate: func(hdr gobwas.Header, src io.Reader) error {
+			bts, err := io.ReadAll(src)
 			if err != nil {
 				return err
 			}
@@ -242,7 +246,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 			dialer.OnUnexpectedDisconnect()
 		}
 		if !dialer.Reconnect.AutoReconnect {
-			err = DisconnectError{Type: dialer.Type}
+			err = DisconnectError{Type: dialer.Type, Err: err}
 		} else {
 			var motherContext context.Context
 			if dialer.Reconnect.GetContext != nil {
@@ -259,7 +263,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 			}
 
 			if isClosed() {
-				return len(data), data, DisconnectError{Type: dialer.Type}
+				return len(data), data, DisconnectError{Type: dialer.Type, Err: err}
 			}
 
 			err = dialer.reconnect(motherContext, isClosed)
