@@ -25,6 +25,8 @@ type (
 		Details string
 		// NoRestartOnDisconnect in the case of using websocket reconnect logic, don't restart action when a reconnect has happened
 		NoRestartOnDisconnect bool
+		// FailOnDisconnect in the case of using webscoket reconnect logic, fail the action instead of trying to restart it
+		FailOnDisconnect bool
 	}
 )
 

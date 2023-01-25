@@ -10,7 +10,7 @@ import (
 )
 
 func TestConnection(t *testing.T) {
-	connection := NewSenseUplink(context.Background(), nil, &requestmetrics.RequestMetrics{}, nil)
+	connection := NewSenseUplink(context.Background(), nil, &requestmetrics.RequestMetrics{}, nil, 0)
 	connection.MockMode = true
 
 	if err := connection.Connect(context.Background(), "wss://localhost", nil, nil, false, 0, false); err != nil {

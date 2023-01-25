@@ -212,6 +212,7 @@ var (
 		"config.connectionSettings.jwtsettings.claims":    {"JWT claims as an escaped JSON string."},
 		"config.connectionSettings.jwtsettings.jwtheader": {"JWT headers as an escaped JSON string. Custom headers to be added to the JWT header."},
 		"config.connectionSettings.jwtsettings.keypath":   {"Local path to the JWT key file."},
+		"config.connectionSettings.maxframesize":          {"(Default 0 - No limit). Max size in bytes allowed to be read on sense websocket."},
 		"config.connectionSettings.mode":                  {"Authentication mode", "`jwt`: JSON Web Token", "`ws`: WebSocket"},
 		"config.connectionSettings.port":                  {"Set another port than default (`80` for http and `443` for https)."},
 		"config.connectionSettings.rawurl":                {"Define the connect URL manually instead letting the `openapp` action do it. **Note**: The protocol must be `wss://` or `ws://`."},

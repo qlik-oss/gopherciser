@@ -35,6 +35,7 @@ JSON Web Token (JWT), an open standard for creation of access tokens, or WebSock
 * `allowuntrusted`: Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted.
 * `appext`: Replace `app` in the connect URL for the `openapp` action. Defaults to `app`, if omitted.
 * `headers`: Headers to use in requests.
+* `maxframesize`: (Default 0 - No limit). Max size in bytes allowed to be read on sense websocket.
 
 ### Examples
 

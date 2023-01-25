@@ -44,6 +44,8 @@ type (
 		AppExt *string `json:"appext,omitempty" doc-key:"config.connectionSettings.appext"`
 		// Header headers to add on the websocket connection
 		Headers map[string]string `json:"headers" doc-key:"config.connectionSettings.headers"`
+		// MaxFrameSize (Default 0 - No limit). Max size in bytes to be read on sense websocket. Limit exceeded yields an error.
+		MaxFrameSize int64 `json:"maxframesize" doc-key:"config.connectionSettings.maxframesize"`
 
 		syncTemplates sync.Once
 		templates     map[string]*template.Template

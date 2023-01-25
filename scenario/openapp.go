@@ -57,6 +57,7 @@ func (openApp *OpenAppSettings) UnmarshalJSON(arg []byte) error {
 
 // Execute open app
 func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, setOpenStart func()) {
+	actionState.FailOnDisconnect = true
 	appEntry, err := openApp.AppSelection.Select(sessionState)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "Failed to perform app selection"))
@@ -224,6 +225,7 @@ func (openApp OpenAppSettings) AppStructureAction() (*AppStructureInfo, []Action
 }
 
 func (connectWs connectWsSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+	actionState.FailOnDisconnect = true
 	appGUID, err := connectWs.ConnectFunc(false)
 	if err != nil {
 		actionState.AddErrors(errors.Wrap(err, "Failed connecting to sense server"))
