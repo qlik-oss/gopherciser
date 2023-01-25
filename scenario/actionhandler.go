@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
@@ -390,7 +389,7 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 				} else {
 					actionState.AddErrors(errors.New("Websocket unexpectedly closed"))
 				}
-			} else {
+			} else if !actionState.FailOnDisconnect {
 				// Fake an actionState for reconnect as a successful one
 				restart = !actionState.NoRestartOnDisconnect
 				actionState = &action.State{Details: actionState.Details}
