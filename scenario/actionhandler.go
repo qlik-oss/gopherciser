@@ -523,11 +523,11 @@ func logResult(sessionState *session.State, actionState *action.State, details s
 	var responsetime int64
 	var actionError error
 
-	defer sessionState.EW.Reset()
-
 	if sessionState == nil {
 		return nil
 	}
+
+	defer sessionState.EW.Reset()
 
 	// check if this is a container action
 	isContainerAction := containerActionEntry != nil
