@@ -10,7 +10,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: cimg/go:1.18
+      - image: cimg/go:1.19
     steps:
       - checkout
       - setup_remote_docker
@@ -20,7 +20,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.18{{ checksum "go.sum" }}
+          key: dependency-cache-1.19{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -34,7 +34,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.18{{ checksum "go.sum" }}
+          key: dependency-cache-1.19{{ checksum "go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"
       - run:
@@ -75,7 +75,7 @@ jobs:
     parameters:
       version:
         type: string
-        default: "1.17"
+        default: "1.19"
     docker:
       - image: cimg/go:<< parameters.version >>
     steps:
@@ -187,8 +187,11 @@ workflows:
           name: "Test Go 1.17"
           version: "1.17"
       - test-go-version:
-          name: "Test Go 1.19"
-          version: "1.19"
+          name: "Test Go 1.18"
+          version: "1.18"
+      - test-go-version:
+          name: "Test Go 1.20"
+          version: "1.20"
       - publish-github:
           requires:
             - build
