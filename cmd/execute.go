@@ -49,8 +49,8 @@ type (
 )
 
 var (
-	metricsPort      int
-	metricsAddress   string
+	metricsLevel     int
+	metricsTarget    string
 	metricsLabel     string
 	metricsGroupings []string
 	profTyp          string
@@ -213,8 +213,8 @@ func init() {
 	AddLoggingParameters(executeCmd)
 
 	// Prometheus
-	executeCmd.Flags().IntVar(&metricsPort, "metrics", 0, "Export via http prometheus metrics.")
-	executeCmd.Flags().StringVar(&metricsAddress, "metricsaddress", "", "If set other than empty string then Push otherwise pull, will be appended by port.")
+	executeCmd.Flags().IntVar(&metricsLevel, "metricslevel", 0, "Export via http prometheus metrics. 0-off, 1-Pull, 2-Push without api, 3 push with api")
+	executeCmd.Flags().StringVar(&metricsTarget, "metricstarget", "", "if metricslevel is 1 then need to be the port as an int, if larger than 2 its the address of the push gateway")
 	executeCmd.Flags().StringVar(&metricsLabel, "metricslabel", "gopherciser", "The job label to use for push metrics")
 	executeCmd.Flags().StringSliceVarP(&metricsGroupings, "metricsgroupingkey", "g", nil, "The grouping keys (in key=value form) to use for push metrics. Specify multiple times for more grouping keys.")
 	executeCmd.Flags().BoolVar(&regression, "regression", false, "Log data needed to run regression analysis.")
@@ -305,21 +305,29 @@ func execute() error {
 	}()
 
 	// === Prometheus section ===
-	if metricsPort > 0 {
-		// Check if push or pull by looking at whether address is set or not
-		if metricsAddress == "" {
-			//Prometheus metrics will be pulled from the endpoint /metrics
-			err := buildmetrics.PullMetrics(ctx, metricsPort, scenario.RegisteredActions())
-			if err != nil {
-				return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
-			}
-		} else {
-			//Prometheus metrics will be pushed to a pushgateway
-			err := buildmetrics.PushMetrics(ctx, metricsPort, metricsAddress, metricsLabel, metricsGroupings, scenario.RegisteredActions())
-			if err != nil {
-				return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
-			}
+	switch metricsLevel {
+	case 1:
+		// Pull enabled
+		metricsPort, err := strconv.Atoi(metricsTarget)
+		if err != nil {
+			return MetricError(fmt.Sprintf("metricsTarget need to be a port number (int) : %s ", err))
 		}
+		err = buildmetrics.PullMetrics(ctx, metricsPort, scenario.RegisteredActions())
+		if err != nil {
+			return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+		}
+	case 2:
+		err := buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), false)
+		if err != nil {
+			return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+		}
+	case 3:
+		err := buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), true)
+		if err != nil {
+			return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+		}
+	default:
+		// no metrics enabled
 	}
 
 	// Data for variable templates
