@@ -3,6 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/qlik-oss/gopherciser/buildmetrics"
+	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/scenario"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -14,11 +18,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/profile"
-	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/spf13/cobra"
@@ -46,17 +48,58 @@ type (
 		SubError error
 		Msg      string
 	}
+	// MetricLevel indicates what level if any to expose metrics, default is no metrics
+	MetricLevel int
 )
 
 var (
-	metricsLevel     int
+	metricsLevel     string
 	metricsTarget    string
+	metricsPort      int
+	metricsAddress   string
 	metricsLabel     string
 	metricsGroupings []string
 	profTyp          string
 	objDefFile       string
 	regression       bool
 )
+
+// MetricsLevel enum
+const (
+	MetricOff MetricLevel = iota
+	MetricPull
+	MetricPush
+	MetricPushAPI
+)
+
+func (value MetricLevel) GetEnumMap() *enummap.EnumMap {
+	metricLevelEnum, _ := enummap.NewEnumMap(map[string]int{
+		"nometric":      int(MetricOff),
+		"pullmetric":    int(MetricPull),
+		"pushmetric":    int(MetricPush),
+		"pushmetricapi": int(MetricPushAPI),
+	})
+
+	return metricLevelEnum
+}
+
+func resolveMetricLevel() (MetricLevel, error) {
+	if i, err := strconv.Atoi(metricsLevel); err != nil {
+		// it's a string
+		i, err = MetricLevel(0).GetEnumMap().Int(metricsLevel)
+		if err != nil {
+			return MetricLevel(0), errors.Errorf("Metric level<%s> does not exist", metricsLevel)
+		}
+		return MetricLevel(i), nil
+	} else {
+		// it's an int
+		_, err = config.SummaryType(0).GetEnumMap().String(i)
+		if err != nil {
+			return MetricLevel(0), errors.Errorf("Metric level<%s> does not exist", metricsLevel)
+		}
+		return MetricLevel(i), nil
+	}
+}
 
 // *** Custom errors ***
 
@@ -213,8 +256,10 @@ func init() {
 	AddLoggingParameters(executeCmd)
 
 	// Prometheus
-	executeCmd.Flags().IntVar(&metricsLevel, "metricslevel", 0, "Export via http prometheus metrics. 0-off, 1-Pull, 2-Push without api, 3 push with api")
+	executeCmd.Flags().StringVar(&metricsLevel, "metricslevel", "", "Export via http prometheus metrics. 0-off, 1-Pull, 2-Push without api, 3 push with api")
 	executeCmd.Flags().StringVar(&metricsTarget, "metricstarget", "", "if metricslevel is 1 then need to be the port as an int, if larger than 2 its the address of the push gateway")
+	executeCmd.Flags().IntVar(&metricsPort, "metrics", 0, "Deprecated use metricslevel instead, will attempt to convert at runtime")
+	executeCmd.Flags().StringVar(&metricsAddress, "metricsaddress", "", "Deprecated use metricstarget instead, will attempt to convert at runtime")
 	executeCmd.Flags().StringVar(&metricsLabel, "metricslabel", "gopherciser", "The job label to use for push metrics")
 	executeCmd.Flags().StringSliceVarP(&metricsGroupings, "metricsgroupingkey", "g", nil, "The grouping keys (in key=value form) to use for push metrics. Specify multiple times for more grouping keys.")
 	executeCmd.Flags().BoolVar(&regression, "regression", false, "Log data needed to run regression analysis.")
@@ -305,29 +350,62 @@ func execute() error {
 	}()
 
 	// === Prometheus section ===
-	switch metricsLevel {
-	case 1:
-		// Pull enabled
-		metricsPort, err := strconv.Atoi(metricsTarget)
-		if err != nil {
-			return MetricError(fmt.Sprintf("metricsTarget need to be a port number (int) : %s ", err))
+	if metricsLevel != "" || metricsPort > 0 {
+		var metricsType MetricLevel
+		var err error
+
+		// Temporary conversion from legacy code metrics arguments to new
+		if metricsPort > 0 {
+			// Conversion needed
+			metricsType = 1
+			if metricsAddress != "" {
+				metricsType = 2
+				u, err := url.Parse(metricsAddress)
+				if err != nil {
+					return fmt.Errorf("can't parse metricsAddress <%s>, metrics will not be pushed", metricsAddress)
+				}
+
+				metricsTarget = fmt.Sprintf("%s://%s:%d%s", u.Scheme, u.Host, metricsPort, u.Path)
+			}
 		}
-		err = buildmetrics.PullMetrics(ctx, metricsPort, scenario.RegisteredActions())
-		if err != nil {
-			return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+
+		//metricsLevel argument takes precendence over deprecated code
+		if metricsLevel != "" {
+			metricsType, err = resolveMetricLevel()
+			if err != nil {
+				return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+			}
 		}
-	case 2:
-		err := buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), false)
-		if err != nil {
-			return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+
+		//Determine what type of metrics to expose
+		if metricsType > 0 {
+			if metricsTarget != "" {
+				switch metricsType {
+				case 1:
+					// Pull enabled
+					metricsPort, err := strconv.Atoi(metricsTarget)
+					if err != nil {
+						return MetricError(fmt.Sprintf("metricsTarget need to be a port number (int) : %s ", err))
+					}
+					err = buildmetrics.PullMetrics(ctx, metricsPort, scenario.RegisteredActions())
+					if err != nil {
+						return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+					}
+				case 2:
+					err = buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), false)
+					if err != nil {
+						return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+					}
+				case 3:
+					err = buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), true)
+					if err != nil {
+						return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
+					}
+				}
+			} else {
+				return MetricError(fmt.Sprintf("metricstarget must be set if metrics are enabled : <%s> ", metricsTarget))
+			}
 		}
-	case 3:
-		err := buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), true)
-		if err != nil {
-			return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
-		}
-	default:
-		// no metrics enabled
 	}
 
 	// Data for variable templates
