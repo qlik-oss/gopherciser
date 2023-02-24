@@ -1,3 +1,4 @@
+//go:build linux || darwin || windows
 // +build linux darwin windows
 
 package buildmetrics
@@ -11,12 +12,18 @@ import (
 )
 
 var (
-	enabled bool
+	enabled    bool
+	apiEnabled bool
 )
 
 // MetricEnabled returns whether metrics are enabled
 func metricEnabled() bool {
 	return enabled
+}
+
+// ApiMetricEnabled returns whether metrics are enabled for apis as well
+func apiMetricEnabled() bool {
+	return apiEnabled
 }
 
 func getLabel(action string, label string) string {
@@ -28,7 +35,7 @@ func getLabel(action string, label string) string {
 
 // ReportApiResult reports the duration for a specific API path and response code
 func ReportApiResult(action, label, path, method string, responseCode int, duration time.Duration) {
-	if metricEnabled() {
+	if metricEnabled() && apiMetricEnabled() {
 		actionlabel := getLabel(action, label)
 		resultString := strconv.Itoa(responseCode)
 		metrics.ApiCallDuration.WithLabelValues(actionlabel, path, method, resultString).Observe(duration.Seconds())
@@ -103,9 +110,10 @@ func PullMetrics(ctx context.Context, metricsPort int, registeredActions []strin
 }
 
 // PushMetrics is called once to setup and enable Prometheus push metrics to specified address
-func PushMetrics(ctx context.Context, metricsPort int, metricsAddress, job string, groupingKeys, registeredActions []string) error {
+func PushMetrics(ctx context.Context, metricsTarget, job string, groupingKeys, registeredActions []string, enableApiMetrics bool) error {
 	enabled = true
-	err := metrics.PushMetrics(ctx, metricsPort, metricsAddress, job, groupingKeys, registeredActions)
+	apiEnabled = enableApiMetrics
+	err := metrics.PushMetrics(ctx, metricsTarget, job, groupingKeys, registeredActions, enableApiMetrics)
 	if err != nil {
 		return err
 	}

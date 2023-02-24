@@ -69,8 +69,8 @@ Flags:
   * `5` or `combined`: Combined (TSV file + JSON console)
   * `6` or `no`: Default logs and status output turned off.
   * `7` or `onlystatus`: Default logs turned off, but status output turned on.
-* `--metrics int`: Set the port to use for export of Prometheus metrics when Gopherciser is running.
-* `--metricsaddress string`: (Prometheus only) Pull, if the string is empty, otherwise push. The port is appended.
+* `--metricslevel int`: Set level of Prometheus metrics to export/expose when Gopherciser is running. 0 - default off, 1 - Pull, 2 - Push without api, 3 - Push with api.
+* `--metricstarget string`: (Prometheus only) Depends on metricslevel > 0. For pull needs to be an int for port, for push is the full target URL.
 * `--metricslabel string`: (Prometheus PUSH only) A label (Prometheus job) to be used when pushing metrics to remote Prometheus
 * `--metricsgroupingkey key=value`, `-g key=value`: (Prometheus PUSH only) This flag, which can be supplied multiple times, sets Prometheus grouping keys (in key=value format).
 * `--profile string`: Start the specified profiler.

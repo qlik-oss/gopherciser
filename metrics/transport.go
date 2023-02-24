@@ -18,9 +18,19 @@ import (
 	"github.com/qlik-oss/gopherciser/version"
 )
 
-func setupMetrics(actions []string) error {
-	prometheus.MustRegister(ApiCallDuration)
-	prometheus.MustRegister(ApiCallDurationQuantile)
+func setupMetrics(actions []string, apimetrics bool) error {
+	if apimetrics { // If not used these api calls would still be registered. Likely no issue
+		prometheus.MustRegister(ApiCallDuration)
+		prometheus.MustRegister(ApiCallDurationQuantile)
+		err := gopherRegistry.Register(ApiCallDuration)
+		if err != nil {
+			return err
+		}
+		err = gopherRegistry.Register(ApiCallDurationQuantile)
+		if err != nil {
+			return err
+		}
+	}
 	prometheus.MustRegister(GopherActions)
 	prometheus.MustRegister(GopherWarnings)
 	prometheus.MustRegister(GopherErrors)
@@ -30,15 +40,7 @@ func setupMetrics(actions []string) error {
 	prometheus.MustRegister(GopherActionLatencyHist)
 	prometheus.MustRegister(BuildInfo)
 
-	err := gopherRegistry.Register(ApiCallDuration)
-	if err != nil {
-		return err
-	}
-	err = gopherRegistry.Register(ApiCallDurationQuantile)
-	if err != nil {
-		return err
-	}
-	err = gopherRegistry.Register(GopherActions)
+	err := gopherRegistry.Register(GopherActions)
 	if err != nil {
 		return err
 	}
@@ -83,18 +85,18 @@ func setupMetrics(actions []string) error {
 }
 
 // PushMetrics handles the constant pushing of metrics to prometheus
-func PushMetrics(ctx context.Context, metricsPort int, metricsAddress, job string, groupingKeys, actions []string) error {
-	err := setupMetrics(actions)
+func PushMetrics(ctx context.Context, metricsTarget, job string, groupingKeys, actions []string, apiMetrics bool) error {
+	err := setupMetrics(actions, apiMetrics)
 	if err != nil {
 		return err
 	}
 
-	u, err := url.Parse(metricsAddress)
+	_, err = url.Parse(metricsTarget)
 	if err != nil {
-		return fmt.Errorf("can't parse metricsAddress <%s>, metrics will not be pushed", metricsAddress)
+		return fmt.Errorf("can't parse metricsAddress <%s>, metrics will not be pushed", metricsTarget)
 	}
 
-	var addr = flag.String("push-address", fmt.Sprintf("%s://%s:%d%s", u.Scheme, u.Host, metricsPort, u.Path), "The address to push prometheus metrics")
+	var addr = flag.String("push-address", metricsTarget, "The address to push prometheus metrics")
 	pusher := push.New(*addr, job).Gatherer(gopherRegistry)
 	for _, gk := range groupingKeys {
 		kv := strings.SplitN(gk, "=", 2)
@@ -128,7 +130,7 @@ func PushMetrics(ctx context.Context, metricsPort int, metricsAddress, job strin
 
 // PullMetrics handle the serving of prometheus metrics on the metrics endpoint
 func PullMetrics(ctx context.Context, metricsPort int, actions []string) error {
-	err := setupMetrics(actions)
+	err := setupMetrics(actions, true)
 	if err != nil {
 		return err
 	}
