@@ -93,7 +93,7 @@ func resolveMetricLevel() (MetricLevel, error) {
 		return MetricLevel(i), nil
 	} else {
 		// it's an int
-		_, err = config.SummaryType(0).GetEnumMap().String(i)
+		_, err = MetricLevel(0).GetEnumMap().String(i)
 		if err != nil {
 			return MetricLevel(0), errors.Errorf("Metric level<%s> does not exist", metricsLevel)
 		}
