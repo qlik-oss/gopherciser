@@ -3,9 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/qlik-oss/gopherciser/buildmetrics"
-	"github.com/qlik-oss/gopherciser/enummap"
-	"github.com/qlik-oss/gopherciser/scenario"
 	"net/url"
 	"os"
 	"os/signal"
@@ -15,6 +12,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/qlik-oss/gopherciser/buildmetrics"
+	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/scenario"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
