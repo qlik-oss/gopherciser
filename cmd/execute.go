@@ -357,9 +357,9 @@ func execute() error {
 		// Temporary conversion from legacy code metrics arguments to new
 		if metricsPort > 0 {
 			// Conversion needed
-			metricsType = 1
+			metricsType = MetricPull
 			if metricsAddress != "" {
-				metricsType = 2
+				metricsType = MetricPush
 				u, err := url.Parse(metricsAddress)
 				if err != nil {
 					return fmt.Errorf("can't parse metricsAddress <%s>, metrics will not be pushed", metricsAddress)
@@ -381,7 +381,7 @@ func execute() error {
 		if metricsType > 0 {
 			if metricsTarget != "" {
 				switch metricsType {
-				case 1:
+				case MetricPull:
 					// Pull enabled
 					metricsPort, err := strconv.Atoi(metricsTarget)
 					if err != nil {
@@ -391,12 +391,12 @@ func execute() error {
 					if err != nil {
 						return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
 					}
-				case 2:
+				case MetricPush:
 					err = buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), false)
 					if err != nil {
 						return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
 					}
-				case 3:
+				case MetricPushAPI:
 					err = buildmetrics.PushMetrics(ctx, metricsTarget, metricsLabel, metricsGroupings, scenario.RegisteredActions(), true)
 					if err != nil {
 						return MetricError(fmt.Sprintf("failed to start prometheus : %s ", err))
