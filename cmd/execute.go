@@ -257,7 +257,7 @@ func init() {
 	AddLoggingParameters(executeCmd)
 
 	// Prometheus
-	executeCmd.Flags().StringVar(&metricsLevel, "metricslevel", "", "Export via http prometheus metrics. 0-off, 1-Pull, 2-Push without api, 3 push with api")
+	executeCmd.Flags().StringVar(&metricsLevel, "metricslevel", "", "Export via http prometheus metrics. \n\t[0] nometrics (default)\n\t[1] pullmetric\n\t[2] pushmetric\n\t[3] pushmetricapi")
 	executeCmd.Flags().StringVar(&metricsTarget, "metricstarget", "", "if metricslevel is 1 then need to be the port as an int, if larger than 2 its the address of the push gateway")
 	executeCmd.Flags().IntVar(&metricsPort, "metrics", 0, "Deprecated use metricslevel instead, will attempt to convert at runtime")
 	executeCmd.Flags().StringVar(&metricsAddress, "metricsaddress", "", "Deprecated use metricstarget instead, will attempt to convert at runtime")
@@ -355,10 +355,13 @@ func execute() error {
 		var metricsType MetricLevel
 		var err error
 
+		if metricsPort > 0 || metricsAddress != "" {
+			_, _ = fmt.Fprintf(os.Stderr, "metrics and metricsaddress are deprecated, use metricslevel and metricstarget instead\n")
+		}
+
 		// Temporary conversion from legacy code metrics arguments to new
 		if metricsPort > 0 {
 			// Conversion needed
-			metricsType = MetricPull
 			if metricsAddress != "" {
 				metricsType = MetricPush
 				u, err := url.Parse(metricsAddress)
@@ -367,6 +370,9 @@ func execute() error {
 				}
 
 				metricsTarget = fmt.Sprintf("%s://%s:%d%s", u.Scheme, u.Host, metricsPort, u.Path)
+			} else {
+				metricsTarget = strconv.Itoa(metricsPort)
+				metricsType = MetricPull
 			}
 		}
 
