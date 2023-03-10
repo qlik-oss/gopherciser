@@ -266,6 +266,7 @@ func (state *State) Reset(ctx context.Context) {
 	state.CurrentApp = nil
 	state.CurrentUser = nil
 	state.objects = nil
+	state.customStates = make(map[string]interface{})
 }
 
 // SetLogEntry set the log entry
