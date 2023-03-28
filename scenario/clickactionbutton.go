@@ -8,8 +8,6 @@ import (
 
 	"github.com/goccy/go-json"
 
-	"github.com/qlik-oss/gopherciser/helpers"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
 	"github.com/qlik-oss/gopherciser/action"
@@ -33,6 +31,11 @@ type (
 	// *** Sub actions of an actionButton ***
 	// An actionButton can contain multiple buttonActions and one buttonNavigationAction.
 	// These sub-actions are executed in order when the an action-button is clicked.
+	actionButtonLayout struct {
+		enigma.GenericObjectLayout
+		Actions    []buttonAction         `json:"actions"`
+		Navigation buttonNavigationAction `json:"navigation"`
+	}
 
 	buttonActionType int
 
@@ -128,8 +131,13 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		return
 	}
 
+	if props := obj.Properties(); props == nil || props.Info.Type != "action-button" {
+		actionState.AddErrors(errors.Wrapf(err, "object<%s> is not a button action", objectID))
+		return
+	}
+
 	// retrieve button-actions
-	buttonActions, navigationAction, err := buttonActions(sessionState, actionState, obj)
+	buttonActionLayout, err := getActionButtonLayout(sessionState, actionState, obj)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "failed to get button actions"))
 		return
@@ -138,7 +146,7 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 	label = firstNonEmpty(label, "buttonaction")
 
 	// run button-actions
-	for _, buttonAction := range buttonActions {
+	for _, buttonAction := range buttonActionLayout.Actions {
 		buttonActionLabel := fmt.Sprintf("%s: %s", label, firstNonEmpty(buttonAction.ActionLabel, buttonAction.ActionType.String()))
 		err := buttonAction.execute(sessionState, actionState, connectionSettings, buttonActionLabel)
 		if err != nil {
@@ -147,10 +155,10 @@ func (settings ClickActionButtonSettings) Execute(sessionState *session.State, a
 		}
 	}
 
-	navigationActionLabel := fmt.Sprintf("%s: %s", label, navigationAction.Action)
-	err = navigationAction.execute(sessionState, actionState, connectionSettings, navigationActionLabel)
+	navigationActionLabel := fmt.Sprintf("%s: %s", label, buttonActionLayout.Navigation.Action)
+	err = buttonActionLayout.Navigation.execute(sessionState, actionState, connectionSettings, navigationActionLabel)
 	if err != nil {
-		actionState.AddErrors(errors.Wrapf(err, "button-navigationaction<%s> failed", navigationAction.Action))
+		actionState.AddErrors(errors.Wrapf(err, "button-navigationaction<%s> failed", buttonActionLayout.Navigation.Action))
 	}
 
 	sessionState.Wait(actionState)
@@ -165,50 +173,23 @@ func firstNonEmpty(strs ...string) string {
 	return ""
 }
 
-// buttonAction returns button actions and navigation action for obj
-func buttonActions(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) ([]buttonAction, *buttonNavigationAction, error) {
-	// TODO(atluq): Add buttonActions to enigma.GenericObjectProperties such
-	// that obj.Properties() could be used, instead of
-	// obj.EnigmaObject.GetEffectivePropertiesRaw()
+func getActionButtonLayout(sessionState *session.State, actionState *action.State, obj *enigmahandlers.Object) (*actionButtonLayout, error) {
+	// TODO(atluq): Change from raw request when enigma has button support
 
-	switch t := obj.EnigmaObject.(type) {
-	case *enigma.GenericObject:
-		genericObj := obj.EnigmaObject.(*enigma.GenericObject)
-
-		propsRaw, err := sessionState.SendRequestRaw(actionState, genericObj.GetEffectivePropertiesRaw)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "properties request failed for object<%s>", obj.ID)
-		}
-
-		// parse button actions
-		actionsRaw, err := helpers.NewDataPath("actions").Lookup(propsRaw)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, `no "actions"-property exist for object<%s>`, obj.ID)
-		}
-
-		actions := []buttonAction{}
-		err = json.Unmarshal(actionsRaw, &actions)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to unmarshal button actions")
-		}
-
-		// parse navigation action associated with button
-		navigationRaw, err := helpers.NewDataPath("navigation").Lookup(propsRaw)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, `no "navigation"-property exist for object<%s>`, obj.ID)
-		}
-
-		navigationAction := &buttonNavigationAction{}
-		err = json.Unmarshal(navigationRaw, navigationAction)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to unmarshal button navigation action")
-		}
-
-		return actions, navigationAction, nil
-
-	default:
-		return nil, nil, errors.Errorf("expected generic object , got object type<%T>", t)
+	genericObj, isGenericObj := obj.EnigmaObject.(*enigma.GenericObject)
+	if !isGenericObj {
+		return nil, errors.Errorf("expected object<%s> to be generic object, got object of type<%T>", obj.ID, obj.EnigmaObject)
 	}
+	layoutRaw, err := sessionState.SendRequestRaw(actionState, genericObj.GetLayoutRaw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get layout for object<%s>", obj.ID)
+	}
+
+	buttonLayout := &actionButtonLayout{}
+	if err := json.Unmarshal(layoutRaw, buttonLayout); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal object layout<%s>", string(layoutRaw))
+	}
+	return buttonLayout, nil
 }
 
 type sendRequestSettings func(context.Context) error
