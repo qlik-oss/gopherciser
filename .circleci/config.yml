@@ -184,9 +184,6 @@ workflows:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
       - test-go-version:
-          name: "Test Go 1.17"
-          version: "1.17"
-      - test-go-version:
           name: "Test Go 1.18"
           version: "1.18"
       - test-go-version:

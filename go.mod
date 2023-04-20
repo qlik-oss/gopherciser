@@ -1,6 +1,6 @@
 module github.com/qlik-oss/gopherciser
 
-go 1.17
+go 1.18
 
 require (
 	github.com/InVisionApp/tabular v0.3.0
