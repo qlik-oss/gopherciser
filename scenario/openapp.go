@@ -145,20 +145,21 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return nil
 	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appEntry.ID))
 
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
-		return errors.WithStack(err)
-	}, actionState, true, "")
+	// Disable these session objects to compare with SDKExerciser
+	// sessionState.QueueRequest(func(ctx context.Context) error {
+	// 	_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
+	// 	return errors.WithStack(err)
+	// }, actionState, true, "")
 
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetStoryList(sessionState, actionState)
-		return errors.WithStack(err)
-	}, actionState, true, "")
+	// sessionState.QueueRequest(func(ctx context.Context) error {
+	// 	_, err := uplink.CurrentApp.GetStoryList(sessionState, actionState)
+	// 	return errors.WithStack(err)
+	// }, actionState, true, "")
 
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
-		return errors.WithStack(err)
-	}, actionState, true, "")
+	// sessionState.QueueRequest(func(ctx context.Context) error {
+	// 	_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
+	// 	return errors.WithStack(err)
+	// }, actionState, true, "")
 
 	for i := 0; i < 2; i++ {
 		sessionState.QueueRequestRaw(uplink.CurrentApp.Doc.GetAppPropertiesRaw, actionState, true, "failed to get AppProperties")
