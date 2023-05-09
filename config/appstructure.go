@@ -188,7 +188,7 @@ func evaluateActionList(actions []scenario.Action, includeRaw bool, appStructure
 						Type:  "getappstructure",
 						Label: "Get app structure",
 					},
-					Settings: &getAppStructureSettings{
+					Settings: &GetAppStructureSettings{
 						IncludeRaw:    includeRaw,
 						AppStructures: appStructureMap,
 					},

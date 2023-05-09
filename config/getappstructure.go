@@ -13,19 +13,19 @@ import (
 )
 
 type (
-	getAppStructureSettings struct {
+	GetAppStructureSettings struct {
 		IncludeRaw    bool `json:"includeRaw,omitempty"`
 		AppStructures map[string]*GeneratedAppStructure
 	}
 )
 
 // Validate implements ActionSettings interface
-func (settings *getAppStructureSettings) Validate() ([]string, error) {
+func (settings *GetAppStructureSettings) Validate() ([]string, error) {
 	return nil, nil
 }
 
 // Execute implements ActionSettings interface
-func (settings *getAppStructureSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+func (settings *GetAppStructureSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
 		return
