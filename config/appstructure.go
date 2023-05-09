@@ -260,7 +260,7 @@ func (cfg *Config) GetAppStructuresAndWarnings(ctx context.Context, includeRaw b
 	for appGUID, generatedStructure := range appStructureMap {
 		structures = append(structures, &Appstructure{
 			Guid:      appGUID,
-			Warnings:  generatedStructure.report.warnings,
+			Warnings:  generatedStructure.GetWarningsList(),
 			Structure: &generatedStructure.AppStructure,
 		})
 	}
@@ -948,6 +948,10 @@ func (structure *GeneratedAppStructure) addSheetMeta(layout *senseobjects.SheetL
 		}
 	}
 	return nil
+}
+
+func (structure *GeneratedAppStructure) GetWarningsList() []AppStructureWarning {
+	return structure.report.warnings
 }
 
 func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
