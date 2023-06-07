@@ -49,7 +49,7 @@ type (
 		Session *SessionEntry
 		Action  *ActionEntry
 		// logging interceptor return false to break.
-		interceptors map[LogLevel]func(entry *LogEntry) bool
+		interceptors map[LogLevel]func(msg *LogChanMsg) bool
 		mu           sync.Mutex
 	}
 )
@@ -254,7 +254,7 @@ func (entry *LogEntry) log(level LogLevel, msg string, eph *ephemeralEntry) {
 	chanMsg := &LogChanMsg{m, s, a, eph}
 
 	if entry.interceptors[level] != nil {
-		if !entry.interceptors[level](entry) {
+		if !entry.interceptors[level](chanMsg) {
 			return
 		}
 	}
@@ -295,13 +295,13 @@ func (entry *LogEntry) SetActionEntry(a *ActionEntry) {
 }
 
 // AddInterceptor to log entry, return false to avoid logging
-func (entry *LogEntry) AddInterceptor(level LogLevel, f func(entry *LogEntry) bool) {
+func (entry *LogEntry) AddInterceptor(level LogLevel, f func(msg *LogChanMsg) bool) {
 	if entry == nil {
 		return
 	}
 
 	if entry.interceptors == nil {
-		entry.interceptors = make(map[LogLevel]func(entry *LogEntry) bool)
+		entry.interceptors = make(map[LogLevel]func(msg *LogChanMsg) bool)
 	}
 
 	entry.interceptors[level] = f

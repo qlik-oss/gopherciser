@@ -174,8 +174,8 @@ func setLogEntry(sessionState *session.State, log *logger.Log, session, thread u
 	})
 }
 
-func onError(sessionState *session.State) func(entry *logger.LogEntry) bool {
-	return func(entry *logger.LogEntry) bool {
+func onError(sessionState *session.State) func(msg *logger.LogChanMsg) bool {
+	return func(msg *logger.LogChanMsg) bool {
 		sessionState.EW.IncErr()
 		sessionState.Counters.Errors.Inc()
 		if sessionState.LogEntry != nil && sessionState.LogEntry.Action != nil {
@@ -185,8 +185,8 @@ func onError(sessionState *session.State) func(entry *logger.LogEntry) bool {
 	}
 }
 
-func onWarning(sessionState *session.State) func(entry *logger.LogEntry) bool {
-	return func(entry *logger.LogEntry) bool {
+func onWarning(sessionState *session.State) func(msg *logger.LogChanMsg) bool {
+	return func(msg *logger.LogChanMsg) bool {
 		sessionState.EW.IncWarn()
 		sessionState.Counters.Warnings.Inc()
 		if sessionState.LogEntry != nil && sessionState.LogEntry.Action != nil {
