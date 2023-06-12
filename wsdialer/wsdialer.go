@@ -211,7 +211,9 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 	} else {
 		// Frame is fragmented, thus use ioutil.ReadAll behavior.
 		var buf bytes.Buffer
-		_, err = buf.ReadFrom(&rd)
+		var n int64
+		n, err = buf.ReadFrom(&rd)
+		fmt.Println("BYTES READ:", n)
 		p = buf.Bytes()
 	}
 	if err != nil {
