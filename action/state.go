@@ -1,6 +1,7 @@
 package action
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
@@ -34,6 +35,7 @@ type (
 func (as *State) AddErrors(errs ...error) {
 	as.errors.mu.Lock()
 	defer as.mu.Unlock()
+	fmt.Printf("AddErrors (0) err<%v> type<%T>", errs[0], errs[0])
 
 	as.errors.me = multierror.Append(as.errors.me, errs...)
 	if as.errors.me != nil && len(as.errors.me.Errors) > 0 {
