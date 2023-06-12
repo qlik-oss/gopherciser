@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/logger"
 )
 
 type (
@@ -35,7 +36,6 @@ type (
 func (as *State) AddErrors(errs ...error) {
 	as.errors.mu.Lock()
 	defer as.mu.Unlock()
-	fmt.Printf("AddErrors (0) err<%v> type<%T>", errs[0], errs[0])
 
 	as.errors.me = multierror.Append(as.errors.me, errs...)
 	if as.errors.me != nil && len(as.errors.me.Errors) > 0 {
@@ -58,4 +58,11 @@ func (as *State) Errors() error {
 	defer as.mu.RUnlock()
 
 	return helpers.FlattenMultiError(as.errors.me)
+}
+
+func (as *State) LogErrors(logEntry *logger.LogEntry) {
+	for _, err := range as.errors.me.Errors {
+		cause := helpers.TrueCause(err)
+		logEntry.LogInfo("ActionErrors", fmt.Sprintf("ActionState error<%v> type<%T> cause<%v> type<%t>", err, err, cause, cause))
+	}
 }
