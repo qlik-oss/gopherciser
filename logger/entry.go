@@ -35,7 +35,7 @@ type (
 		Success      bool
 		Warnings     uint64
 		Errors       uint64
-		Stack        string
+		Stack        error
 		Sent         uint64
 		Received     uint64
 		Details      string
@@ -49,7 +49,7 @@ type (
 		Session *SessionEntry
 		Action  *ActionEntry
 		// logging interceptor return false to break.
-		interceptors map[LogLevel]func(entry *LogEntry) bool
+		interceptors map[LogLevel]func(msg *LogEntry) bool
 		mu           sync.Mutex
 	}
 )
@@ -184,7 +184,7 @@ func (entry *LogEntry) LogError(err error) {
 	}
 
 	entry.log(ErrorLevel, fmt.Sprintf("%s", err), &ephemeralEntry{
-		Stack: fmt.Sprintf("%+v", err),
+		Stack: err,
 	})
 }
 
@@ -194,7 +194,7 @@ func (entry *LogEntry) LogErrorWithMsg(msg string, err error) {
 		return
 	}
 	entry.log(ErrorLevel, msg, &ephemeralEntry{
-		Stack: fmt.Sprintf("%+v", err),
+		Stack: err,
 	})
 }
 
@@ -295,13 +295,13 @@ func (entry *LogEntry) SetActionEntry(a *ActionEntry) {
 }
 
 // AddInterceptor to log entry, return false to avoid logging
-func (entry *LogEntry) AddInterceptor(level LogLevel, f func(entry *LogEntry) bool) {
+func (entry *LogEntry) AddInterceptor(level LogLevel, f func(msg *LogEntry) bool) {
 	if entry == nil {
 		return
 	}
 
 	if entry.interceptors == nil {
-		entry.interceptors = make(map[LogLevel]func(entry *LogEntry) bool)
+		entry.interceptors = make(map[LogLevel]func(msg *LogEntry) bool)
 	}
 
 	entry.interceptors[level] = f

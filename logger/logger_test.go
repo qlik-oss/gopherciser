@@ -124,7 +124,7 @@ func TestLogging(t *testing.T) {
 	//Test interceptor
 	buf.Reset()
 	interceptorTriggered := false
-	entry.AddInterceptor(WarningLevel, func(entry *LogEntry) bool {
+	entry.AddInterceptor(WarningLevel, func(msg *LogEntry) bool {
 		interceptorTriggered = true
 		return true
 	})
@@ -139,7 +139,7 @@ func TestLogging(t *testing.T) {
 
 	// Test avoiding logging through interceptor
 	buf.Reset()
-	entry.AddInterceptor(WarningLevel, func(entry *LogEntry) bool {
+	entry.AddInterceptor(WarningLevel, func(msg *LogEntry) bool {
 		return false
 	})
 	entry.Log(WarningLevel)
