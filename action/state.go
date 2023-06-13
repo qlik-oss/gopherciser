@@ -61,8 +61,11 @@ func (as *State) Errors() error {
 }
 
 func (as *State) LogErrors(logEntry *logger.LogEntry) {
+	if as.errors.me == nil {
+		return
+	}
 	for _, err := range as.errors.me.Errors {
 		cause := helpers.TrueCause(err)
-		logEntry.LogInfo("ActionErrors", fmt.Sprintf("ActionState error<%v> type<%T> cause<%v> type<%t>", err, err, cause, cause))
+		logEntry.LogInfo("ActionErrors", fmt.Sprintf("ActionState error<%v> type<%T> cause<%v> type<%T>", err, err, cause, cause))
 	}
 }
