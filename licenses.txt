@@ -198,7 +198,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ------
 
-PROJECT: github.com/golang/protobuf/LICENSE
+PROJECT: github.com/golang/protobuf/proto/LICENSE
 
 Copyright 2010 The Go Authors.  All rights reserved.
 
