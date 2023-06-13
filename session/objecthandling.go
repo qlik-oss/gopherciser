@@ -2,10 +2,11 @@ package session
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"math"
 	"sync"
+
+	"github.com/goccy/go-json"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v3"
@@ -28,6 +29,8 @@ type (
 	}
 
 	CalcEvalConditionFailedError struct{}
+
+	NxValidationError enigma.NxValidationError
 )
 
 const (
@@ -47,6 +50,11 @@ func init() {
 	if err := GlobalObjectHandler.RegisterHandler("container", &ContainerHandler{}, false); err != nil {
 		panic(err)
 	}
+
+}
+
+func (err NxValidationError) Error() string {
+	return fmt.Sprintf("ErrorCode:%d (%s)", err.ErrorCode, enigma.ErrorCodeLookup(err.ErrorCode))
 }
 
 // Error implements error interface
@@ -651,15 +659,16 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 	}, actionState, true, fmt.Sprintf("failed to get tree data for object<%s>", gob.GenericId))
 }
 
-func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
-	if err == nil {
+func checkHyperCubeErr(id string, nve *enigma.NxValidationError) error {
+	if nve == nil {
 		return nil
 	}
-	switch err.ErrorCode {
+	switch nve.ErrorCode {
 	case constant.LocerrCalcEvalConditionFailed:
 		return CalcEvalConditionFailedError{}
 	default:
-		return errors.Errorf("object<%s> has hypercube error<ErrorCode:%d (%s)>", id, err.ErrorCode, enigma.ErrorCodeLookup(err.ErrorCode))
+		err := NxValidationError(*nve)
+		return errors.Wrapf(err, "object<%s> has hypercube error<ErrorCode:%d (%s)>", id, err.ErrorCode, err.ExtendedMessage)
 	}
 }
 
@@ -681,15 +690,16 @@ func checkEngineErr(err error, sessionState *State, req string) error {
 	}
 }
 
-//Logic as written in client.js as of sense april 2018:
-// getFullContinuousRange: function (t) {
-// 	var e = t.qHyperCube.qDimensionInfo[0].qMin,
-// 	n = t.qHyperCube.qDimensionInfo[0].qMax;
-// 	return n < e || "NaN" === n ? e = n = "NaN" : e === n && (e -= .5, n += .5), {
-// 		min: e,
-// 		max: n
-// 	}
-// },
+// Logic as written in client.js as of sense april 2018:
+//
+//	getFullContinuousRange: function (t) {
+//		var e = t.qHyperCube.qDimensionInfo[0].qMin,
+//		n = t.qHyperCube.qDimensionInfo[0].qMax;
+//		return n < e || "NaN" === n ? e = n = "NaN" : e === n && (e -= .5, n += .5), {
+//			min: e,
+//			max: n
+//		}
+//	},
 func GetFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64, enigma.Float64, error) {
 	if hypercube == nil || hypercube.DimensionInfo == nil || len(hypercube.DimensionInfo) < 1 {
 		return -1, -1, errors.Errorf("hypercube has no dimension")
@@ -707,13 +717,14 @@ func GetFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64
 	return e, n, nil
 }
 
-//Logic as written in client.js as of sense april 2018:
-// getApproriateNrOfBins: function (t) {
-// 	var e = t.qHyperCube.qMeasureInfo.length || 1,
-// 	n = 4 + 2 * (e - 1);
-// 	return t.qHyperCube.qDimensionInfo.length > 1 && (e = Math.max(1, Math.min(h.maxNumberOfLines, t.qHyperCube.qDimensionInfo[1].qStateCounts.qLocked + t.qHyperCube.qDimensionInfo[1].qStateCounts.qOption + t.qHyperCube.qDimensionInfo[1].qStateCounts.qSelected)), n = 4),
-// 	Math.ceil(2e3 / (e * n))
-// },
+// Logic as written in client.js as of sense april 2018:
+//
+//	getApproriateNrOfBins: function (t) {
+//		var e = t.qHyperCube.qMeasureInfo.length || 1,
+//		n = 4 + 2 * (e - 1);
+//		return t.qHyperCube.qDimensionInfo.length > 1 && (e = Math.max(1, Math.min(h.maxNumberOfLines, t.qHyperCube.qDimensionInfo[1].qStateCounts.qLocked + t.qHyperCube.qDimensionInfo[1].qStateCounts.qOption + t.qHyperCube.qDimensionInfo[1].qStateCounts.qSelected)), n = 4),
+//		Math.ceil(2e3 / (e * n))
+//	},
 func GetApproriateNrOfBins(hypercube *enigmahandlers.HyperCube) int {
 	e := 1
 	if hypercube != nil && hypercube.MeasureInfo != nil {

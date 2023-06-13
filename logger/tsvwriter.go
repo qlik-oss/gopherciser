@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -108,7 +109,11 @@ func (writer *TSVWriter) WriteMessage(msg *LogChanMsg) error {
 		case FieldErrors:
 			buf.WriteString(strconv.FormatUint(msg.Errors, 10))
 		case FieldStack:
-			buf.WriteString(replacer.Replace(msg.Stack))
+			errMsg := ""
+			if msg.Stack != nil {
+				errMsg = fmt.Sprintf("%+v", msg.Stack)
+			}
+			buf.WriteString(replacer.Replace(fmt.Sprintf("%+v", errMsg)))
 		case FieldSent:
 			buf.WriteString(strconv.FormatUint(msg.Sent, 10))
 		case FieldReceived:
