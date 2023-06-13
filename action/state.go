@@ -1,7 +1,6 @@
 package action
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
@@ -60,12 +59,16 @@ func (as *State) Errors() error {
 	return helpers.FlattenMultiError(as.errors.me)
 }
 
-func (as *State) LogErrors(logEntry *logger.LogEntry) {
+// DebugErrors logs all actionstate errors to debug log
+func (as *State) DebugErrors(logEntry *logger.LogEntry) {
 	if as.errors.me == nil {
 		return
 	}
 	for _, err := range as.errors.me.Errors {
+		if err == nil {
+			continue
+		}
 		cause := helpers.TrueCause(err)
-		logEntry.LogInfo("ActionErrors", fmt.Sprintf("ActionState error<%v> type<%T> cause<%v> type<%T>", err, err, cause, cause))
+		logEntry.LogDebugf("ActionState error<%v> type<%T> cause<%v> type<%T>", err, err, cause, cause)
 	}
 }
