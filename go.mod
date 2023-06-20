@@ -1,6 +1,6 @@
 module github.com/qlik-oss/gopherciser
 
-go 1.18
+go 1.20
 
 require (
 	github.com/InVisionApp/tabular v0.3.0
@@ -19,7 +19,7 @@ require (
 	github.com/qlik-oss/enigma-go/v3 v3.7.0
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
 	github.com/rs/zerolog v1.29.1
-	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
+	github.com/shiena/ansicolor v0.0.0-20230509054315-a9deabde6e02
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
 )
