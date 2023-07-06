@@ -285,7 +285,7 @@ func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error)
 	return *am.resourceMap[ResourceTypeApp].list[appNumber%uint64(n)], nil
 }
 
-// GetAllOfType get a copy of a list of current item with resource type
+// GetAllOfType gets a copy of a list of the current items with specified resource type
 func (am *ArtifactMap) GetAllOfType(sessionState *State, resourcetype string) []ArtifactEntry {
 	am.mu.Lock()
 	defer am.mu.Unlock()
