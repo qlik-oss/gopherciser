@@ -285,6 +285,24 @@ func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error)
 	return *am.resourceMap[ResourceTypeApp].list[appNumber%uint64(n)], nil
 }
 
+// GetAllOfType get a copy of a list of current item with resource type
+func (am *ArtifactMap) GetAllOfType(sessionState *State, resourcetype string) []ArtifactEntry {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	artifacts := am.resourceMap[resourcetype]
+	if artifacts == nil {
+		return nil
+	}
+
+	list := artifacts.list
+	cpy := make([]ArtifactEntry, 0, len(list))
+	for _, item := range list {
+		cpy = append(cpy, *item)
+	}
+	return cpy
+}
+
 // LookupAppTitle lookup app using title
 func (am *ArtifactMap) LookupAppTitle(title string) (*ArtifactEntry, error) {
 	return am.Lookup(ResourceTypeApp, title, ArtifactEntryCompareTypeName)
