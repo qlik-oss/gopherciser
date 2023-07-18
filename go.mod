@@ -16,7 +16,7 @@ require (
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
-	github.com/qlik-oss/enigma-go/v3 v3.7.0
+	github.com/qlik-oss/enigma-go/v4 v4.0.1
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
 	github.com/rs/zerolog v1.29.1
 	github.com/shiena/ansicolor v0.0.0-20230509054315-a9deabde6e02

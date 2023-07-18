@@ -10,7 +10,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	enigma "github.com/qlik-oss/enigma-go/v3"
+	enigma "github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/eventws"
