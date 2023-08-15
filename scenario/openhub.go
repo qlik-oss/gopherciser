@@ -55,7 +55,7 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil) // Send second streams request because client does
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/header/api/hub/v1/externalproductsignons", host), actionState, sessionState.LogEntry, reqNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/externalproductsignons", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/favorites", host), actionState, sessionState.LogEntry, nil)
 
