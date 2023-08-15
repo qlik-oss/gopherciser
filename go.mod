@@ -7,7 +7,7 @@ require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/buger/jsonparser v1.1.1
 	github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571
-	github.com/gobwas/ws v1.2.1
+	github.com/gobwas/ws v1.3.0
 	github.com/goccy/go-json v0.10.2
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/uuid v1.3.0
@@ -16,9 +16,9 @@ require (
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
-	github.com/qlik-oss/enigma-go/v3 v3.7.0
-	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
-	github.com/rs/zerolog v1.29.1
+	github.com/qlik-oss/enigma-go/v4 v4.0.1
+	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
+	github.com/rs/zerolog v1.30.0
 	github.com/shiena/ansicolor v0.0.0-20230509054315-a9deabde6e02
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4

@@ -11,7 +11,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/enigmainterceptors"
 	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/globals/constant"

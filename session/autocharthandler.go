@@ -2,12 +2,12 @@ package session
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/helpers"

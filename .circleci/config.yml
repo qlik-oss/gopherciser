@@ -136,7 +136,7 @@ jobs:
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.20
     steps:
       - attach_workspace:
           at: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
@@ -183,9 +183,9 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
-      # - test-go-version:
-      #     name: "Test Go 1.19"
-      #     version: "1.19"
+      - test-go-version:
+          name: "Test Go 1.21"
+          version: "1.21"
       - publish-github:
           requires:
             - build
