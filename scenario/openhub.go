@@ -55,6 +55,7 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil) // Send second streams request because client does
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/externalproductsignons", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/favorites", host), actionState, sessionState.LogEntry, nil)
 
@@ -70,7 +71,6 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	}, nil, nil)
 
 	// These requests will warn only instead of error in case of failure
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-bot/config", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/custombannermessages", host), actionState, sessionState.LogEntry, reqNoError)
 
