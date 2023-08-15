@@ -165,6 +165,11 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return errors.WithStack(err)
 	}, actionState, true, "")
 
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.Doc.GetScriptEx(ctx)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
 	for i := 0; i < 2; i++ {
 		sessionState.QueueRequestRaw(uplink.CurrentApp.Doc.GetAppPropertiesRaw, actionState, true, "failed to get AppProperties")
 	}
