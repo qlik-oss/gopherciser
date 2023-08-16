@@ -189,10 +189,6 @@ func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.appPropsList.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		return app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
 	}); err != nil {
