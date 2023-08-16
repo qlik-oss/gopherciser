@@ -152,10 +152,6 @@ func (app *App) GetVariableList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	// update variable list layout when variable list has a change event
 	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
