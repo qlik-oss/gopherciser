@@ -13,7 +13,6 @@ import (
 type (
 	AppPropsList struct {
 		enigmaObject *enigma.GenericObject
-		properties   *enigma.GenericObjectProperties
 		layout       *enigma.GenericObjectLayout
 		items        map[string]*enigma.GenericObject
 
@@ -51,39 +50,6 @@ func CreateAppPropsListObject(ctx context.Context, doc *enigma.Doc) (*AppPropsLi
 		enigmaObject: obj,
 		items:        make(map[string]*enigma.GenericObject, 1),
 	}, nil
-}
-
-// UpdateProperties of AppPropsList
-func (appPropsList *AppPropsList) UpdateProperties(ctx context.Context) error {
-	if appPropsList.enigmaObject == nil {
-		return errors.Errorf("AppPropsList enigma object is nil")
-	}
-	propertiesRaw, err := appPropsList.enigmaObject.GetEffectivePropertiesRaw(ctx)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	var properties enigma.GenericObjectProperties
-	err = json.Unmarshal(propertiesRaw, &properties)
-	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal AppPopsList properties")
-	}
-
-	appPropsList.setProperties(&properties)
-	return nil
-}
-
-func (appPropsList *AppPropsList) setProperties(properties *enigma.GenericObjectProperties) {
-	appPropsList.mu.Lock()
-	defer appPropsList.mu.Unlock()
-	appPropsList.properties = properties
-}
-
-// Properties of AppPropsList
-func (appPropsList *AppPropsList) Properties() *enigma.GenericObjectProperties {
-	appPropsList.mu.Lock()
-	defer appPropsList.mu.Unlock()
-	return appPropsList.properties
 }
 
 // UpdateLayout of AppPropsList

@@ -46,7 +46,7 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 
 	// Get or create current selection object
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		if _, err := uplink.CurrentApp.GetCurrentSelections(sessionState, actionState); err != nil {
+		if _, err := uplink.CurrentApp.GetCurrentSelections(sessionState, actionState, true); err != nil {
 			return errors.WithStack(err)
 		}
 		return nil

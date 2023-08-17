@@ -469,6 +469,17 @@ func (state *State) RegisterEvent(handle int,
 	})
 }
 
+// GetEvent for handle
+func (state *State) GetEventFunc(handle int) func(ctx context.Context, actionState *action.State) error {
+	state.eventMu.Lock()
+	defer state.eventMu.Unlock()
+	event, exist := state.events[handle]
+	if exist && event != nil {
+		return event.F
+	}
+	return nil
+}
+
 // DeRegisterEvents for handles in list
 func (state *State) DeRegisterEvents(handles []int) {
 	state.eventMu.Lock()

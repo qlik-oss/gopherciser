@@ -152,10 +152,6 @@ func (app *App) GetVariableList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	// update variable list layout when variable list has a change event
 	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
@@ -190,10 +186,6 @@ func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.
 	}
 
 	if err := sessionState.SendRequest(actionState, createAppPropsList); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if err := sessionState.SendRequest(actionState, app.appPropsList.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -457,8 +449,15 @@ func (app *App) GetFieldList(sessionState SessionState, actionState *action.Stat
 }
 
 // GetCurrentSelections create current selection session object and add to list
-func (app *App) GetCurrentSelections(sessionState SessionState, actionState *action.State) (*CurrentSelections, error) {
+func (app *App) GetCurrentSelections(sessionState SessionState, actionState *action.State, requestData bool) (*CurrentSelections, error) {
 	if app.currentSelections != nil {
+		if requestData && app.currentSelections.enigmaObject != nil {
+			if f := sessionState.GetEventFunc(app.currentSelections.enigmaObject.Handle); f != nil {
+				if err := f(sessionState.BaseContext(), actionState); err != nil {
+					return app.currentSelections, errors.WithStack(err)
+				}
+			}
+		}
 		return app.currentSelections, nil
 	}
 
@@ -475,20 +474,26 @@ func (app *App) GetCurrentSelections(sessionState SessionState, actionState *act
 		return nil, errors.WithStack(err)
 	}
 
-	// Get layout
-	if err := sessionState.SendRequest(actionState, app.currentSelections.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if err := sessionState.SendRequest(actionState, app.currentSelections.UpdateLayout); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+	var once sync.Once
 	// update currentSelection layout when object is changed
 	onCurrentSelectionChanged := func(ctx context.Context, actionState *action.State) error {
+		var err error
+		once.Do(func() {
+			err = sessionState.SendRequest(actionState, app.currentSelections.UpdateProperties)
+		})
+		if err != nil {
+			return errors.WithStack(err)
+		}
 		return errors.WithStack(app.currentSelections.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.currentSelections.enigmaObject.Handle,
-		onCurrentSelectionChanged, nil, true)
+
+	if requestData {
+		if err := onCurrentSelectionChanged(sessionState.BaseContext(), actionState); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	sessionState.RegisterEvent(app.currentSelections.enigmaObject.Handle, onCurrentSelectionChanged, nil, true)
 
 	return app.currentSelections, nil
 }
