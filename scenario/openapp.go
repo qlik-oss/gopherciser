@@ -166,8 +166,9 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}, actionState, true, "")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.Doc.GetScriptEx(ctx)
-		return errors.WithStack(err)
+		_, err := uplink.CurrentApp.Doc.GetScriptEx(ctx) // ignore err, as when not ownning app an Access denied will be returned.
+		sessionState.LogEntry.LogDebugf("GetScriptEx request returned error: %v", err)
+		return nil
 	}, actionState, true, "")
 
 	for i := 0; i < 2; i++ {
