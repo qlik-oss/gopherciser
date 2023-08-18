@@ -166,8 +166,8 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 	}, actionState, true, "")
 
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.Doc.GetScriptEx(ctx)
-		return errors.WithStack(err)
+		_, _ = uplink.CurrentApp.Doc.GetScriptEx(ctx) // ignore err, as when not ownning app a Access denied will be returned.
+		return nil
 	}, actionState, true, "")
 
 	for i := 0; i < 2; i++ {
