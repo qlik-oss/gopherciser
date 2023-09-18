@@ -25,7 +25,7 @@
 		"security": true,
 		"virtualproxy": "vp",
 		"headers": {
-			"X-Qlik-User-header": "{{.UserName}}"
+			"X-Sense-User": "{{.UserName}}"
 		}
 	},
 	"loginSettings": {

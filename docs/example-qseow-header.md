@@ -61,7 +61,7 @@ Do the following in the QSEoW deployment:
 8. Fill in the following in the **Authentication** section:
    * **Anonymous access mode**: Select **No anonymous user** in the drop-down.
    * **Authentication method**: Select **Header authentication static user directory** (meaning that the user directory is set in the QMC - see **Header authentication static user directory** below) in the drop-down.
-   * **Header authentication header name**: Enter the name of the http header that identifies users ("X-Qlik-User-header" in this example).
+   * **Header authentication header name**: Enter the name of the http header that identifies users ("X-Sense-User" in this example).
    * **Header authentication static user directory**: Enter the name of the user directory where additional information can be fetched for header authenticated users ("anydir" in this example).
 9. Select **Add new server node** in the **Load balancing** section.
 10. Select the engine nodes to load balance to and then select **Add**.
@@ -88,7 +88,7 @@ The next step is to make sure that the header authentication is correctly config
 Do the following on the load client:
 
 1. Install a plug-in that allows modification of http headers in the web browser (for example, "ModHeader" for the Google Chrome browser).
-2. Enter the header name ("X-Qlik-User-header" in this example) in the **Header name** field in the browser plug-in.
+2. Enter the header name ("X-Sense-User" in this example) in the **Header name** field in the browser plug-in.
 3. Enter the name of the user ("anyuser" in this example) in the **Header value** field in the browser plug-in.
 4. Go to the hub of the QSEoW deployment using the following URI (using "vp" as `<virtualproxyprefix>` in this example): `<hostname>/<virtualproxyprefix>/hub/`
 5. If you can access the hub and the username entered in the **Header value** field is displayed, the virtual proxy with header authentication works.
@@ -109,7 +109,7 @@ Do the following on the load client:
 2. Modify the following fields to match the QSEoW setup configured above:
    * `connectionSettings.server`: The hostname of the QSEoW deployment.
    * `connectionSettings.virtualproxy`: The prefix for the virtual proxy that handles the virtual users ("vp" in this example).
-   * `connectionSettings.headers`: The name of the http header that identifies users ("X-Qlik-User-header" in this example).
+   * `connectionSettings.headers`: The name of the http header that identifies users ("X-Sense-User" in this example).
    * `loginSettings.settings.directory`: The name of the user directory ("anydir" in this example). The directory name is used by the login access rule to allocate licenses.
    * `scenario.action: OpenApp.settings.randomapps`: The names of the test apps.
 3. Save the changes to the script.
