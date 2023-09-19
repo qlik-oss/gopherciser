@@ -229,7 +229,7 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 		node.AddChild(newNode)
 		if name == "scheduler" {
 			indentedNode := &IndentedHeadersNode{Level: 1}
-			addSchedulers(newNode, compiledDocs)
+			addSchedulers(indentedNode, compiledDocs)
 			newNode.AddChild(indentedNode)
 		}
 		if name == "scenario" {

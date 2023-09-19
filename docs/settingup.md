@@ -2235,7 +2235,7 @@ This section of the JSON file contains scheduler settings for the users in the l
 
 
 
-## Simple scheduler
+### Simple scheduler
 
 Settings specific to the `simple` scheduler.
 
@@ -2268,7 +2268,7 @@ Settings specific to the `simple` scheduler.
       * `true`: All users and sessions have the same randomization sequence, which only changes if the `instance` flag is changed.
       * `false`: Normal randomization sequence, dependent on both the `instance` parameter and the current user session.
 
-### Using `reconnectsettings`
+#### Using `reconnectsettings`
 
 If `reconnectsettings.reconnect` is enabled, the following is attempted:
 
@@ -2282,7 +2282,7 @@ If `reconnectsettings.reconnect` is enabled, the following is attempted:
     * `Y`: An integer representing the number of re-connection attempts
     * `Z`: The time spent re-connecting (ms)
 
-### Example
+#### Example
 
 Simple scheduler settings:
 
