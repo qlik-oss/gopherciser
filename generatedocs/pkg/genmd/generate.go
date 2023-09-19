@@ -18,11 +18,6 @@ type (
 		children []DocNode
 	}
 
-	FoldedDocNode struct {
-		Name string
-		DocNode
-	}
-
 	DocEntry common.DocEntry
 
 	DocNode interface {
@@ -55,10 +50,6 @@ func NewDocNode(doc fmt.Stringer) DocNode {
 	}
 }
 
-func NewFoldedDocNode(foldStr string, doc fmt.Stringer) DocNode {
-	return &FoldedDocNode{foldStr, NewDocNode(doc)}
-}
-
 func (node *DocNodeStruct) AddChild(child DocNode) {
 	node.children = append(node.children, child)
 }
@@ -84,14 +75,6 @@ func (node *DocNodeStruct) WriteTo(writer io.Writer) {
 	for _, childNode := range node.children {
 		childNode.WriteTo(writer)
 	}
-}
-
-func (node *FoldedDocNode) WriteTo(writer io.Writer) {
-	fmt.Fprint(writer, "<details>\n")
-	fmt.Fprintf(writer, "<summary>%s</summary>\n\n", node.Name)
-	node.DocNode.WriteTo(writer)
-	fmt.Fprint(writer, "<hr>")
-	fmt.Fprint(writer, "</details>\n\n")
 }
 
 const (
@@ -138,7 +121,7 @@ func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, acti
 			DocEntry: DocEntry(compiledEntry),
 			Params:   MarkdownParams(actionParams, compiledDocs.Params),
 		}
-		newNode := NewFoldedDocNode(action, actionEntry)
+		newNode := NewDocNode(actionEntry)
 		node.AddChild(newNode)
 	}
 }
@@ -146,7 +129,7 @@ func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, acti
 func addGroups(node DocNode, compiledDocs *CompiledDocs) {
 	actionSettings := common.Actions()
 	for _, group := range compiledDocs.Groups {
-		groupNode := NewFoldedDocNode(group.Title, DocEntry(group.DocEntry))
+		groupNode := NewDocNode(DocEntry(group.DocEntry))
 		node.AddChild(groupNode)
 		addActions(groupNode, compiledDocs, group.Actions, actionSettings)
 	}
@@ -161,7 +144,7 @@ func addGroups(node DocNode, compiledDocs *CompiledDocs) {
 		ungroupedActions = ungroupedActionsSkipNew
 	}
 	if len(ungroupedActions) > 0 {
-		ungroupedGroup := NewFoldedDocNode("Ungrouped actions", EmptyDocEntry{})
+		ungroupedGroup := NewDocNode(EmptyDocEntry{})
 		node.AddChild(ungroupedGroup)
 		addActions(ungroupedGroup, compiledDocs, ungroupedActions, actionSettings)
 	}
@@ -189,7 +172,7 @@ func addSchedulers(node DocNode, compiledDocs *CompiledDocs) {
 			DocEntry: DocEntry(compiledEntry),
 			Params:   MarkdownParams(schedParams, compiledDocs.Params),
 		}
-		newNode := NewFoldedDocNode(sched, schedEntry)
+		newNode := NewDocNode(schedEntry)
 		node.AddChild(newNode)
 	}
 }
@@ -211,7 +194,7 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 		fieldEntry := &DocEntryWithParams{}
 		fieldEntry.DocEntry = DocEntry(compiledDocs.Config[name])
 		fieldEntry.Params = MarkdownParams(configStruct, compiledDocs.Params)
-		newNode := NewFoldedDocNode(name, fieldEntry)
+		newNode := NewDocNode(fieldEntry)
 		node.AddChild(newNode)
 		if name == "scheduler" {
 			addSchedulers(newNode, compiledDocs)

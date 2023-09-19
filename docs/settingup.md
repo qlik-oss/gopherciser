@@ -7,9 +7,6 @@ A load scenario is defined in a JSON file with a number of sections.
 
 * [Load scenario example](./examples/configuration_example.json)
 
-<details>
-<summary>connectionSettings</summary>
-
 ## Connection settings section
 
 This section of the JSON file contains connection information.
@@ -111,11 +108,6 @@ connectionSettings": {
 		"X-Sense-User" : "{{.UserName}}"
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>hooks</summary>
 
 ## Hooks section
 
@@ -252,11 +244,6 @@ Let's assume the response from this endpoint is:
 
 The validator with path `/oktorun` will extract the value `false` and compare to the value defined in the validator, in this case `true`. Since the they are not equal the test will stop with error before starting exection.
 
-<hr></details>
-
-<details>
-<summary>loginSettings</summary>
-
 ## Login settings section
 
 This section of the JSON file contains information on the login settings.
@@ -348,11 +335,6 @@ testuser5;;A;d;v;a;n;c;e;d;;P;a;s;s;w;o;r;d;
 
 *testuser1* will get default `directory` and `password`, *testuser3* and *testuser5* will get default `directory`.
 
-<hr></details>
-
-<details>
-<summary>scenario</summary>
-
 ## Scenario section
 
 This section of the JSON file contains the actions that are performed in the load scenario.
@@ -379,18 +361,12 @@ All actions follow the same basic structure:
 }
 ```
 
-<details>
-<summary>Common actions</summary>
-
 # Common actions
 
 These actions are applicable for most types of Qlik Sense deployments.
 
 **Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).
 
-
-<details>
-<summary>applybookmark</summary>
 
 ## ApplyBookmark action
 
@@ -412,11 +388,6 @@ Apply a bookmark in the current app.
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>askhubadvisor</summary>
 
 ## AskHubAdvisor action
 
@@ -603,11 +574,6 @@ You can apart from session variables include the following action local variable
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>changesheet</summary>
-
 ## ChangeSheet action
 
 Change to a new sheet, unsubscribe to the currently subscribed objects, and subscribe to all objects on the new sheet.
@@ -648,11 +614,6 @@ The action supports getting data from the following objects:
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>clearall</summary>
-
 ## ClearAll action
 
 Clear all selections in an app.
@@ -666,11 +627,6 @@ Clear all selections in an app.
     "label": "Clear all selections (1)"
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>clearfield</summary>
 
 ## ClearField action
 
@@ -689,11 +645,6 @@ Clear selections in a field.
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>clickactionbutton</summary>
 
 ## ClickActionButton action
 
@@ -736,11 +687,6 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
      }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>containertab</summary>
 
 ## Containertab action
 
@@ -791,11 +737,6 @@ A `Containertab` action simulates switching the active object in a `container` o
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>createbookmark</summary>
-
 ## CreateBookmark action
 
 Create a bookmark from the current selection and selected sheet.
@@ -820,11 +761,6 @@ Create a bookmark from the current selection and selected sheet.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>createsheet</summary>
-
 ## CreateSheet action
 
 Create a new sheet in the current app.
@@ -843,11 +779,6 @@ Create a new sheet in the current app.
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>deletebookmark</summary>
 
 ## DeleteBookmark action
 
@@ -874,11 +805,6 @@ Delete one or more bookmarks in the current app.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>deletesheet</summary>
-
 ## DeleteSheet action
 
 Delete one or more sheets in the current app.
@@ -904,11 +830,6 @@ Delete one or more sheets in the current app.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>disconnectapp</summary>
-
 ## DisconnectApp action
 
 Disconnect from an already connected app.
@@ -922,11 +843,6 @@ Disconnect from an already connected app.
     "action" : "disconnectapp"
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>disconnectenvironment</summary>
 
 ## DisconnectEnvironment action
 
@@ -944,11 +860,6 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>dosave</summary>
-
 ## DoSave action
 
 `DoSave` issues a command to engine to save the currently open app. If the simulated user does not have permission to save the app it will result in an error.
@@ -961,11 +872,6 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
     "action" : "dosave"
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>duplicatesheet</summary>
 
 ## DuplicateSheet action
 
@@ -989,11 +895,6 @@ Duplicate a sheet, including all objects.
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>getscript</summary>
 
 ## GetScript action
 
@@ -1022,11 +923,6 @@ Get the load script for the app and save to log file
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>iterated</summary>
 
 ## Iterated action
 
@@ -1066,11 +962,6 @@ Loop one or more actions.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>listboxselect</summary>
-
 ## ListBoxSelect action
 
 Perform list object specific selectiontypes in listbox.
@@ -1099,11 +990,6 @@ Perform list object specific selectiontypes in listbox.
      }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>objectsearch</summary>
 
 ## ObjectSearch action
 
@@ -1178,11 +1064,6 @@ Search a master object dimension using search terms from a file.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>openapp</summary>
-
 ## OpenApp action
 
 Open an app.
@@ -1232,11 +1113,6 @@ Open an app.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>productversion</summary>
-
 ## ProductVersion action
 
 Request the product version from the server and, optionally, save it to the log. This is a lightweight request that can be used as a keep-alive message in a loop.
@@ -1266,11 +1142,6 @@ Request the product version from the server and, optionally, save it to the log.
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>publishbookmark</summary>
 
 ## PublishBookmark action
 
@@ -1309,11 +1180,6 @@ Publish the bookmark with the `title` "bookmark of testuser", where "testuser" i
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>publishsheet</summary>
-
 ## PublishSheet action
 
 Publish sheets in the current app.
@@ -1335,11 +1201,6 @@ Publish sheets in the current app.
      }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>randomaction</summary>
 
 ## RandomAction action
 
@@ -1471,11 +1332,6 @@ The following default values are used for the different actions:
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>reload</summary>
-
 ## Reload action
 
 Reload the current app by simulating selecting **Load data** in the Data load editor. To select an app, preceed this action with an `openapp` action.
@@ -1499,11 +1355,6 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>select</summary>
 
 ## Select action
 
@@ -1600,11 +1451,6 @@ To statically select "Gamma" in this case:
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>setscript</summary>
-
 ## SetScript action
 
 Set the load script for the current app. To load the data from the script, use the `reload` action after the `setscript` action.
@@ -1621,11 +1467,6 @@ Set the load script for the current app. To load the data from the script, use t
     }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>setscriptvar</summary>
 
 ## SetScriptVar action
 
@@ -1857,11 +1698,6 @@ Dissecting the first array construction action. The `join` command takes the ele
     }
 }
  ```
-<hr></details>
-
-<details>
-<summary>setsensevariable</summary>
-
 ## SetSenseVariable action
 
 Sets a Qlik Sense variable on a sheet in the open app.
@@ -1879,11 +1715,6 @@ Set a variable to 2000
      "value": "2000"
 }
 ```
-<hr></details>
-
-<details>
-<summary>sheetchanger</summary>
-
 ## SheetChanger action
 
 Create and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.
@@ -1901,11 +1732,6 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
     "action": "sheetchanger"
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>smartsearch</summary>
 
 ## SmartSearch action
 
@@ -2061,11 +1887,6 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>subscribeobjects</summary>
-
 ## Subscribeobjects action
 
 Subscribe to any object in the currently active app.
@@ -2102,11 +1923,6 @@ Subscribe to an additional single object (or a list of objects) in the currently
     }
 }
 ```
-<hr></details>
-
-<details>
-<summary>thinktime</summary>
-
 ## ThinkTime action
 
 Simulate user think time.
@@ -2153,11 +1969,6 @@ This simulates a think time of 5 seconds.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>unpublishbookmark</summary>
-
 ## UnpublishBookmark action
 
 Unpublish a bookmark.
@@ -2195,11 +2006,6 @@ Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser"
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>unpublishsheet</summary>
-
 ## UnpublishSheet action
 
 Unpublish sheets in the current app.
@@ -2219,11 +2025,6 @@ Unpublish sheets in the current app.
      }
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>unsubscribeobjects</summary>
 
 ## Unsubscribeobjects action
 
@@ -2259,20 +2060,10 @@ Unsubscribe from all currently subscribed objects.
     }
 }
 ```
-<hr></details>
-
-<hr></details>
-
-<details>
-<summary>Qlik Sense Enterprise on Windows (QSEoW) actions</summary>
-
 ## Qlik Sense Enterprise on Windows (QSEoW) actions
 
 These actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.
 
-
-<details>
-<summary>deleteodag</summary>
 
 ## DeleteOdag action
 
@@ -2291,11 +2082,6 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>generateodag</summary>
-
 ## GenerateOdag action
 
 Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
@@ -2313,11 +2099,6 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
-<hr></details>
-
-<details>
-<summary>openhub</summary>
-
 ## OpenHub action
 
 Open the hub in a QSEoW environment. This also makes the apps included in the response for the users `myspace` available for use by subsequent actions. The action `changestream` can be used to only select from apps in a specific stream.
@@ -2331,11 +2112,6 @@ Open the hub in a QSEoW environment. This also makes the apps included in the re
      "label": "Open the hub"
 }
 ```
-
-<hr></details>
-
-<details>
-<summary>changestream</summary>
 
 ## ChangeStream action
 
@@ -2372,10 +2148,6 @@ Make  apps in stream with id `ABSCDFSDFSDFO1231234` selectable subsequent action
      }
 }
 ```
-
-<hr></details>
-
-<hr></details>
 
 
 ## Session variables
@@ -2461,20 +2233,12 @@ The following functions are supported:
 </details>
 
 
-<hr></details>
-
-<details>
-<summary>scheduler</summary>
-
 ## Scheduler section
 
 This section of the JSON file contains scheduler settings for the users in the load scenario.
 
 
 
-
-<details>
-<summary>simple</summary>
 
 ## Simple scheduler
 
@@ -2565,13 +2329,6 @@ Simple scheduler set to attempt re-connection in case of an unexpected WebSocket
 }
 ```
 
-<hr></details>
-
-<hr></details>
-
-<details>
-<summary>settings</summary>
-
 ## Settings section
 
 This section of the JSON file contains timeout and logging settings for the load scenario.
@@ -2627,6 +2384,4 @@ This section of the JSON file contains timeout and logging settings for the load
 	}
 }
 ```
-
-<hr></details>
 
