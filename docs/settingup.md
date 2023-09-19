@@ -361,14 +361,14 @@ All actions follow the same basic structure:
 }
 ```
 
-# Common actions
+### Common actions
 
 These actions are applicable for most types of Qlik Sense deployments.
 
 **Note:** It is recommended to prepend the actions listed here with an `openapp` action as most of them perform operations in an app context (such as making selections or changing sheets).
 
 
-## ApplyBookmark action
+#### ApplyBookmark action
 
 Apply a bookmark in the current app.
 
@@ -378,7 +378,7 @@ Apply a bookmark in the current app.
 * `id`: ID of the bookmark.
 * `selectionsonly`: Apply selections only.
 
-### Example
+##### Example
 
 ```json
 {
@@ -389,7 +389,7 @@ Apply a bookmark in the current app.
 }
 ```
 
-## AskHubAdvisor action
+#### AskHubAdvisor action
 
 Perform a query in the Qlik Sense hub insight advisor.
 * `querysource`: The source from which queries will be randomly picked.
@@ -418,9 +418,9 @@ Perform a query in the Qlik Sense hub insight advisor.
     * `recommendation`: Enable followups based on recommendations.
     * `sentence`: Enable followup queries based on bare sentences.
 
-### Examples
+##### Examples
 
-#### Pick queries from file
+###### Pick queries from file
 
 ```json
 {
@@ -438,7 +438,7 @@ show sales per country
 5; what is the lowest price of shoes
 ```
 
-#### Pick queries from list
+###### Pick queries from list
 
 ```json
 {
@@ -450,7 +450,7 @@ show sales per country
 }
 ```
 
-#### Perform followup queries if possible (default: 0)
+###### Perform followup queries if possible (default: 0)
 
 ```json
 {
@@ -463,7 +463,7 @@ show sales per country
 }
 ```
 
-#### Change lanuage (default: "en")
+###### Change lanuage (default: "en")
 
 ```json
 {
@@ -476,7 +476,7 @@ show sales per country
 }
 ```
 
-#### Weights in querylist
+###### Weights in querylist
 
 ```json
 {
@@ -494,7 +494,7 @@ show sales per country
 }
 ```
 
-#### Thinktime before followup queries
+###### Thinktime before followup queries
 
 See detailed examples of settings in the documentation for thinktime action.
 
@@ -515,7 +515,7 @@ See detailed examples of settings in the documentation for thinktime action.
 }
 ```
 
-#### Ask followups only based on app selection
+###### Ask followups only based on app selection
 
 
 ```json
@@ -532,7 +532,7 @@ See detailed examples of settings in the documentation for thinktime action.
 }
 ```
 
-#### Save chart images to file
+###### Save chart images to file
 
 ```json
 {
@@ -548,7 +548,7 @@ See detailed examples of settings in the documentation for thinktime action.
 }
 ```
 
-#### Save chart images to file with custom name
+###### Save chart images to file with custom name
 
 The `saveimagefile` file name template setting supports
 [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables).
@@ -574,7 +574,7 @@ You can apart from session variables include the following action local variable
 }
 ```
 
-## ChangeSheet action
+#### ChangeSheet action
 
 Change to a new sheet, unsubscribe to the currently subscribed objects, and subscribe to all objects on the new sheet.
 
@@ -602,7 +602,7 @@ The action supports getting data from the following objects:
 
 * `id`: GUID of the sheet to change to.
 
-### Example
+##### Example
 
 ```json
 {
@@ -614,12 +614,12 @@ The action supports getting data from the following objects:
 }
 ```
 
-## ClearAll action
+#### ClearAll action
 
 Clear all selections in an app.
 
 
-### Example
+##### Example
 
 ```json
 {
@@ -628,13 +628,13 @@ Clear all selections in an app.
 }
 ```
 
-## ClearField action
+#### ClearField action
 
 Clear selections in a field.
 
 * `name`: Name of field to clear.
 
-### Example
+##### Example
 
 ```json
 {
@@ -646,12 +646,12 @@ Clear selections in a field.
 }
 ```
 
-## ClickActionButton action
+#### ClickActionButton action
 
 A `ClickActionButton`-action simulates clicking an _action-button_. An _action-button_ is a sheet item which, when clicked, executes a series of actions. The series of actions contained by an action-button begins with any number _generic button-actions_ and ends with an optional _navigation button-action_.
 
-### Supported button-actions
-#### Generic button-actions
+##### Supported button-actions
+###### Generic button-actions
 - Apply bookmark
 - Move backward in all selections
 - Move forward in all selections
@@ -668,7 +668,7 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 - Toggle selection in field
 - Set value of variable
 
-#### Navigation button-actions
+###### Navigation button-actions
 - Change to first sheet
 - Change to last sheet
 - Change to previous sheet
@@ -676,7 +676,7 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 - Change sheet by ID
 * `id`: ID of the action-button to click.
 
-### Examples
+##### Examples
 
 ```json
 {
@@ -688,7 +688,7 @@ A `ClickActionButton`-action simulates clicking an _action-button_. An _action-b
 }
 ```
 
-## Containertab action
+#### Containertab action
 
 A `Containertab` action simulates switching the active object in a `container` object.
 
@@ -700,7 +700,7 @@ A `Containertab` action simulates switching the active object in a `container` o
 * `objectid`: ID of the object to set as active, used with mode `objectid`.
 * `index`: Zero based index of tab to switch to, used with mode `index`.
 
-### Examples
+##### Examples
 
 ```json
 {
@@ -737,7 +737,7 @@ A `Containertab` action simulates switching the active object in a `container` o
 }
 ```
 
-## CreateBookmark action
+#### CreateBookmark action
 
 Create a bookmark from the current selection and selected sheet.
 
@@ -749,7 +749,7 @@ Create a bookmark from the current selection and selected sheet.
 * `nosheet`: Do not include the sheet location in the bookmark.
 * `savelayout`: Include the layout in the bookmark.
 
-### Example
+##### Example
 
 ```json
 {
@@ -761,7 +761,7 @@ Create a bookmark from the current selection and selected sheet.
 }
 ```
 
-## CreateSheet action
+#### CreateSheet action
 
 Create a new sheet in the current app.
 
@@ -769,7 +769,7 @@ Create a new sheet in the current app.
 * `title`: Name of the sheet to create.
 * `description`: (optional) Description of the sheet to create.
 
-### Example
+##### Example
 
 ```json
 {
@@ -780,7 +780,7 @@ Create a new sheet in the current app.
 }
 ```
 
-## DeleteBookmark action
+#### DeleteBookmark action
 
 Delete one or more bookmarks in the current app.
 
@@ -793,7 +793,7 @@ Delete one or more bookmarks in the current app.
     * `matching`: Delete all bookmarks with the specified `title` in the current app.
     * `all`: Delete all bookmarks in the current app.
 
-### Example
+##### Example
 
 ```json
 {
@@ -805,7 +805,7 @@ Delete one or more bookmarks in the current app.
 }
 ```
 
-## DeleteSheet action
+#### DeleteSheet action
 
 Delete one or more sheets in the current app.
 
@@ -818,7 +818,7 @@ Delete one or more sheets in the current app.
 * `title`: (optional) Name of the sheet to delete.
 * `id`: (optional) GUID of the sheet to delete.
 
-### Example
+##### Example
 
 ```json
 {
@@ -830,12 +830,12 @@ Delete one or more sheets in the current app.
 }
 ```
 
-## DisconnectApp action
+#### DisconnectApp action
 
 Disconnect from an already connected app.
 
 
-### Example
+##### Example
 
 ```json
 {
@@ -844,14 +844,14 @@ Disconnect from an already connected app.
 }
 ```
 
-## DisconnectEnvironment action
+#### DisconnectEnvironment action
 
 Disconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environmentsor uses custom actions towards external environment, it should be used directly after the last action towards the environment.
 
 Since the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.
 
 
-### Example
+##### Example
 
 ```json
 {
@@ -860,11 +860,11 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 }
 ```
 
-## DoSave action
+#### DoSave action
 
 `DoSave` issues a command to engine to save the currently open app. If the simulated user does not have permission to save the app it will result in an error.
 
-### Example
+##### Example
 
 ```json
 {
@@ -873,7 +873,7 @@ Since the action also disconnects any open websocket to Sense apps, it does not 
 }
 ```
 
-## DuplicateSheet action
+#### DuplicateSheet action
 
 Duplicate a sheet, including all objects.
 
@@ -882,7 +882,7 @@ Duplicate a sheet, including all objects.
 * `save`: Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted.
 * `cloneid`: (optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action.
 
-### Example
+##### Example
 
 ```json
 {
@@ -896,14 +896,14 @@ Duplicate a sheet, including all objects.
 }
 ```
 
-## GetScript action
+#### GetScript action
 
 Get the load script for the app.
 
 
 * `savelog`: Save load script to log file under the INFO log labelled *LoadScript*
 
-### Example
+##### Example
 
 Get the load script for the app
 
@@ -924,7 +924,7 @@ Get the load script for the app and save to log file
 }
 ```
 
-## Iterated action
+#### Iterated action
 
 Loop one or more actions.
 
@@ -937,7 +937,7 @@ Loop one or more actions.
   * `disabled`: (optional) Disable action (`true` / `false`). If set to `true`, the action is not executed.
   * `settings`: Most, but not all, actions have a settings section with action-specific settings.
 
-### Example
+##### Example
 
 ```json
 //Visit all sheets twice
@@ -962,7 +962,7 @@ Loop one or more actions.
 }
 ```
 
-## ListBoxSelect action
+#### ListBoxSelect action
 
 Perform list object specific selectiontypes in listbox.
 
@@ -976,7 +976,7 @@ Perform list object specific selectiontypes in listbox.
 * `accept`: Accept or abort selection after selection (only used with `wrap`) (`true` / `false`).
 * `wrap`: Wrap selection with Begin / End selection requests (`true` / `false`).
 
-### Examples
+##### Examples
 
 ```json
 {
@@ -991,7 +991,7 @@ Perform list object specific selectiontypes in listbox.
 }
 ```
 
-## ObjectSearch action
+#### ObjectSearch action
 
 Perform a search select in a listbox, field or master dimension.
 
@@ -1011,7 +1011,7 @@ Perform a search select in a listbox, field or master dimension.
 * `erroronempty`: If set to true and the object search yields an empty result, the action will result in an error. Defaults to false.
 * `searchtermsfile`: Path to search terms file when using `source` of type `fromfile`. File should contain one term per row.
 
-### Examples
+##### Examples
 
 Search a listbox object, all users searches for same thing and gets an error if no result found
 
@@ -1064,7 +1064,7 @@ Search a master object dimension using search terms from a file.
 }
 ```
 
-## OpenApp action
+#### OpenApp action
 
 Open an app.
 
@@ -1090,7 +1090,7 @@ Open an app.
 * `externalhost`: (optional) Sets an external host to be used instead of `server` configured in connection settings.
 * `unique`: Create unqiue engine session not re-using session from previous connection with same user. Defaults to false.
 
-### Examples
+##### Examples
 
 ```json
 {
@@ -1113,13 +1113,13 @@ Open an app.
 }
 ```
 
-## ProductVersion action
+#### ProductVersion action
 
 Request the product version from the server and, optionally, save it to the log. This is a lightweight request that can be used as a keep-alive message in a loop.
 
 * `log`: Save the product version to the log (`true` / `false`). Defaults to `false`, if omitted.
 
-### Example
+##### Example
 
 ```json
 //Keep-alive loop
@@ -1143,7 +1143,7 @@ Request the product version from the server and, optionally, save it to the log.
 }
 ```
 
-## PublishBookmark action
+#### PublishBookmark action
 
 Publish a bookmark.
 
@@ -1152,7 +1152,7 @@ Publish a bookmark.
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
 
-### Example
+##### Example
 
 Publish the bookmark with `id` "bookmark1" that was created earlier on in the script.
 
@@ -1180,7 +1180,7 @@ Publish the bookmark with the `title` "bookmark of testuser", where "testuser" i
 }
 ```
 
-## PublishSheet action
+#### PublishSheet action
 
 Publish sheets in the current app.
 
@@ -1190,7 +1190,7 @@ Publish sheets in the current app.
 * `sheetIds`: (optional) Array of sheet IDs for the `sheetids` mode.
 * `includePublished`: Try to publish already published sheets.
 
-### Example
+##### Example
 ```json
 {
      "label": "PublishSheets",
@@ -1202,7 +1202,7 @@ Publish sheets in the current app.
 }
 ```
 
-## RandomAction action
+#### RandomAction action
 
 Randomly select other actions to perform. This meta-action can be used as a starting point for your testing efforts, to simplify script authoring or to add background load.
 
@@ -1229,7 +1229,7 @@ Each action executed by `randomaction` is followed by a customizable `thinktime`
   * `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
 * `iterations`: Number of random actions to perform.
 
-### Random action defaults
+##### Random action defaults
 
 The following default values are used for the different actions:
 
@@ -1270,9 +1270,9 @@ The following default values are used for the different actions:
 }
 ```
 
-### Examples
+##### Examples
 
-#### Generating a background load by executing 5 random actions
+###### Generating a background load by executing 5 random actions
 
 ```json
 {
@@ -1306,7 +1306,7 @@ The following default values are used for the different actions:
 }
 ```
 
-#### Making random selections from excluded values
+###### Making random selections from excluded values
 
 ```json
 {
@@ -1332,7 +1332,7 @@ The following default values are used for the different actions:
 }
 ```
 
-## Reload action
+#### Reload action
 
 Reload the current app by simulating selecting **Load data** in the Data load editor. To select an app, preceed this action with an `openapp` action.
 
@@ -1344,7 +1344,7 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
 * `log`: Save the reload log as a field in the output (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used when needed as the reload log can become very large.
 * `nosave`: Do not send a save request for the app after the reload is done. Defaults to saving the app.
 
-### Example
+##### Example
 
 ```json
 {
@@ -1356,7 +1356,7 @@ Reload the current app by simulating selecting **Load data** in the Data load ed
 }
 ```
 
-## Select action
+#### Select action
 
 Select random values in an object.
 
@@ -1376,7 +1376,7 @@ See the [Limitations](README.md#limitations) section in the README.md file for l
 * `dim`: Dimension / column in which to select.
 * `values`: Array of element values to select when using selection type `values`. These are the element values for a selection, not the values seen by the user.
 
-### Example
+##### Example
 
 Randomly select among all the values in object `RZmvzbF`.
 
@@ -1414,7 +1414,7 @@ Randomly select among all the enabled values (a.k.a "white" values) in object `R
 }
 ```
 
-#### Statically selecting specific values
+###### Statically selecting specific values
 
 This example selects specific element values in object `RZmvzbF`. These are the values which can be seen in a selection when e.g. inspecting traffic, it is not the data values presented to the user. E.g. when loading a table in the following order by a Sense loadscript:
 
@@ -1451,13 +1451,13 @@ To statically select "Gamma" in this case:
 }
 ```
 
-## SetScript action
+#### SetScript action
 
 Set the load script for the current app. To load the data from the script, use the `reload` action after the `setscript` action.
 
 * `script`: Load script for the app (written as a string).
 
-### Example
+##### Example
 
 ```json
 {
@@ -1468,7 +1468,7 @@ Set the load script for the current app. To load the data from the script, use t
 }
 ```
 
-## SetScriptVar action
+#### SetScriptVar action
 
 Sets a variable which can be used within the same session. Cannot be accessed across different simulated users.
 
@@ -1480,7 +1480,7 @@ Sets a variable which can be used within the same session. Cannot be accessed ac
 * `value`: Value to set to variable (supports the use of [session variables](#session_variables)).
 * `sep`: Separator to use when separating string into array. Defaults to `,`.
 
-### Example
+##### Example
 
 Create a variable containing a string and use it in openapp.
 
@@ -1698,14 +1698,14 @@ Dissecting the first array construction action. The `join` command takes the ele
     }
 }
  ```
-## SetSenseVariable action
+#### SetSenseVariable action
 
 Sets a Qlik Sense variable on a sheet in the open app.
 
 * `name`: Name of the Qlik Sense variable to set.
 * `value`: Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))
 
-### Example
+##### Example
 
 Set a variable to 2000
 
@@ -1715,12 +1715,12 @@ Set a variable to 2000
      "value": "2000"
 }
 ```
-## SheetChanger action
+#### SheetChanger action
 
 Create and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.
 
 
-### Example
+##### Example
 
 ```json
 {
@@ -1733,7 +1733,7 @@ Create and execute a `changesheet` action for each sheet in an app. This can be 
 }
 ```
 
-## SmartSearch action
+#### SmartSearch action
 
 Perform a Smart Search in Sense app to find suggested selections.
 
@@ -1757,9 +1757,9 @@ Perform a Smart Search in Sense app to find suggested selections.
   * `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
 
 
-### Examples
+##### Examples
 
-#### Search with one search term
+###### Search with one search term
 ```json
 {
     "action": "smartsearch",
@@ -1772,7 +1772,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 }
 ```
 
-#### Search with two search terms
+###### Search with two search terms
 ```json
 {
     "action": "smartsearch",
@@ -1785,7 +1785,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 }
 ```
 
-#### Search with random selection of search text from list
+###### Search with random selection of search text from list
 ```json
 {
     "action": "smartsearch",
@@ -1799,7 +1799,7 @@ Perform a Smart Search in Sense app to find suggested selections.
 }
 ```
 
-#### Search with random selection of search text from file
+###### Search with random selection of search text from file
 ```json
 {
     "action": "smartsearch",
@@ -1809,14 +1809,14 @@ Perform a Smart Search in Sense app to find suggested selections.
     }
 }
 ```
-##### `data/searchtexts.txt`
+####### `data/searchtexts.txt`
 ```
 search text
 "quoted search text"
 another search text
 ```
 
-#### Simulate pasting search text
+###### Simulate pasting search text
 
 The default behavior is to simulate typing at normal speed.
 ```json
@@ -1831,7 +1831,7 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
-#### Make a random selection from search results
+###### Make a random selection from search results
 ```json
 {
     "action": "smartsearch",
@@ -1848,7 +1848,7 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
-#### Search with one search term including spaces
+###### Search with one search term including spaces
 ```json
 {
     "action": "smartsearch",
@@ -1860,7 +1860,7 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
-#### Search with two search terms, one of them including spaces
+###### Search with two search terms, one of them including spaces
 ```json
 {
     "action": "smartsearch",
@@ -1873,7 +1873,7 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
-#### Search with one search term including double quote
+###### Search with one search term including double quote
 ```json
 {
     "action": "smartsearch",
@@ -1887,14 +1887,14 @@ The default behavior is to simulate typing at normal speed.
 }
 ```
 
-## Subscribeobjects action
+#### Subscribeobjects action
 
 Subscribe to any object in the currently active app.
 
 * `clear`: Remove any previously subscribed objects from the subscription list.
 * `ids`: List of object IDs to subscribe to.
 
-### Example
+##### Example
 
 Subscribe to two objects in the currently active app and remove any previous subscriptions. 
 
@@ -1923,7 +1923,7 @@ Subscribe to an additional single object (or a list of objects) in the currently
     }
 }
 ```
-## ThinkTime action
+#### ThinkTime action
 
 Simulate user think time.
 
@@ -1936,9 +1936,9 @@ Simulate user think time.
 * `mean`: Mean (seconds), used with type `uniform`.
 * `dev`: Deviation (seconds) from `mean` value, used with type `uniform`.
 
-### Examples
+##### Examples
 
-#### ThinkTime uniform
+###### ThinkTime uniform
 
 This simulates a think time of 10 to 15 seconds.
 
@@ -1954,7 +1954,7 @@ This simulates a think time of 10 to 15 seconds.
 } 
 ```
 
-#### ThinkTime constant
+###### ThinkTime constant
 
 This simulates a think time of 5 seconds.
 
@@ -1969,7 +1969,7 @@ This simulates a think time of 5 seconds.
 }
 ```
 
-## UnpublishBookmark action
+#### UnpublishBookmark action
 
 Unpublish a bookmark.
 
@@ -1978,7 +1978,7 @@ Unpublish a bookmark.
 * `title`: Name of the bookmark (supports the use of [variables](#session_variables)).
 * `id`: ID of the bookmark.
 
-### Example
+##### Example
 
 Unpublish the bookmark with `id` "bookmark1" that was created earlier on in the script.
 
@@ -2006,7 +2006,7 @@ Unpublish the bookmark with the `title` "bookmark of testuser", where "testuser"
 }
 ```
 
-## UnpublishSheet action
+#### UnpublishSheet action
 
 Unpublish sheets in the current app.
 
@@ -2015,7 +2015,7 @@ Unpublish sheets in the current app.
     * `sheetids`: Only unpublish the sheets specified by the `sheetIds` array.
 * `sheetIds`: (optional) Array of sheet IDs for the `sheetids` mode.
 
-### Example
+##### Example
 ```json
 {
      "label": "UnpublishSheets",
@@ -2026,14 +2026,14 @@ Unpublish sheets in the current app.
 }
 ```
 
-## Unsubscribeobjects action
+#### Unsubscribeobjects action
 
 Unsubscribe to any currently subscribed object.
 
 * `ids`: List of object IDs to unsubscribe from.
 * `clear`: Remove any previously subscribed objects from the subscription list.
 
-### Example
+##### Example
 
 Unsubscribe from a single object (or a list of objects).
 
@@ -2060,18 +2060,18 @@ Unsubscribe from all currently subscribed objects.
     }
 }
 ```
-## Qlik Sense Enterprise on Windows (QSEoW) actions
+#### Qlik Sense Enterprise on Windows (QSEoW) actions
 
 These actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.
 
 
-## DeleteOdag action
+#### DeleteOdag action
 
 Delete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.
 
 * `linkname`: Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
 
-### Example
+##### Example
 
 ```json
 {
@@ -2082,13 +2082,13 @@ Delete all user-generated on-demand apps for the current user and the specified 
 }
 ```
 
-## GenerateOdag action
+#### GenerateOdag action
 
 Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 
 * `linkname`: Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*.
 
-### Example
+##### Example
 
 ```json
 {
@@ -2099,12 +2099,12 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 }
 ```
 
-## OpenHub action
+#### OpenHub action
 
 Open the hub in a QSEoW environment. This also makes the apps included in the response for the users `myspace` available for use by subsequent actions. The action `changestream` can be used to only select from apps in a specific stream.
 
 
-### Example
+##### Example
 
 ```json
 {
@@ -2113,7 +2113,7 @@ Open the hub in a QSEoW environment. This also makes the apps included in the re
 }
 ```
 
-## ChangeStream action
+#### ChangeStream action
 
 Change to specified stream. This makes the apps in the specified stream selectable by actions such as `openapp`.
 * `mode`: Decides what kind of value the `stream` field contains. Defaults to `name`.
@@ -2121,7 +2121,7 @@ Change to specified stream. This makes the apps in the specified stream selectab
     * `id`: `stream` is the ID if the stream.
 * `stream`: 
 
-### Example
+##### Example
 
 Make apps in stream `Everyone` selectable by subsequent actions.
 
@@ -2150,7 +2150,7 @@ Make  apps in stream with id `ABSCDFSDFSDFO1231234` selectable subsequent action
 ```
 
 
-## Session variables
+#### Session variables
 
 This section describes the session variables that can be used with some of the actions.
 
@@ -2180,7 +2180,7 @@ The following functions are supported:
 * `add`: Adds two integer values together and outputs the sum. E.g. `{{ add 1 2 }}`.
 * `join`: Joins array elements together to a string separated by defined separator. E.g. `{{ join .ScriptVars.MyArray \",\" }}`.
 
-### Example
+##### Example
 
 ```json
 {

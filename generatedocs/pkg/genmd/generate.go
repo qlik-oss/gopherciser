@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
@@ -41,7 +43,36 @@ type (
 		Groups     []common.GroupsEntry
 		Extra      map[string]common.DocEntry
 	}
+
+	IndentedHeadersNode struct {
+		Level    int
+		children []DocNode
+	}
 )
+
+var headerRegex = regexp.MustCompile(`(?m)^ *#+`)
+
+func (n *IndentedHeadersNode) WriteTo(w io.Writer) {
+	level := n.Level
+	if level < 0 {
+		level = 0
+	}
+	indentStr := strings.Repeat("#", level)
+	for _, child := range n.children {
+		var buf bytes.Buffer
+		child.WriteTo(&buf)
+		bytes := headerRegex.ReplaceAll(buf.Bytes(), []byte("$0"+indentStr))
+		fmt.Fprint(w, string(bytes))
+	}
+}
+
+func (n *IndentedHeadersNode) AddChild(child DocNode) {
+	n.children = append(n.children, child)
+}
+
+func (n *IndentedHeadersNode) Children() []DocNode {
+	return n.children
+}
 
 func NewDocNode(doc fmt.Stringer) DocNode {
 	return &DocNodeStruct{
@@ -200,8 +231,10 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 			addSchedulers(newNode, compiledDocs)
 		}
 		if name == "scenario" {
-			addGroups(newNode, compiledDocs)
-			addExtra(newNode, compiledDocs, "sessionvariables")
+			indentedNode := &IndentedHeadersNode{Level: 2}
+			addGroups(indentedNode, compiledDocs)
+			addExtra(indentedNode, compiledDocs, "sessionvariables")
+			newNode.AddChild(indentedNode)
 		}
 	}
 }
