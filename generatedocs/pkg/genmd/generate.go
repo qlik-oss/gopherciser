@@ -228,7 +228,9 @@ func addConfigFields(node DocNode, compiledDocs *CompiledDocs) {
 		newNode := NewDocNode(fieldEntry)
 		node.AddChild(newNode)
 		if name == "scheduler" {
+			indentedNode := &IndentedHeadersNode{Level: 1}
 			addSchedulers(newNode, compiledDocs)
+			newNode.AddChild(indentedNode)
 		}
 		if name == "scenario" {
 			indentedNode := &IndentedHeadersNode{Level: 2}
