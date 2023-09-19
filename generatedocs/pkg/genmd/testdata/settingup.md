@@ -107,7 +107,7 @@ connectionSettings": {
 	"security": true,
 	"virtualproxy" : "header",
 	"headers" : {
-		"X-Qlik-User-Header" : "{{.UserName}}"
+		"X-Sense-User" : "{{.UserName}}"
 }
 ```
 
