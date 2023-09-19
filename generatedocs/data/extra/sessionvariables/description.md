@@ -3,9 +3,6 @@
 
 This section describes the session variables that can be used with some of the actions.
 
-<details>
-<summary><a name="session_variables"></a>Session variables</summary>
-
 Some action parameters support session variables. A session variable is defined by putting the variable, prefixed by a dot, within double curly brackets, such as `{{.UserName}}`.
 
 The following session variables are supported in actions:
@@ -78,5 +75,3 @@ The following functions are supported:
   }
 }
 ```
-
-</details>
