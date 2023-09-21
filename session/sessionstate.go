@@ -132,6 +132,7 @@ type (
 		Thread     uint64
 		ScriptVars map[string]interface{}
 		Local      interface{}
+		Artifacts  *TemplateArtifactMap
 	}
 
 	ObjectHandlerInstance interface {
@@ -601,6 +602,20 @@ func (state *State) TriggerContextChanges(ctx context.Context, actionState *acti
 	state.TriggerEvents(actionState, cl.Changed, cl.Closed)
 }
 
+type (
+	TemplateArtifactMap struct {
+		artifactMap *ArtifactMap
+	}
+)
+
+func (artifacts *TemplateArtifactMap) GetIDByTypeAndName(artifactType, name string) (string, error) {
+	artifact, err := artifacts.artifactMap.Lookup(artifactType, name, ArtifactEntryCompareTypeName)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return artifact.ID, nil
+}
+
 // GetSessionVariable populates and returns session variables struct
 func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 	if state == nil {
@@ -620,6 +635,7 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 		Thread:     thread,
 		Local:      localData,
 		ScriptVars: state.variables,
+		Artifacts:  &TemplateArtifactMap{state.ArtifactMap},
 	}
 
 	if state.User != nil {
