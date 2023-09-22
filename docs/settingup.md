@@ -2397,7 +2397,7 @@ The following session variables are supported in actions:
   * `GetIDByTypeAndName`: A function that accepts the two string arguments,
     `artifactType` and `artifactName`, and returns the resource id of the artifact.
   * `GetNameByTypeAndID`: A function that accepts the two string arguments,
-    `artifactType` and `artifactID` and returns the name of the artifact.
+    `artifactType` and `artifactID`, and returns the name of the artifact.
 
 
 The following variable is supported in the filename of the log file:
