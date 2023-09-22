@@ -2393,6 +2393,12 @@ The following session variables are supported in actions:
 * `Session`: The enumeration of the currently simulated session.
 * `Thread`: The enumeration of the currently simulated "thread" or "concurrent user".
 * `ScriptVars`: A map containing script variables added by the action `setscriptvar`.
+* `Artifacts`:
+  * `GetIDByTypeAndName`: A function that accepts the two string arguments,
+    `artifactType` and `artifactName`, and returns the resource id of the artifact.
+  * `GetNameByTypeAndID`: A function that accepts the two string arguments,
+    `artifactType` and `artifactID`, and returns the name of the artifact.
+
 
 The following variable is supported in the filename of the log file:
 
@@ -2454,6 +2460,17 @@ The following functions are supported:
   "settings": {
     "title": "Bookmark no {{ add .ScriptVars.BookmarkCounter 1 }}",
     "description": "This bookmark will have the title Bookmark no 2"
+  }
+}
+```
+
+```json
+{
+  "action": "setscriptvar",
+  "settings": {
+    "name": "MyAppId",
+    "type": "string",
+    "value": "{{.Artifacts.GetIDByTypeAndName \"app\" (print \"an-app-\" .Session)}}"
   }
 }
 ```

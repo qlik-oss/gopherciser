@@ -277,3 +277,129 @@ func assertEventCounter(ec *eventCounter, ech, ecl int) error {
 
 	return nil
 }
+
+func TestStateTemplateArtifactMap(t *testing.T) {
+
+	t.Run("nil templateArtifactmap", func(t *testing.T) {
+		var tmplAM *TemplateArtifactMap
+		id, err := tmplAM.GetIDByTypeAndName("type", "name")
+		if id != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "templateArtifactMap is nil"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+	t.Run("nil artifactmap", func(t *testing.T) {
+		tmplAM := &TemplateArtifactMap{nil}
+		id, err := tmplAM.GetIDByTypeAndName("type", "name")
+		if id != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "artifactMap is nil"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+	am := NewArtifactMap()
+	am.Append("type1", &ArtifactEntry{
+		ID:     "id1",
+		ItemID: "itemID1",
+		Name:   "name1",
+	})
+	am.Append("type2", &ArtifactEntry{
+		ID:     "id2",
+		ItemID: "itemID2",
+		Name:   "name2",
+	})
+	am.Append("typeNil", nil)
+	am.Append("typeNoName", &ArtifactEntry{
+		ID:     "IDnoName",
+		ItemID: "",
+		Name:   "",
+	})
+	am.Append("typeNoID", &ArtifactEntry{
+		ID:     "",
+		ItemID: "",
+		Name:   "nameNoID",
+	})
+	artifacts := &TemplateArtifactMap{am}
+
+	t.Run("get type by id", func(t *testing.T) {
+		name, err := artifacts.GetNameByTypeAndID("type1", "id1")
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if name != "name1" {
+			t.Errorf("expected<name1> got<%v>", name)
+		}
+	})
+	t.Run("get id by name", func(t *testing.T) {
+		id, err := artifacts.GetIDByTypeAndName("type2", "name2")
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if id != "id2" {
+			t.Errorf("expected<name1> got<%v>", id)
+		}
+	})
+
+	t.Run("get nil artifact", func(t *testing.T) {
+		id, err := artifacts.GetIDByTypeAndName("typeNil", "name2")
+		if id != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "item type<typeNil> id<name2> not found in artifact map"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+	t.Run("get no name", func(t *testing.T) {
+		name, err := artifacts.GetNameByTypeAndID("typeNoName", "IDnoName")
+		if name != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "name is empty string"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+	t.Run("get no id", func(t *testing.T) {
+		id, err := artifacts.GetIDByTypeAndName("typeNoID", "nameNoID")
+		if id != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "id is empty string"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+	t.Run("empty args", func(t *testing.T) {
+		id, err := artifacts.GetIDByTypeAndName("", "")
+		if id != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "first argument artifactType is empty string"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+	t.Run("empty arg 2", func(t *testing.T) {
+		id, err := artifacts.GetIDByTypeAndName("x", "")
+		if id != "" {
+			t.Error("id is not empty")
+		}
+		expectedError := "second argument name is empty string"
+		if err.Error() != expectedError {
+			t.Errorf("expected error<%s> got error<%s>", expectedError, err.Error())
+		}
+	})
+
+}

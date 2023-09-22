@@ -132,6 +132,7 @@ type (
 		Thread     uint64
 		ScriptVars map[string]interface{}
 		Local      interface{}
+		Artifacts  *TemplateArtifactMap
 	}
 
 	ObjectHandlerInstance interface {
@@ -601,6 +602,52 @@ func (state *State) TriggerContextChanges(ctx context.Context, actionState *acti
 	state.TriggerEvents(actionState, cl.Changed, cl.Closed)
 }
 
+type (
+	TemplateArtifactMap struct {
+		artifactMap *ArtifactMap
+	}
+)
+
+func (artifacts *TemplateArtifactMap) getArtifact(artifactType, lookup string, cmpType ArtifactEntryCompareType,
+	valueLabel string, valueGetter func(*ArtifactEntry) string) (string, error) {
+	if artifactType == "" {
+		return "", errors.New("first argument artifactType is empty string")
+	}
+	if lookup == "" {
+		return "", errors.Errorf("second argument %s is empty string", cmpType)
+	}
+	if artifacts == nil {
+		return "", errors.New("templateArtifactMap is nil")
+	}
+	if artifacts.artifactMap == nil {
+		return "", errors.New("artifactMap is nil")
+	}
+	artifact, err := artifacts.artifactMap.Lookup(artifactType, lookup, cmpType)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	if artifact == nil {
+		return "", errors.New("artifact is nil")
+	}
+	valueStr := valueGetter(artifact)
+	if valueStr == "" {
+		return "", errors.Errorf("%s is empty string", valueLabel)
+	}
+	return valueStr, nil
+}
+
+func (artifacts *TemplateArtifactMap) GetIDByTypeAndName(artifactType, name string) (string, error) {
+	return artifacts.getArtifact(artifactType, name, ArtifactEntryCompareTypeName, "id", func(artifact *ArtifactEntry) string {
+		return artifact.ID
+	})
+}
+
+func (artifacts *TemplateArtifactMap) GetNameByTypeAndID(artifactType, id string) (string, error) {
+	return artifacts.getArtifact(artifactType, id, ArtifactEntryCompareTypeID, "name", func(artifact *ArtifactEntry) string {
+		return artifact.Name
+	})
+}
+
 // GetSessionVariable populates and returns session variables struct
 func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 	if state == nil {
@@ -620,6 +667,7 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 		Thread:     thread,
 		Local:      localData,
 		ScriptVars: state.variables,
+		Artifacts:  &TemplateArtifactMap{state.ArtifactMap},
 	}
 
 	if state.User != nil {
