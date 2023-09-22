@@ -1,6 +1,7 @@
 package session
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -62,6 +63,19 @@ const (
 	ArtifactEntryCompareTypeItemID
 	ArtifactEntryCompareTypeName
 )
+
+func (cmpType ArtifactEntryCompareType) String() string {
+	switch cmpType {
+	case ArtifactEntryCompareTypeName:
+		return "name"
+	case ArtifactEntryCompareTypeID:
+		return "id"
+	case ArtifactEntryCompareTypeItemID:
+		return "itemID"
+	default:
+		return fmt.Sprintf("%T<%v>", cmpType, int(cmpType))
+	}
+}
 
 func (d *ArtifactList) Len() int {
 	if d == nil {
