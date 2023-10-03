@@ -707,6 +707,23 @@ var (
 		&Select{SelectTypeHypercubeColumnValues, "/qHyperCubeDef"},
 	}
 
+	// DefaultSNShape object definitions for sn-shape
+	DefaultSNShape = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -749,5 +766,6 @@ var (
 		"sn-video-player":       &DefaultSNVideoPlayer,
 		"sn-grid-chart":         &DefaultSNGridChart,
 		"sn-table":              &DefaultSNTable,
+		"sn-shape":              &DefaultSNShape,
 	}
 )
