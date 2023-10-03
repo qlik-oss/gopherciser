@@ -690,6 +690,23 @@ var (
 		Select: nil, // TODO support select in grid chart, select using unsupported SelectPivotCells method
 	}
 
+	// DefaultSNTable object definitions for sn-table
+	DefaultSNTable = ObjectDef{
+		DataDef{DataDefHyperCube, "/qHyperCube"},
+		[]Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						DataTypeHyperCubeData,
+						"/qHyperCubeDef",
+						100,
+					},
+				},
+			}},
+		},
+		&Select{SelectTypeHypercubeColumnValues, "/qHyperCubeDef"},
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -731,5 +748,6 @@ var (
 		"qlik-date-picker":      &DefaultQlikDatePicker,
 		"sn-video-player":       &DefaultSNVideoPlayer,
 		"sn-grid-chart":         &DefaultSNGridChart,
+		"sn-table":              &DefaultSNTable,
 	}
 )
