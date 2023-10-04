@@ -724,6 +724,23 @@ var (
 		Select: nil,
 	}
 
+	// DefaultSNText object definitions for sn-text
+	DefaultSNText = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -767,5 +784,6 @@ var (
 		"sn-grid-chart":         &DefaultSNGridChart,
 		"sn-table":              &DefaultSNTable,
 		"sn-shape":              &DefaultSNShape,
+		"sn-text":               &DefaultSNText,
 	}
 )
