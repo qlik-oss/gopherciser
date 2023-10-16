@@ -53,6 +53,7 @@ type (
 // Currently known resource types
 const (
 	ResourceTypeApp         = "app"
+	ResourceTypeQVApp       = "qvapp"
 	ResourceTypeGenericLink = "genericlink"
 	ResourceTypeDataset     = "dataset"
 	ResourceTypeDataAsset   = "dataasset"
@@ -319,7 +320,11 @@ func (am *ArtifactMap) GetAllOfType(sessionState *State, resourcetype string) []
 
 // LookupAppTitle lookup app using title
 func (am *ArtifactMap) LookupAppTitle(title string) (*ArtifactEntry, error) {
-	return am.Lookup(ResourceTypeApp, title, ArtifactEntryCompareTypeName)
+	entry, err := am.Lookup(ResourceTypeApp, title, ArtifactEntryCompareTypeName)
+	if err != nil {
+		entry, err = am.Lookup(ResourceTypeQVApp, title, ArtifactEntryCompareTypeName)
+	}
+	return entry, err
 }
 
 // LookupItemID lookup resource using Item ID
@@ -331,8 +336,12 @@ func (am *ArtifactMap) LookupItemID(resourcetype, itemID string) (*ArtifactEntry
 func (am *ArtifactMap) LookupAppGUID(guid string) (*ArtifactEntry, error) {
 	entry, err := am.Lookup(ResourceTypeApp, guid, ArtifactEntryCompareTypeID)
 	if err != nil {
-		// GUID not found in map, create new entry with GUID (Supports using openapp with GUID and no preceeding OpenHub)
-		entry = &ArtifactEntry{ID: guid, ResourceType: ResourceTypeApp} // todo how to handle itemID?
+		// try qvapp type
+		entry, err = am.Lookup(ResourceTypeQVApp, guid, ArtifactEntryCompareTypeID)
+		if err != nil {
+			// GUID not found in map, create new entry with GUID (Supports using openapp with GUID and no preceeding OpenHub)
+			entry = &ArtifactEntry{ID: guid, ResourceType: ResourceTypeApp} // todo how to handle itemID?
+		}
 	}
 	return entry, nil
 }
