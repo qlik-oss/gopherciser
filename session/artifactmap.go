@@ -336,7 +336,7 @@ func (am *ArtifactMap) LookupItemID(resourcetype, itemID string) (*ArtifactEntry
 func (am *ArtifactMap) LookupAppGUID(guid string) (*ArtifactEntry, error) {
 	entry, err := am.Lookup(ResourceTypeApp, guid, ArtifactEntryCompareTypeID)
 	if err != nil {
-		// try qvapp typoe
+		// try qvapp type
 		entry, err = am.Lookup(ResourceTypeQVApp, guid, ArtifactEntryCompareTypeID)
 		if err != nil {
 			// GUID not found in map, create new entry with GUID (Supports using openapp with GUID and no preceeding OpenHub)
