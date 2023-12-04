@@ -741,6 +741,26 @@ var (
 		Select: nil,
 	}
 
+	// DefaultSNPivotTable
+	DefaultSNPivotTable = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCube",
+		},
+		Data: []Data{
+			{
+				DataCore{
+					Requests: []GetDataRequests{
+						{
+							Type: DataTypeLayout,
+						},
+					},
+				},
+			},
+		},
+		// TODO Select needs support for SelectPivotCells
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -785,5 +805,6 @@ var (
 		"sn-table":              &DefaultSNTable,
 		"sn-shape":              &DefaultSNShape,
 		"sn-text":               &DefaultSNText,
+		"sn-pivot-table":        &DefaultSNPivotTable,
 	}
 )
