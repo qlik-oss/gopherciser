@@ -761,6 +761,13 @@ var (
 		// TODO Select needs support for SelectPivotCells
 	}
 
+	// DefaultLayoutContainer, container type with all "children" visible
+	DefaultLayoutContainer = ObjectDef{
+		DataDef{DataDefNoData, ""},
+		nil,
+		nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -806,5 +813,6 @@ var (
 		"sn-shape":              &DefaultSNShape,
 		"sn-text":               &DefaultSNText,
 		"sn-pivot-table":        &DefaultSNPivotTable,
+		"sn-layout-container":   &DefaultLayoutContainer,
 	}
 )
