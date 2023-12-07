@@ -1,8 +1,6 @@
 package helpers
 
 import (
-	"strings"
-
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 )
@@ -14,17 +12,43 @@ type (
 
 // UnmarshalJSON StringBool
 func (sb *StringBool) UnmarshalJSON(arg []byte) error {
-	var s string
-	if err := json.Unmarshal(arg, &s); err != nil {
-		return errors.Wrap(err, "failed to unmarshal StringBool")
+	if sb == nil {
+		return nil
 	}
 
-	switch strings.ToLower(s) {
-	case "false":
-	case "0":
+	// Is integer
+	var i int
+	if err := json.Unmarshal(arg, &i); err == nil {
+		switch i {
+		case 0:
+			*sb = false
+		default:
+			*sb = true
+		}
+		return nil
+	}
+
+	// Is string
+	var s string
+	if err := json.Unmarshal(arg, &s); err != nil {
+		return errors.Wrapf(err, "Failed to unmarshal byte array<%v>", arg)
+	}
+
+	switch s {
+	case "false", "0":
 		*sb = false
 	default:
 		*sb = true
 	}
+
 	return nil
+}
+
+// AsBool returns bool representation of StringBool
+func (sb *StringBool) AsBool() bool {
+	if sb == nil {
+		return false
+	}
+
+	return bool(*sb)
 }

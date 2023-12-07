@@ -50,7 +50,9 @@ func init() {
 	if err := GlobalObjectHandler.RegisterHandler("container", &ContainerHandler{}, false); err != nil {
 		panic(err)
 	}
-
+	if err := GlobalObjectHandler.RegisterHandler("sn-layout-container", &LayoutContainerHandler{}, false); err != nil {
+		panic(err)
+	}
 }
 
 func (err NxValidationError) Error() string {
@@ -157,7 +159,7 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 	if err != nil {
 		switch errors.Cause(err).(type) {
 		case senseobjdef.NoDefError:
-			sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object type<%s> not supported", enigmaObject.GenericType)
+			sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
 			return nil
 		default:
 			return errors.WithStack(err)
@@ -765,7 +767,7 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 		}
 	default:
-		sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object type<%s> not supported", enigmaObject.GenericType)
+		sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
 		return nil
 	}
 
@@ -805,7 +807,7 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 			UpdateObjectHyperCubeTreeDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		default:
 			sessionState.LogEntry.Logf(logger.WarningLevel,
-				"Get Data for object type<%s> not supported", enigmaObject.GenericType)
+				"Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
 		}
 	}
 	return nil
