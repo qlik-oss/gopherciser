@@ -53,6 +53,9 @@ func init() {
 	if err := GlobalObjectHandler.RegisterHandler("sn-layout-container", &LayoutContainerHandler{}, false); err != nil {
 		panic(err)
 	}
+	if err := GlobalObjectHandler.RegisterHandler("masterobject", &MasterObjectHandler{}, false); err != nil {
+		panic(err)
+	}
 }
 
 func (err NxValidationError) Error() string {
@@ -134,7 +137,7 @@ func getAndAddObjectWithCallback(sessionState *State, actionState *action.State,
 	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))
 }
 
-func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
+func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, def *senseobjdef.ObjectDef) error {
 	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 	if !ok {
 		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
@@ -155,14 +158,17 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 		return errors.Wrapf(err, "failed to get children for object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 	}
 
-	def, err := senseobjdef.GetObjectDef(enigmaObject.GenericType)
-	if err != nil {
-		switch errors.Cause(err).(type) {
-		case senseobjdef.NoDefError:
-			sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
-			return nil
-		default:
-			return errors.WithStack(err)
+	if def == nil {
+		var err error
+		def, err = senseobjdef.GetObjectDef(enigmaObject.GenericType)
+		if err != nil {
+			switch errors.Cause(err).(type) {
+			case senseobjdef.NoDefError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
+				return nil
+			default:
+				return errors.WithStack(err)
+			}
 		}
 	}
 
@@ -183,7 +189,7 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 	return nil
 }
 
-func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func DefaultSetObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject, def *senseobjdef.ObjectDef) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -195,15 +201,51 @@ func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj 
 	wg.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
-		return GetObjectLayout(sessionState, actionState, obj)
+		return GetObjectLayout(sessionState, actionState, obj, def)
 	}, actionState, true, "")
 
 	wg.Wait()
 
 	event := func(ctx context.Context, as *action.State) error {
-		return GetObjectLayout(sessionState, as, obj)
+		return GetObjectLayout(sessionState, as, obj, def)
 	}
 	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+
+	children := obj.ChildList()
+	childListItems := make(map[string]interface{})
+	if children != nil && children.Items != nil {
+		sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", genObj.GenericId, genObj.GenericType)
+		for _, child := range children.Items {
+			sessionState.LogEntry.LogDebug(fmt.Sprintf("obj<%s> child<%s> found in ChildList", obj.ID, child.Info.Id))
+			childListItems[child.Info.Id] = nil
+			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id)
+		}
+	}
+
+	if genObj.GenericType == "sheet" {
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			sheetList, err := sessionState.Connection.Sense().CurrentApp.GetSheetList(sessionState, actionState)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if sheetList != nil {
+				entry, err := sheetList.GetSheetEntry(genObj.GenericId)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				if entry != nil && entry.Data != nil {
+					for _, cell := range entry.Data.Cells {
+						if _, ok := childListItems[cell.Name]; !ok {
+							// Todo should this be a warning?
+							sessionState.LogEntry.LogDebug(fmt.Sprintf("cell<%s> missing from sheet<%s> childlist", cell.Name, genObj.GenericId))
+							GetAndAddObjectAsync(sessionState, actionState, cell.Name)
+						}
+					}
+				}
+			}
+			return nil
+		}, actionState, true, "")
+	}
 }
 
 func SetChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {

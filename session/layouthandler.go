@@ -53,6 +53,8 @@ type (
 	}
 )
 
+// TODO support "childobject" (masterobject added to library from inside layout container)
+
 // Instance implements ObjectHandler  interface
 func (handler *LayoutContainerHandler) Instance(id string) ObjectHandlerInstance {
 	return &LayoutContainerHandlerInstance{ID: id, activeChildren: make(map[string]bool)}
