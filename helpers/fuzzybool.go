@@ -1,8 +1,7 @@
 package helpers
 
 import (
-	"encoding/json"
-
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 )
 
@@ -17,20 +16,12 @@ func (sb *FuzzyBool) UnmarshalJSON(arg []byte) error {
 		return nil
 	}
 
-	tmpMap := make(map[string]interface{})
-	tmpArray := []byte(`{"val":`)
-	tmpArray = append(tmpArray, arg...)
-	tmpArray = append(tmpArray, byte('}'))
-
-	if err := json.Unmarshal(tmpArray, &tmpMap); err != nil {
+	var val interface{}
+	if err := json.Unmarshal(arg, &val); err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal byte array<%v> as bool", arg)
 	}
 
-	if tmpMap["val"] == nil {
-		return errors.Errorf("Failed to unmarshal byte array<%v> as bool", arg)
-	}
-
-	switch val := tmpMap["val"].(type) {
+	switch val := val.(type) {
 	case int:
 		switch val {
 		case 0:
