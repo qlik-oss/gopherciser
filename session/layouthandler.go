@@ -31,8 +31,8 @@ type (
 	}
 
 	LayoutContainerLayoutObject struct {
-		ChildRefId string              `json:"childRefId"`
-		Condition  *helpers.StringBool `json:"condition"`
+		ChildRefId string             `json:"childRefId"`
+		Condition  *helpers.FuzzyBool `json:"condition"`
 	}
 
 	LayoutContainerChildList struct {

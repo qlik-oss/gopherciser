@@ -57,14 +57,14 @@ type (
 			Rowspan int         `json:"rowspan"`
 			Bounds  SheetBounds `json:"bounds,omitempty"`
 		} `json:"cells,omitempty"`
-		Columns               interface{}        `json:"columns"`
-		Rows                  interface{}        `json:"rows"`
-		Title                 string             `json:"title"`
-		LabelExpression       string             `json:"labelExpression"`
-		Description           string             `json:"description"`
-		DescriptionExpression string             `json:"descriptionExpression"`
-		Rank                  interface{}        `json:"rank"`
-		ShowCondition         helpers.StringBool `json:"showCondition"`
+		Columns               interface{}       `json:"columns"`
+		Rows                  interface{}       `json:"rows"`
+		Title                 string            `json:"title"`
+		LabelExpression       string            `json:"labelExpression"`
+		Description           string            `json:"description"`
+		DescriptionExpression string            `json:"descriptionExpression"`
+		Rank                  interface{}       `json:"rank"`
+		ShowCondition         helpers.FuzzyBool `json:"showCondition"`
 	}
 
 	// SheetListPropertiesData properties of sheetlist
