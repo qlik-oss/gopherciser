@@ -15,6 +15,18 @@ func TestFuzzyBool_UnmarshalJSON(t *testing.T) {
 		wantSb  helpers.FuzzyBool
 	}{
 		{
+			name:    "Test null",
+			args:    []byte(``),
+			wantErr: false,
+			wantSb:  true,
+		},
+		{
+			name:    "Test null",
+			args:    []byte(`null`),
+			wantErr: false,
+			wantSb:  true,
+		},
+		{
 			name:    "Test bool false",
 			args:    []byte(`false`),
 			wantErr: false,

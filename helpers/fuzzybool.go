@@ -16,6 +16,11 @@ func (sb *FuzzyBool) UnmarshalJSON(arg []byte) error {
 		return nil
 	}
 
+	if len(arg) < 1 {
+		*sb = true
+		return nil
+	}
+
 	var val interface{}
 	if err := json.Unmarshal(arg, &val); err != nil {
 		return errors.Wrapf(err, "Failed to unmarshal byte array<%v> as bool", arg)
@@ -40,6 +45,8 @@ func (sb *FuzzyBool) UnmarshalJSON(arg []byte) error {
 		}
 	case bool:
 		*sb = FuzzyBool(val)
+	case nil:
+		*sb = true
 	default:
 		return errors.Errorf("Failed to unmarshal byte array<%v> as bool", arg)
 	}
