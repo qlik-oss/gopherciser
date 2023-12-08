@@ -15,7 +15,7 @@ func TestFuzzyBool_UnmarshalJSON(t *testing.T) {
 		wantSb  helpers.FuzzyBool
 	}{
 		{
-			name:    "Test null",
+			name:    "Test empty",
 			args:    []byte(``),
 			wantErr: false,
 			wantSb:  true,
@@ -91,6 +91,12 @@ func TestFuzzyBool_UnmarshalJSON(t *testing.T) {
 			args:    []byte(`1.0`),
 			wantErr: false,
 			wantSb:  true,
+		},
+		{
+			name:    "Test array",
+			args:    []byte(`[1]`),
+			wantErr: true,
+			wantSb:  false,
 		},
 	}
 	for _, tt := range tests {
