@@ -42,12 +42,12 @@ type (
 	}
 
 	ContainerChild struct {
-		RefID             string              `json:"refId"`
-		Label             string              `json:"label"`
-		IsMaster          bool                `json:"isMaster"`
-		ExternalReference *ContainerExternal  `json:"externalReference"`
-		Type              string              `json:"type"`
-		Condition         *helpers.StringBool `json:"condition"`
+		RefID             string             `json:"refId"`
+		Label             string             `json:"label"`
+		IsMaster          bool               `json:"isMaster"`
+		ExternalReference *ContainerExternal `json:"externalReference"`
+		Type              string             `json:"type"`
+		Condition         *helpers.FuzzyBool `json:"condition"`
 	}
 
 	ContainerChildItemData struct {
