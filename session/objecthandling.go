@@ -28,7 +28,7 @@ type (
 		writeLock sync.Mutex
 	}
 
-	CalcEvalConditionFailedError struct{}
+	CalcEvalConditionFailedError string
 
 	NxValidationError enigma.NxValidationError
 )
@@ -59,12 +59,12 @@ func init() {
 }
 
 func (err NxValidationError) Error() string {
-	return fmt.Sprintf("ErrorCode:%d (%s)", err.ErrorCode, enigma.ErrorCodeLookup(err.ErrorCode))
+	return EngineCodeToString(err.ErrorCode)
 }
 
 // Error implements error interface
 func (err CalcEvalConditionFailedError) Error() string {
-	return "object has unsatisfied calculation condition"
+	return fmt.Sprintf("object has unsatisfied calculation condition in %s", string(err))
 }
 
 // RegisterHandler for object type, override existing handler with override flag
@@ -351,7 +351,7 @@ func UpdateObjectHyperCubeDataAsync(sessionState *State, actionState *action.Sta
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -415,7 +415,7 @@ func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -468,15 +468,13 @@ func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *acti
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
 				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
 			}
 			return errors.WithStack(err)
-		} else if hypercube.Error != nil {
-			return nil
 		}
 
 		if hypercube.Size == nil {
@@ -554,7 +552,7 @@ func UpdateObjectHyperCubeStackDataAsync(sessionState *State, actionState *actio
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -624,7 +622,7 @@ func UpdateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get continuous data for object<%s>", gob.GenericId)
 		hypercube := obj.HyperCube()
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -703,16 +701,49 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 	}, actionState, true, fmt.Sprintf("failed to get tree data for object<%s>", gob.GenericId))
 }
 
-func checkHyperCubeErr(id string, nve *enigma.NxValidationError) error {
+func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEntry *logger.LogEntry) error {
+	if hypercube == nil {
+		return errors.Errorf("object<%s> has no hypercube", id)
+	}
+
+	if err := checkHyperCubeErrorInner(id, "hypercube", hypercube.Error); err != nil {
+		return err
+	}
+
+	if hypercube.DimensionInfo != nil {
+		for i, dimInfo := range hypercube.DimensionInfo {
+			if err := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.DimensionInfo[%d]", i), dimInfo.Error); err != nil {
+				logEntry.Log(logger.WarningLevel, fmt.Sprintf("object<%s> has hypercube error<%s> in DimensionInfo[%d]", id, EngineCodeToString(dimInfo.Error.ErrorCode), i))
+			}
+		}
+	}
+
+	if hypercube.MeasureInfo != nil {
+		for i, measureInfo := range hypercube.MeasureInfo {
+			if err := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d]", i), measureInfo.Error); err != nil {
+				logEntry.Log(logger.WarningLevel, fmt.Sprintf("object<%s> has hypercube error<%s> in MeasureInfo[%d]", id, EngineCodeToString(measureInfo.Error.ErrorCode), i))
+			}
+			if measureInfo.MiniChart != nil {
+				if err := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d].MiniChart", i), measureInfo.MiniChart.Error); err != nil {
+					logEntry.Log(logger.WarningLevel, fmt.Sprintf("object<%s> has hypercube error<%s> in MeasureInfo[%d].MiniChart", id, EngineCodeToString(measureInfo.MiniChart.Error.ErrorCode), i))
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func checkHyperCubeErrorInner(id, path string, nve *enigma.NxValidationError) error {
 	if nve == nil {
 		return nil
 	}
 	switch nve.ErrorCode {
 	case constant.LocerrCalcEvalConditionFailed:
-		return CalcEvalConditionFailedError{}
+		return CalcEvalConditionFailedError(path)
 	default:
 		err := NxValidationError(*nve)
-		return errors.Wrapf(err, "object<%s> has hypercube error<ErrorCode:%d (%s)>", id, err.ErrorCode, err.ExtendedMessage)
+		return errors.Wrapf(err, "object<%s> has hypercube(%s) error<ErrorCode:%d (%s)>", id, path, err.ErrorCode, err.ExtendedMessage)
 	}
 }
 
@@ -853,4 +884,8 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 		}
 	}
 	return nil
+}
+
+func EngineCodeToString(errorCode int) string {
+	return fmt.Sprintf("ErrorCode:%d (%s)", errorCode, enigma.ErrorCodeLookup(errorCode))
 }
