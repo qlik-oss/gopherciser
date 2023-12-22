@@ -21,8 +21,7 @@ type (
 	LayoutContainerHandlerInstance struct {
 		ID string
 
-		activeChildren map[string]bool
-		lock           sync.Mutex
+		lock sync.Mutex
 	}
 
 	LayoutContainerLayout struct {
@@ -55,7 +54,7 @@ type (
 
 // Instance implements ObjectHandler  interface
 func (handler *LayoutContainerHandler) Instance(id string) ObjectHandlerInstance {
-	return &LayoutContainerHandlerInstance{ID: id, activeChildren: make(map[string]bool)}
+	return &LayoutContainerHandlerInstance{ID: id}
 }
 
 // GetObjectDefinition implements ObjectHandlerInstance interface
@@ -104,48 +103,42 @@ func (handler *LayoutContainerHandlerInstance) UpdateChildren(sessionState *Stat
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	// set current active to false
-	for key := range handler.activeChildren {
-		handler.activeChildren[key] = false
-	}
-
 	// Set / add latest list to true
-	subscribeChildren := make([]string, 0, len(layout.Objects))
+	activeChildRefs := make([]string, 0, len(layout.Objects))
+	inactiveChildRefs := make([]string, 0, len(layout.Objects))
 	for _, child := range layout.Objects {
 		if child.Condition.AsBool() {
-			if _, exists := handler.activeChildren[child.ChildRefId]; !exists {
-				subscribeChildren = append(subscribeChildren, child.ChildRefId)
-			}
-			handler.activeChildren[child.ChildRefId] = true
+			activeChildRefs = append(activeChildRefs, child.ChildRefId)
+		} else {
+			inactiveChildRefs = append(activeChildRefs, child.ChildRefId)
 		}
 	}
 
-	// for any child still false add to unsubscribe list
-	unSubscribeChildren := make([]string, 0, len(layout.Objects))
-	for childRefId, active := range handler.activeChildren {
-		if !active {
-			unSubscribeChildren = append(unSubscribeChildren, childRefId)
-		}
-	}
-
-	// Any still in list and false should be removed from active and unsubscribed
-	for _, childRef := range unSubscribeChildren {
-		delete(handler.activeChildren, childRef)
-	}
-
-	var err error
-	if unSubscribeChildren, err = layout.ChildRefsToIDs(unSubscribeChildren); err != nil {
+	// Unsubscribe to any deactivated objects
+	inactiveChildren, err := layout.ChildRefsToIDs(inactiveChildRefs)
+	if err != nil {
 		return errors.Wrapf(err, "layout object<%s>", handler.ID)
 	}
-	if err := sessionState.ClearSubscribedObjects(unSubscribeChildren); err != nil {
+	upLink := sessionState.Connection.Sense()
+	unsubscribeObjects := make([]string, 0, len(inactiveChildren))
+	for _, objId := range inactiveChildren {
+		if _, err := upLink.Objects.GetObjectByID(objId); err == nil {
+			unsubscribeObjects = append(unsubscribeObjects, objId)
+		}
+	}
+	if err := sessionState.ClearSubscribedObjects(unsubscribeObjects); err != nil {
 		return errors.WithStack(err)
 	}
 
-	if subscribeChildren, err = layout.ChildRefsToIDs(subscribeChildren); err != nil {
+	// Subscribe to any activated objects
+	activeChildren, err := layout.ChildRefsToIDs(activeChildRefs)
+	if err != nil {
 		return errors.Wrapf(err, "layout object<%s>", handler.ID)
 	}
-	for _, objId := range subscribeChildren {
-		GetAndAddObjectAsync(sessionState, actionState, objId)
+	for _, objId := range activeChildren {
+		if _, err := upLink.Objects.GetObjectByID(objId); err != nil {
+			GetAndAddObjectAsync(sessionState, actionState, objId)
+		}
 	}
 
 	return nil
