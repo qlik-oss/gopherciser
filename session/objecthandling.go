@@ -706,44 +706,60 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 		return errors.Errorf("object<%s> has no hypercube", id)
 	}
 
-	if err := checkHyperCubeErrorInner(id, "hypercube", hypercube.Error); err != nil {
+	if err, _ := checkHyperCubeErrorInner(id, "hypercube", hypercube.Error); err != nil {
 		return err
 	}
 
+	var firstWarnError error
 	if hypercube.DimensionInfo != nil {
 		for i, dimInfo := range hypercube.DimensionInfo {
-			if err := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.DimensionInfo[%d]", i), dimInfo.Error); err != nil {
-				logEntry.Log(logger.WarningLevel, fmt.Sprintf("object<%s> has hypercube error<%s> in DimensionInfo[%d]", id, EngineCodeToString(dimInfo.Error.ErrorCode), i))
+			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.DimensionInfo[%d]", i), dimInfo.Error); err != nil {
+				if !warning {
+					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in DimensionInfo[%d]", id, EngineCodeToString(dimInfo.Error.ErrorCode), i)
+				}
+				if firstWarnError != nil {
+					firstWarnError = err
+				}
 			}
 		}
 	}
 
 	if hypercube.MeasureInfo != nil {
 		for i, measureInfo := range hypercube.MeasureInfo {
-			if err := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d]", i), measureInfo.Error); err != nil {
-				logEntry.Log(logger.WarningLevel, fmt.Sprintf("object<%s> has hypercube error<%s> in MeasureInfo[%d]", id, EngineCodeToString(measureInfo.Error.ErrorCode), i))
+			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d]", i), measureInfo.Error); err != nil {
+				if !warning {
+					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d]", id, EngineCodeToString(measureInfo.Error.ErrorCode), i)
+				}
+				if firstWarnError != nil {
+					firstWarnError = err
+				}
 			}
 			if measureInfo.MiniChart != nil {
-				if err := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d].MiniChart", i), measureInfo.MiniChart.Error); err != nil {
-					logEntry.Log(logger.WarningLevel, fmt.Sprintf("object<%s> has hypercube error<%s> in MeasureInfo[%d].MiniChart", id, EngineCodeToString(measureInfo.MiniChart.Error.ErrorCode), i))
+				if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d].MiniChart", i), measureInfo.MiniChart.Error); err != nil {
+					if !warning {
+						return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d].MiniChart", id, EngineCodeToString(measureInfo.MiniChart.Error.ErrorCode), i)
+					}
+					if firstWarnError != nil {
+						firstWarnError = err
+					}
 				}
 			}
 		}
 	}
 
-	return nil
+	return firstWarnError
 }
 
-func checkHyperCubeErrorInner(id, path string, nve *enigma.NxValidationError) error {
+func checkHyperCubeErrorInner(id, path string, nve *enigma.NxValidationError) (error, bool) {
 	if nve == nil {
-		return nil
+		return nil, false
 	}
 	switch nve.ErrorCode {
 	case constant.LocerrCalcEvalConditionFailed:
-		return CalcEvalConditionFailedError(path)
+		return CalcEvalConditionFailedError(path), true
 	default:
 		err := NxValidationError(*nve)
-		return errors.Wrapf(err, "object<%s> has hypercube(%s) error<ErrorCode:%d (%s)>", id, path, err.ErrorCode, err.ExtendedMessage)
+		return errors.Wrapf(err, "object<%s> has hypercube(%s) error<ErrorCode:%d (%s)>", id, path, err.ErrorCode, err.ExtendedMessage), false
 	}
 }
 
