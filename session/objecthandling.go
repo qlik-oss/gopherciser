@@ -717,7 +717,7 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 				if !warning {
 					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in DimensionInfo[%d]", id, EngineCodeToString(dimInfo.Error.ErrorCode), i)
 				}
-				if firstWarnError != nil {
+				if firstWarnError == nil {
 					firstWarnError = err
 				}
 			}
@@ -730,7 +730,7 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 				if !warning {
 					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d]", id, EngineCodeToString(measureInfo.Error.ErrorCode), i)
 				}
-				if firstWarnError != nil {
+				if firstWarnError == nil {
 					firstWarnError = err
 				}
 			}
@@ -739,7 +739,7 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 					if !warning {
 						return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d].MiniChart", id, EngineCodeToString(measureInfo.MiniChart.Error.ErrorCode), i)
 					}
-					if firstWarnError != nil {
+					if firstWarnError == nil {
 						firstWarnError = err
 					}
 				}
