@@ -30,12 +30,26 @@ type (
 
 	CalcEvalConditionFailedError string
 
-	NxValidationError enigma.NxValidationError
+	HyperCubeSection int
+
+	NxValidationError struct {
+		Err     enigma.NxValidationError
+		Id      string
+		Path    string
+		Section HyperCubeSection
+	}
 )
 
 const (
 	maxNbrLines = 12
 	maxNbrTicks = 300
+)
+
+const (
+	HyperCubeSectionRoot HyperCubeSection = iota
+	HyperCubeSectionMeasure
+	HyperCubeSectionDimension
+	HyperCubeSectionMeasureMinichart
 )
 
 var (
@@ -59,7 +73,22 @@ func init() {
 }
 
 func (err NxValidationError) Error() string {
-	return EngineCodeToString(err.ErrorCode)
+	return fmt.Sprintf("object<%s> has %s error<%s> ExtendMessage<%s>", err.Id, err.Path, EngineCodeToString(err.Err.ErrorCode), err.Err.ExtendedMessage)
+}
+
+// Implements engima.Error interface
+func (err NxValidationError) Code() int {
+	return err.Err.ErrorCode
+}
+
+// Implements engima.Error interface
+func (err NxValidationError) Parameter() string {
+	return ""
+}
+
+// Implements engima.Error interface
+func (err NxValidationError) Message() string {
+	return err.Err.ExtendedMessage
 }
 
 // Error implements error interface
@@ -706,14 +735,14 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 		return errors.Errorf("object<%s> has no hypercube", id)
 	}
 
-	if err, _ := checkHyperCubeErrorInner(id, "hypercube", hypercube.Error); err != nil {
+	if err, _ := checkHyperCubeErrorInner(id, "hypercube", HyperCubeSectionRoot, hypercube.Error); err != nil {
 		return err
 	}
 
 	var firstWarnError error
 	if hypercube.DimensionInfo != nil {
 		for i, dimInfo := range hypercube.DimensionInfo {
-			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.DimensionInfo[%d]", i), dimInfo.Error); err != nil {
+			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.DimensionInfo[%d]", i), HyperCubeSectionDimension, dimInfo.Error); err != nil {
 				if !warning {
 					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in DimensionInfo[%d]", id, EngineCodeToString(dimInfo.Error.ErrorCode), i)
 				}
@@ -726,7 +755,7 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 
 	if hypercube.MeasureInfo != nil {
 		for i, measureInfo := range hypercube.MeasureInfo {
-			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d]", i), measureInfo.Error); err != nil {
+			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d]", i), HyperCubeSectionMeasure, measureInfo.Error); err != nil {
 				if !warning {
 					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d]", id, EngineCodeToString(measureInfo.Error.ErrorCode), i)
 				}
@@ -735,7 +764,7 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 				}
 			}
 			if measureInfo.MiniChart != nil {
-				if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d].MiniChart", i), measureInfo.MiniChart.Error); err != nil {
+				if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d].MiniChart", i), HyperCubeSectionMeasureMinichart, measureInfo.MiniChart.Error); err != nil {
 					if !warning {
 						return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d].MiniChart", id, EngineCodeToString(measureInfo.MiniChart.Error.ErrorCode), i)
 					}
@@ -750,7 +779,7 @@ func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEnt
 	return firstWarnError
 }
 
-func checkHyperCubeErrorInner(id, path string, nve *enigma.NxValidationError) (error, bool) {
+func checkHyperCubeErrorInner(id, path string, section HyperCubeSection, nve *enigma.NxValidationError) (error, bool) {
 	if nve == nil {
 		return nil, false
 	}
@@ -758,8 +787,7 @@ func checkHyperCubeErrorInner(id, path string, nve *enigma.NxValidationError) (e
 	case constant.LocerrCalcEvalConditionFailed:
 		return CalcEvalConditionFailedError(path), true
 	default:
-		err := NxValidationError(*nve)
-		return errors.Wrapf(err, "object<%s> has hypercube(%s) error<ErrorCode:%d (%s)>", id, path, err.ErrorCode, err.ExtendedMessage), false
+		return NxValidationError{Err: *nve, Id: id, Section: section, Path: path}, false
 	}
 }
 
