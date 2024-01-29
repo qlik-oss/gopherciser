@@ -243,7 +243,6 @@ func DefaultSetObjectDataAndEvents(sessionState *State, actionState *action.Stat
 				sessionState.LogEntry.LogDetail(logger.WarningLevel, fmt.Sprintf("error adding id<%s> to IDMap", properties.ExtendsId), err.Error())
 			}
 		}
-		fmt.Printf("obj<%s> type<%s> extends<%s>\n", obj.ID, properties.Info.Type, properties.ExtendsId)
 	}
 
 	event := func(ctx context.Context, as *action.State) error {
