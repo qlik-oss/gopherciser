@@ -235,6 +235,17 @@ func DefaultSetObjectDataAndEvents(sessionState *State, actionState *action.Stat
 
 	wg.Wait()
 
+	properties := obj.Properties()
+	if properties != nil && properties.ExtendsId != "" && properties.Info != nil && properties.Info.Type == "listbox" {
+		// Special handling of objects wrapping listbox objects due to changes for listboxes belonging to filterpanes
+		if err := sessionState.IDMap.IsDuplicateKey(properties.ExtendsId); err == nil {
+			if err := sessionState.IDMap.Add(properties.ExtendsId, obj.ID, sessionState.LogEntry); err != nil {
+				sessionState.LogEntry.LogDetail(logger.WarningLevel, fmt.Sprintf("error adding id<%s> to IDMap", properties.ExtendsId), err.Error())
+			}
+		}
+		fmt.Printf("obj<%s> type<%s> extends<%s>\n", obj.ID, properties.Info.Type, properties.ExtendsId)
+	}
+
 	event := func(ctx context.Context, as *action.State) error {
 		return GetObjectLayout(sessionState, as, obj, def)
 	}
