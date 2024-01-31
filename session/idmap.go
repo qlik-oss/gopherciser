@@ -50,7 +50,7 @@ func (idm *IDMap) Add(key, id string, logEntry *logger.LogEntry) error {
 	return idm.add(key, id, logEntry, false)
 }
 
-// Add new key to id map
+// Replace key in id map
 func (idm *IDMap) Replace(key, id string, logEntry *logger.LogEntry) error {
 	return idm.add(key, id, logEntry, true)
 }
