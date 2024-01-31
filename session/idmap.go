@@ -47,6 +47,15 @@ func (idm *IDMap) IsDuplicateKey(key string) error {
 
 // Add new key to id map
 func (idm *IDMap) Add(key, id string, logEntry *logger.LogEntry) error {
+	return idm.add(key, id, logEntry, false)
+}
+
+// Replace key in id map
+func (idm *IDMap) Replace(key, id string, logEntry *logger.LogEntry) error {
+	return idm.add(key, id, logEntry, true)
+}
+
+func (idm *IDMap) add(key, id string, logEntry *logger.LogEntry, overwrite bool) error {
 	if idm == nil {
 		return errors.New("IDMap is nil")
 	}
@@ -57,9 +66,11 @@ func (idm *IDMap) Add(key, id string, logEntry *logger.LogEntry) error {
 
 	idm.newIfNil()
 
-	// First check if key already exists
-	if err := idm.IsDuplicateKey(key); err != nil {
-		return errors.WithStack(err)
+	if !overwrite {
+		// First check if key already exists
+		if err := idm.IsDuplicateKey(key); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	idm.m.Store(key, id)
