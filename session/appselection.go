@@ -225,8 +225,10 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 		}
 	case AppModeRoundGUIDFromList:
 		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.AppList)
-		entry = &ArtifactEntry{ // todo itemID, title?
-			ID: guid,
+		var err error
+		entry, err = sessionState.ArtifactMap.LookupAppGUID(guid)
+		if err != nil {
+			return nil, errors.WithStack(err)
 		}
 	case AppModeRandomNameFromFile:
 		app, err := getRandomAppListEntry(sessionState, appSelection.Filename.Rows())
@@ -255,8 +257,10 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 		}
 	case AppModeRoundGUIDFromFile:
 		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.Filename.Rows())
-		entry = &ArtifactEntry{ // todo itemID, title?
-			ID: guid,
+		var err error
+		entry, err = sessionState.ArtifactMap.LookupAppGUID(guid)
+		if err != nil {
+			return nil, errors.WithStack(err)
 		}
 	default:
 		return nil, errors.Errorf("app selection mode <%s> not supported", appSelection.AppMode)

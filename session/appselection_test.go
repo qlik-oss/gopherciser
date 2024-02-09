@@ -35,6 +35,7 @@ func Test_AppSelection_RoundRobin(t *testing.T) {
 			Session: &logger.SessionEntry{},
 			Action:  &logger.ActionEntry{},
 		},
+		ArtifactMap: session.NewArtifactMap(),
 	}
 	entry, err := appSelection.Select(sessionState)
 	if err != nil {
@@ -72,6 +73,7 @@ func Test_AppSelection_RoundRobin2(t *testing.T) {
 			Session: &logger.SessionEntry{},
 			Action:  &logger.ActionEntry{},
 		},
+		ArtifactMap: session.NewArtifactMap(),
 	}
 
 	appSelection, err := session.NewAppSelection(session.AppModeRoundGUIDFromList, "", nil)
