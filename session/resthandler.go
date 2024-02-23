@@ -26,7 +26,9 @@ import (
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/version"
 	"github.com/rs/dnscache"
 )
 
@@ -90,6 +92,28 @@ type (
 		Sent(message []byte)
 		Received(message []byte)
 	}
+
+	// MiddlewareInput contains a logger and metadata about the context in which
+	// a http request is performed.
+	MiddlewareInput struct {
+		// RunID is a string unique to an execution of gopherciser
+		RunID              string
+		GopherciserVersion string
+		LogEntry           *logger.LogEntry
+	}
+
+	// MiddlewareHooks run before and after a http request is performed
+	MiddlewareHooks struct {
+		// Before runs right before http request is performed. Use Before to add
+		// custom headers or logging. Do not mutate the request in any other way
+		// than adding headers.
+		Before func(*http.Request)
+		// After runs after request is performed and response is closed if it
+		// exists. Use After to add custom logging. Do not mutate the response.
+		After func(*http.Response, error)
+	}
+
+	RESTClientMiddleware func(input *MiddlewareInput) MiddlewareHooks
 )
 
 // RestMethod values
@@ -106,6 +130,11 @@ const (
 	PATCH
 	// HEAD RestMethod
 	HEAD
+)
+
+var (
+	customRESTClientMiddleware   RESTClientMiddleware = nil
+	registerCustomMiddlewareOnce sync.Once
 )
 
 var (
@@ -126,6 +155,46 @@ var (
 
 	dnsResolver = &dnscache.Resolver{}
 )
+
+// RegisterRESTClientMiddleware adds functions that run before and after http
+// requests are performed. The intended use is to add custom request headers or
+// logging.
+func RegisterRESTClientMiddleware(middleware RESTClientMiddleware) error {
+	if middleware == nil {
+		return errors.New("can not register nil middleware")
+	}
+	registered := false
+	registerCustomMiddlewareOnce.Do(func() {
+		customRESTClientMiddleware = middleware
+		registered = true
+	})
+	if !registered {
+		return errors.New("RegisterRESTClientMiddleware was called more than once")
+	}
+	return nil
+}
+
+func createMiddlewareHooks(logEntry *logger.LogEntry) MiddlewareHooks {
+	ops := MiddlewareHooks{
+		Before: func(*http.Request) {},
+		After:  func(*http.Response, error) {},
+	}
+	if customRESTClientMiddleware == nil {
+		return ops
+	}
+	customOps := customRESTClientMiddleware(&MiddlewareInput{
+		GopherciserVersion: version.Version,
+		RunID:              runid.Get(),
+		LogEntry:           logEntry,
+	})
+	if customOps.Before != nil {
+		ops.Before = customOps.Before
+	}
+	if customOps.After != nil {
+		ops.After = customOps.After
+	}
+	return ops
+}
 
 // NewRestHandler new instance of RestHandler
 func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
@@ -546,10 +615,18 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			return
 		}
 
-		if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
+		req, errRequest := newStdRequest(handler.ctx, request, handler.headers.GetHeader(host))
+		if errRequest != nil {
 			WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
 		}
-
+		hooks := createMiddlewareHooks(logEntry)
+		hooks.Before(req)
+		res, errRequest := handler.Client.Do(req)
+		defer hooks.After(res, errRequest)
+		request.response = res
+		if errRequest != nil {
+			WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
+		}
 		if request.response != nil {
 			defer func() {
 				if err := request.response.Body.Close(); err != nil {
@@ -614,53 +691,39 @@ func prependURLPath(aURL, pathToPrepend string) (string, error) {
 	return urlObj.String(), nil
 }
 
-func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
+func newStdRequest(ctx context.Context, request *RestRequest, mainHeader http.Header) (*http.Request, error) {
 	var req *http.Request
 	var err error
 
 	switch request.Method {
 	case HEAD:
 		req, err = http.NewRequest(http.MethodHead, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case GET:
 		req, err = http.NewRequest(http.MethodGet, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case DELETE:
 		req, err = http.NewRequest(http.MethodDelete, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case POST:
 		req, err = http.NewRequest(http.MethodPost, request.Destination, getRequestReader(request))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
 	case PUT:
 		req, err = http.NewRequest(http.MethodPut, request.Destination, getRequestReader(request))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
 	case PATCH:
 		req, err = http.NewRequest(http.MethodPatch, request.Destination, getRequestReader(request))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
 	default:
-		return errors.Errorf("Unsupported REST method<%v>", request.Method)
+		return nil, errors.Errorf("Unsupported REST method<%v>", request.Method)
 	}
-	req = req.WithContext(ctx)
-	handler.newHeader(headers, request, req.Header)
-
-	res, err := client.Do(req)
-	request.response = res
 	if err != nil {
-		return errors.Wrap(err, "HTTP request fail")
+		return nil, errors.Wrap(err, "Failed to create HTTP request")
 	}
-	return nil
+	//Set user-agent as special "gopherciser version". version is set from the version package during build.
+	req.Header.Set("User-Agent", globals.UserAgent())
+	for k, v := range mainHeader {
+		req.Header[k] = v
+	}
+	req.Header.Set("Content-Type", request.ContentType)
+	for k, v := range request.ExtraHeaders {
+		req.Header.Set(k, v)
+	}
+	return req.WithContext(ctx), nil
 }
 
 func getRequestReader(request *RestRequest) io.Reader {
@@ -668,19 +731,6 @@ func getRequestReader(request *RestRequest) io.Reader {
 		return request.ContentReader
 	}
 	return bytes.NewReader(request.Content)
-}
-
-func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestRequest, reqHeader http.Header) {
-	//Set user-agent as special "gopherciser version". version is set from the version package during build.
-	reqHeader.Set("User-Agent", globals.UserAgent())
-
-	for k, v := range mainHeader {
-		reqHeader[k] = v
-	}
-	reqHeader.Set("Content-Type", request.ContentType)
-	for k, v := range request.ExtraHeaders {
-		reqHeader.Set(k, v)
-	}
 }
 
 // RoundTrip implement RoundTripper interface
