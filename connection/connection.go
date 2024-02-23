@@ -236,20 +236,21 @@ func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (stri
 	}
 
 	// Set protocol
+	port := connection.Port
 	if connection.Security {
 		url = "wss://" + url
-		if connection.Port < 1 {
-			connection.Port = 443
+		if port < 1 {
+			port = 443
 		}
 	} else {
 		url = "ws://" + url
-		if connection.Port < 1 {
-			connection.Port = 80
+		if port < 1 {
+			port = 80
 		}
 	}
 
 	// Add port
-	url += ":" + strconv.Itoa(connection.Port)
+	url += ":" + strconv.Itoa(port)
 
 	// Add virtual proxy
 	if connection.VirtualProxy != "" {
