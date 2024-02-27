@@ -9,6 +9,7 @@ import (
 	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/session"
@@ -91,74 +92,110 @@ func (settings ReloadSettings) Execute(sessionState *session.State,
 		return
 	}
 
-	// Reserve a RequestID for use with the DoReload method
-	ctxWithReservedRequestID, reservedRequestID := app.Doc.WithReservedRequestID(sessionState.BaseContext())
+	if sessionState.Connection == nil {
+		actionState.AddErrors(errors.New("Not connected to a Sense environment (no connection)"))
+		return
+	}
+	uplink := sessionState.Connection.Sense()
+	if uplink == nil {
+		actionState.AddErrors(errors.New("no sense connection"))
+		return
+	}
 
-	progressMessage := ""
+	if err := settings.DoReload(sessionState, actionState, uplink, app.Doc); err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	sessionState.Wait(actionState)
+}
+
+func (settings *ReloadSettings) DoReload(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, doc *enigma.Doc) error {
+	saveLog := func(progressMessage string) {
+		if settings.SaveLog {
+			sessionState.LogEntry.LogInfo("ReloadLog", progressMessage)
+		}
+	}
+
+	progressMessage, err := settings.doReload(sessionState, actionState, uplink, doc)
+	if err != nil {
+		saveLog(progressMessage)
+		return errors.WithStack(err)
+	}
+
+	saveLog(progressMessage)
+	return nil
+}
+
+func (settings *ReloadSettings) doReload(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, doc *enigma.Doc) (string, error) {
+	// Reserve a RequestID for use with the DoReload method
+	ctxWithReservedRequestID, reservedRequestID := doc.WithReservedRequestID(sessionState.BaseContext())
+
+	var progressMessage string
 	reloadDone := make(chan struct{})
-	defer close(reloadDone)
-	go func() {
+	progressPoller := func(ctx context.Context) error {
+		var progress *enigma.ProgressData
+		// Get the progress using the request id we reserved for the reload
+		getProgress := func(ctx context.Context) error {
+			var err error
+			progress, err = uplink.Global.GetProgress(ctx, reservedRequestID)
+			return err
+		}
 		for {
 			select {
 			case <-reloadDone:
-				return
-			case <-time.After(time.Duration(constant.ReloadPollInterval)):
-
-				// Get the progress using the request id we reserved for the reload
-				var progress *enigma.ProgressData
-				getProgress := func(ctx context.Context) error {
-					if sessionState.Connection == nil {
-						return errors.New("Not connected to a Sense environment (no connection)")
-					}
-					uplink := sessionState.Connection.Sense()
-					if uplink == nil {
-						return errors.New("no sense connection")
-					}
-					var err error
-					progress, err = uplink.Global.GetProgress(ctx, reservedRequestID)
-					return err
-				}
+				// Send one last progress message
 				if err := sessionState.SendRequest(actionState, getProgress); err != nil {
-					actionState.AddErrors(errors.Wrap(err, "Error during reload"))
-					if settings.SaveLog {
-						sessionState.LogEntry.LogInfo("ReloadLog", progressMessage)
-					}
-					return
+					return errors.Wrap(err, "Error during reload")
+				}
+				if settings.SaveLog {
+					progressMessage = fmt.Sprintf("%s%s", progressMessage, progress.PersistentProgress)
+				}
+				return nil
+			case <-sessionState.BaseContext().Done():
+				return nil
+			case <-time.After(time.Duration(constant.ReloadPollInterval)):
+				if err := sessionState.SendRequest(actionState, getProgress); err != nil {
+					return errors.Wrap(err, "Error during reload")
 				}
 				if settings.SaveLog {
 					progressMessage = fmt.Sprintf("%s%s", progressMessage, progress.PersistentProgress)
 				}
 			}
 		}
-	}()
+	}
+
+	var progressError error
+	sessionState.QueueRequestWithCallback(progressPoller, actionState, false, "error during reload of app", func(err error) {
+		progressError = err
+	})
 
 	var status bool
 	doReload := func(ctx context.Context) error {
+		defer close(reloadDone)
 		var err error
-		status, err = app.Doc.DoReload(ctxWithReservedRequestID, int(settings.ReloadMode), settings.Partial, false)
+		status, err = doc.DoReload(ctxWithReservedRequestID, int(settings.ReloadMode), settings.Partial, false)
 		return err
 	}
+
 	if err := sessionState.SendRequest(actionState, doReload); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "Error when reloading app"))
-		sessionState.LogEntry.LogInfo("ReloadLog", progressMessage)
-		return
+		return progressMessage, errors.Wrap(err, "Error when reloading app")
+	}
+
+	if progressError != nil {
+		return progressMessage, errors.Wrap(progressError, "Error when reloading app")
 	}
 
 	if !status {
-		actionState.AddErrors(errors.Errorf("Reload failed"))
-		// don't return so ReloadLog will be save
+		return progressMessage, errors.Errorf("Reload failed")
 	} else if !settings.NoSave {
 		// save the app after reload if it was successful
 		if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			return connection.CurrentApp.Doc.DoSave(ctx, "")
+			return doc.DoSave(ctx, "")
 		}); err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed to save app"))
-			// don't return so ReloadLog will be save
+			return progressMessage, errors.Wrap(err, "failed to save app")
 		}
 	}
 
-	if settings.SaveLog {
-		sessionState.LogEntry.LogInfo("ReloadLog", progressMessage)
-	}
-	sessionState.Wait(actionState)
+	return progressMessage, nil
 }
