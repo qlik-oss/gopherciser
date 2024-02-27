@@ -134,22 +134,27 @@ func (settings *ReloadSettings) doReload(sessionState *session.State, actionStat
 	var progressMessage string
 	reloadDone := make(chan struct{})
 	progressPoller := func(ctx context.Context) error {
+		var progress *enigma.ProgressData
+		// Get the progress using the request id we reserved for the reload
+		getProgress := func(ctx context.Context) error {
+			var err error
+			progress, err = uplink.Global.GetProgress(ctx, reservedRequestID)
+			return err
+		}
 		for {
 			select {
 			case <-reloadDone:
-				// TODO should send one last one?
+				// Send one last progress message
+				if err := sessionState.SendRequest(actionState, getProgress); err != nil {
+					return errors.Wrap(err, "Error during reload")
+				}
+				if settings.SaveLog {
+					progressMessage = fmt.Sprintf("%s%s", progressMessage, progress.PersistentProgress)
+				}
 				return nil
-			case <-ctx.Done():
+			case <-sessionState.BaseContext().Done():
 				return nil
 			case <-time.After(time.Duration(constant.ReloadPollInterval)):
-
-				// Get the progress using the request id we reserved for the reload
-				var progress *enigma.ProgressData
-				getProgress := func(ctx context.Context) error {
-					var err error
-					progress, err = uplink.Global.GetProgress(ctx, reservedRequestID)
-					return err
-				}
 				if err := sessionState.SendRequest(actionState, getProgress); err != nil {
 					return errors.Wrap(err, "Error during reload")
 				}
@@ -172,6 +177,7 @@ func (settings *ReloadSettings) doReload(sessionState *session.State, actionStat
 		status, err = doc.DoReload(ctxWithReservedRequestID, int(settings.ReloadMode), settings.Partial, false)
 		return err
 	}
+
 	if err := sessionState.SendRequest(actionState, doReload); err != nil {
 		return progressMessage, errors.Wrap(err, "Error when reloading app")
 	}
@@ -181,15 +187,13 @@ func (settings *ReloadSettings) doReload(sessionState *session.State, actionStat
 	}
 
 	if !status {
-		actionState.AddErrors(errors.Errorf("Reload failed"))
-		// don't return so ReloadLog will be save
+		return progressMessage, errors.Errorf("Reload failed")
 	} else if !settings.NoSave {
 		// save the app after reload if it was successful
 		if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 			return doc.DoSave(ctx, "")
 		}); err != nil {
-			actionState.AddErrors(errors.Wrap(err, "failed to save app"))
-			// don't return so ReloadLog will be save
+			return progressMessage, errors.Wrap(err, "failed to save app")
 		}
 	}
 
