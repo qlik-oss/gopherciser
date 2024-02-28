@@ -467,13 +467,7 @@ func selectFromSearchResult(sessionState *session.State, actionState *action.Sta
 }
 
 func smartSearch(sessionState *session.State, actionState *action.State, reset func(), searchTextList []string, pasteSearchText bool, uplink *enigmahandlers.SenseUplink) *enigma.SearchResult {
-	//uplink := sessionState.Connection.Sense()
-	/*
-		if uplink.CurrentApp == nil {
-			actionState.AddErrors(errors.New("not connected to app"))
-			return nil
-		}
-	*/
+
 	doc := uplink.CurrentApp.Doc
 	rand := sessionState.Randomizer()
 	searchText := searchTextList[rand.Rand(len(searchTextList))]
