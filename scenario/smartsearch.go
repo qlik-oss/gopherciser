@@ -466,12 +466,14 @@ func selectFromSearchResult(sessionState *session.State, actionState *action.Sta
 	sessionState.Wait(actionState)
 }
 
-func smartSearch(sessionState *session.State, actionState *action.State, reset func(), searchTextList []string, pasteSearchText bool) *enigma.SearchResult {
-	uplink := sessionState.Connection.Sense()
-	if uplink.CurrentApp == nil {
-		actionState.AddErrors(errors.New("not connected to app"))
-		return nil
-	}
+func smartSearch(sessionState *session.State, actionState *action.State, reset func(), searchTextList []string, pasteSearchText bool, uplink *enigmahandlers.SenseUplink) *enigma.SearchResult {
+	//uplink := sessionState.Connection.Sense()
+	/*
+		if uplink.CurrentApp == nil {
+			actionState.AddErrors(errors.New("not connected to app"))
+			return nil
+		}
+	*/
 	doc := uplink.CurrentApp.Doc
 	rand := sessionState.Randomizer()
 	searchText := searchTextList[rand.Rand(len(searchTextList))]
@@ -510,8 +512,20 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 
 	var searchResult *enigma.SearchResult
 
+	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
+		actionState.AddErrors(errors.New("not connected to a Sense environment"))
+		return
+	}
+
+	uplink := sessionState.Connection.Sense()
+
+	if uplink.CurrentApp == nil {
+		actionState.AddErrors(errors.New("not connected to app"))
+		return
+	}
+
 	searchSettings := executeFunc(func(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
-		searchResult = smartSearch(sessionState, actionState, reset, settings.SearchTextList, settings.PasteSearchText)
+		searchResult = smartSearch(sessionState, actionState, reset, settings.SearchTextList, settings.PasteSearchText, uplink)
 	})
 
 	selectSettings := executeFunc(func(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
@@ -535,6 +549,12 @@ func (settings SmartSearchSettings) Execute(sessionState *session.State, actionS
 			actionState.AddErrors(errors.Wrap(err, "failed to execute smart search subaction select"))
 			return
 		}
+
+		// Send GetApplayout request - added for API compliance (Feb-2024)
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			_, err := uplink.CurrentApp.Doc.GetAppLayout(ctx)
+			return errors.WithStack(err)
+		}, actionState, false, "GetAppLayout request failed")
 	}
 
 	sessionState.Wait(actionState)
