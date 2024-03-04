@@ -72,25 +72,7 @@ func (settings ReloadSettings) Validate() ([]string, error) {
 }
 
 // Execute implements ActionSettings interface
-func (settings ReloadSettings) Execute(sessionState *session.State,
-	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
-
-	if sessionState.Connection == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense environment (no connection)"))
-		return
-	}
-
-	connection := sessionState.Connection.Sense()
-	if connection == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense environment (no uplink)"))
-		return
-	}
-
-	app := connection.CurrentApp
-	if app == nil {
-		actionState.AddErrors(errors.New("Not connected to a Sense app"))
-		return
-	}
+func (settings ReloadSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
 	if sessionState.Connection == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment (no connection)"))
@@ -99,6 +81,12 @@ func (settings ReloadSettings) Execute(sessionState *session.State,
 	uplink := sessionState.Connection.Sense()
 	if uplink == nil {
 		actionState.AddErrors(errors.New("no sense connection"))
+		return
+	}
+
+	app := uplink.CurrentApp
+	if app == nil {
+		actionState.AddErrors(errors.New("Not connected to a Sense app"))
 		return
 	}
 
