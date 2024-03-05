@@ -93,27 +93,15 @@ type (
 		Received(message []byte)
 	}
 
-	// MiddlewareInput contains a logger and metadata about the context in which
-	// a http request is performed.
-	MiddlewareInput struct {
+	CustomHeadersInput struct {
 		// RunID is a string unique to an execution of gopherciser
 		RunID              string
 		GopherciserVersion string
-		LogEntry           *logger.LogEntry
+		Session            logger.SessionEntry
+		Action             logger.ActionEntry
 	}
 
-	// MiddlewareHooks run before and after a http request is performed
-	MiddlewareHooks struct {
-		// Before runs right before http request is performed. Use Before to add
-		// custom headers or logging. Do not mutate the request in any other way
-		// than adding headers.
-		Before func(*http.Request)
-		// After runs after request is performed and response is closed if it
-		// exists. Use After to add custom logging. Do not mutate the response.
-		After func(*http.Response, error)
-	}
-
-	RESTClientMiddleware func(input *MiddlewareInput) MiddlewareHooks
+	CustomHeadersFunc func(input CustomHeadersInput, setHeader func(key, value string))
 )
 
 // RestMethod values
@@ -133,8 +121,8 @@ const (
 )
 
 var (
-	customRESTClientMiddleware   RESTClientMiddleware = nil
-	registerCustomMiddlewareOnce sync.Once
+	registeredAddCustomHeaders    CustomHeadersFunc = func(CustomHeadersInput, func(key, value string)) {}
+	registerCustomHeadersFuncOnce sync.Once
 )
 
 var (
@@ -156,44 +144,47 @@ var (
 	dnsResolver = &dnscache.Resolver{}
 )
 
-// RegisterRESTClientMiddleware adds functions that run before and after http
-// requests are performed. The intended use is to add custom request headers or
-// logging.
-func RegisterRESTClientMiddleware(middleware RESTClientMiddleware) error {
-	if middleware == nil {
+// RegisterCustomHeadersFunc adds extra headers to all http requests.
+// RegisterCustomHeadersFunc shall be called only once and this call shall be before
+// the gopherciser scenario runs.
+func RegisterCustomHeadersFunc(f CustomHeadersFunc) error {
+	if f == nil {
 		return errors.New("can not register nil middleware")
 	}
 	registered := false
-	registerCustomMiddlewareOnce.Do(func() {
-		customRESTClientMiddleware = middleware
+	registerCustomHeadersFuncOnce.Do(func() {
+		registeredAddCustomHeaders = f
 		registered = true
 	})
 	if !registered {
-		return errors.New("RegisterRESTClientMiddleware was called more than once")
+		return errors.New("RegisterCustomHeadersFunc shall not be called more than once")
 	}
 	return nil
 }
 
-func createMiddlewareHooks(logEntry *logger.LogEntry) MiddlewareHooks {
-	ops := MiddlewareHooks{
-		Before: func(*http.Request) {},
-		After:  func(*http.Response, error) {},
+func addCustomHeaders(req *http.Request, logEntry *logger.LogEntry) {
+	if logEntry == nil {
+		return
 	}
-	if customRESTClientMiddleware == nil {
-		return ops
-	}
-	customOps := customRESTClientMiddleware(&MiddlewareInput{
-		GopherciserVersion: version.Version,
-		RunID:              runid.Get(),
-		LogEntry:           logEntry,
-	})
-	if customOps.Before != nil {
-		ops.Before = customOps.Before
-	}
-	if customOps.After != nil {
-		ops.After = customOps.After
-	}
-	return ops
+	registeredAddCustomHeaders(
+		CustomHeadersInput{
+			RunID:              runid.Get(),
+			GopherciserVersion: version.Version,
+			Session: func() logger.SessionEntry {
+				if logEntry == nil || logEntry.Session == nil {
+					return logger.SessionEntry{}
+				}
+				return *logEntry.Session
+			}(),
+			Action: func() logger.ActionEntry {
+				if logEntry == nil || logEntry.Action == nil {
+					return logger.ActionEntry{}
+				}
+				return *logEntry.Action
+			}(),
+		},
+		req.Header.Set,
+	)
 }
 
 // NewRestHandler new instance of RestHandler
@@ -615,14 +606,11 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			return
 		}
 
-		req, errRequest := newStdRequest(handler.ctx, request, handler.headers.GetHeader(host))
+		req, errRequest := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
 		if errRequest != nil {
 			WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
 		}
-		hooks := createMiddlewareHooks(logEntry)
-		hooks.Before(req)
 		res, errRequest := handler.Client.Do(req)
-		defer hooks.After(res, errRequest)
 		request.response = res
 		if errRequest != nil {
 			WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
@@ -691,7 +679,7 @@ func prependURLPath(aURL, pathToPrepend string) (string, error) {
 	return urlObj.String(), nil
 }
 
-func newStdRequest(ctx context.Context, request *RestRequest, mainHeader http.Header) (*http.Request, error) {
+func newStdRequest(ctx context.Context, request *RestRequest, logEntry *logger.LogEntry, mainHeader http.Header) (*http.Request, error) {
 	var req *http.Request
 	var err error
 
@@ -714,6 +702,7 @@ func newStdRequest(ctx context.Context, request *RestRequest, mainHeader http.He
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create HTTP request")
 	}
+	addCustomHeaders(req, logEntry)
 	//Set user-agent as special "gopherciser version". version is set from the version package during build.
 	req.Header.Set("User-Agent", globals.UserAgent())
 	for k, v := range mainHeader {
