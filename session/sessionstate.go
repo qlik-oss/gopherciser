@@ -165,9 +165,9 @@ const (
 // Standard defined target environments
 const (
 	TargetEnvQlikSenseOnWindows = "qseow"
-	TargetEnvQlikCore           = "qlik-core"
+	TargetEnvStandaloneEngine   = "engine"
 
-	TargetEnvDefault = TargetEnvQlikCore
+	TargetEnvDefault = TargetEnvStandaloneEngine
 )
 
 var (
