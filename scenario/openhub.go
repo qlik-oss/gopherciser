@@ -28,6 +28,8 @@ func (openHub OpenHubSettings) Validate() ([]string, error) {
 
 // Execute execute the action
 func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, setHubStart func()) {
+	sessionState.SetTargetEnv(session.TargetEnvQlikSenseOnWindows)
+
 	// New hub connection, clear any existing apps.
 	sessionState.ArtifactMap = session.NewArtifactMap()
 
