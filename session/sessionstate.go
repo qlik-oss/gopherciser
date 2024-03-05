@@ -90,6 +90,7 @@ type (
 		rand          *rand
 		trafficLogger enigmahandlers.ITrafficLogger
 		reconnect     ReconnectInfo
+		targetEnv     string
 
 		ctx       context.Context
 		ctxCancel context.CancelFunc
@@ -159,6 +160,14 @@ const (
 const (
 	EventWsReconnectStarted = "eventws.reconnect.started"
 	EventWsReconnectEnded   = "eventws.reconnect.ended"
+)
+
+// Standard defined target environments
+const (
+	TargetEnvQlikSenseOnWindows = "qseow"
+	TargetEnvStandaloneEngine   = "engine"
+
+	TargetEnvDefault = TargetEnvStandaloneEngine
 )
 
 var (
@@ -1157,4 +1166,14 @@ func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, 
 	if state.LogEntry != nil {
 		state.LogEntry.LogTrafficMetric(responseTime, sent, received, requestID, method, params, trafficType, msg)
 	}
+}
+
+// TargetEnv currently set target enviroment
+func (state *State) TargetEnv() string {
+	return state.targetEnv
+}
+
+// SetTargetEnv set current target environment
+func (state *State) SetTargetEnv(env string) {
+	state.targetEnv = env
 }
