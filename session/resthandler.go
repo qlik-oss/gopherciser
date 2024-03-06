@@ -595,20 +595,21 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			return
 		}
 
-		var host string
-		host, errRequest = getHost(request.Destination)
-		if errRequest != nil {
-			WarnOrError(actionState, logEntry, failOnError, errors.Wrapf(errRequest, "Failed to read REST response to %s", request.Destination))
-		}
-
-		if err := handler.addVirtualProxy(request); err != nil {
-			actionState.AddErrors(err)
+		host, err := getHost(request.Destination)
+		if err != nil {
+			actionState.AddErrors(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
 			return
 		}
 
-		req, errRequest := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
-		if errRequest != nil {
-			WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
+		if err := handler.addVirtualProxy(request); err != nil {
+			actionState.AddErrors(errors.WithStack(err))
+			return
+		}
+
+		req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
+		if err != nil {
+			actionState.AddErrors(errors.WithStack(err))
+			return
 		}
 		res, errRequest := handler.Client.Do(req)
 		request.response = res
