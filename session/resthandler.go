@@ -575,6 +575,10 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		defer handler.DecPending(request)
 		var errRequest error
 		var panicErr error
+		failRequest := func(err error) {
+			errRequest = err
+			actionState.AddErrors(err)
+		}
 		defer helpers.RecoverWithError(&panicErr)
 		if callback != nil {
 			defer func() {
@@ -590,29 +594,27 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		}
 
 		if handler.Client == nil {
-			errRequest = errors.New("no REST client initialized")
-			actionState.AddErrors(errRequest)
+			failRequest(errors.New("no REST client initialized"))
 			return
 		}
 
 		host, err := getHost(request.Destination)
 		if err != nil {
-			actionState.AddErrors(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
+			failRequest(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
 			return
 		}
 
 		if err := handler.addVirtualProxy(request); err != nil {
-			actionState.AddErrors(errors.WithStack(err))
+			failRequest(errors.WithStack(err))
 			return
 		}
 
 		req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
 		if err != nil {
-			actionState.AddErrors(errors.WithStack(err))
+			failRequest(errors.WithStack(err))
 			return
 		}
-		res, errRequest := handler.Client.Do(req)
-		request.response = res
+		request.response, errRequest = handler.Client.Do(req)
 		if errRequest != nil {
 			WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
 		}
