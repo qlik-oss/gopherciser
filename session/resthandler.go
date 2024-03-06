@@ -26,7 +26,9 @@ import (
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/version"
 	"github.com/rs/dnscache"
 )
 
@@ -90,6 +92,16 @@ type (
 		Sent(message []byte)
 		Received(message []byte)
 	}
+
+	CustomHeadersInput struct {
+		// RunID is a string unique to an execution of gopherciser
+		RunID              string
+		GopherciserVersion string
+		Session            logger.SessionEntry
+		Action             logger.ActionEntry
+	}
+
+	CustomHeadersFunc func(input CustomHeadersInput, setHeader func(key, value string))
 )
 
 // RestMethod values
@@ -106,6 +118,11 @@ const (
 	PATCH
 	// HEAD RestMethod
 	HEAD
+)
+
+var (
+	registeredAddCustomHeaders    CustomHeadersFunc = func(CustomHeadersInput, func(key, value string)) {}
+	registerCustomHeadersFuncOnce sync.Once
 )
 
 var (
@@ -126,6 +143,49 @@ var (
 
 	dnsResolver = &dnscache.Resolver{}
 )
+
+// RegisterCustomHeadersFunc adds extra headers to all http requests.
+// RegisterCustomHeadersFunc shall be called only once and this call shall be before
+// the gopherciser scenario runs.
+func RegisterCustomHeadersFunc(f CustomHeadersFunc) error {
+	if f == nil {
+		return errors.New("can not register nil middleware")
+	}
+	registered := false
+	registerCustomHeadersFuncOnce.Do(func() {
+		registeredAddCustomHeaders = f
+		registered = true
+	})
+	if !registered {
+		return errors.New("RegisterCustomHeadersFunc shall not be called more than once")
+	}
+	return nil
+}
+
+func addCustomHeaders(req *http.Request, logEntry *logger.LogEntry) {
+	if logEntry == nil {
+		return
+	}
+	registeredAddCustomHeaders(
+		CustomHeadersInput{
+			RunID:              runid.Get(),
+			GopherciserVersion: version.Version,
+			Session: func() logger.SessionEntry {
+				if logEntry == nil || logEntry.Session == nil {
+					return logger.SessionEntry{}
+				}
+				return *logEntry.Session
+			}(),
+			Action: func() logger.ActionEntry {
+				if logEntry == nil || logEntry.Action == nil {
+					return logger.ActionEntry{}
+				}
+				return *logEntry.Action
+			}(),
+		},
+		req.Header.Set,
+	)
+}
 
 // NewRestHandler new instance of RestHandler
 func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
@@ -515,6 +575,10 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		defer handler.DecPending(request)
 		var errRequest error
 		var panicErr error
+		failRequest := func(err error) {
+			errRequest = err
+			actionState.AddErrors(err)
+		}
 		defer helpers.RecoverWithError(&panicErr)
 		if callback != nil {
 			defer func() {
@@ -530,26 +594,30 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		}
 
 		if handler.Client == nil {
-			errRequest = errors.New("no REST client initialized")
-			actionState.AddErrors(errRequest)
+			failRequest(errors.New("no REST client initialized"))
 			return
 		}
 
-		var host string
-		host, errRequest = getHost(request.Destination)
-		if errRequest != nil {
-			WarnOrError(actionState, logEntry, failOnError, errors.Wrapf(errRequest, "Failed to read REST response to %s", request.Destination))
+		host, err := getHost(request.Destination)
+		if err != nil {
+			failRequest(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
+			return
 		}
 
 		if err := handler.addVirtualProxy(request); err != nil {
-			actionState.AddErrors(err)
+			failRequest(errors.WithStack(err))
 			return
 		}
 
-		if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
-			WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
+		req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
+		if err != nil {
+			failRequest(errors.WithStack(err))
+			return
 		}
-
+		request.response, errRequest = handler.Client.Do(req)
+		if errRequest != nil {
+			WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
+		}
 		if request.response != nil {
 			defer func() {
 				if err := request.response.Body.Close(); err != nil {
@@ -614,53 +682,40 @@ func prependURLPath(aURL, pathToPrepend string) (string, error) {
 	return urlObj.String(), nil
 }
 
-func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
+func newStdRequest(ctx context.Context, request *RestRequest, logEntry *logger.LogEntry, mainHeader http.Header) (*http.Request, error) {
 	var req *http.Request
 	var err error
 
 	switch request.Method {
 	case HEAD:
 		req, err = http.NewRequest(http.MethodHead, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case GET:
 		req, err = http.NewRequest(http.MethodGet, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case DELETE:
 		req, err = http.NewRequest(http.MethodDelete, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case POST:
 		req, err = http.NewRequest(http.MethodPost, request.Destination, getRequestReader(request))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
 	case PUT:
 		req, err = http.NewRequest(http.MethodPut, request.Destination, getRequestReader(request))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
 	case PATCH:
 		req, err = http.NewRequest(http.MethodPatch, request.Destination, getRequestReader(request))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
 	default:
-		return errors.Errorf("Unsupported REST method<%v>", request.Method)
+		return nil, errors.Errorf("Unsupported REST method<%v>", request.Method)
 	}
-	req = req.WithContext(ctx)
-	handler.newHeader(headers, request, req.Header)
-
-	res, err := client.Do(req)
-	request.response = res
 	if err != nil {
-		return errors.Wrap(err, "HTTP request fail")
+		return nil, errors.Wrap(err, "Failed to create HTTP request")
 	}
-	return nil
+	addCustomHeaders(req, logEntry)
+	//Set user-agent as special "gopherciser version". version is set from the version package during build.
+	req.Header.Set("User-Agent", globals.UserAgent())
+	for k, v := range mainHeader {
+		req.Header[k] = v
+	}
+	req.Header.Set("Content-Type", request.ContentType)
+	for k, v := range request.ExtraHeaders {
+		req.Header.Set(k, v)
+	}
+	return req.WithContext(ctx), nil
 }
 
 func getRequestReader(request *RestRequest) io.Reader {
@@ -668,19 +723,6 @@ func getRequestReader(request *RestRequest) io.Reader {
 		return request.ContentReader
 	}
 	return bytes.NewReader(request.Content)
-}
-
-func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestRequest, reqHeader http.Header) {
-	//Set user-agent as special "gopherciser version". version is set from the version package during build.
-	reqHeader.Set("User-Agent", globals.UserAgent())
-
-	for k, v := range mainHeader {
-		reqHeader[k] = v
-	}
-	reqHeader.Set("Content-Type", request.ContentType)
-	for k, v := range request.ExtraHeaders {
-		reqHeader.Set(k, v)
-	}
 }
 
 // RoundTrip implement RoundTripper interface

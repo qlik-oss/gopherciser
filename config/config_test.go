@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 )
@@ -493,6 +494,7 @@ func TestCustomLogger(t *testing.T) {
 		{logger.InfoLevel, "", "0", "SequenceSummary", "user3"},
 		{logger.InfoLevel, "", "0", "SequenceSummary", "user4"},
 		{logger.InfoLevel, "", "", "GopherciserVersion", ""},
+		{logger.InfoLevel, "", runid.Get(), "RunID", ""},
 		{logger.InfoLevel, "", "0", "TotErrWarn", ""},
 		{logger.InfoLevel, "", "$!IGNORE", "TestDuration", ""},
 	}

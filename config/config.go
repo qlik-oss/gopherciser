@@ -20,6 +20,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/session"
@@ -610,6 +611,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log version information at the start of the log
 	entry := logger.NewLogEntry(log)
 	entry.LogInfo("GopherciserVersion", version.Version)
+	entry.LogInfo("RunID", runid.Get())
 
 	// Log script validation warnings
 	for _, warning := range cfg.ValidationWarnings {
