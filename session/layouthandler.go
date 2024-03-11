@@ -115,7 +115,7 @@ func (handler *LayoutContainerHandlerInstance) UpdateChildren(sessionState *Stat
 	}
 
 	// Unsubscribe to any deactivated objects
-	inactiveChildren, err := layout.ChildRefsToIDs(inactiveChildRefs)
+	inactiveChildren, err := layout.ChildRefsToIDs(sessionState, inactiveChildRefs)
 	if err != nil {
 		return errors.Wrapf(err, "layout object<%s>", handler.ID)
 	}
@@ -131,7 +131,7 @@ func (handler *LayoutContainerHandlerInstance) UpdateChildren(sessionState *Stat
 	}
 
 	// Subscribe to any activated objects
-	activeChildren, err := layout.ChildRefsToIDs(activeChildRefs)
+	activeChildren, err := layout.ChildRefsToIDs(sessionState, activeChildRefs)
 	if err != nil {
 		return errors.Wrapf(err, "layout object<%s>", handler.ID)
 	}
@@ -162,7 +162,7 @@ func GetLayourContainerLayout(sessionState *State, actionState *action.State, co
 }
 
 // ChildRefsToIDs translates a list of child refs to object ID's
-func (layout *LayoutContainerLayout) ChildRefsToIDs(childRefs []string) ([]string, error) {
+func (layout *LayoutContainerLayout) ChildRefsToIDs(sessionState *State, childRefs []string) ([]string, error) {
 	objectIds := make([]string, 0, len(childRefs))
 	for _, refID := range childRefs {
 		objId := ""
@@ -171,6 +171,11 @@ func (layout *LayoutContainerLayout) ChildRefsToIDs(childRefs []string) ([]strin
 				objId = child.Data.ExtendsId
 				if objId == "" {
 					objId = child.Info.Id
+				} else {
+					// Special handling of objects wrapping listbox objects due to changes for listboxes belonging to filterpanes
+					if err := sessionState.IDMap.Replace(child.Info.Id, objId, sessionState.LogEntry); err != nil {
+						sessionState.LogEntry.LogDetail(logger.WarningLevel, fmt.Sprintf("error adding id<%s> to IDMap", child.Info.Id), err.Error())
+					}
 				}
 				break
 			}
