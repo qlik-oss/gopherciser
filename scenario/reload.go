@@ -90,7 +90,7 @@ func (settings ReloadSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
-	if err := settings.DoReload(sessionState, actionState, uplink, app.Doc); err != nil {
+	if err := settings.DoReload(sessionState.BaseContext(), sessionState, actionState, uplink, app.Doc); err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
@@ -98,14 +98,14 @@ func (settings ReloadSettings) Execute(sessionState *session.State, actionState 
 	sessionState.Wait(actionState)
 }
 
-func (settings *ReloadSettings) DoReload(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, doc *enigma.Doc) error {
+func (settings *ReloadSettings) DoReload(ctx context.Context, sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, doc *enigma.Doc) error {
 	saveLog := func(progressMessage string) {
 		if settings.SaveLog {
 			sessionState.LogEntry.LogInfo("ReloadLog", progressMessage)
 		}
 	}
 
-	progressMessage, err := settings.doReload(sessionState, actionState, uplink, doc)
+	progressMessage, err := settings.doReload(ctx, sessionState, actionState, uplink, doc)
 	if err != nil {
 		saveLog(progressMessage)
 		return errors.WithStack(err)
@@ -115,9 +115,9 @@ func (settings *ReloadSettings) DoReload(sessionState *session.State, actionStat
 	return nil
 }
 
-func (settings *ReloadSettings) doReload(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, doc *enigma.Doc) (string, error) {
+func (settings *ReloadSettings) doReload(ctx context.Context, sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, doc *enigma.Doc) (string, error) {
 	// Reserve a RequestID for use with the DoReload method
-	ctxWithReservedRequestID, reservedRequestID := doc.WithReservedRequestID(sessionState.BaseContext())
+	ctxWithReservedRequestID, reservedRequestID := doc.WithReservedRequestID(ctx)
 
 	var progressMessage string
 	reloadDone := make(chan struct{})
@@ -140,7 +140,7 @@ func (settings *ReloadSettings) doReload(sessionState *session.State, actionStat
 					progressMessage = fmt.Sprintf("%s%s", progressMessage, progress.PersistentProgress)
 				}
 				return nil
-			case <-sessionState.BaseContext().Done():
+			case <-ctx.Done():
 				return nil
 			case <-time.After(time.Duration(constant.ReloadPollInterval)):
 				if err := sessionState.SendRequest(actionState, getProgress); err != nil {
