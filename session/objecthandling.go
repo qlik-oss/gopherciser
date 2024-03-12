@@ -236,12 +236,10 @@ func DefaultSetObjectDataAndEvents(sessionState *State, actionState *action.Stat
 	wg.Wait()
 
 	properties := obj.Properties()
-	if properties != nil && properties.ExtendsId != "" && properties.Info != nil {
-		if properties.Info.Type == "listbox" {
-			// Special handling of objects wrapping listbox objects due to changes for listboxes belonging to filterpanes
-			if err := sessionState.IDMap.Replace(properties.ExtendsId, obj.ID, sessionState.LogEntry); err != nil {
-				sessionState.LogEntry.LogDetail(logger.WarningLevel, fmt.Sprintf("error adding id<%s> to IDMap", properties.ExtendsId), err.Error())
-			}
+	if properties != nil && properties.ExtendsId != "" && properties.Info != nil && properties.Info.Type == "listbox" {
+		// Special handling of objects wrapping listbox objects due to changes for listboxes belonging to filterpanes
+		if err := sessionState.IDMap.Replace(properties.ExtendsId, obj.ID, sessionState.LogEntry); err != nil {
+			sessionState.LogEntry.LogDetail(logger.WarningLevel, fmt.Sprintf("error adding id<%s> to IDMap", properties.ExtendsId), err.Error())
 		}
 	}
 
