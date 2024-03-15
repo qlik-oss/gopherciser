@@ -196,7 +196,7 @@ workflows:
             branches:
               ignore: /.*/  # only publish on release tags, ignore all branches
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+/
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+.*/
       - build-publish-docker:
           requires:
             - build
