@@ -11,7 +11,7 @@ type (
 	// FuzzyBool resolves boolean sent as strings, integers, float64 or boolean, json unmarshal defaults to true
 	FuzzyBool bool
 
-	// FuzzyInt resolves integer sent as string or integer
+	// FuzzyInt resolves integer sent as string, integer or float64
 	FuzzyInt int
 )
 
@@ -97,7 +97,7 @@ func (fi *FuzzyInt) UnmarshalJSON(arg []byte) error {
 			*fi = FuzzyInt(ival)
 		}
 	case float64:
-		*fi = FuzzyInt(val)
+		*fi = FuzzyInt(val) // Truncate float since should be an integer
 	default:
 		return errors.Errorf("Failed to unmarshal value<%v> with type<%T> as integer", val, val)
 	}
