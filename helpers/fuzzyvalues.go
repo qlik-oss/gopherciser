@@ -96,8 +96,10 @@ func (fi *FuzzyInt) UnmarshalJSON(arg []byte) error {
 			}
 			*fi = FuzzyInt(ival)
 		}
+	case float64:
+		*fi = FuzzyInt(val)
 	default:
-		return errors.Errorf("Failed to unmarshal value<%v> with type<%T> as integer", arg, val)
+		return errors.Errorf("Failed to unmarshal value<%v> with type<%T> as integer", val, val)
 	}
 	return nil
 }
