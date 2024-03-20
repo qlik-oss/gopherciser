@@ -30,9 +30,10 @@ const (
 
 // Constants for known ResourceType
 const (
-	ResourceTypeApp         = "app"
-	ResourceTypeReload      = "reload"
-	ResourceTypeEvaluation  = "evaluation"
-	ResourceTypeItems       = "items"
-	ResourceTypeSharingTask = "sharing-task"
+	ResourceTypeApp           = "app"
+	ResourceTypeReload        = "reload"
+	ResourceTypeEvaluation    = "evaluation"
+	ResourceTypeItems         = "items"
+	ResourceTypeSharingTask   = "sharing-task"
+	ResourceTypeReportingTask = "reporting-task"
 )
