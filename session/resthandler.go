@@ -276,7 +276,7 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 					}
 					for _, ip := range ips {
 						dialer := &net.Dialer{
-							Timeout:   30 * time.Second,
+							Timeout:   state.Timeout,
 							KeepAlive: 30 * time.Second,
 						}
 						var conn net.Conn
