@@ -76,22 +76,14 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 		mErrLock sync.Mutex
 	)
 
-	for {
+	addUser := func() bool {
 		if helpers.IsContextTriggered(ctx) {
-			break
+			return false
 		}
 
 		localThreads++
 		if sched.Settings.ConcurrentUsers > 0 && localThreads > sched.Settings.ConcurrentUsers {
-			break
-		}
-
-		if localThreads != 1 {
-			helpers.WaitFor(ctx, time.Duration(sched.Settings.RampupDelay*float64(time.Second)))
-		}
-
-		if helpers.IsContextTriggered(ctx) {
-			break
+			return false
 		}
 
 		wg.Add(1)
@@ -106,7 +98,32 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 				}()
 			}
 		}()
+
+		return true
 	}
+
+	ticker := time.NewTicker(time.Duration(sched.Settings.RampupDelay * float64(time.Second)))
+	if addUser() {
+		for range ticker.C {
+			if !addUser() {
+				break
+			}
+		}
+	}
+	// for {
+
+	// if helpers.IsContextTriggered(ctx) {
+	// 	break
+	// }
+
+	// if localThreads != 1 {
+	// 	helpers.WaitFor(ctx, time.Duration(sched.Settings.RampupDelay*float64(time.Second)))
+	// }
+
+	// if helpers.IsContextTriggered(ctx) {
+	// 	break
+	// }
+	// }
 
 	wg.Wait()
 
