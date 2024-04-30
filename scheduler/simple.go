@@ -110,20 +110,6 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 			}
 		}
 	}
-	// for {
-
-	// if helpers.IsContextTriggered(ctx) {
-	// 	break
-	// }
-
-	// if localThreads != 1 {
-	// 	helpers.WaitFor(ctx, time.Duration(sched.Settings.RampupDelay*float64(time.Second)))
-	// }
-
-	// if helpers.IsContextTriggered(ctx) {
-	// 	break
-	// }
-	// }
 
 	wg.Wait()
 
