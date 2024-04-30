@@ -109,7 +109,7 @@ func (l LogLevel) String() string {
 // NewLog instance
 func NewLog(settings LogSettings) *Log {
 	return &Log{
-		logChan:  make(chan *LogChanMsg, 200),
+		logChan:  make(chan *LogChanMsg, 2000),
 		Settings: settings,
 		Closed:   make(chan interface{}),
 	}
