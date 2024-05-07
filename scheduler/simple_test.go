@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/statistics"
@@ -248,4 +249,88 @@ func compareSequenceNotEqual(seq1, seq2 []int) error {
 	}
 
 	return errors.Errorf("sequence<%v> and sequence<%v> are equal", seq1, seq2)
+}
+
+func TestScale(t *testing.T) {
+	concurrentusers := 99999999999999999
+	executionTime := 300
+	rampupdelay := 0.003
+
+	connectionSettings := &connection.ConnectionSettings{
+		Server: "localhost",
+		Mode:   connection.WS,
+	}
+	sched := &SimpleScheduler{
+		Settings: SimpleSchedSettings{
+			ConcurrentUsers: concurrentusers,
+			ExecutionTime:   executionTime,
+			RampupDelay:     rampupdelay,
+			Iterations:      1,
+		},
+		Scheduler: Scheduler{
+			ConnectionSettings: connectionSettings,
+		},
+	}
+	scenario := []scenario.Action{
+		{
+			ActionCore: scenario.ActionCore{
+				Type: scenario.ActionThinkTime,
+			},
+			Settings: scenario.ThinkTimeSettings{
+				DistributionSettings: helpers.DistributionSettings{
+					Type:  helpers.StaticDistribution,
+					Delay: 0.00000001,
+				},
+			},
+		},
+	}
+
+	counters := &statistics.ExecutionCounters{}
+	err := sched.Execute(context.Background(), nil, time.Second, scenario, "", users.NewUserGeneratorNone(), connectionSettings, counters)
+	if err != nil {
+		t.Fatal(err)
+	}
+	totalSessions := counters.Sessions.Current()
+	t.Logf("Total sessions: %d", totalSessions)
+	expectedSessions := uint64(float64(executionTime)/rampupdelay) + 1
+	if expectedSessions != totalSessions {
+		t.Errorf("Total sessions: %d, expected: %d", totalSessions, expectedSessions)
+	}
+}
+
+func BenchmarkSimple(b *testing.B) {
+	connectionSettings := &connection.ConnectionSettings{
+		Server: "localhost",
+		Mode:   connection.WS,
+	}
+
+	sched := &SimpleScheduler{
+		Settings: SimpleSchedSettings{
+			ConcurrentUsers: b.N,
+			ExecutionTime:   -1,
+			RampupDelay:     0.006,
+			Iterations:      1,
+		},
+		Scheduler: Scheduler{
+			ConnectionSettings: connectionSettings,
+		},
+	}
+	scenario := []scenario.Action{
+		{
+			ActionCore: scenario.ActionCore{
+				Type: scenario.ActionThinkTime,
+			},
+			Settings: scenario.ThinkTimeSettings{
+				DistributionSettings: helpers.DistributionSettings{
+					Type:  helpers.StaticDistribution,
+					Delay: 0.00000001,
+				},
+			},
+		},
+	}
+	counters := &statistics.ExecutionCounters{}
+	err := sched.Execute(context.Background(), nil, time.Second, scenario, "", users.NewUserGeneratorNone(), connectionSettings, counters)
+	if err != nil {
+		b.Fatal(err)
+	}
 }

@@ -103,6 +103,7 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 	}
 
 	ticker := time.NewTicker(time.Duration(sched.Settings.RampupDelay * float64(time.Second)))
+	defer ticker.Stop()
 	if addUser() {
 		for range ticker.C {
 			if !addUser() {
