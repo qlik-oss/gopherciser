@@ -76,6 +76,7 @@ func (sched SimpleScheduler) Execute(ctx context.Context, log *logger.Log, timeo
 		mErrLock sync.Mutex
 	)
 
+	// Create user, return true if more users should be created
 	addUser := func() bool {
 		if helpers.IsContextTriggered(ctx) {
 			return false
