@@ -251,7 +251,11 @@ func compareSequenceNotEqual(seq1, seq2 []int) error {
 	return errors.Errorf("sequence<%v> and sequence<%v> are equal", seq1, seq2)
 }
 
+// TestScale can be turned on to test if user creator loop scales well,
+// but should not be included in normal tests
 func TestScale(t *testing.T) {
+	t.SkipNow()
+
 	concurrentusers := 99999999999999999
 	executionTime := 300
 	rampupdelay := 0.003
