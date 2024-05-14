@@ -40,11 +40,13 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 	}
 
 	// "Think"
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
 	select {
 	case <-sessionState.BaseContext().Done():
 		// returning without updating end time makes log result log info: aborted instead of result: true
 		return
-	case <-time.After(delay):
+	case <-timer.C:
 	}
 
 	// Fake received message to not trigger error in onResult interceptor
