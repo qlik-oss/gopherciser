@@ -37,15 +37,18 @@ func (settings CycleDimensionSettings) Execute(sessionState *session.State, acti
 		return
 	}
 
-	// TODO make async with callback
-	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		dim, err := app.Doc.GetDimension(ctx, settings.Id) // TODO make global
-		if err != nil {
-			return err
-		}
-		return errors.WithStack(dim.StepCycle(ctx, 1))
+	dim, err := app.GetDimension(sessionState, actionState, settings.Id)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		return dim.StepCycle(ctx, 1)
 	})
-	actionState.AddErrors(err)
+	if err != nil {
+		actionState.AddErrors(err)
+	}
 
 	sessionState.Wait(actionState) // Await all async requests, e.g. those triggered on changed objects
 }
