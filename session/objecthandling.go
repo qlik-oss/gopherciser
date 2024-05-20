@@ -344,7 +344,7 @@ func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path h
 	return nil
 }
 
-func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path helpers.DataPath) error {
+func SetHyperCube(sessionState *State, actionState *action.State, rawLayout json.RawMessage, obj *enigmahandlers.Object, path helpers.DataPath) error {
 	rawHyperCube, err := path.Lookup(rawLayout)
 	if err != nil {
 		return errors.Wrap(err, "error getting hypercube")
@@ -356,6 +356,27 @@ func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path he
 	}
 
 	obj.SetHyperCube(hyperCube)
+
+	// Look for cyclic dimensions and add to app sessionobjects
+	if len(hyperCube.DimensionInfo) > 0 {
+		for i, dim := range hyperCube.DimensionInfo {
+			if dim != nil && dim.Grouping == "C" {
+				app, err := sessionState.CurrentSenseApp()
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				if dim.LibraryId == "" {
+					sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s> dim<%d> has grouping<C>, but no library ID", obj.ID, i)
+					continue
+				}
+				// GetDimension (adds it to sessionobjects list)
+				if _, err = app.GetDimension(sessionState, actionState, dim.LibraryId); err != nil {
+					actionState.AddErrors(err)
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -888,7 +909,7 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 			return errors.Errorf(
 				"object<%s> is defined as hypercube carrier, but has not hypercube path definition", enigmaObject.GenericType)
 		}
-		if err := SetHyperCube(rawLayout, obj, objectDef.DataDef.Path); err != nil {
+		if err := SetHyperCube(sessionState, actionState, rawLayout, obj, objectDef.DataDef.Path); err != nil {
 			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 		}
 	default:
