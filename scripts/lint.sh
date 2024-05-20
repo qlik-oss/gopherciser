@@ -30,14 +30,11 @@ fi
 echo Running lint
 case $LINTLEVEL in
 # minimal amount of linting currently running clean. More linters and and rules will be added as more lint errors are fixed.
-# Current status:
-# linters currently looked at: govet
-# subrules currently disabled:
-# * none
+# currently no subrules disabled in "min"
 MIN)
   "$GOPATH"/bin/golangci-lint run --timeout 5m
   ;;
-# Default set of linters
+# "full" set of linters
 *)
   "$GOPATH"/bin/golangci-lint run --timeout 5m
   ;;
