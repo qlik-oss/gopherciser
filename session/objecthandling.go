@@ -360,7 +360,7 @@ func SetHyperCube(sessionState *State, actionState *action.State, rawLayout json
 	// Look for cyclic dimensions and add to app sessionobjects
 	if len(hyperCube.DimensionInfo) > 0 {
 		for i, dim := range hyperCube.DimensionInfo {
-			if dim != nil && dim.Grouping == "C" {
+			if dim != nil && dim.Grouping == constant.NxDimensionInfoGroupingCollection {
 				app, err := sessionState.CurrentSenseApp()
 				if err != nil {
 					return errors.WithStack(err)
