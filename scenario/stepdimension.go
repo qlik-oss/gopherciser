@@ -10,22 +10,22 @@ import (
 )
 
 type (
-	// CycleDimensionSettings Cycledimension Cycle a step in a cyclic dimension
-	CycleDimensionSettings struct {
-		Id string `json:"id" doc-key:"cycledimension.id"`
+	// StepDimensionSettings cycle a step in a cyclic dimension
+	StepDimensionSettings struct {
+		Id string `json:"id" doc-key:"stepdimension.id"`
 	}
 )
 
-// Validate CycledimensionSettings action (Implements ActionSettings interface)
-func (settings CycleDimensionSettings) Validate() ([]string, error) {
+// Validate StepDimensionSettings action (Implements ActionSettings interface)
+func (settings StepDimensionSettings) Validate() ([]string, error) {
 	if settings.Id == "" {
-		return nil, errors.Errorf("Id not set for %s", ActionCycleDimension)
+		return nil, errors.Errorf("Id not set for %s", ActionStepDimension)
 	}
 	return nil, nil
 }
 
-// Execute CycledimensionSettings action (Implements ActionSettings interface)
-func (settings CycleDimensionSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
+// Execute StepDimensionSettings action (Implements ActionSettings interface)
+func (settings StepDimensionSettings) Execute(sessionState *session.State, actionState *action.State, connection *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
 		return
