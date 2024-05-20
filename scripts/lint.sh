@@ -3,24 +3,6 @@
 # Purpose: This script lints the code.
 # Instructions: make lint
 
-# On darwin you can also install with homebrew 
-# brew install golangci/tap/golangci-lint
-
-# set OS 
-OS= 
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        OS=Linux
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-        # Mac OSX
-        OS=Darwin
-elif [[ "$OSTYPE" == "cygwin" ]]; then
-        # POSIX compatibility layer and Linux environment emulation for Windows
-        OS=Windows
-else
-        # Unknown, assume Linux
-        OS=Linux
-fi
-
 # set lint level
 LINTLEVEL=${1:-DEFAULT}
 
