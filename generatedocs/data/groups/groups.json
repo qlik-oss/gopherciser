@@ -38,7 +38,8 @@
             "thinktime",
             "unpublishbookmark",
             "unpublishsheet",
-            "unsubscribeobjects"
+            "unsubscribeobjects",
+            "stepdimension"
         ]
     },
     {
