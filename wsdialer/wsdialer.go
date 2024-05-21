@@ -75,7 +75,7 @@ const (
 
 var (
 	// DefaultBackoff of reconnection
-	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0}
+	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 8.0, 12.0, 16.0}
 
 	closedChan = make(chan struct{}) // reusable closed channel
 )
