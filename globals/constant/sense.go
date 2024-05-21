@@ -38,3 +38,10 @@ const (
 	DataReductionModeClustered = "C"
 	DataReductionModeStacked   = "ST"
 )
+
+// NxDimensionInfoGrouping
+const (
+	NxDimensionInfoGroupingNone       = "N"
+	NxDimensionInfoGroupingHiearchy   = "H"
+	NxDimensionInfoGroupingCollection = "C"
+)

@@ -558,6 +558,9 @@
     "setscriptvar.value": [
         "Value to set to variable (supports the use of [session variables](#session_variables))."
     ],
+    "stepdimension.id": [
+        "library ID of the cyclic dimension"
+    ],
     "subscribeobjects.clear" : [
         "Remove any previously subscribed objects from the subscription list."
     ],

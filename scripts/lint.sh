@@ -3,24 +3,6 @@
 # Purpose: This script lints the code.
 # Instructions: make lint
 
-# On darwin you can also install with homebrew 
-# brew install golangci/tap/golangci-lint
-
-# set OS 
-OS= 
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        OS=Linux
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-        # Mac OSX
-        OS=Darwin
-elif [[ "$OSTYPE" == "cygwin" ]]; then
-        # POSIX compatibility layer and Linux environment emulation for Windows
-        OS=Windows
-else
-        # Unknown, assume Linux
-        OS=Linux
-fi
-
 # set lint level
 LINTLEVEL=${1:-DEFAULT}
 
@@ -48,15 +30,12 @@ fi
 echo Running lint
 case $LINTLEVEL in
 # minimal amount of linting currently running clean. More linters and and rules will be added as more lint errors are fixed.
-# Current status:
-# linters currently looked at: govet
-# subrules currently disabled:
-#   * structtag : We override tags in engima, so structtag complains about repeating tags, found no way to tell it this is intended.
+# currently no subrules disabled in "min"
 MIN)
-  "$GOPATH"/bin/golangci-lint run -D structcheck --timeout 5m
+  "$GOPATH"/bin/golangci-lint run --timeout 5m
   ;;
-# Default set of linters
+# "full" set of linters
 *)
-  "$GOPATH"/bin/golangci-lint run
+  "$GOPATH"/bin/golangci-lint run --timeout 5m
   ;;
 esac

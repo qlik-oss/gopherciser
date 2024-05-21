@@ -22,6 +22,7 @@ type (
 		loadmodellist     *LoadModelList
 		fieldlist         *FieldList
 		dimensionList     *DimensionList
+		dimensions        map[string]*enigma.GenericDimension
 		appPropsList      *AppPropsList
 	}
 
@@ -541,4 +542,36 @@ func (app *App) setDimensionList(SessionState SessionState, dl *DimensionList) {
 		SessionState.DeRegisterEvent(app.dimensionList.enigmaObject.Handle)
 	}
 	app.dimensionList = dl
+}
+
+func (app *App) GetDimension(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericDimension, error) {
+	dim := app.dimensions[id]
+	if dim != nil {
+		return dim, nil
+	}
+
+	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		var err error
+		dim, err = app.Doc.GetDimension(ctx, id)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	app.addDimension(dim)
+
+	return dim, nil
+}
+
+func (app *App) addDimension(dim *enigma.GenericDimension) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+
+	if app.dimensions == nil {
+		app.dimensions = map[string]*enigma.GenericDimension{dim.GenericId: dim}
+		return
+	}
+
+	app.dimensions[dim.GenericId] = dim
 }
