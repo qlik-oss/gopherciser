@@ -22,7 +22,6 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
-	"github.com/qlik-oss/gopherciser/structs"
 	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/wsdialer"
@@ -75,7 +74,6 @@ type (
 		User         *users.User
 		OutputsDir   string
 		CurrentApp   *ArtifactEntry
-		CurrentUser  *structs.User
 		Counters     *statistics.ExecutionCounters
 		// CurrentActionState will contain the state of the latest action to be started
 		CurrentActionState *action.State
@@ -274,7 +272,6 @@ func (state *State) Reset(ctx context.Context) {
 	state.RequestMetrics = &requestmetrics.RequestMetrics{}
 	state.events = make(map[int]*Event)
 	state.CurrentApp = nil
-	state.CurrentUser = nil
 	state.objects = nil
 	state.customStates = make(map[string]interface{})
 }
