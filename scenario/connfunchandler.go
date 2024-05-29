@@ -47,7 +47,7 @@ func defaultGuidWsConnectTest(connectionSettings *connection.ConnectionSettings,
 		return errors.Wrapf(err, "failed to get connect function")
 	}
 
-	connectWs := OpenAppSettings{}.GetConnectWsAction("", connectFunc)
+	connectWs := GetConnectWsAction("", connectFunc)
 	if err := connectWs.Execute(sessionState, connectionSettings); err != nil {
 		return errors.Wrap(err, "failed to connect to engine over web socket")
 	}

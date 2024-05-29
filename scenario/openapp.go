@@ -82,7 +82,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		wsLabel = fmt.Sprintf("%s - WS", label)
 	}
 
-	connectWs := openApp.GetConnectWsAction(wsLabel, connectFunc)
+	connectWs := GetConnectWsAction(wsLabel, connectFunc)
 
 	//Connect websocket and logs as separate action
 	actionState.NoResults = true // temporary set to not report while doing sub action.
@@ -216,7 +216,7 @@ func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID st
 	return uplink.SetCurrentApp(appGUID, doc)
 }
 
-func (openApp OpenAppSettings) GetConnectWsAction(wsLabel string, connectFunc func(bool) (string, error)) Action {
+func GetConnectWsAction(wsLabel string, connectFunc func(bool) (string, error)) Action {
 	connectWs := Action{
 		ActionCore{
 			Type:  ActionConnectWs,
