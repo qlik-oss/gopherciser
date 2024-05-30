@@ -101,7 +101,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 
 	uplink := sessionState.Connection.Sense()
 
-	openApp.doOpen(sessionState, actionState, uplink, appEntry.ID)
+	DoOpenApp(sessionState, actionState, uplink, appEntry.ID)
 	if actionState.Failed {
 		return
 	}
@@ -274,7 +274,8 @@ func (openApp OpenAppSettings) AffectsAppObjectsAction(structure appstructure.Ap
 	return []*appstructure.AppStructurePopulatedObjects{&newObjs}, nil, true
 }
 
-func (openApp OpenAppSettings) doOpen(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, appGUID string) {
+// DoOpenApp is intended to be used from inside a open app action after websocket is connected
+func DoOpenApp(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, appGUID string) {
 	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		return openDoc(ctx, uplink, appGUID)
 	}); err != nil {
