@@ -106,92 +106,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
-	if uplink.CurrentApp == nil {
-		actionState.AddErrors(errors.New("No current app"))
-		return
-	}
-	if uplink.CurrentApp.Doc == nil {
-		actionState.AddErrors(errors.New("No current enigma doc"))
-		return
-	}
-
-	doc := uplink.CurrentApp.Doc
-
-	var authUser string
-	// Ask for user synchronously to make sure it's on all subsequent log entries
-	getAuthUser := func(ctx context.Context) error {
-		var err error
-		authUser, err = uplink.Global.GetAuthenticatedUser(ctx)
-		return err
-	}
-	if err := sessionState.SendRequest(actionState, getAuthUser); err != nil {
-		actionState.AddErrors(err)
-		return
-	}
-	sessionState.LogEntry.LogInfo("AuthenticatedUser", authUser)
-
-	// send another AuthenticatedUser for api compliance
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.Global.GetAuthenticatedUser(ctx)
-		return err
-	}, actionState, true, "")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		layout, applyOutErr := doc.GetAppLayout(ctx)
-		if applyOutErr != nil {
-			return applyOutErr
-		}
-		uplink.CurrentApp.Layout = layout
-		return nil
-	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appEntry.ID))
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
-		return errors.WithStack(err)
-	}, actionState, true, "")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetStoryList(sessionState, actionState)
-		return errors.WithStack(err)
-	}, actionState, true, "")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
-		return errors.WithStack(err)
-	}, actionState, true, "")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.Global.AllowCreateApp(ctx)
-		return errors.WithStack(err)
-	}, actionState, true, "")
-
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.CurrentApp.Doc.GetScriptEx(ctx) // ignore err, as when not ownning app an Access denied will be returned.
-		if err != nil {
-			sessionState.LogEntry.LogDebugf("GetScriptEx request returned error: %v", err)
-		}
-		return nil
-	}, actionState, true, "")
-
-	for i := 0; i < 2; i++ {
-		sessionState.QueueRequestRaw(uplink.CurrentApp.Doc.GetAppPropertiesRaw, actionState, true, "failed to get AppProperties")
-	}
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := uplink.Global.GetBaseBNFHash(ctx, "S")
-		return err
-	}, actionState, true, "")
-
-	// Send GetConfiguration request 5 times
-	for i := 0; i < 5; i++ {
-		sessionState.QueueRequest(func(ctx context.Context) error {
-			return errors.WithStack(uplink.Global.RPC(ctx, "GetConfiguration", nil))
-		}, actionState, false, "GetConfiguration request failed")
-	}
-
-	sessionState.GetSheetList(actionState, uplink)
-	if actionState.Failed {
-		return
-	}
+	DoPostOpenAppRequests(sessionState, actionState, uplink, appEntry.ID)
 
 	// setup re-connect function
 	sessionState.SetReconnectFunc(connectFunc)
@@ -289,6 +204,95 @@ func DoOpenApp(sessionState *session.State, actionState *action.State, uplink *e
 	}
 	if uplink.CurrentApp.Doc == nil {
 		actionState.AddErrors(errors.New("No current enigma doc"))
+		return
+	}
+}
+
+func DoPostOpenAppRequests(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, appID string) {
+	if uplink.CurrentApp == nil {
+		actionState.AddErrors(errors.New("No current app"))
+		return
+	}
+	if uplink.CurrentApp.Doc == nil {
+		actionState.AddErrors(errors.New("No current enigma doc"))
+		return
+	}
+
+	doc := uplink.CurrentApp.Doc
+
+	var authUser string
+	// Ask for user synchronously to make sure it's on all subsequent log entries
+	getAuthUser := func(ctx context.Context) error {
+		var err error
+		authUser, err = uplink.Global.GetAuthenticatedUser(ctx)
+		return err
+	}
+	if err := sessionState.SendRequest(actionState, getAuthUser); err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+	sessionState.LogEntry.LogInfo("AuthenticatedUser", authUser)
+
+	// send another AuthenticatedUser for api compliance
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.GetAuthenticatedUser(ctx)
+		return err
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		layout, applyOutErr := doc.GetAppLayout(ctx)
+		if applyOutErr != nil {
+			return applyOutErr
+		}
+		uplink.CurrentApp.Layout = layout
+		return nil
+	}, actionState, true, fmt.Sprintf("Failed getting app layout for app GUID<%s>", appID))
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetVariableList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetStoryList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.GetAppsPropsList(sessionState, actionState)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.AllowCreateApp(ctx)
+		return errors.WithStack(err)
+	}, actionState, true, "")
+
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.CurrentApp.Doc.GetScriptEx(ctx) // ignore err, as when not ownning app an Access denied will be returned.
+		if err != nil {
+			sessionState.LogEntry.LogDebugf("GetScriptEx request returned error: %v", err)
+		}
+		return nil
+	}, actionState, true, "")
+
+	for i := 0; i < 2; i++ {
+		sessionState.QueueRequestRaw(uplink.CurrentApp.Doc.GetAppPropertiesRaw, actionState, true, "failed to get AppProperties")
+	}
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		_, err := uplink.Global.GetBaseBNFHash(ctx, "S")
+		return err
+	}, actionState, true, "")
+
+	// Send GetConfiguration request 5 times
+	for i := 0; i < 5; i++ {
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			return errors.WithStack(uplink.Global.RPC(ctx, "GetConfiguration", nil))
+		}, actionState, false, "GetConfiguration request failed")
+	}
+
+	sessionState.GetSheetList(actionState, uplink)
+	if actionState.Failed {
 		return
 	}
 }
