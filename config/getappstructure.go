@@ -14,8 +14,10 @@ import (
 
 type (
 	GetAppStructureSettings struct {
-		IncludeRaw    bool `json:"includeRaw,omitempty"`
-		AppStructures map[string]*GeneratedAppStructure
+		IncludeRaw bool `json:"includeRaw,omitempty"`
+		// TruncateStringsTo truncates non significant strings to size if set to > 0
+		TruncateStringsTo int `json:"truncate,omitempty"`
+		AppStructures     map[string]*GeneratedAppStructure
 	}
 )
 
@@ -59,6 +61,7 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 		sessionState.LogEntry,
 		AppStructureReport{},
 		sync.Mutex{},
+		settings.TruncateStringsTo,
 	}
 	structure.logEntry = sessionState.LogEntry
 
