@@ -541,6 +541,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	metaDef := helpers.NewDataPath("/qMetaDef")
 	rawMetaDef, _ := metaDef.Lookup(properties)
 	_ = json.Unmarshal(rawMetaDef, &obj.MetaDef)
+	truncateMeta(&obj.MetaDef, structure.truncateTo)
 
 	enumTyp, _ := appstructure.ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
 
