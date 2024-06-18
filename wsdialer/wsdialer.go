@@ -11,10 +11,12 @@ import (
 	"net"
 	"net/http"
 	neturl "net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/gobwas/ws"
 	gobwas "github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/pkg/errors"
@@ -201,9 +203,9 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 	if err != nil {
 		return m, err
 	}
-	// if h.OpCode.IsControl() && h.Length > ws.MaxControlFramePayloadSize {
-	// 	os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nopcode:%v fin:%v masked:%v mask:%v\nrsv:%v\n", h.OpCode, h.Fin, h.Masked, h.Mask, string(h.Rsv)))
-	// }
+	if h.OpCode.IsControl() && h.Length > ws.MaxControlFramePayloadSize {
+		os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nlength:%v, opcode:%v fin:%v masked:%v mask:%v\nrsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
+	}
 	var p []byte
 	if h.Fin {
 		// No more frames will be read. Use fixed sized buffer to read payload.
