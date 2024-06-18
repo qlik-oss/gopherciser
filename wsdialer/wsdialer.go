@@ -194,12 +194,16 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 			m = append(m, wsutil.Message{OpCode: hdr.OpCode, Payload: bts})
 			return nil
 		},
-		MaxFrameSize: maxFrameSize,
+		MaxFrameSize:    maxFrameSize,
+		SkipHeaderCheck: true,
 	}
 	h, err := rd.NextFrame()
 	if err != nil {
 		return m, err
 	}
+	// if h.OpCode.IsControl() && h.Length > ws.MaxControlFramePayloadSize {
+	// 	os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nopcode:%v fin:%v masked:%v mask:%v\nrsv:%v\n", h.OpCode, h.Fin, h.Masked, h.Mask, string(h.Rsv)))
+	// }
 	var p []byte
 	if h.Fin {
 		// No more frames will be read. Use fixed sized buffer to read payload.
