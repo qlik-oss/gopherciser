@@ -203,7 +203,9 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 	if err != nil {
 		return m, err
 	}
+	var controlFrameErr error
 	if h.OpCode.IsControl() && h.Length > ws.MaxControlFramePayloadSize {
+		controlFrameErr = ws.ErrProtocolControlPayloadOverflow
 		os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nlength:%v, opcode:%v fin:%v masked:%v mask:%v rsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
 	}
 	var p []byte
@@ -223,7 +225,7 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 	if err != nil {
 		return m, err
 	}
-	return append(m, wsutil.Message{OpCode: h.OpCode, Payload: p}), nil
+	return append(m, wsutil.Message{OpCode: h.OpCode, Payload: p}), controlFrameErr
 }
 
 // ReadMessage Read one entire message from websocket
