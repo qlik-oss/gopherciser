@@ -204,7 +204,7 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 		return m, err
 	}
 	if h.OpCode.IsControl() && h.Length > ws.MaxControlFramePayloadSize {
-		os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nlength:%v, opcode:%v fin:%v masked:%v mask:%v\nrsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
+		os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nlength:%v, opcode:%v fin:%v masked:%v mask:%v rsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
 	}
 	var p []byte
 	if h.Fin {
