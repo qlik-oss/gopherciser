@@ -204,9 +204,13 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 		return m, err
 	}
 	var controlFrameErr error
-	if h.OpCode.IsControl() && h.Length > ws.MaxControlFramePayloadSize {
-		controlFrameErr = ws.ErrProtocolControlPayloadOverflow
-		os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nlength:%v, opcode:%v fin:%v masked:%v mask:%v rsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
+	if h.OpCode.IsControl() {
+		if h.Length > ws.MaxControlFramePayloadSize {
+			controlFrameErr = ws.ErrProtocolControlPayloadOverflow
+			os.Stderr.WriteString(fmt.Sprintf("MaxControlFramePayloadSize exceeded\nlength:%v, opcode:%v fin:%v masked:%v mask:%v rsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
+		} else if h.OpCode == ws.OpPing {
+			os.Stderr.WriteString(fmt.Sprintf("Ping received:\nlength:%v, opcode:%v fin:%v masked:%v mask:%v rsv:%v\n", h.Length, h.OpCode, h.Fin, h.Masked, h.Mask, h.Rsv))
+		}
 	}
 	var p []byte
 	if h.Fin {
