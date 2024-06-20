@@ -22,6 +22,10 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 )
 
+var (
+	ErrFrameTooLarge = wsutil.ErrFrameTooLarge
+)
+
 type (
 	// ReConnectSettings settings for automatically reconnecting websocket
 	ReConnectSettings struct {
