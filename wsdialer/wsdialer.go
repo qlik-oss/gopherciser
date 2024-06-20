@@ -194,7 +194,8 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 			m = append(m, wsutil.Message{OpCode: hdr.OpCode, Payload: bts})
 			return nil
 		},
-		MaxFrameSize: maxFrameSize,
+		MaxFrameSize:    maxFrameSize,
+		SkipHeaderCheck: true,
 	}
 	h, err := rd.NextFrame()
 	if err != nil {
