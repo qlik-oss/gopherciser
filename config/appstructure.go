@@ -48,6 +48,7 @@ type (
 		logEntry      *logger.LogEntry
 		report        AppStructureReport
 		structureLock sync.Mutex
+		truncateTo    int
 	}
 
 	// Appstructure and warnings in consumable form
@@ -540,6 +541,7 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	metaDef := helpers.NewDataPath("/qMetaDef")
 	rawMetaDef, _ := metaDef.Lookup(properties)
 	_ = json.Unmarshal(rawMetaDef, &obj.MetaDef)
+	truncateMeta(&obj.MetaDef, structure.truncateTo)
 
 	enumTyp, _ := appstructure.ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
 
@@ -679,10 +681,8 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	rawMeasure, err := measurePath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(id, typ, "measure", AppStructureWarningMeasureNotFound, "measure definition not found")
-	} else {
-		if err := json.Unmarshal(rawMeasure, &measure); err != nil {
-			return errors.WithStack(err)
-		}
+	} else if err := json.Unmarshal(rawMeasure, &measure); err != nil {
+		return errors.WithStack(err)
 	}
 
 	// Save meta information to structure
@@ -691,11 +691,10 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(id, typ, "measure", AppStructureWarningMetaInformationNotFound, "measure has not meta information")
-	} else {
-		if err := json.Unmarshal(rawMeta, &meta); err != nil {
-			return errors.WithStack(err)
-		}
+	} else if err := json.Unmarshal(rawMeta, &meta); err != nil {
+		return errors.WithStack(err)
 	}
+	truncateMeta(&meta, structure.truncateTo)
 
 	obj.Measures = []appstructure.AppStructureMeasureMeta{
 		{
@@ -724,10 +723,8 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	rawDimension, err := dimensionPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(id, typ, "dimension", AppStructureWarningDimensionNotFound, "dimension defintion not found")
-	} else {
-		if err := json.Unmarshal(rawDimension, &dimension); err != nil {
-			return errors.WithStack(err)
-		}
+	} else if err := json.Unmarshal(rawDimension, &dimension); err != nil {
+		return errors.WithStack(err)
 	}
 
 	// Add dimension meta information to structure
@@ -736,11 +733,10 @@ func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app
 	rawMeta, err := metaPath.Lookup(obj.RawBaseProperties)
 	if err != nil {
 		structure.warn(id, typ, "dimension", AppStructureWarningMetaInformationNotFound, "dimension has not meta information")
-	} else {
-		if err := json.Unmarshal(rawMeta, &meta); err != nil {
-			return errors.WithStack(err)
-		}
+	} else if err := json.Unmarshal(rawMeta, &meta); err != nil {
+		return errors.WithStack(err)
 	}
+	truncateMeta(&meta, structure.truncateTo)
 
 	obj.Dimensions = []appstructure.AppStructureDimensionMeta{
 		{
@@ -847,11 +843,10 @@ func (structure *GeneratedAppStructure) handleBookmark(ctx context.Context, app 
 	rawMeta, err := metaPath.Lookup(properties)
 	if err != nil {
 		structure.warn(id, typ, "", AppStructureWarningMetaInformationNotFound, "bookmark has no meta information")
-	} else {
-		if err = json.Unmarshal(rawMeta, &meta); err != nil {
-			structure.warn(id, typ, "", AppStructureWarningMetaInformationNotFound, fmt.Sprintf("bookmark failed to unmarshal meta information: %s", err))
-		}
+	} else if err = json.Unmarshal(rawMeta, &meta); err != nil {
+		structure.warn(id, typ, "", AppStructureWarningMetaInformationNotFound, fmt.Sprintf("bookmark failed to unmarshal meta information: %s", err))
 	}
+	truncateMeta(&meta, structure.truncateTo)
 
 	structureBookmark.Title = meta.Title
 	structureBookmark.Description = meta.Description
@@ -986,4 +981,12 @@ func (report *AppStructureReport) AddWarning(warning AppStructureWarning) {
 	}
 
 	report.warnings = append(report.warnings, warning)
+}
+
+func truncateMeta(meta *appstructure.MetaDef, truncateTo int) {
+	if truncateTo < 1 {
+		return
+	}
+	meta.Title = meta.Title[:helpers.Min(len(meta.Title), truncateTo)]
+	meta.Description = meta.Description[:helpers.Min(len(meta.Description), truncateTo)]
 }
