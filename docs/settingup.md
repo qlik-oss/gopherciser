@@ -2500,7 +2500,7 @@ The following functions are supported:
 }
 ```
 
-Let's assume the case there are 4 apps to be used in the test, all ending with number 1 to 4. The use of modulo in the example will cycle through the app number suffix. 
+Let's assume the case there are 4 apps to be used in the test, all ending with number 0 to 3. The use of modulo in the example will cycle through the app suffix number in following order: 1, 2, 3, 0.
 
 ```json
 {
@@ -2515,6 +2515,19 @@ Let's assume the case there are 4 apps to be used in the test, all ending with n
 }
 ```
 
+Very similar case as above but apps have number suffix from 1 to 4. This can be habdled combining `modulo` and `add` functions. The cycle through the suffix number will be done in following order: 2, 3, 4, 1.
+```json
+{
+  "action": "elastictriggersubscription",
+  "label": "trigger reporting task",
+  "settings": {
+    "subscriptiontype": "template-sharing",
+    "limitperpage": 100,
+    "appname": "PS-18566_Test_Levels_Pages- {{ modulo .Session 4 | add 1 }}",
+    "subscriptionmode": "random",
+  }
+}
+```
 
 </details>
 
