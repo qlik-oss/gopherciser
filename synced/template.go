@@ -41,6 +41,7 @@ var (
 		"env":       os.Getenv,
 		"add":       add,
 		"join":      strings.Join,
+		"modulo":    modulo,
 	}
 )
 
@@ -140,6 +141,19 @@ func add(iVal1 interface{}, iVal2 interface{}) (int64, error) {
 	}
 
 	return val1 + val2, nil
+}
+
+func modulo(iVal1 interface{}, iVal2 interface{}) (int64, error) {
+	val1, err := parseToInt64(iVal1)
+	if err != nil {
+		return 0, err
+	}
+	val2, err := parseToInt64(iVal2)
+	if err != nil {
+		return 0, err
+	}
+
+	return val1 % val2, nil
 }
 
 func parseToInt64(val interface{}) (int64, error) {

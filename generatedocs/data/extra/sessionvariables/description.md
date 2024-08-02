@@ -34,6 +34,7 @@ The following functions are supported:
 * `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 * `add`: Adds two integer values together and outputs the sum. E.g. `{{ add 1 2 }}`.
 * `join`: Joins array elements together to a string separated by defined separator. E.g. `{{ join .ScriptVars.MyArray \",\" }}`.
+* `modulo`: Returns modulo of two integer values and output the result. E.g. `{{ modulo 10 4 }}` (will return 2)
 
 ### Example
 
@@ -95,5 +96,21 @@ The following functions are supported:
   }
 }
 ```
+
+Let's assume the case there are 4 apps to be used in the test, all ending with number 1 to 4. The use of modulo in the example will cycle through the app number suffix. 
+
+```json
+{
+  "action": "elastictriggersubscription",
+  "label": "trigger reporting task",
+  "settings": {
+    "subscriptiontype": "template-sharing",
+    "limitperpage": 100,
+    "appname": "PS-18566_Test_Levels_Pages- {{ modulo .Session 4}}",
+    "subscriptionmode": "random",
+  }
+}
+```
+
 
 </details>
