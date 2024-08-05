@@ -56,6 +56,7 @@ func TestTemplate(t *testing.T) {
 		Param2 Template `json:"param2"`
 		Param3 Template `json:"param3"`
 		Param4 Template `json:"param4"`
+		Param5 Template `json:"param5"`
 	}
 
 	_ = os.Setenv("test-env", "val2")
@@ -64,7 +65,8 @@ func TestTemplate(t *testing.T) {
 	"param1" : "val1 is {{.Val1}} and val2 is {{env \"test-env\"}}",
 	"param2" : "{{ add 1 \"3\" }}",
 	"param3" : "{{ join .Val2 \",\" }},elem4",
-	"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}"
+	"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}",
+	"param5" : "{{ modulo 10 \"4\" }}"
 }`
 
 	if err := json.Unmarshal([]byte(jsn), &myStruct); err != nil {
@@ -75,6 +77,7 @@ func TestTemplate(t *testing.T) {
 	testParam(t, &myStruct.Param2, "4")
 	testParam(t, &myStruct.Param3, "elem1,elem2,elem3,elem4")
 	testParam(t, &myStruct.Param4, "elem1,elem2")
+	testParam(t, &myStruct.Param5, "2")
 }
 
 func testParam(t *testing.T, tmpl *Template, expected string) {

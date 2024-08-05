@@ -34,6 +34,7 @@ The following functions are supported:
 * `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 * `add`: Adds two integer values together and outputs the sum. E.g. `{{ add 1 2 }}`.
 * `join`: Joins array elements together to a string separated by defined separator. E.g. `{{ join .ScriptVars.MyArray \",\" }}`.
+* `modulo`: Returns modulo of two integer values and output the result. E.g. `{{ modulo 10 4 }}` (will return 2)
 
 ### Example
 
@@ -92,6 +93,35 @@ The following functions are supported:
     "name": "MyAppId",
     "type": "string",
     "value": "{{.Artifacts.GetIDByTypeAndName \"app\" (print \"an-app-\" .Session)}}"
+  }
+}
+```
+
+Let's assume the case there are 4 apps to be used in the test, all ending with number 0 to 3. The use of modulo in the example will cycle through the app suffix number in following order: 1, 2, 3, 0.
+
+```json
+{
+  "action": "elastictriggersubscription",
+  "label": "trigger reporting task",
+  "settings": {
+    "subscriptiontype": "template-sharing",
+    "limitperpage": 100,
+    "appname": "PS-18566_Test_Levels_Pages- {{ modulo .Session 4}}",
+    "subscriptionmode": "random",
+  }
+}
+```
+
+Very similar case as above but apps have number suffix from 1 to 4. This can be handled combining `modulo` and `add` functions. The cycle through the suffix number will be done in following order: 2, 3, 4, 1.
+```json
+{
+  "action": "elastictriggersubscription",
+  "label": "trigger reporting task",
+  "settings": {
+    "subscriptiontype": "template-sharing",
+    "limitperpage": 100,
+    "appname": "PS-18566_Test_Levels_Pages- {{ modulo .Session 4 | add 1 }}",
+    "subscriptionmode": "random",
   }
 }
 ```
