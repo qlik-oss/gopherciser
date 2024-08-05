@@ -112,7 +112,7 @@ Let's assume the case there are 4 apps to be used in the test, all ending with n
 }
 ```
 
-Very similar case as above but apps have number suffix from 1 to 4. This can be habdled combining `modulo` and `add` functions. The cycle through the suffix number will be done in following order: 2, 3, 4, 1.
+Very similar case as above but apps have number suffix from 1 to 4. This can be handled combining `modulo` and `add` functions. The cycle through the suffix number will be done in following order: 2, 3, 4, 1.
 ```json
 {
   "action": "elastictriggersubscription",
