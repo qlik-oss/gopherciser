@@ -16,8 +16,10 @@ type (
 	GetAppStructureSettings struct {
 		IncludeRaw bool `json:"includeRaw,omitempty"`
 		// TruncateStringsTo truncates non significant strings to size if set to > 0
-		TruncateStringsTo int `json:"truncate,omitempty"`
-		AppStructures     map[string]*GeneratedAppStructure
+		TruncateStringsTo int  `json:"truncate,omitempty"`
+		DisableLog        bool `json:"disablelog"` // If enabled warnings won't be logged while getting app structure
+
+		AppStructures map[string]*GeneratedAppStructure
 	}
 )
 
@@ -63,7 +65,10 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 		sync.Mutex{},
 		settings.TruncateStringsTo,
 	}
-	structure.logEntry = sessionState.LogEntry
+
+	if !settings.DisableLog {
+		structure.logEntry = sessionState.LogEntry
+	}
 
 	for _, info := range allInfos {
 		if info == nil {
