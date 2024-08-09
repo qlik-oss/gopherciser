@@ -60,7 +60,7 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 
 	structure := &GeneratedAppStructure{
 		innerAs,
-		sessionState.LogEntry,
+		nil,
 		AppStructureReport{},
 		sync.Mutex{},
 		settings.TruncateStringsTo,
