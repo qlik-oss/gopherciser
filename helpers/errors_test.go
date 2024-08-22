@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 )
 
 func TestFlatten(t *testing.T) {
@@ -15,7 +16,7 @@ func TestFlatten(t *testing.T) {
 	}
 
 	firstError := "first error"
-	mErr = multierror.Append(mErr, fmt.Errorf(firstError))
+	mErr = multierror.Append(mErr, errors.New(firstError))
 
 	err := FlattenMultiError(mErr)
 	if err == nil || err.Error() != firstError {
@@ -23,7 +24,7 @@ func TestFlatten(t *testing.T) {
 	}
 
 	secondError := "second error"
-	mErr = multierror.Append(mErr, fmt.Errorf(secondError))
+	mErr = multierror.Append(mErr, errors.New(secondError))
 	err = FlattenMultiError(mErr)
 	expected := fmt.Sprintf("2 errors occurred:\n\t* %s\n\t* %s\n\n", firstError, secondError)
 	if err == nil || err.Error() != expected {
