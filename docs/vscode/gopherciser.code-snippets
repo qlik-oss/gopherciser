@@ -4,7 +4,7 @@
 		"prefix": "action",
 		"description": "Adds scenario action skeleton, to be used in an empty file. Action needs to be registered after completion.",
 		"body": [
-			"package scenario",
+			"package ${3:scenario}",
 			"",
 			"import (",
 			"\t\"github.com/qlik-oss/gopherciser/action\"",
@@ -15,7 +15,7 @@
 			"type (",
 			"\t// ${1:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}}Settings ${1:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}} ${2:describe action here}",
 			"\t${1:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}}Settings struct {",
-			"\t\tParameter string `json:\"parameter\" doc-key:\"path.to.description\"`",
+			"\t\tParameter string `json:\"parameter\" displayname:\"Parameter\" doc-key:\"path.to.description\"`",
 			"\t}",
 			")",
 			"",
