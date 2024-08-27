@@ -30,7 +30,7 @@ func TestResthandler(t *testing.T) {
 	defer ts.Close()
 
 	actionState := action.State{}
-	pendingHandler := pending.NewHandler(32)
+	pendingHandler := pending.NewHandler()
 
 	restHandler := NewRestHandler(context.Background(), &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second, &pendingHandler)
 	restHandler.Client = http.DefaultClient

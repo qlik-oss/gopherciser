@@ -202,16 +202,13 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
-		Timeout:      timeout,
-		ArtifactMap:  NewArtifactMap(),
-		OutputsDir:   outputsDir,
-		User:         user,
-		HeaderJar:    NewHeaderJar(),
-		VirtualProxy: virtualProxy,
-		// Buffer size for the pendingHandler has been chosen after evaluation tests towards sense
-		// with medium amount of objects in the sheets. Evaluation was done before introducing spinLoopPending
-		// in pendingHandler and could possibly be lowered, this would however require re-evaluation.
-		Pending:        pending.NewHandler(32),
+		Timeout:        timeout,
+		ArtifactMap:    NewArtifactMap(),
+		OutputsDir:     outputsDir,
+		User:           user,
+		HeaderJar:      NewHeaderJar(),
+		VirtualProxy:   virtualProxy,
+		Pending:        pending.NewHandler(),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		Counters:       counters,
 		customStates:   make(map[string]interface{}),
@@ -222,7 +219,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		events:    make(map[int]*Event),
 		reconnect: ReconnectInfo{
 			reconnectFunc:       nil,
-			pendingReconnection: pending.NewHandler(32),
+			pendingReconnection: pending.NewHandler(),
 		},
 	}
 
