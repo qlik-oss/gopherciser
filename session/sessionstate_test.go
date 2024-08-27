@@ -214,7 +214,7 @@ func TestState_SessionVariables(t *testing.T) {
 func setupStateForCLTest() (*State, *eventCounter, *eventCounter, *eventCounter, *eventCounter) {
 	counters := &statistics.ExecutionCounters{}
 	state := New(context.Background(), "", 60, nil, 1, 1, "", false, counters)
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
 
 	event0 := registerEvent(state, 0)
 	event1 := registerEvent(state, 1)
@@ -408,7 +408,7 @@ func TestStateTemplateArtifactMap(t *testing.T) {
 func TestPendingWaiter(t *testing.T) {
 	counters := &statistics.ExecutionCounters{}
 	state := New(context.Background(), "", 120, nil, 1, 1, "", false, counters)
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
 	actionState := &action.State{}
 
 	firstDone := false

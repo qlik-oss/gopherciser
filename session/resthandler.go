@@ -26,6 +26,7 @@ import (
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/pending"
 	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/version"
@@ -38,14 +39,13 @@ type (
 
 	// RestHandler handles waiting for pending requests and responses
 	RestHandler struct {
-		reqCounterCond *sync.Cond
-		reqCounter     int
-		timeout        time.Duration
-		Client         *http.Client
-		trafficLogger  enigma.TrafficLogger
-		headers        *HeaderJar
-		virtualProxy   string
-		ctx            context.Context
+		timeout       time.Duration
+		Client        *http.Client
+		trafficLogger enigma.TrafficLogger
+		headers       *HeaderJar
+		virtualProxy  string
+		ctx           context.Context
+		pending       *pending.Handler
 	}
 
 	// RestRequest represents a REST request and its response
@@ -188,15 +188,14 @@ func addCustomHeaders(req *http.Request, logEntry *logger.LogEntry) {
 }
 
 // NewRestHandler new instance of RestHandler
-func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
+func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration, pendingHandler *pending.Handler) *RestHandler {
 	return &RestHandler{
-		reqCounter:     0,
-		reqCounterCond: sync.NewCond(&sync.Mutex{}),
-		trafficLogger:  trafficLogger,
-		headers:        headerjar,
-		virtualProxy:   virtualProxy,
-		timeout:        timeout,
-		ctx:            ctx,
+		trafficLogger: trafficLogger,
+		headers:       headerjar,
+		virtualProxy:  virtualProxy,
+		timeout:       timeout,
+		ctx:           ctx,
+		pending:       pendingHandler,
 	}
 }
 
@@ -227,32 +226,6 @@ func (method RestMethod) String() string {
 		return "unknown"
 	}
 	return str
-}
-
-// WaitForPending uses double locking of mutex to wait until mutex is unlocked by
-// loop listening for pending req/resp
-func (handler *RestHandler) WaitForPending() {
-	handler.reqCounterCond.L.Lock()
-	for handler.reqCounter > 0 {
-		handler.reqCounterCond.Wait()
-	}
-	handler.reqCounterCond.L.Unlock()
-}
-
-// IncPending increase pending requests
-func (handler *RestHandler) IncPending() {
-	handler.reqCounterCond.L.Lock()
-	handler.reqCounter++
-	handler.reqCounterCond.Broadcast()
-	handler.reqCounterCond.L.Unlock()
-}
-
-// DecPending increase finished requests
-func (handler *RestHandler) DecPending(request *RestRequest) {
-	handler.reqCounterCond.L.Lock()
-	handler.reqCounter--
-	handler.reqCounterCond.Broadcast()
-	handler.reqCounterCond.L.Unlock()
 }
 
 // DefaultClient creates client instance with default client settings
@@ -567,12 +540,12 @@ func (handler *RestHandler) QueueRequest(actionState *action.State, failOnError 
 // QueueRequestWithCallback Async request with callback, set warnOnError to log warning instead of registering error for request
 func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, failOnError bool,
 	request *RestRequest, logEntry *logger.LogEntry, callback func(err error, req *RestRequest)) {
-	handler.IncPending()
+	handler.pending.IncPending()
 
 	startTS := time.Now()
 	go func() {
 		stall := time.Since(startTS)
-		defer handler.DecPending(request)
+		defer handler.pending.DecPending()
 		var errRequest error
 		var panicErr error
 		failRequest := func(err error) {

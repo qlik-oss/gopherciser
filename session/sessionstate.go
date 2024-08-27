@@ -286,7 +286,7 @@ func (state *State) SetLogEntry(entry *logger.LogEntry) {
 		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter(state.Counters)
 	}
 
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
 }
 
 // TrafficLogger returns the current trafficLogger
@@ -336,9 +336,6 @@ func (state *State) IsAbortTriggered() bool {
 // Wait for all pending requests to finish, returns true if action state has been marked as failed
 func (state *State) Wait(actionState *action.State) bool {
 	state.Pending.WaitForPending(state.ctx)
-	if state.Rest != nil {
-		state.Rest.WaitForPending()
-	}
 	return actionState.Failed
 }
 
