@@ -663,7 +663,7 @@ func recursiveDataFromStackedPivotCell(cell *enigma.NxStackedPivotCell, currentD
 		return
 	}
 
-	if cell.SubNodes != nil && len(cell.SubNodes) > 1 {
+	if len(cell.SubNodes) > 1 {
 		for _, subCell := range cell.SubNodes {
 			recursiveDataFromStackedPivotCell(subCell, currentDim+1, getDim, possibleMap)
 		}
