@@ -12,21 +12,21 @@ func TestSampleCollector_Average(t *testing.T) {
 		t.Parallel()
 		collector := generateSamples(50)
 		if err := validateAverage(collector); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 	})
 	t.Run("medium sample set", func(t *testing.T) {
 		t.Parallel()
 		collector := generateSamples(500)
 		if err := validateAverage(collector); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 	})
 	t.Run("large sample set", func(t *testing.T) {
 		t.Parallel()
 		collector := generateSamples(10000000)
 		if err := validateAverage(collector); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 	})
 }
