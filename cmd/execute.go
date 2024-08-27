@@ -418,7 +418,7 @@ func execute() error {
 	// Data for variable templates
 	templateData := struct {
 		ConfigFile string
-	}{strings.Split(filepath.Base(cfgFile), ".")[0]}
+	}{strings.TrimRight(filepath.Base(cfgFile), "."+filepath.Ext(cfgFile))}
 
 	// === start execution ===
 	var msgErrorReachedMsg *string
