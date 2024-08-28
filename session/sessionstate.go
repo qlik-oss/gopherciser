@@ -202,16 +202,13 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
-		Timeout:      timeout,
-		ArtifactMap:  NewArtifactMap(),
-		OutputsDir:   outputsDir,
-		User:         user,
-		HeaderJar:    NewHeaderJar(),
-		VirtualProxy: virtualProxy,
-		// Buffer size for the pendingHandler has been chosen after evaluation tests towards sense
-		// with medium amount of objects in the sheets. Evaluation was done before introducing spinLoopPending
-		// in pendingHandler and could possibly be lowered, this would however require re-evaluation.
-		Pending:        pending.NewHandler(32),
+		Timeout:        timeout,
+		ArtifactMap:    NewArtifactMap(),
+		OutputsDir:     outputsDir,
+		User:           user,
+		HeaderJar:      NewHeaderJar(),
+		VirtualProxy:   virtualProxy,
+		Pending:        pending.NewHandler(),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		Counters:       counters,
 		customStates:   make(map[string]interface{}),
@@ -222,7 +219,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		events:    make(map[int]*Event),
 		reconnect: ReconnectInfo{
 			reconnectFunc:       nil,
-			pendingReconnection: pending.NewHandler(32),
+			pendingReconnection: pending.NewHandler(),
 		},
 	}
 
@@ -286,7 +283,7 @@ func (state *State) SetLogEntry(entry *logger.LogEntry) {
 		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter(state.Counters)
 	}
 
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
 }
 
 // TrafficLogger returns the current trafficLogger
@@ -336,9 +333,6 @@ func (state *State) IsAbortTriggered() bool {
 // Wait for all pending requests to finish, returns true if action state has been marked as failed
 func (state *State) Wait(actionState *action.State) bool {
 	state.Pending.WaitForPending(state.ctx)
-	if state.Rest != nil {
-		state.Rest.WaitForPending()
-	}
 	return actionState.Failed
 }
 

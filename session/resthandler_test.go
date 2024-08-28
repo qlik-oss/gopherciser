@@ -11,6 +11,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/pending"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,8 +30,9 @@ func TestResthandler(t *testing.T) {
 	defer ts.Close()
 
 	actionState := action.State{}
+	pendingHandler := pending.NewHandler()
 
-	restHandler := NewRestHandler(context.Background(), &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second)
+	restHandler := NewRestHandler(context.Background(), &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second, &pendingHandler)
 	restHandler.Client = http.DefaultClient
 	getRequest := RestRequest{
 		Method:      GET,
@@ -38,7 +40,9 @@ func TestResthandler(t *testing.T) {
 		Destination: ts.URL,
 	}
 	restHandler.QueueRequest(&actionState, true, &getRequest, &logger.LogEntry{})
-	restHandler.WaitForPending()
+	timeOutContext, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	pendingHandler.WaitForPending(timeOutContext)
 
 	assert.Equal(t, "get!", string(getRequest.ResponseBody))
 
@@ -49,7 +53,7 @@ func TestResthandler(t *testing.T) {
 		Content:     []byte("data!"),
 	}
 	restHandler.QueueRequest(&actionState, true, &postRequest, &logger.LogEntry{})
-	restHandler.WaitForPending()
+	pendingHandler.WaitForPending(timeOutContext)
 
 	assert.Equal(t, "data!", string(postRequest.Content))
 }

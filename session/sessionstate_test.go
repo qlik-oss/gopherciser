@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -213,7 +214,7 @@ func TestState_SessionVariables(t *testing.T) {
 func setupStateForCLTest() (*State, *eventCounter, *eventCounter, *eventCounter, *eventCounter) {
 	counters := &statistics.ExecutionCounters{}
 	state := New(context.Background(), "", 60, nil, 1, 1, "", false, counters)
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
 
 	event0 := registerEvent(state, 0)
 	event1 := registerEvent(state, 1)
@@ -402,4 +403,43 @@ func TestStateTemplateArtifactMap(t *testing.T) {
 		}
 	})
 
+}
+
+func TestPendingWaiter(t *testing.T) {
+	counters := &statistics.ExecutionCounters{}
+	state := New(context.Background(), "", 120, nil, 1, 1, "", false, counters)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
+	actionState := &action.State{}
+
+	firstDone := false
+	secondDone := false
+	thirdDone := false
+
+	state.QueueRequest(func(ctx context.Context) error {
+		<-time.After(50 * time.Millisecond)
+		firstDone = true
+		return nil
+	}, actionState, true, "")
+
+	state.Rest.QueueRequestWithCallback(actionState, true, nil, state.LogEntry, func(err error, req *RestRequest) {
+		<-time.After(100 * time.Millisecond)
+		secondDone = true
+		state.QueueRequest(func(ctx context.Context) error {
+			<-time.After(500 * time.Millisecond)
+			thirdDone = true
+			return nil
+		}, actionState, true, "")
+	})
+
+	state.Wait(actionState)
+
+	if !firstDone {
+		t.Error("first request not waited for")
+	}
+	if !secondDone {
+		t.Error("second request not waited for")
+	}
+	if !thirdDone {
+		t.Error("third request not waited for")
+	}
 }

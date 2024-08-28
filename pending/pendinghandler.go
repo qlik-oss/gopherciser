@@ -20,7 +20,7 @@ type (
 )
 
 // NewHandler new instance of PendingHandler
-func NewHandler(size int) Handler {
+func NewHandler() Handler {
 	return Handler{
 		cond: sync.NewCond(&sync.Mutex{}),
 	}
