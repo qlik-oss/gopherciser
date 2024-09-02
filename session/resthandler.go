@@ -447,8 +447,8 @@ func (handler *RestHandler) PostAsync(url string, actionState *action.State, log
 }
 
 // PostSync send sync POST request with options, using options=nil default options are used
-func (handler *RestHandler) PostSync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
-	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+func (handler *RestHandler) PostSync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) (*RestRequest, error) {
+	return handler.PostSyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
 }
 
 // PostWithHeadersAsync send async POST request with options and headers, using options=nil default options are used
