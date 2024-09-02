@@ -118,6 +118,8 @@ const (
 	PATCH
 	// HEAD RestMethod
 	HEAD
+	// OPTIONS RestMethod
+	OPTIONS
 )
 
 var (
@@ -127,12 +129,13 @@ var (
 
 var (
 	restMethodEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-		"get":    int(GET),
-		"post":   int(POST),
-		"delete": int(DELETE),
-		"put":    int(PUT),
-		"patch":  int(PATCH),
-		"head":   int(HEAD),
+		"get":     int(GET),
+		"post":    int(POST),
+		"delete":  int(DELETE),
+		"put":     int(PUT),
+		"patch":   int(PATCH),
+		"head":    int(HEAD),
+		"options": int(OPTIONS),
 	})
 
 	defaultReqOptions = ReqOptions{
@@ -443,6 +446,11 @@ func (handler *RestHandler) PostAsync(url string, actionState *action.State, log
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
 }
 
+// PostSync send sync POST request with options, using options=nil default options are used
+func (handler *RestHandler) PostSync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
+	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+}
+
 // PostWithHeadersAsync send async POST request with options and headers, using options=nil default options are used
 func (handler *RestHandler) PostWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions) *RestRequest {
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, headers, options, nil)
@@ -451,6 +459,11 @@ func (handler *RestHandler) PostWithHeadersAsync(url string, actionState *action
 // PostAsyncWithCallback send async POST request with options and callback, using options=nil default options are used
 func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	return handler.sendAsyncWithCallback(POST, url, actionState, logEntry, content, headers, options, callback)
+}
+
+// PostSyncWithCallback send sync POST request with options and callback, using options=nil default options are used
+func (handler *RestHandler) PostSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(POST, url, actionState, logEntry, content, headers, options, callback)
 }
 
 // DeleteAsyncWithCallback send async DELETE request with options and callback, using options=nil default options are used
@@ -466,6 +479,40 @@ func (handler *RestHandler) DeleteAsyncWithHeaders(url string, actionState *acti
 // DeleteAsync send async DELETE request with options, using options=nil default options are used
 func (handler *RestHandler) DeleteAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
 	return handler.DeleteAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
+// OptionsAsync send async request with options, using options=nil default options are used
+func (handler *RestHandler) OptionsAsync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions) *RestRequest {
+	return handler.sendAsyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, nil)
+}
+
+// OptionsAsyncWitCallback send async request with options and callback, using options=nil default options are used
+func (handler *RestHandler) OptionsAsyncWitCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, callback)
+}
+
+// OptionsSync send sync request with options, using options=nil default options are used
+func (handler *RestHandler) OptionsSync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, nil)
+}
+
+// OptionsSyncWitCallback send sync request with options and callback, using options=nil default options are used
+func (handler *RestHandler) OptionsSyncWitCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, callback)
+}
+
+func (handler *RestHandler) sendSyncWithCallback(method RestMethod, url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	var returnErr error
+	var wg sync.WaitGroup
+	wg.Add(1)
+	returnReq := handler.sendAsyncWithCallback(method, url, actionState, logEntry, content, headers, options, func(err error, req *RestRequest) {
+		defer wg.Done()
+		if callback != nil {
+			callback(err, req)
+		}
+	})
+	wg.Wait()
+	return returnReq, returnErr
 }
 
 func (handler *RestHandler) sendAsyncWithCallback(method RestMethod, url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
@@ -672,6 +719,8 @@ func newStdRequest(ctx context.Context, request *RestRequest, logEntry *logger.L
 		req, err = http.NewRequest(http.MethodPut, request.Destination, getRequestReader(request))
 	case PATCH:
 		req, err = http.NewRequest(http.MethodPatch, request.Destination, getRequestReader(request))
+	case OPTIONS:
+		req, err = http.NewRequest(http.MethodOptions, request.Destination, nil)
 	default:
 		return nil, errors.Errorf("Unsupported REST method<%v>", request.Method)
 	}
