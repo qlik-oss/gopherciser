@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/client_golang v1.20.4
 	github.com/qlik-oss/enigma-go/v4 v4.2.0
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
 	github.com/rs/zerolog v1.33.0
