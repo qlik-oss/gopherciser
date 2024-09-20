@@ -856,8 +856,8 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 
 			// Add trace ID to metric message if exist as header
 			traceID := ""
-			if req.Response != nil && req.Response.Header != nil {
-				traceID = req.Response.Header.Get("x-b3-traceid")
+			if resp.Header != nil {
+				traceID = resp.Header.Get("x-b3-traceid")
 			}
 			msg := ""
 			if traceID != "" {
