@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/goccy/go-json"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
@@ -33,9 +34,27 @@ type (
 		Condition  helpers.FuzzyBool `json:"condition"`
 	}
 
+	TabbedContainerLayoutChildListItemsData struct {
+		Title         string `json:"title"`
+		Visualization string `json:"visualization"`
+		ChildRefId    string `json:"childRefId"`
+		ExtendsId     string `json:"qExtendsId"`
+		ShowCondition string `json:"showCondition"`
+	}
+
+	TabbedContainerLayoutChildListItems struct {
+		Info enigma.NxInfo                           `json:"qInfo"`
+		Meta interface{}                             `json:"qMeta"`
+		Data TabbedContainerLayoutChildListItemsData `json:"qData"`
+	}
+
+	TabbedContainerLayoutChildList struct {
+		Items []TabbedContainerLayoutChildListItems `json:"qItems"`
+	}
+
 	TabbedContainerLayout struct {
 		Objects      []TabbedContainerLayoutObjects `json:"objects"`
-		ChildList    ContainerChildList             `json:"qChildList"`
+		ChildList    TabbedContainerLayoutChildList `json:"qChildList"`
 		DefaultTabId string                         `json:"defaultTabId"`
 		ShowTabs     bool                           `json:"showTabs"`
 		CachedTabId  string                         `json:"cachedTabId"`
@@ -110,7 +129,7 @@ func (handler *TabbedContainerHandlerInstance) UpdateChildren(layout *TabbedCont
 	handler.mu.Lock()
 	defer handler.mu.Unlock()
 
-	refMap, err := createContainerChildRefMap(&layout.ChildList)
+	refMap, err := createTabbedContainerChildRefMap(&layout.ChildList)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -149,7 +168,8 @@ func (handler *TabbedContainerHandlerInstance) FirstShowableChild() (*ContainerC
 		if child.Show {
 			showCntr++
 			if firstShow == nil {
-				firstShow = &child
+				c := child
+				firstShow = &c
 			}
 		}
 	}
@@ -210,11 +230,12 @@ func (handler *TabbedContainerHandlerInstance) SwitchActiveChild(sessionState *S
 		// Already active
 		return
 	}
+	handler.ActiveID = child.ObjID
 
 	// TODO handle master/external object
 
 	// Subscribe to new active ID
-	if child.ObjID != "" {
+	if handler.ActiveID != "" {
 		GetAndAddObjectAsync(sessionState, actionState, handler.ActiveID)
 	}
 }
@@ -234,4 +255,29 @@ func GetTabbedContainerLayout(sessionState *State, actionState *action.State, co
 	}
 
 	return &layout
+}
+
+func createTabbedContainerChildRefMap(childList *TabbedContainerLayoutChildList) (map[string]string, error) {
+	if childList == nil {
+		return map[string]string{}, nil
+	}
+	var mErr *multierror.Error
+	refMap := make(map[string]string, len(childList.Items))
+	for _, item := range childList.Items {
+		ref := item.Data.ChildRefId
+		if ref == "" {
+			ref = item.Data.ExtendsId
+		}
+		if ref == "" {
+			mErr = multierror.Append(mErr, errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
+			continue
+		}
+		refMap[ref] = item.Info.Id
+	}
+
+	if mErr != nil {
+		return nil, helpers.FlattenMultiError(mErr)
+	}
+	return refMap, nil
+
 }
