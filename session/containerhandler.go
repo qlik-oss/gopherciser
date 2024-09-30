@@ -152,9 +152,23 @@ func (handler *ContainerHandlerInstance) UpdateChildren(layout *ContainerLayout)
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	refMap, err := createContainerChildRefMap(&layout.ChildList)
-	if err != nil {
-		return errors.WithStack(err)
+	var mErr *multierror.Error
+	// Create map with reference and the object id
+	refMap := make(map[string]string, len(layout.ChildList.Items))
+	for _, item := range layout.ChildList.Items {
+		ref := item.Data.ContainerChildId
+		if ref == "" {
+			ref = item.Data.ExtendsId
+		}
+		if ref == "" {
+			mErr = multierror.Append(mErr, errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
+			continue
+		}
+		refMap[ref] = item.Info.Id
+	}
+
+	if mErr != nil {
+		return helpers.FlattenMultiError(mErr)
 	}
 
 	// Create child array with same order as .Children, this is the order of the tabs
@@ -298,29 +312,4 @@ func (handler *ContainerHandlerInstance) SwitchActiveChild(sessionState *State, 
 	}
 
 	return nil
-}
-
-// createContainerChildRefMap creates map with reference and the object id
-func createContainerChildRefMap(childList *ContainerChildList) (map[string]string, error) {
-	if childList == nil {
-		return map[string]string{}, nil
-	}
-	var mErr *multierror.Error
-	refMap := make(map[string]string, len(childList.Items))
-	for _, item := range childList.Items {
-		ref := item.Data.ContainerChildId
-		if ref == "" {
-			ref = item.Data.ExtendsId
-		}
-		if ref == "" {
-			mErr = multierror.Append(mErr, errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
-			continue
-		}
-		refMap[ref] = item.Info.Id
-	}
-
-	if mErr != nil {
-		return nil, helpers.FlattenMultiError(mErr)
-	}
-	return refMap, nil
 }
