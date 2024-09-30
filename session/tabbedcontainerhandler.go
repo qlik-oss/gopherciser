@@ -24,7 +24,7 @@ type (
 		DefaultID string
 		CachedID  string
 
-		children []ContainerChildReference // TODO validate container with master objects
+		children []TabbedContainerChildReference
 		mu       sync.Mutex
 	}
 
@@ -58,6 +58,12 @@ type (
 		DefaultTabId string                         `json:"defaultTabId"`
 		ShowTabs     bool                           `json:"showTabs"`
 		CachedTabId  string                         `json:"cachedTabId"`
+	}
+
+	TabbedContainerChildReference struct {
+		RefID string
+		ObjID string
+		Show  bool
 	}
 )
 
@@ -135,18 +141,9 @@ func (handler *TabbedContainerHandlerInstance) UpdateChildren(layout *TabbedCont
 	}
 
 	// Create child array with same order as .Objects, this is the order of the tabs
-	handler.children = make([]ContainerChildReference, 0, len(layout.Objects))
+	handler.children = make([]TabbedContainerChildReference, 0, len(layout.Objects))
 	for _, child := range layout.Objects {
-		ccr := ContainerChildReference{RefID: child.ChildRefId, ObjID: refMap[child.ChildRefId]}
-		// TODO validate master objects
-		// if child.ExternalReference != nil {
-		// 	ccr.External = true
-		// }
-		// if child.Condition == nil {
-		// 	ccr.Show = true
-		// } else {
-		// 	ccr.Show = bool(*child.Condition)
-		// }
+		ccr := TabbedContainerChildReference{RefID: child.ChildRefId, ObjID: refMap[child.ChildRefId]}
 		ccr.Show = bool(child.Condition)
 		handler.children = append(handler.children, ccr)
 	}
@@ -155,13 +152,13 @@ func (handler *TabbedContainerHandlerInstance) UpdateChildren(layout *TabbedCont
 }
 
 // FirstShowableChild gets reference to first object from container which fulfills conditions, true if already active object
-func (handler *TabbedContainerHandlerInstance) FirstShowableChild() (*ContainerChildReference, bool) {
+func (handler *TabbedContainerHandlerInstance) FirstShowableChild() (*TabbedContainerChildReference, bool) {
 	handler.mu.Lock()
 	defer handler.mu.Unlock()
 
-	showMap := make(map[string]*ContainerChildReference, len(handler.children))
+	showMap := make(map[string]*TabbedContainerChildReference, len(handler.children))
 
-	var firstShow *ContainerChildReference
+	var firstShow *TabbedContainerChildReference
 	showCntr := 0
 	for _, child := range handler.children {
 		showMap[child.ObjID] = &child
@@ -203,7 +200,7 @@ func (handler *TabbedContainerHandlerInstance) FirstShowableChild() (*ContainerC
 	return firstShow, false
 }
 
-func (handler *TabbedContainerHandlerInstance) SwitchActiveChild(sessionState *State, actionState *action.State, child *ContainerChildReference) {
+func (handler *TabbedContainerHandlerInstance) SwitchActiveChild(sessionState *State, actionState *action.State, child *TabbedContainerChildReference) {
 	handler.mu.Lock()
 	defer handler.mu.Unlock()
 
@@ -231,8 +228,6 @@ func (handler *TabbedContainerHandlerInstance) SwitchActiveChild(sessionState *S
 		return
 	}
 	handler.ActiveID = child.ObjID
-
-	// TODO handle master/external object
 
 	// Subscribe to new active ID
 	if handler.ActiveID != "" {
@@ -266,13 +261,13 @@ func createTabbedContainerChildRefMap(childList *TabbedContainerLayoutChildList)
 	for _, item := range childList.Items {
 		ref := item.Data.ChildRefId
 		if ref == "" {
-			ref = item.Data.ExtendsId
-		}
-		if ref == "" {
 			mErr = multierror.Append(mErr, errors.Errorf("failed to find reference for object<%s>", item.Info.Id))
 			continue
 		}
 		refMap[ref] = item.Info.Id
+		if item.Data.ExtendsId != "" { // if it's a masterobject, use masterobject ID instead
+			refMap[ref] = item.Data.ExtendsId
+		}
 	}
 
 	if mErr != nil {
