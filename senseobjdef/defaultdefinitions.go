@@ -768,6 +768,12 @@ var (
 		nil,
 	}
 
+	DefaultTabbedContainer = ObjectDef{
+		DataDef{DataDefNoData, ""},
+		nil,
+		nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -814,5 +820,6 @@ var (
 		"sn-text":               &DefaultSNText,
 		"sn-pivot-table":        &DefaultSNPivotTable,
 		"sn-layout-container":   &DefaultLayoutContainer,
+		"sn-tabbed-container":   &DefaultTabbedContainer,
 	}
 )
