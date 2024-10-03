@@ -215,7 +215,7 @@ func (sched *Scheduler) SetContinueOnErrors(enabled bool) error {
 }
 
 func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
-	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) error {
+	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters, onIterationFinished func(iteration int, err error)) error {
 
 	sessionID := counters.Sessions.Inc()
 	instanceID := sched.InstanceNumber
@@ -265,6 +265,10 @@ func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration,
 		err := sched.runIteration(userScenario, sessionState, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
+		}
+
+		if onIterationFinished != nil {
+			onIterationFinished(iteration, err)
 		}
 
 		if err := sched.TimeBuf.Wait(ctx, false); err != nil {
