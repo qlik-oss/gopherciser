@@ -145,6 +145,12 @@ type (
 		Value      string `json:"value"`
 		Color      string `json:"-"`
 	}
+
+	// interface can be implemented on a action in a scenario to validate if scheduler type is allowed to use action
+	// returns list of warnings and error
+	ValidateActionForScheduler interface {
+		ValidateActionForScheduler(string) ([]string, error)
+	}
 )
 
 // ansi color codes
