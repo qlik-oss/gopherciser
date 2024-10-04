@@ -95,7 +95,7 @@ type (
 	// ValidateActionForScheduler interface can be implemented on a action in a scenario to validate if scheduler type is allowed to use action
 	// returns list of warnings and error
 	ValidateActionForScheduler interface {
-		ValidateActionForScheduler(string) ([]string, error)
+		IsActionValidForScheduler(string) ([]string, error)
 	}
 
 	// Enum interface should be implemented on types used fields of action struct if:

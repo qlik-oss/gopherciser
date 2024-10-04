@@ -493,7 +493,7 @@ func (cfg *Config) validateScheduler() error {
 		}
 		for _, act := range cfg.Scenario {
 			if schedValidate, ok := act.Settings.(scenario.ValidateActionForScheduler); ok {
-				warnings, err := schedValidate.ValidateActionForScheduler(cfg.schedType)
+				warnings, err := schedValidate.IsActionValidForScheduler(cfg.schedType)
 				if err != nil {
 					return errors.WithStack(err)
 				}
