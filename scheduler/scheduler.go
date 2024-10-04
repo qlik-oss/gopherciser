@@ -338,21 +338,21 @@ func logErrReport(sessionState *session.State) {
 }
 
 // UnmarshalScheduler unmarshal IScheduler
-func UnmarshalScheduler(raw []byte) (IScheduler, error) {
+func UnmarshalScheduler(raw []byte) (IScheduler, string, error) {
 	// use json parser instead for fetching type?
 	var tmp schedulerTmp
 	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, errors.Wrap(err, "failed unmarshaling scheduler type")
+		return nil, "", errors.Wrap(err, "failed unmarshaling scheduler type")
 	}
 
 	schedType := SchedHandler(tmp.SchedType)
 	if err := json.Unmarshal(raw, schedType); err != nil {
-		return nil, errors.Wrapf(err, "failed unmarshaling scheduler ")
+		return nil, tmp.SchedType, errors.Wrapf(err, "failed unmarshaling scheduler ")
 	}
 
 	if sched, ok := schedType.(IScheduler); ok {
-		return sched, nil
+		return sched, tmp.SchedType, nil
 	}
 
-	return nil, errors.Errorf("Failed casting scheduler<%T><%v> to IScheduler", schedType, tmp.SchedType)
+	return nil, tmp.SchedType, errors.Errorf("Failed casting scheduler<%T><%v> to IScheduler", schedType, tmp.SchedType)
 }
