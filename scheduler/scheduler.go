@@ -215,7 +215,7 @@ func (sched *Scheduler) SetContinueOnErrors(enabled bool) error {
 }
 
 func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration, log *logger.Log, userScenario []scenario.Action, thread uint64,
-	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters) error {
+	outputsDir string, user *users.User, iterations int, onlyInstanceSeed bool, counters *statistics.ExecutionCounters, onIterationFinished func(iteration int, err error)) error {
 
 	sessionID := counters.Sessions.Inc()
 	instanceID := sched.InstanceNumber
@@ -265,6 +265,10 @@ func (sched *Scheduler) StartNewUser(ctx context.Context, timeout time.Duration,
 		err := sched.runIteration(userScenario, sessionState, ctx)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
+		}
+
+		if onIterationFinished != nil {
+			onIterationFinished(iteration, err)
 		}
 
 		if err := sched.TimeBuf.Wait(ctx, false); err != nil {
@@ -334,21 +338,21 @@ func logErrReport(sessionState *session.State) {
 }
 
 // UnmarshalScheduler unmarshal IScheduler
-func UnmarshalScheduler(raw []byte) (IScheduler, error) {
+func UnmarshalScheduler(raw []byte) (IScheduler, string, error) {
 	// use json parser instead for fetching type?
 	var tmp schedulerTmp
 	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, errors.Wrap(err, "failed unmarshaling scheduler type")
+		return nil, "", errors.Wrap(err, "failed unmarshaling scheduler type")
 	}
 
 	schedType := SchedHandler(tmp.SchedType)
 	if err := json.Unmarshal(raw, schedType); err != nil {
-		return nil, errors.Wrapf(err, "failed unmarshaling scheduler ")
+		return nil, tmp.SchedType, errors.Wrapf(err, "failed unmarshaling scheduler ")
 	}
 
 	if sched, ok := schedType.(IScheduler); ok {
-		return sched, nil
+		return sched, tmp.SchedType, nil
 	}
 
-	return nil, errors.Errorf("Failed casting scheduler<%T><%v> to IScheduler", schedType, tmp.SchedType)
+	return nil, tmp.SchedType, errors.Errorf("Failed casting scheduler<%T><%v> to IScheduler", schedType, tmp.SchedType)
 }

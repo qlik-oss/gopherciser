@@ -73,3 +73,18 @@ func (action IteratedSettings) AppStructureAction() (*AppStructureInfo, []Action
 		Include:     false,
 	}, action.Actions
 }
+
+// IsActionValidForScheduler implements ValidateActionForScheduler interface
+func (action IteratedSettings) IsActionValidForScheduler(schedType string) ([]string, error) {
+	warnings := make([]string, 0)
+	for _, act := range action.Actions { // ValidateActionForScheduler for any sub actions
+		if schedValidate, ok := act.Settings.(ValidateActionForScheduler); ok {
+			ws, err := schedValidate.IsActionValidForScheduler(schedType)
+			if err != nil {
+				return warnings, errors.WithStack(err)
+			}
+			warnings = append(warnings, ws...)
+		}
+	}
+	return warnings, nil
+}

@@ -150,7 +150,7 @@ func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration
 		}
 
 		user := users.GetNext(counters)
-		err = sched.StartNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed, counters)
+		err = sched.StartNewUser(ctx, timeout, log, scenario, thread, outputsDir, user, innerIterations, sched.Settings.OnlyInstanceSeed, counters, nil)
 		if err != nil {
 			mErr = multierror.Append(mErr, err)
 		}

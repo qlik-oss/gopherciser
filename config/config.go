@@ -120,6 +120,7 @@ type (
 	// Config setup and scenario to execute
 	Config struct {
 		*cfgCore
+		schedType string
 		Scheduler scheduler.IScheduler `json:"scheduler"`
 
 		// CustomLoggers list of custom loggers.
@@ -443,7 +444,7 @@ func (cfg *Config) UnmarshalJSON(arg []byte) error {
 		return errors.Wrap(err, "no scheduler in config")
 	}
 
-	cfg.Scheduler, err = scheduler.UnmarshalScheduler(rawsched)
+	cfg.Scheduler, cfg.schedType, err = scheduler.UnmarshalScheduler(rawsched)
 	if err != nil {
 		return errors.Wrap(err, "failed unmarhaling scheduler")
 	}
@@ -490,6 +491,16 @@ func (cfg *Config) validateScheduler() error {
 		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
 			return errors.Errorf("No scenario items defined")
 		}
+		for _, act := range cfg.Scenario {
+			if schedValidate, ok := act.Settings.(scenario.ValidateActionForScheduler); ok {
+				warnings, err := schedValidate.IsActionValidForScheduler(cfg.schedType)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				cfg.ValidationWarnings = append(cfg.ValidationWarnings, warnings...)
+			}
+		}
+
 	}
 	return nil
 }

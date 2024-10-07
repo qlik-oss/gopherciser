@@ -91,10 +91,12 @@ type (
 		IsAppAction bool
 		Include     bool
 	}
-)
 
-type (
-	// *** Interfaces which could be implemented on action struct field types ***
+	// ValidateActionForScheduler interface can be implemented on a action in a scenario to validate if scheduler type is allowed to use action
+	// returns list of warnings and error
+	ValidateActionForScheduler interface {
+		IsActionValidForScheduler(string) ([]string, error)
+	}
 
 	// Enum interface should be implemented on types used fields of action struct if:
 	// 1. Type is derived from one integer type. Example: `type MyType int`
