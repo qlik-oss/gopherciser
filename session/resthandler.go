@@ -648,7 +648,7 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			request.ResponseStatus = request.response.Status
 			request.ResponseStatusCode = request.response.StatusCode
 			request.ResponseHeaders = request.response.Header
-			request.ResponseBody, errRequest = io.ReadAll(request.response.Body)
+			request.ResponseBody, errRequest = helpers.ReadAll(request.response.Body)
 			// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
 			if logEntry.ShouldLogTrafficMetrics() && strings.HasPrefix(request.response.Header.Get("Content-Type"), "text/event-stream") {
 				logEntry.LogTrafficMetric(time.Since(doTs).Nanoseconds(), 0, uint64(len(request.ResponseBody)), -1, req.URL.Path, "", "STREAM", "")
@@ -669,32 +669,6 @@ func (handler *RestHandler) addVirtualProxy(request *RestRequest) error {
 		request.Destination = destination
 	}
 	return nil
-}
-
-func ReadAll(r io.Reader) ([]byte, error) {
-	buf := helpers.GlobalBufferPool.Get()
-	defer helpers.GlobalBufferPool.Put(buf)
-
-	capacity := int64(bytes.MinRead)
-	var err error
-	// If the buffer overflows, we will get bytes.ErrTooLarge.
-	// Return that as an error. Any other panic remains.
-	defer func() {
-		e := recover()
-		if e == nil {
-			return
-		}
-		if panicErr, ok := e.(error); ok && panicErr == bytes.ErrTooLarge {
-			err = panicErr
-		} else {
-			panic(e)
-		}
-	}()
-	if int64(int(capacity)) == capacity {
-		buf.Grow(int(capacity))
-	}
-	_, err = buf.ReadFrom(r)
-	return buf.Bytes(), err
 }
 
 func prependURLPath(aURL, pathToPrepend string) (string, error) {

@@ -191,7 +191,7 @@ func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.
 		State:     gobwas.StateClientSide,
 		CheckUTF8: true,
 		OnIntermediate: func(hdr gobwas.Header, src io.Reader) error {
-			bts, err := io.ReadAll(src)
+			bts, err := helpers.ReadAll(src)
 			if err != nil {
 				return err
 			}
