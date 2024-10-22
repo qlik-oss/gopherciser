@@ -507,6 +507,7 @@ func (handler *RestHandler) sendSyncWithCallback(method RestMethod, url string, 
 	wg.Add(1)
 	returnReq := handler.sendAsyncWithCallback(method, url, actionState, logEntry, content, headers, options, func(err error, req *RestRequest) {
 		defer wg.Done()
+		returnErr = err
 		if callback != nil {
 			callback(err, req)
 		}
