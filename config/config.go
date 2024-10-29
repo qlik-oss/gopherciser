@@ -492,6 +492,9 @@ func (cfg *Config) validateScheduler() error {
 			return errors.Errorf("No scenario items defined")
 		}
 		for _, act := range cfg.Scenario {
+			if act.Disabled {
+				continue
+			}
 			if schedValidate, ok := act.Settings.(scenario.ValidateActionForScheduler); ok {
 				warnings, err := schedValidate.IsActionValidForScheduler(cfg.schedType)
 				if err != nil {
