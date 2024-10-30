@@ -2,8 +2,11 @@ package scenario
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/goccy/go-json"
+	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -48,33 +51,61 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	reqNoError := session.DefaultReqOptions()
 	reqNoError.FailOnError = false
 
+	// Create and set a XRF key to headers
+	xrfkey := helpers.GenerateXrfKey(sessionState.Randomizer())
+	hostUrl, err := url.Parse(host)
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to parse hostname from URL"))
+		return
+	}
+	headers := sessionState.HeaderJar.GetHeader(hostUrl.Host)
+	headers.Add("X-Qlik-XrfKey", xrfkey)
+
+	// Request done synced
 	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/about", host), actionState, sessionState.LogEntry, nil)
-	getPrivilegesAsync(sessionState, actionState, host)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink", host), actionState, sessionState.LogEntry, nil)
-	fillArtifactsFromStreamsAsync(sessionState, actionState, host)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil) // Send second streams request because client does
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/externalproductsignons", host), actionState, sessionState.LogEntry, reqNoError)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties", host), actionState, sessionState.LogEntry, nil)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/favorites", host), actionState, sessionState.LogEntry, nil)
+	if actionState.Failed {
+		return
+	}
+	_, _ = sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/api/hub/about?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+		if err != nil {
+			return
+		}
+		getPrivilegesAsync(sessionState, actionState, host, xrfkey)
+	})
+	if actionState.Failed {
+		return
+	}
+
+	// async requests
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/user/info?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/desktoplink?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
+	fillArtifactsFromStreamsAsync(sessionState, actionState, host, xrfkey)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/reports?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/qvdocuments?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/properties?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/externalproductsignons?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, reqNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/streams?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil) // Send second streams request because client does
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/apps/favorites?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
 
 	virtualProxy := ""
 	if connectionSettings.VirtualProxy != "" {
 		virtualProxy = fmt.Sprintf("/%s", connectionSettings.VirtualProxy)
 	}
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qps/user?targetUri=%s%s/hub/", host, host, virtualProxy), actionState, sessionState.LogEntry, nil)
-
-	xrfkey := helpers.GenerateXrfKey(sessionState.Randomizer())
-	sessionState.Rest.GetWithHeadersAsync(fmt.Sprintf("%s/qrs/datacollection/settings?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, map[string]string{
-		"X-Qlik-XrfKey": xrfkey,
-	}, nil, nil)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/qrs/datacollection/settings?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil)
 
 	// These requests will warn only instead of error in case of failure
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license", host), actionState, sessionState.LogEntry, reqNoError)
-	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/custombannermessages", host), actionState, sessionState.LogEntry, reqNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, reqNoError)
+	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/custombannermessages?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, reqNoError)
+	// var QlikCSRFToken string
+	noContentOptions := session.DefaultReqOptions()
+	noContentOptions.ExpectedStatusCode = []int{http.StatusNoContent}
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
+		if err != nil {
+			return
+		}
+		// QlikCSRFToken = req.ResponseHeaders.Get("qlik-csrf-token")
+	})
 
 	// Client requests features twice, so we do it twice
 	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
@@ -93,9 +124,9 @@ func (openHub OpenHubSettings) AppStructureAction() (*AppStructureInfo, []Action
 	}, nil
 }
 
-func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *action.State, host string) {
+func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *action.State, host, xrfkey string) {
 	// Get all apps in "Work" and "Published" sections
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/user", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/user?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
 		}
@@ -110,7 +141,7 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 		}
 	})
 
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/myspace", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/apps/stream/myspace?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
 		}
@@ -126,7 +157,7 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 	})
 
 	// Get all apps from other streams
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/streams?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
 		}
@@ -149,8 +180,8 @@ func fillArtifactsFromStreamsAsync(sessionState *session.State, actionState *act
 	})
 }
 
-func getPrivilegesAsync(sessionState *session.State, actionState *action.State, host string) {
-	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/api/hub/v1/privileges", host), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
+func getPrivilegesAsync(sessionState *session.State, actionState *action.State, host, xrfkey string) {
+	_, _ = sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/api/hub/v1/privileges?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil || !sessionState.LogEntry.ShouldLogDebug() {
 			return
 		}
