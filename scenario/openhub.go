@@ -97,14 +97,13 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	// These requests will warn only instead of error in case of failure
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/insight-advisor-chat/license?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, reqNoError)
 	sessionState.Rest.GetAsync(fmt.Sprintf("%s/api/hub/v1/custombannermessages?xrfkey=%s", host, xrfkey), actionState, sessionState.LogEntry, reqNoError)
-	// var QlikCSRFToken string
 	noContentOptions := session.DefaultReqOptions()
 	noContentOptions.ExpectedStatusCode = []int{http.StatusNoContent}
 	sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
 		}
-		// QlikCSRFToken = req.ResponseHeaders.Get("qlik-csrf-token")
+		connectionSettings.SetCSRFToken(req.ResponseHeaders.Get("qlik-csrf-token"))
 	})
 
 	// Client requests features twice, so we do it twice

@@ -114,7 +114,7 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 		case "ws":
 			cookieUrl.Scheme = "http"
 		}
-		cookieUrl.Path = ""
+		cookieUrl.Path = url.Path
 		cookies := cookieJar.Cookies(&cookieUrl)
 		cookieStrings := make([]string, 0, len(cookies))
 		for _, cookie := range cookies {
