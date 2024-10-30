@@ -121,7 +121,13 @@ func (settings ChangestreamSettings) Execute(sessionState *session.State, action
 		return
 	}
 
-	streamsUrl := fmt.Sprintf("%s/api/hub/v1/apps/stream/%s", host, streamID)
+	xrfkey, err := sessionState.GetXrfKey(host)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	streamsUrl := fmt.Sprintf("%s/api/hub/v1/apps/stream/%s?xrfkey=%s", host, streamID, xrfkey)
 	sessionState.Rest.GetAsyncWithCallback(streamsUrl, actionState, sessionState.LogEntry, nil, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return

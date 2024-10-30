@@ -3,13 +3,10 @@ package scenario
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/goccy/go-json"
-	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
-	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
 	"github.com/qlik-oss/gopherciser/structs"
@@ -52,14 +49,11 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	reqNoError.FailOnError = false
 
 	// Create and set a XRF key to headers
-	xrfkey := helpers.GenerateXrfKey(sessionState.Randomizer())
-	hostUrl, err := url.Parse(host)
+	xrfkey, err := sessionState.GetXrfKey(host)
 	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to parse hostname from URL"))
+		actionState.AddErrors(err)
 		return
 	}
-	headers := sessionState.HeaderJar.GetHeader(hostUrl.Host)
-	headers.Add("X-Qlik-XrfKey", xrfkey)
 
 	// Request done synced
 	sessionState.Features.UpdateCapabilities(sessionState.Rest, host, actionState, sessionState.LogEntry)
