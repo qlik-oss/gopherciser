@@ -114,7 +114,9 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 		case "ws":
 			cookieUrl.Scheme = "http"
 		}
-		cookieUrl.Path = url.Path
+		if wstype == "EventWebsocket" { // Workaround for event websockets only
+			cookieUrl.Path = ""
+		}
 		cookies := cookieJar.Cookies(&cookieUrl)
 		cookieStrings := make([]string, 0, len(cookies))
 		for _, cookie := range cookies {
