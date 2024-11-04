@@ -49,7 +49,7 @@ func defaultGuidWsConnectTest(connectionSettings *connection.ConnectionSettings,
 
 	noContentOptions := session.DefaultReqOptions()
 	noContentOptions.ExpectedStatusCode = []int{http.StatusNoContent}
-	sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
+	_, _ = sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
 		if err != nil {
 			return
 		}
