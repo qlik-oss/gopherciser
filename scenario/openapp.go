@@ -309,7 +309,7 @@ func TrySetCSRFToken(sessionState *session.State, actionState *action.State, con
 		noContentOptions := session.DefaultReqOptions()
 		noContentOptions.ExpectedStatusCode = []int{http.StatusNoContent, http.StatusOK, http.StatusNotFound}
 		noContentOptions.FailOnError = false
-		sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
+		_, _ = sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
 			if err != nil {
 				return
 			}
