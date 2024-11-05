@@ -49,6 +49,7 @@ type (
 
 		syncTemplates sync.Once
 		templates     map[string]*template.Template
+		csrfToken     string
 	}
 
 	// ConnectFunc connects to a sense environment, set reconnect to true if it's a reconnect and session in engine
@@ -272,6 +273,10 @@ func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (stri
 		url += "/" + AppExt
 	}
 
+	if connection.csrfToken != "" {
+		url += "?qlik-csrf-token=" + connection.csrfToken
+	}
+
 	return url, nil
 }
 
@@ -331,4 +336,9 @@ func (connectionSettings *ConnectionSettings) parseTemplates() error {
 // AllowUntrusted implements session.ConnectionSettings interface
 func (connectionSettings *ConnectionSettings) AllowUntrusted() bool {
 	return connectionSettings.Allowuntrusted
+}
+
+// SetCSRFToken setting token that will be added to connect url when connecting to engine
+func (connectionSettings *ConnectionSettings) SetCSRFToken(token string) {
+	connectionSettings.csrfToken = token
 }

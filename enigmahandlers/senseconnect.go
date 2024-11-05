@@ -149,7 +149,7 @@ func (uplink *SenseUplink) Connect(ctx context.Context, url string, headers http
 		uplink.executeFailedConnectFuncs()
 	}
 
-	setupDialer(&dialer, timeout, uplink.logEntry, onUnexpectedDisconnect, uplink.MaxFrameSize)
+	setupDialer(&dialer, timeout, onUnexpectedDisconnect, uplink.MaxFrameSize)
 
 	// TODO somehow get better values for connect time
 	startTimestamp := time.Now()

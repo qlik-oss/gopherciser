@@ -64,6 +64,8 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		return
 	}
 
+	TrySetCSRFToken(sessionState, actionState, connectionSettings)
+
 	actionState.Details = sessionState.LogEntry.Session.AppName
 	var headers http.Header
 	if openApp.UniqueSession {
@@ -294,5 +296,26 @@ func DoPostOpenAppRequests(sessionState *session.State, actionState *action.Stat
 	sessionState.GetSheetList(actionState, uplink)
 	if actionState.Failed {
 		return
+	}
+}
+
+func TrySetCSRFToken(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings) {
+	if sessionState.TargetEnv() == "" { // No preceeding action performed to determine target environment
+		host, err := connectionSettings.GetRestUrl()
+		if err != nil {
+			actionState.AddErrors(err)
+			return
+		}
+		noContentOptions := session.DefaultReqOptions()
+		noContentOptions.ExpectedStatusCode = []int{http.StatusNoContent, http.StatusOK, http.StatusNotFound}
+		noContentOptions.FailOnError = false
+		_, _ = sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
+			if err != nil {
+				return
+			}
+			if req.ResponseStatusCode == http.StatusNoContent {
+				connectionSettings.SetCSRFToken(req.ResponseHeaders.Get("qlik-csrf-token"))
+			}
+		})
 	}
 }
