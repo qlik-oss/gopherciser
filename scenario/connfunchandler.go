@@ -42,19 +42,8 @@ func GetConnTestFuncs() []func(*connection.ConnectionSettings, *session.State, *
 }
 
 func defaultGuidWsConnectTest(connectionSettings *connection.ConnectionSettings, sessionState *session.State, actionState *action.State) error {
-	host, err := connectionSettings.GetRestUrl()
-	if err != nil {
-		return err
-	}
 
-	noContentOptions := session.DefaultReqOptions()
-	noContentOptions.ExpectedStatusCode = []int{http.StatusNoContent}
-	_, _ = sessionState.Rest.GetSyncWithCallback(fmt.Sprintf("%s/qps/csrftoken", host), actionState, sessionState.LogEntry, noContentOptions, func(err error, req *session.RestRequest) {
-		if err != nil {
-			return
-		}
-		connectionSettings.SetCSRFToken(req.ResponseHeaders.Get("qlik-csrf-token"))
-	})
+	TrySetCSRFToken(sessionState, actionState, connectionSettings)
 
 	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "00000000-0000-0000-0000-000000000000", "", nil)
 	if err != nil {
