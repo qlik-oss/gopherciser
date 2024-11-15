@@ -72,7 +72,7 @@ func TestIterated(t *testing.T) {
 	defer sessionState.Disconnect()
 
 	sessionState.Connection = new(enigmahandlers.SenseConnection)
-	sense := enigmahandlers.NewSenseUplink(ctx, nil, sessionState.RequestMetrics, nil)
+	sense := enigmahandlers.NewSenseUplink(ctx, nil, sessionState.RequestMetrics, nil, 0)
 	sense.MockMode = true
 	sessionState.Connection.SetSense(sense)
 	sessionState.LogEntry = logger.NewLogEntry(&logger.Log{})

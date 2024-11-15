@@ -2,13 +2,10 @@ package config
 
 import (
 	"context"
-	"github.com/goccy/go-json"
-	"fmt"
-	"os"
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -16,19 +13,23 @@ import (
 )
 
 type (
-	getAppStructureSettings struct {
-		IncludeRaw bool        `json:"includeRaw,omitempty"`
-		Summary    SummaryType `json:"summary,omitempty"`
+	GetAppStructureSettings struct {
+		IncludeRaw bool `json:"includeRaw,omitempty"`
+		// TruncateStringsTo truncates non significant strings to size if set to > 0
+		TruncateStringsTo int  `json:"truncate,omitempty"`
+		DisableLog        bool `json:"disablelog"` // If enabled warnings won't be logged while getting app structure
+
+		AppStructures map[string]*GeneratedAppStructure
 	}
 )
 
 // Validate implements ActionSettings interface
-func (settings *getAppStructureSettings) Validate() ([]string, error) {
+func (settings *GetAppStructureSettings) Validate() ([]string, error) {
 	return nil, nil
 }
 
 // Execute implements ActionSettings interface
-func (settings *getAppStructureSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
+func (settings *GetAppStructureSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 	if sessionState.Connection == nil || sessionState.Connection.Sense() == nil {
 		actionState.AddErrors(errors.New("Not connected to a Sense environment"))
 		return
@@ -57,25 +58,29 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 			Guid:  app.GUID,
 		}}
 
-	appStructure := &GeneratedAppStructure{
+	structure := &GeneratedAppStructure{
 		innerAs,
-		sessionState.LogEntry,
+		nil,
 		AppStructureReport{},
 		sync.Mutex{},
+		settings.TruncateStringsTo,
 	}
-	appStructure.logEntry = sessionState.LogEntry
+
+	if !settings.DisableLog {
+		structure.logEntry = sessionState.LogEntry
+	}
 
 	for _, info := range allInfos {
 		if info == nil {
 			continue
 		}
-		if err := appStructure.getStructureForObjectAsync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw); err != nil {
+		if err := structure.getStructureForObjectAsync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw); err != nil {
 			actionState.AddErrors(err)
 			return
 		}
 	}
 
-	appStructure.getFieldListAsync(sessionState, actionState, app)
+	structure.getFieldListAsync(sessionState, actionState, app)
 
 	if sessionState.Wait(actionState) {
 		return // An error occurred
@@ -95,44 +100,11 @@ func (settings *getAppStructureSettings) Execute(sessionState *session.State, ac
 	}
 
 	sheetListLayout := sheetList.Layout()
-	err = appStructure.addSheetMeta(sheetListLayout)
+	err = structure.addSheetMeta(sheetListLayout)
 	if err != nil {
 		actionState.AddErrors(err)
 		return
 	}
 
-	// TODO clicking the "Selections" tab in sense would normally create a fieldlist and a dimensionlist object
-	// to get dimensions and fields. We however already have master object dimensions in object list
-	// should these be moved to a combined field+dimension list? Leave this as is now and to be decided
-	// when implementing actions using fields and decide what works best for GUI.
-
-	raw, err := json.MarshalIndent(appStructure, "", "  ")
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "error marshaling app structure"))
-		return
-	}
-
-	outputDir := sessionState.OutputsDir
-	if outputDir != "" && outputDir[len(outputDir)-1:] != "/" {
-		outputDir += "/"
-	}
-
-	fileName := fmt.Sprintf("%s%s.structure", outputDir, app.GUID)
-	structureFile, err := os.Create(fileName)
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to create structure file"))
-		return
-	}
-	defer func() {
-		if err := structureFile.Close(); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "failed to close file<%v> successfully: %v\n", structureFile, err)
-		}
-	}()
-
-	if _, err = structureFile.Write(raw); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "error while writing to structure file"))
-		return
-	}
-
-	appStructure.printSummary(settings.Summary, fileName)
+	settings.AppStructures[app.GUID] = structure
 }

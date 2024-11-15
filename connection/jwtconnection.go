@@ -2,14 +2,14 @@ package connection
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
+	"os"
 	"strings"
 	"sync"
 
 	"github.com/goccy/go-json"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/session"
@@ -53,9 +53,9 @@ type (
 )
 
 // GetConnectFunc which establishes a connection to Qlik Sense
-func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connection *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) func() (string, error) {
-	connectFunc := func() (string, error) {
-		url, err := connection.GetURL(appGUID, externalhost)
+func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) ConnectFunc {
+	connectFunc := func(reconnect bool) (string, error) {
+		url, err := connectionSettings.GetURL(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
 		}
@@ -67,9 +67,8 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 			sessionState.Disconnect()
 		}
 
-		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger())
+		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger(), connectionSettings.MaxFrameSize)
 		sessionState.Connection.SetSense(sense)
-		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
 		// Connect
 		ctx, cancel := sessionState.ContextWithTimeout(sessionState.BaseContext())
@@ -90,9 +89,10 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 		for k, v := range customHeaders {
 			connectHeaders[k] = v
 		}
-		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connection.Allowuntrusted, sessionState.Timeout); err != nil {
+		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
+		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
 
 		return appGUID, nil
 	}
@@ -217,7 +217,7 @@ func (connectJWT *ConnectJWTSettings) getPrivateKey() ([]byte, error) {
 	// read private key into memory
 	var readKeyErr error
 	connectJWT.readKey.Do(func() {
-		connectJWT.key, readKeyErr = ioutil.ReadFile(connectJWT.KeyPath)
+		connectJWT.key, readKeyErr = os.ReadFile(connectJWT.KeyPath)
 	})
 
 	if readKeyErr != nil {

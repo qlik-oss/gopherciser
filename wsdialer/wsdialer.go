@@ -1,8 +1,11 @@
 package wsdialer
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -17,6 +20,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/globals"
 	"github.com/qlik-oss/gopherciser/helpers"
+)
+
+var (
+	ErrFrameTooLarge = wsutil.ErrFrameTooLarge
 )
 
 type (
@@ -51,6 +58,7 @@ type (
 		Reconnect ReConnectSettings
 		// OnUnexpectedDisconnect triggers on disconnect of websocket
 		OnUnexpectedDisconnect func()
+		MaxFrameSize           int64
 
 		url       *neturl.URL
 		closed    chan struct{}
@@ -60,6 +68,7 @@ type (
 	// DisconnectError is sent on websocket disconnect
 	DisconnectError struct {
 		Type string
+		Err  error
 	}
 )
 
@@ -70,7 +79,7 @@ const (
 
 var (
 	// DefaultBackoff of reconnection
-	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0}
+	DefaultBackoff = []float64{0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 8.0, 12.0, 16.0}
 
 	closedChan = make(chan struct{}) // reusable closed channel
 )
@@ -81,11 +90,11 @@ func init() {
 
 // Error implements error interface
 func (err DisconnectError) Error() string {
-	return fmt.Sprintf("Websocket<%s> disconnected", err.Type)
+	return fmt.Sprintf("Websocket<%s> disconnected (%s)", err.Type, err.Err)
 }
 
 // New Create new websocket dialer, use type to define a specific type which would be reported when getting a DisconnectError
-func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, timeout time.Duration, allowUntrusted bool, wstype string) (*WsDialer, error) {
+func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, timeout time.Duration, allowUntrusted bool, wstype string, maxFrameSize int64) (*WsDialer, error) {
 	if timeout.Nanoseconds() < 1 {
 		timeout = DefaultTimeout
 	}
@@ -105,7 +114,9 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 		case "ws":
 			cookieUrl.Scheme = "http"
 		}
-		cookieUrl.Path = ""
+		if wstype == "EventWebsocket" { // Workaround for event websockets only
+			cookieUrl.Path = ""
+		}
 		cookies := cookieJar.Cookies(&cookieUrl)
 		cookieStrings := make([]string, 0, len(cookies))
 		for _, cookie := range cookies {
@@ -144,9 +155,10 @@ func New(url *neturl.URL, httpHeader http.Header, cookieJar http.CookieJar, time
 				InsecureSkipVerify: allowUntrusted,
 			},
 		},
-		url:    url,
-		Type:   wstype,
-		closed: make(chan struct{}),
+		url:          url,
+		Type:         wstype,
+		closed:       make(chan struct{}),
+		MaxFrameSize: maxFrameSize,
 	}
 
 	return &dialer, nil
@@ -161,7 +173,11 @@ func (dialer *WsDialer) Dial(ctx context.Context) error {
 	}
 
 	var err error
-	dialer.Conn, _ /*br*/, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
+	var br *bufio.Reader
+	dialer.Conn, br, _ /*hs*/, err = dialer.Dialer.Dial(ctx, dialer.url.String())
+	if br != nil {
+		gobwas.PutReader(br)
+	}
 	return errors.WithStack(err)
 }
 
@@ -170,23 +186,87 @@ func (dialer *WsDialer) WriteMessage(messageType int, data []byte) error {
 	return wsutil.WriteClientMessage(dialer, gobwas.OpCode(messageType), data)
 }
 
+// readMessage is copied from github.com/gobwas/wsutil package and modified with maxframesize parameter
+func readMessage(r io.Reader, m []wsutil.Message, maxFrameSize int64) ([]wsutil.Message, error) {
+	rd := wsutil.Reader{
+		Source:    r,
+		State:     gobwas.StateClientSide,
+		CheckUTF8: true,
+		OnIntermediate: func(hdr gobwas.Header, src io.Reader) error {
+			bts, err := io.ReadAll(src)
+			if err != nil {
+				return err
+			}
+			m = append(m, wsutil.Message{OpCode: hdr.OpCode, Payload: bts})
+			return nil
+		},
+		MaxFrameSize:    maxFrameSize,
+		SkipHeaderCheck: true,
+	}
+	h, err := rd.NextFrame()
+	if err != nil {
+		return m, err
+	}
+	var p []byte
+	if h.Fin {
+		// No more frames will be read. Use fixed sized buffer to read payload.
+		p = make([]byte, h.Length)
+		// It is not possible to receive io.EOF here because Reader does not
+		// return EOF if frame payload was successfully fetched.
+		// Thus we consistent here with io.Reader behavior.
+		_, err = io.ReadFull(&rd, p)
+	} else {
+		// Frame is fragmented, thus use ioutil.ReadAll behavior.
+		var buf bytes.Buffer
+		_, err = buf.ReadFrom(&rd)
+		p = buf.Bytes()
+	}
+	if err != nil {
+		return m, err
+	}
+	return append(m, wsutil.Message{OpCode: h.OpCode, Payload: p}), nil
+}
+
 // ReadMessage Read one entire message from websocket
 func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 	var msg []wsutil.Message
 	var err error
-	msg, err = wsutil.ReadServerMessage(dialer, msg)
+	msg, err = readMessage(dialer, msg, dialer.MaxFrameSize)
 	var data []byte
 
+	var closeMsg []byte
 	for _, m := range msg {
-		data = append(data, m.Payload...)
+		if m.OpCode == gobwas.OpClose {
+			closeMsg = append(closeMsg, m.Payload...)
+		} else {
+			data = append(data, m.Payload...)
+		}
 	}
 
-	if err == io.EOF {
+	disconnected := false
+	switch err := err.(type) {
+	// We might want to check sub errors, but have seen both net.ErrClosed and os.SyscallError on disconnect to handling all OpErrors as disconnects for now
+	case *net.OpError:
+		disconnected = true
+	default:
+		if err == io.EOF {
+			disconnected = true
+		}
+	}
+
+	if len(closeMsg) > 3 {
+		closeStatusCode := binary.BigEndian.Uint16(closeMsg[:2])
+		closeReason := closeMsg[2:]
+		err = fmt.Errorf("websocket closed with code<%d> and reason<%s>", closeStatusCode, closeReason)
+		disconnected = true
+	}
+
+	if disconnected {
 		if dialer.OnUnexpectedDisconnect != nil {
 			dialer.OnUnexpectedDisconnect()
 		}
 		if !dialer.Reconnect.AutoReconnect {
-			err = DisconnectError{Type: dialer.Type}
+			err = DisconnectError{Type: dialer.Type, Err: err}
 		} else {
 			var motherContext context.Context
 			if dialer.Reconnect.GetContext != nil {
@@ -203,7 +283,7 @@ func (dialer *WsDialer) ReadMessage() (int, []byte, error) {
 			}
 
 			if isClosed() {
-				return len(data), data, DisconnectError{Type: dialer.Type}
+				return len(data), data, DisconnectError{Type: dialer.Type, Err: err}
 			}
 
 			err = dialer.reconnect(motherContext, isClosed)

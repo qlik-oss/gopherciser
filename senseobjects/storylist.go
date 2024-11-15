@@ -2,11 +2,11 @@ package senseobjects
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 )
 
 type (
@@ -14,9 +14,7 @@ type (
 	StoryList struct {
 		enigmaObject *enigma.GenericObject
 		layout       *enigma.GenericObjectLayout
-		properties   *enigma.GenericObjectProperties
-
-		mutex sync.Mutex
+		mutex        sync.Mutex
 	}
 )
 
@@ -73,33 +71,4 @@ func (storyList *StoryList) setLayout(layout *enigma.GenericObjectLayout) {
 	storyList.mutex.Lock()
 	defer storyList.mutex.Unlock()
 	storyList.layout = layout
-}
-
-// UpdateProperties get and set properties for StoryList
-func (storyList *StoryList) UpdateProperties(ctx context.Context) error {
-	if storyList.enigmaObject == nil {
-		return errors.Errorf("storyList enigma object is nil")
-	}
-
-	propertiesRaw, err := storyList.enigmaObject.GetEffectivePropertiesRaw(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to unmarshal storyList properties")
-	}
-
-	var properties enigma.GenericObjectProperties
-	err = json.Unmarshal(propertiesRaw, &properties)
-	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal storyList properties")
-	}
-
-	storyList.setProperties(&properties)
-
-	return nil
-}
-
-func (storyList *StoryList) setProperties(properties *enigma.GenericObjectProperties) {
-	storyList.mutex.Lock()
-	defer storyList.mutex.Unlock()
-
-	storyList.properties = properties
 }

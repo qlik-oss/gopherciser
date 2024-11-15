@@ -2,13 +2,14 @@ package session
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"math"
 	"sync"
 
+	"github.com/goccy/go-json"
+
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/globals/constant"
@@ -27,12 +28,28 @@ type (
 		writeLock sync.Mutex
 	}
 
-	CalcEvalConditionFailedError struct{}
+	CalcEvalConditionFailedError string
+
+	HyperCubeSection int
+
+	NxValidationError struct {
+		Err     enigma.NxValidationError
+		Id      string
+		Path    string
+		Section HyperCubeSection
+	}
 )
 
 const (
 	maxNbrLines = 12
 	maxNbrTicks = 300
+)
+
+const (
+	HyperCubeSectionRoot HyperCubeSection = iota
+	HyperCubeSectionMeasure
+	HyperCubeSectionDimension
+	HyperCubeSectionMeasureMinichart
 )
 
 var (
@@ -47,11 +64,39 @@ func init() {
 	if err := GlobalObjectHandler.RegisterHandler("container", &ContainerHandler{}, false); err != nil {
 		panic(err)
 	}
+	if err := GlobalObjectHandler.RegisterHandler("sn-layout-container", &LayoutContainerHandler{}, false); err != nil {
+		panic(err)
+	}
+	if err := GlobalObjectHandler.RegisterHandler("masterobject", &MasterObjectHandler{}, false); err != nil {
+		panic(err)
+	}
+	if err := GlobalObjectHandler.RegisterHandler("sn-tabbed-container", &TabbedContainerHandler{}, false); err != nil {
+		panic(err)
+	}
+}
+
+func (err NxValidationError) Error() string {
+	return fmt.Sprintf("object<%s> has %s error<%s> ExtendMessage<%s>", err.Id, err.Path, EngineCodeToString(err.Err.ErrorCode), err.Err.ExtendedMessage)
+}
+
+// Implements engima.Error interface
+func (err NxValidationError) Code() int {
+	return err.Err.ErrorCode
+}
+
+// Implements engima.Error interface
+func (err NxValidationError) Parameter() string {
+	return ""
+}
+
+// Implements engima.Error interface
+func (err NxValidationError) Message() string {
+	return err.Err.ExtendedMessage
 }
 
 // Error implements error interface
 func (err CalcEvalConditionFailedError) Error() string {
-	return "object has unsatisfied calculation condition"
+	return fmt.Sprintf("object has unsatisfied calculation condition in %s", string(err))
 }
 
 // RegisterHandler for object type, override existing handler with override flag
@@ -124,7 +169,7 @@ func getAndAddObjectWithCallback(sessionState *State, actionState *action.State,
 	}, actionState, true, fmt.Sprintf("Failed to get object<%s>", name))
 }
 
-func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
+func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, def *senseobjdef.ObjectDef) error {
 	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
 	if !ok {
 		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
@@ -145,14 +190,17 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 		return errors.Wrapf(err, "failed to get children for object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 	}
 
-	def, err := senseobjdef.GetObjectDef(enigmaObject.GenericType)
-	if err != nil {
-		switch errors.Cause(err).(type) {
-		case senseobjdef.NoDefError:
-			sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object type<%s> not supported", enigmaObject.GenericType)
-			return nil
-		default:
-			return errors.WithStack(err)
+	if def == nil {
+		var err error
+		def, err = senseobjdef.GetObjectDef(enigmaObject.GenericType)
+		if err != nil {
+			switch errors.Cause(err).(type) {
+			case senseobjdef.NoDefError:
+				sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
+				return nil
+			default:
+				return errors.WithStack(err)
+			}
 		}
 	}
 
@@ -173,7 +221,7 @@ func GetObjectLayout(sessionState *State, actionState *action.State, obj *enigma
 	return nil
 }
 
-func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
+func DefaultSetObjectDataAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject, def *senseobjdef.ObjectDef) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -185,15 +233,59 @@ func SetObjectDataAndEvents(sessionState *State, actionState *action.State, obj 
 	wg.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
-		return GetObjectLayout(sessionState, actionState, obj)
+		return GetObjectLayout(sessionState, actionState, obj, def)
 	}, actionState, true, "")
 
 	wg.Wait()
 
+	properties := obj.Properties()
+	if properties != nil && properties.ExtendsId != "" && properties.Info != nil && properties.Info.Type == "listbox" {
+		// Special handling of objects wrapping listbox objects due to changes for listboxes belonging to filterpanes
+		if err := sessionState.IDMap.Replace(properties.ExtendsId, obj.ID, sessionState.LogEntry); err != nil {
+			sessionState.LogEntry.LogDetail(logger.WarningLevel, fmt.Sprintf("error adding id<%s> to IDMap", properties.ExtendsId), err.Error())
+		}
+	}
+
 	event := func(ctx context.Context, as *action.State) error {
-		return GetObjectLayout(sessionState, as, obj)
+		return GetObjectLayout(sessionState, as, obj, def)
 	}
 	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+
+	children := obj.ChildList()
+	childListItems := make(map[string]interface{})
+	if children != nil && children.Items != nil {
+		sessionState.LogEntry.LogDebugf("object<%s> type<%s> has children", genObj.GenericId, genObj.GenericType)
+		for _, child := range children.Items {
+			sessionState.LogEntry.LogDebug(fmt.Sprintf("obj<%s> child<%s> found in ChildList", obj.ID, child.Info.Id))
+			childListItems[child.Info.Id] = nil
+			GetAndAddObjectAsync(sessionState, actionState, child.Info.Id)
+		}
+	}
+
+	if genObj.GenericType == "sheet" {
+		sessionState.QueueRequest(func(ctx context.Context) error {
+			sheetList, err := sessionState.Connection.Sense().CurrentApp.GetSheetList(sessionState, actionState)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if sheetList != nil {
+				entry, err := sheetList.GetSheetEntry(genObj.GenericId)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				if entry != nil && entry.Data != nil {
+					for _, cell := range entry.Data.Cells {
+						if _, ok := childListItems[cell.Name]; !ok {
+							// Todo should this be a warning?
+							sessionState.LogEntry.LogDebug(fmt.Sprintf("cell<%s> missing from sheet<%s> childlist", cell.Name, genObj.GenericId))
+							GetAndAddObjectAsync(sessionState, actionState, cell.Name)
+						}
+					}
+				}
+			}
+			return nil
+		}, actionState, true, "")
+	}
 }
 
 func SetChildList(rawLayout json.RawMessage, obj *enigmahandlers.Object) error {
@@ -255,7 +347,7 @@ func SetListObject(rawLayout json.RawMessage, obj *enigmahandlers.Object, path h
 	return nil
 }
 
-func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path helpers.DataPath) error {
+func SetHyperCube(sessionState *State, actionState *action.State, rawLayout json.RawMessage, obj *enigmahandlers.Object, path helpers.DataPath) error {
 	rawHyperCube, err := path.Lookup(rawLayout)
 	if err != nil {
 		return errors.Wrap(err, "error getting hypercube")
@@ -267,6 +359,27 @@ func SetHyperCube(rawLayout json.RawMessage, obj *enigmahandlers.Object, path he
 	}
 
 	obj.SetHyperCube(hyperCube)
+
+	// Look for cyclic dimensions and add to app sessionobjects
+	if len(hyperCube.DimensionInfo) > 0 {
+		for i, dim := range hyperCube.DimensionInfo {
+			if dim != nil && dim.Grouping == constant.NxDimensionInfoGroupingCollection {
+				app, err := sessionState.CurrentSenseApp()
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				if dim.LibraryId == "" {
+					sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s> dim<%d> has grouping<C>, but no library ID", obj.ID, i)
+					continue
+				}
+				// GetDimension (adds it to sessionobjects list)
+				if _, err = app.GetDimension(sessionState, actionState, dim.LibraryId); err != nil {
+					actionState.AddErrors(err)
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -299,7 +412,7 @@ func UpdateObjectHyperCubeDataAsync(sessionState *State, actionState *action.Sta
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -363,7 +476,7 @@ func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -416,15 +529,13 @@ func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *acti
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
 				return errors.Wrap(obj.SetHyperCubeDataPages(make([]*enigma.NxDataPage, 0), false), "failed to set hypercube datapages")
 			}
 			return errors.WithStack(err)
-		} else if hypercube.Error != nil {
-			return nil
 		}
 
 		if hypercube.Size == nil {
@@ -502,7 +613,7 @@ func UpdateObjectHyperCubeStackDataAsync(sessionState *State, actionState *actio
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -572,7 +683,7 @@ func UpdateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get continuous data for object<%s>", gob.GenericId)
 		hypercube := obj.HyperCube()
-		if err := checkHyperCubeErr(gob.GenericId, hypercube.Error); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -651,15 +762,64 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 	}, actionState, true, fmt.Sprintf("failed to get tree data for object<%s>", gob.GenericId))
 }
 
-func checkHyperCubeErr(id string, err *enigma.NxValidationError) error {
-	if err == nil {
-		return nil
+func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEntry *logger.LogEntry) error {
+	if hypercube == nil {
+		return errors.Errorf("object<%s> has no hypercube", id)
 	}
-	switch err.ErrorCode {
+
+	if err, _ := checkHyperCubeErrorInner(id, "hypercube", HyperCubeSectionRoot, hypercube.Error); err != nil {
+		return err
+	}
+
+	var firstWarnError error
+	if hypercube.DimensionInfo != nil {
+		for i, dimInfo := range hypercube.DimensionInfo {
+			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.DimensionInfo[%d]", i), HyperCubeSectionDimension, dimInfo.Error); err != nil {
+				if !warning {
+					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in DimensionInfo[%d]", id, EngineCodeToString(dimInfo.Error.ErrorCode), i)
+				}
+				if firstWarnError == nil {
+					firstWarnError = err
+				}
+			}
+		}
+	}
+
+	if hypercube.MeasureInfo != nil {
+		for i, measureInfo := range hypercube.MeasureInfo {
+			if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d]", i), HyperCubeSectionMeasure, measureInfo.Error); err != nil {
+				if !warning {
+					return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d]", id, EngineCodeToString(measureInfo.Error.ErrorCode), i)
+				}
+				if firstWarnError == nil {
+					firstWarnError = err
+				}
+			}
+			if measureInfo.MiniChart != nil {
+				if err, warning := checkHyperCubeErrorInner(id, fmt.Sprintf("hypercube.MeasureInfo[%d].MiniChart", i), HyperCubeSectionMeasureMinichart, measureInfo.MiniChart.Error); err != nil {
+					if !warning {
+						return errors.Wrapf(err, "object<%s> has hypercube error<%s> in MeasureInfo[%d].MiniChart", id, EngineCodeToString(measureInfo.MiniChart.Error.ErrorCode), i)
+					}
+					if firstWarnError == nil {
+						firstWarnError = err
+					}
+				}
+			}
+		}
+	}
+
+	return firstWarnError
+}
+
+func checkHyperCubeErrorInner(id, path string, section HyperCubeSection, nve *enigma.NxValidationError) (error, bool) {
+	if nve == nil {
+		return nil, false
+	}
+	switch nve.ErrorCode {
 	case constant.LocerrCalcEvalConditionFailed:
-		return CalcEvalConditionFailedError{}
+		return CalcEvalConditionFailedError(path), true
 	default:
-		return errors.Errorf("object<%s> has hypercube error<ErrorCode:%d (%s)>", id, err.ErrorCode, enigma.ErrorCodeLookup(err.ErrorCode))
+		return NxValidationError{Err: *nve, Id: id, Section: section, Path: path}, false
 	}
 }
 
@@ -681,15 +841,16 @@ func checkEngineErr(err error, sessionState *State, req string) error {
 	}
 }
 
-//Logic as written in client.js as of sense april 2018:
-// getFullContinuousRange: function (t) {
-// 	var e = t.qHyperCube.qDimensionInfo[0].qMin,
-// 	n = t.qHyperCube.qDimensionInfo[0].qMax;
-// 	return n < e || "NaN" === n ? e = n = "NaN" : e === n && (e -= .5, n += .5), {
-// 		min: e,
-// 		max: n
-// 	}
-// },
+// Logic as written in client.js as of sense april 2018:
+//
+//	getFullContinuousRange: function (t) {
+//		var e = t.qHyperCube.qDimensionInfo[0].qMin,
+//		n = t.qHyperCube.qDimensionInfo[0].qMax;
+//		return n < e || "NaN" === n ? e = n = "NaN" : e === n && (e -= .5, n += .5), {
+//			min: e,
+//			max: n
+//		}
+//	},
 func GetFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64, enigma.Float64, error) {
 	if hypercube == nil || hypercube.DimensionInfo == nil || len(hypercube.DimensionInfo) < 1 {
 		return -1, -1, errors.Errorf("hypercube has no dimension")
@@ -707,13 +868,14 @@ func GetFullContinuousRange(hypercube *enigmahandlers.HyperCube) (enigma.Float64
 	return e, n, nil
 }
 
-//Logic as written in client.js as of sense april 2018:
-// getApproriateNrOfBins: function (t) {
-// 	var e = t.qHyperCube.qMeasureInfo.length || 1,
-// 	n = 4 + 2 * (e - 1);
-// 	return t.qHyperCube.qDimensionInfo.length > 1 && (e = Math.max(1, Math.min(h.maxNumberOfLines, t.qHyperCube.qDimensionInfo[1].qStateCounts.qLocked + t.qHyperCube.qDimensionInfo[1].qStateCounts.qOption + t.qHyperCube.qDimensionInfo[1].qStateCounts.qSelected)), n = 4),
-// 	Math.ceil(2e3 / (e * n))
-// },
+// Logic as written in client.js as of sense april 2018:
+//
+//	getApproriateNrOfBins: function (t) {
+//		var e = t.qHyperCube.qMeasureInfo.length || 1,
+//		n = 4 + 2 * (e - 1);
+//		return t.qHyperCube.qDimensionInfo.length > 1 && (e = Math.max(1, Math.min(h.maxNumberOfLines, t.qHyperCube.qDimensionInfo[1].qStateCounts.qLocked + t.qHyperCube.qDimensionInfo[1].qStateCounts.qOption + t.qHyperCube.qDimensionInfo[1].qStateCounts.qSelected)), n = 4),
+//		Math.ceil(2e3 / (e * n))
+//	},
 func GetApproriateNrOfBins(hypercube *enigmahandlers.HyperCube) int {
 	e := 1
 	if hypercube != nil && hypercube.MeasureInfo != nil {
@@ -750,11 +912,11 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 			return errors.Errorf(
 				"object<%s> is defined as hypercube carrier, but has not hypercube path definition", enigmaObject.GenericType)
 		}
-		if err := SetHyperCube(rawLayout, obj, objectDef.DataDef.Path); err != nil {
+		if err := SetHyperCube(sessionState, actionState, rawLayout, obj, objectDef.DataDef.Path); err != nil {
 			return errors.Wrapf(err, "object<%s> type<%s>", obj.ID, enigmaObject.GenericType)
 		}
 	default:
-		sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object type<%s> not supported", enigmaObject.GenericType)
+		sessionState.LogEntry.Logf(logger.WarningLevel, "Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
 		return nil
 	}
 
@@ -794,8 +956,12 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 			UpdateObjectHyperCubeTreeDataAsync(sessionState, actionState, enigmaObject, obj, r)
 		default:
 			sessionState.LogEntry.Logf(logger.WarningLevel,
-				"Get Data for object type<%s> not supported", enigmaObject.GenericType)
+				"Get Data for object<%s> type<%s> not supported", enigmaObject.GenericId, enigmaObject.GenericType)
 		}
 	}
 	return nil
+}
+
+func EngineCodeToString(errorCode int) string {
+	return fmt.Sprintf("ErrorCode:%d (%s)", errorCode, enigma.ErrorCodeLookup(errorCode))
 }

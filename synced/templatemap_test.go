@@ -13,7 +13,8 @@ func TestMap(t *testing.T) {
 		"param1" : "val1 is {{.Val1}} and val2 is {{env \"test-env\"}}",
 		"param2" : "{{ add 1 \"3\" }}",
 		"param3" : "{{ join .Val2 \",\" }},elem4",
-		"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}"		
+		"param4" : "{{ join (slice .Val2 0 (add (len .Val2) -1)) \",\" }}",
+		"param5" : "{{ modulo 10 \"4\" }}"		
 	}`
 
 	var tmplMap TemplateMap
@@ -31,6 +32,7 @@ func TestMap(t *testing.T) {
 		"param2": "4",
 		"param3": "elem1,elem2,elem3,elem4",
 		"param4": "elem1,elem2",
+		"param5": "2",
 	}
 
 	for k, v := range cmpMap {

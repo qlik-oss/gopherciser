@@ -66,12 +66,12 @@ func TestValidatePublishSheetSettings(t *testing.T) {
 		input   PublishSheetSettings
 		isValid bool
 	}{
-		{PublishSheetSettings{AllSheets, nil}, true},
-		{PublishSheetSettings{AllSheets, []string{"A", "B", "C"}}, false},
-		{PublishSheetSettings{AllSheets, []string{}}, true},
-		{PublishSheetSettings{SheetIDs, nil}, false},
-		{PublishSheetSettings{SheetIDs, []string{}}, false},
-		{PublishSheetSettings{SheetIDs, []string{"A", "B", "C"}}, true},
+		{PublishSheetSettings{AllSheets, nil, false}, true},
+		{PublishSheetSettings{AllSheets, []string{"A", "B", "C"}, false}, false},
+		{PublishSheetSettings{AllSheets, []string{}, true}, true},
+		{PublishSheetSettings{SheetIDs, nil, false}, false},
+		{PublishSheetSettings{SheetIDs, []string{}, true}, false},
+		{PublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, false}, true},
 	}
 
 	for _, tc := range tt {

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
@@ -466,7 +466,7 @@ func cutPosition(index int, slice *[]int) error {
 	return nil
 }
 
-//getPossible returns []possible, []bins, error
+// getPossible returns []possible, []bins, error
 func getPossible(obj *enigmahandlers.Object, dataDefType senseobjdef.DataDefType, dim int,
 	selectionType SelectionType, columns bool) ([]int, []string, error) {
 	if selectStateHandler == nil {
@@ -663,7 +663,7 @@ func recursiveDataFromStackedPivotCell(cell *enigma.NxStackedPivotCell, currentD
 		return
 	}
 
-	if cell.SubNodes != nil && len(cell.SubNodes) > 1 {
+	if len(cell.SubNodes) > 1 {
 		for _, subCell := range cell.SubNodes {
 			recursiveDataFromStackedPivotCell(subCell, currentDim+1, getDim, possibleMap)
 		}

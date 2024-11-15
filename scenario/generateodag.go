@@ -10,7 +10,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
@@ -107,7 +107,7 @@ func GenerateOdag(sessionState *session.State, settings GenerateOdagSettings, ac
 func MakeOdagRequest(sessionState *session.State, actionState *action.State, odagLinkBindings []structs.OdagLinkBinding, host string, odagEndpoint OdagEndpointConfiguration, odagLinkId string, postObject structs.IOdagPostRequest, connection *enigmahandlers.SenseUplink) error {
 	var currentSelections *senseobjects.CurrentSelections
 	var err error
-	if currentSelections, err = connection.CurrentApp.GetCurrentSelections(sessionState, actionState); err != nil {
+	if currentSelections, err = connection.CurrentApp.GetCurrentSelections(sessionState, actionState, true); err != nil {
 		return errors.WithStack(err)
 	}
 

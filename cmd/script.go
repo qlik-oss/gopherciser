@@ -17,6 +17,9 @@ var (
 	// structure command parameters
 	outputFolder string
 	includeRaw   bool
+
+	// validate command parameters
+	printJSON bool
 )
 
 func init() {
@@ -26,6 +29,7 @@ func init() {
 	// validate sub command
 	scriptCmd.AddCommand(validateCmd)
 	AddAllSharedParameters(validateCmd)
+	validateCmd.Flags().BoolVarP(&printJSON, "print", "p", false, "Print result JSON.")
 
 	// connect sub command
 	scriptCmd.AddCommand(testConnectionCmd)
@@ -108,13 +112,22 @@ var validateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := unmarshalConfigFile()
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			return
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(ExitCodeJSONParseError)
 		}
 
 		if err := validateConfigAndPrintWarnings(cfg); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-			return
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(ExitCodeJSONValidateError)
+		}
+
+		if printJSON {
+			result, err := json.MarshalIndent(cfg, "", "  ")
+			if err != nil {
+				_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to marshal result JSON, err: %v\n", err))
+				os.Exit(ExitCodeJSONParseError)
+			}
+			fmt.Println(string(result))
 		}
 
 		_, _ = os.Stderr.WriteString("Config Valid!\n")
@@ -177,7 +190,7 @@ Will save one .structure file per app in script in the folder defined by output 
 			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
 		case nil:
 		default:
-			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(ExitCodeAppStructure)
 		}
 	},

@@ -45,5 +45,11 @@ func (settings SetScriptSettings) Execute(sessionState *session.State,
 		actionState.AddErrors(errors.Wrap(err, "failed to set script"))
 		return
 	}
+
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error { return app.Doc.DoSave(ctx, "") }); err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to save app"))
+		return
+	}
+
 	sessionState.Wait(actionState)
 }

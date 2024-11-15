@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
@@ -92,10 +91,12 @@ type (
 		IsAppAction bool
 		Include     bool
 	}
-)
 
-type (
-	// *** Interfaces which could be implemented on action struct field types ***
+	// ValidateActionForScheduler interface can be implemented on a action in a scenario to validate if scheduler type is allowed to use action
+	// returns list of warnings and error
+	ValidateActionForScheduler interface {
+		IsActionValidForScheduler(string) ([]string, error)
+	}
 
 	// Enum interface should be implemented on types used fields of action struct if:
 	// 1. Type is derived from one integer type. Example: `type MyType int`
@@ -147,6 +148,9 @@ const (
 	ActionSetScriptVar          = "setscriptvar"
 	ActionSmartSearch           = "smartsearch"
 	ActionObjectSearch          = "objectsearch"
+	ActionGetScript             = "getscript"
+	ActionChangeSteam           = "changestream"
+	ActionStepDimension         = "stepdimension"
 )
 
 // Scenario actions needs an entry in actionHandler
@@ -257,6 +261,9 @@ func ResetDefaultActions() {
 		ActionSetScriptVar:          SetScriptVarSettings{},
 		ActionSmartSearch:           SmartSearchSettings{},
 		ActionObjectSearch:          ObjectSearchSettings{},
+		ActionGetScript:             GetscriptSettings{},
+		ActionChangeSteam:           ChangestreamSettings{},
+		ActionStepDimension:         StepDimensionSettings{},
 	}
 }
 
@@ -386,7 +393,7 @@ func (act *Action) execute(sessionState *session.State, connectionSettings *conn
 				} else {
 					actionState.AddErrors(errors.New("Websocket unexpectedly closed"))
 				}
-			} else {
+			} else if !actionState.FailOnDisconnect {
 				// Fake an actionState for reconnect as a successful one
 				restart = !actionState.NoRestartOnDisconnect
 				actionState = &action.State{Details: actionState.Details}
@@ -520,11 +527,11 @@ func logResult(sessionState *session.State, actionState *action.State, details s
 	var responsetime int64
 	var actionError error
 
-	defer sessionState.EW.Reset()
-
 	if sessionState == nil {
 		return nil
 	}
+
+	defer sessionState.EW.Reset()
 
 	// check if this is a container action
 	isContainerAction := containerActionEntry != nil

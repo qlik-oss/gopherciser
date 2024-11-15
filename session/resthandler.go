@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -19,7 +18,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/buildmetrics"
 	"github.com/qlik-oss/gopherciser/enummap"
@@ -27,7 +26,10 @@ import (
 	"github.com/qlik-oss/gopherciser/globals/constant"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/pending"
+	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/statistics"
+	"github.com/qlik-oss/gopherciser/version"
 	"github.com/rs/dnscache"
 )
 
@@ -37,14 +39,13 @@ type (
 
 	// RestHandler handles waiting for pending requests and responses
 	RestHandler struct {
-		reqCounterCond *sync.Cond
-		reqCounter     int
-		timeout        time.Duration
-		Client         *http.Client
-		trafficLogger  enigma.TrafficLogger
-		headers        *HeaderJar
-		virtualProxy   string
-		ctx            context.Context
+		timeout       time.Duration
+		Client        *http.Client
+		trafficLogger enigma.TrafficLogger
+		headers       *HeaderJar
+		virtualProxy  string
+		ctx           context.Context
+		pending       *pending.Handler
 	}
 
 	// RestRequest represents a REST request and its response
@@ -91,6 +92,16 @@ type (
 		Sent(message []byte)
 		Received(message []byte)
 	}
+
+	CustomHeadersInput struct {
+		// RunID is a string unique to an execution of gopherciser
+		RunID              string
+		GopherciserVersion string
+		Session            logger.SessionEntry
+		Action             logger.ActionEntry
+	}
+
+	CustomHeadersFunc func(input CustomHeadersInput, setHeader func(key, value string))
 )
 
 // RestMethod values
@@ -105,15 +116,26 @@ const (
 	PUT
 	// PATCH RestMethod
 	PATCH
+	// HEAD RestMethod
+	HEAD
+	// OPTIONS RestMethod
+	OPTIONS
+)
+
+var (
+	registeredAddCustomHeaders    CustomHeadersFunc = func(CustomHeadersInput, func(key, value string)) {}
+	registerCustomHeadersFuncOnce sync.Once
 )
 
 var (
 	restMethodEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
-		"get":    int(GET),
-		"post":   int(POST),
-		"delete": int(DELETE),
-		"put":    int(PUT),
-		"patch":  int(PATCH),
+		"get":     int(GET),
+		"post":    int(POST),
+		"delete":  int(DELETE),
+		"put":     int(PUT),
+		"patch":   int(PATCH),
+		"head":    int(HEAD),
+		"options": int(OPTIONS),
 	})
 
 	defaultReqOptions = ReqOptions{
@@ -125,16 +147,58 @@ var (
 	dnsResolver = &dnscache.Resolver{}
 )
 
+// RegisterCustomHeadersFunc adds extra headers to all http requests.
+// RegisterCustomHeadersFunc shall be called only once and this call shall be before
+// the gopherciser scenario runs.
+func RegisterCustomHeadersFunc(f CustomHeadersFunc) error {
+	if f == nil {
+		return errors.New("can not register nil middleware")
+	}
+	registered := false
+	registerCustomHeadersFuncOnce.Do(func() {
+		registeredAddCustomHeaders = f
+		registered = true
+	})
+	if !registered {
+		return errors.New("RegisterCustomHeadersFunc shall not be called more than once")
+	}
+	return nil
+}
+
+func addCustomHeaders(req *http.Request, logEntry *logger.LogEntry) {
+	if logEntry == nil {
+		return
+	}
+	registeredAddCustomHeaders(
+		CustomHeadersInput{
+			RunID:              runid.Get(),
+			GopherciserVersion: version.Version,
+			Session: func() logger.SessionEntry {
+				if logEntry == nil || logEntry.Session == nil {
+					return logger.SessionEntry{}
+				}
+				return *logEntry.Session
+			}(),
+			Action: func() logger.ActionEntry {
+				if logEntry == nil || logEntry.Action == nil {
+					return logger.ActionEntry{}
+				}
+				return *logEntry.Action
+			}(),
+		},
+		req.Header.Set,
+	)
+}
+
 // NewRestHandler new instance of RestHandler
-func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration) *RestHandler {
+func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration, pendingHandler *pending.Handler) *RestHandler {
 	return &RestHandler{
-		reqCounter:     0,
-		reqCounterCond: sync.NewCond(&sync.Mutex{}),
-		trafficLogger:  trafficLogger,
-		headers:        headerjar,
-		virtualProxy:   virtualProxy,
-		timeout:        timeout,
-		ctx:            ctx,
+		trafficLogger: trafficLogger,
+		headers:       headerjar,
+		virtualProxy:  virtualProxy,
+		timeout:       timeout,
+		ctx:           ctx,
+		pending:       pendingHandler,
 	}
 }
 
@@ -167,32 +231,6 @@ func (method RestMethod) String() string {
 	return str
 }
 
-// WaitForPending uses double locking of mutex to wait until mutex is unlocked by
-// loop listening for pending req/resp
-func (handler *RestHandler) WaitForPending() {
-	handler.reqCounterCond.L.Lock()
-	for handler.reqCounter > 0 {
-		handler.reqCounterCond.Wait()
-	}
-	handler.reqCounterCond.L.Unlock()
-}
-
-// IncPending increase pending requests
-func (handler *RestHandler) IncPending() {
-	handler.reqCounterCond.L.Lock()
-	handler.reqCounter++
-	handler.reqCounterCond.Broadcast()
-	handler.reqCounterCond.L.Unlock()
-}
-
-// DecPending increase finished requests
-func (handler *RestHandler) DecPending(request *RestRequest) {
-	handler.reqCounterCond.L.Lock()
-	handler.reqCounter--
-	handler.reqCounterCond.Broadcast()
-	handler.reqCounterCond.L.Unlock()
-}
-
 // DefaultClient creates client instance with default client settings
 func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 	// todo client values are currently from http.DefaultTransport, should choose better values depending on
@@ -214,7 +252,7 @@ func DefaultClient(allowUntrusted bool, state *State) (*http.Client, error) {
 					}
 					for _, ip := range ips {
 						dialer := &net.Dialer{
-							Timeout:   30 * time.Second,
+							Timeout:   state.Timeout,
 							KeepAlive: 30 * time.Second,
 						}
 						var conn net.Conn
@@ -330,6 +368,49 @@ func (handler *RestHandler) getAsyncWithCallback(url string, actionState *action
 	return handler.sendAsyncWithCallback(GET, url, actionState, logEntry, nil, headers, options, callback)
 }
 
+// HeadSync sends synchronous HEAD request with options, using options=nil default options are used
+func (handler *RestHandler) HeadSync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
+	return handler.HeadSyncWithCallback(url, actionState, logEntry, options, nil)
+}
+
+// HeadSyncWithCallback sends synchronous HEAD request with options and callback, using options=nil default options are used
+func (handler *RestHandler) HeadSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	var reqErr error
+	var request *RestRequest
+	var wg sync.WaitGroup
+	wg.Add(1)
+	syncCallback := func(err error, req *RestRequest) {
+		defer wg.Done()
+		reqErr = err
+		request = req
+		if callback != nil {
+			callback(err, req)
+		}
+	}
+	handler.headAsyncWithCallback(url, actionState, logEntry, nil, options, syncCallback)
+	wg.Wait()
+	return request, reqErr
+}
+
+// HeadAsync send async HEAD request with options, using options=nil default options are used
+func (handler *RestHandler) HeadAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
+	return handler.headAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
+// HeadWithHeadersAsync send async HEAD request with headers and options, using options=nil default options are used
+func (handler *RestHandler) HeadWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.headAsyncWithCallback(url, actionState, logEntry, headers, options, callback)
+}
+
+// HeadAsyncWithCallback send async HEAD request with options and callback, with options=nil default options are used
+func (handler *RestHandler) HeadAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.headAsyncWithCallback(url, actionState, logEntry, nil, options, callback)
+}
+
+func (handler *RestHandler) headAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(HEAD, url, actionState, logEntry, nil, headers, options, callback)
+}
+
 // PutAsync send async PUT request with options, using options=nil default options are used
 func (handler *RestHandler) PutAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
 	return handler.PutAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
@@ -365,6 +446,11 @@ func (handler *RestHandler) PostAsync(url string, actionState *action.State, log
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
 }
 
+// PostSync send sync POST request with options, using options=nil default options are used
+func (handler *RestHandler) PostSync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) (*RestRequest, error) {
+	return handler.PostSyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+}
+
 // PostWithHeadersAsync send async POST request with options and headers, using options=nil default options are used
 func (handler *RestHandler) PostWithHeadersAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions) *RestRequest {
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, headers, options, nil)
@@ -373,6 +459,11 @@ func (handler *RestHandler) PostWithHeadersAsync(url string, actionState *action
 // PostAsyncWithCallback send async POST request with options and callback, using options=nil default options are used
 func (handler *RestHandler) PostAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	return handler.sendAsyncWithCallback(POST, url, actionState, logEntry, content, headers, options, callback)
+}
+
+// PostSyncWithCallback send sync POST request with options and callback, using options=nil default options are used
+func (handler *RestHandler) PostSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(POST, url, actionState, logEntry, content, headers, options, callback)
 }
 
 // DeleteAsyncWithCallback send async DELETE request with options and callback, using options=nil default options are used
@@ -388,6 +479,41 @@ func (handler *RestHandler) DeleteAsyncWithHeaders(url string, actionState *acti
 // DeleteAsync send async DELETE request with options, using options=nil default options are used
 func (handler *RestHandler) DeleteAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
 	return handler.DeleteAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
+// OptionsAsync send async request with options, using options=nil default options are used
+func (handler *RestHandler) OptionsAsync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions) *RestRequest {
+	return handler.sendAsyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, nil)
+}
+
+// OptionsAsyncWitCallback send async request with options and callback, using options=nil default options are used
+func (handler *RestHandler) OptionsAsyncWitCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+	return handler.sendAsyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, callback)
+}
+
+// OptionsSync send sync request with options, using options=nil default options are used
+func (handler *RestHandler) OptionsSync(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, nil)
+}
+
+// OptionsSyncWitCallback send sync request with options and callback, using options=nil default options are used
+func (handler *RestHandler) OptionsSyncWitCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, callback)
+}
+
+func (handler *RestHandler) sendSyncWithCallback(method RestMethod, url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	var returnErr error
+	var wg sync.WaitGroup
+	wg.Add(1)
+	returnReq := handler.sendAsyncWithCallback(method, url, actionState, logEntry, content, headers, options, func(err error, req *RestRequest) {
+		defer wg.Done()
+		returnErr = err
+		if callback != nil {
+			callback(err, req)
+		}
+	})
+	wg.Wait()
+	return returnReq, returnErr
 }
 
 func (handler *RestHandler) sendAsyncWithCallback(method RestMethod, url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
@@ -462,14 +588,18 @@ func (handler *RestHandler) QueueRequest(actionState *action.State, failOnError 
 // QueueRequestWithCallback Async request with callback, set warnOnError to log warning instead of registering error for request
 func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, failOnError bool,
 	request *RestRequest, logEntry *logger.LogEntry, callback func(err error, req *RestRequest)) {
-	handler.IncPending()
+	handler.pending.IncPending()
 
 	startTS := time.Now()
 	go func() {
 		stall := time.Since(startTS)
-		defer handler.DecPending(request)
+		defer handler.pending.DecPending()
 		var errRequest error
 		var panicErr error
+		failRequest := func(err error) {
+			errRequest = err
+			actionState.AddErrors(err)
+		}
 		defer helpers.RecoverWithError(&panicErr)
 		if callback != nil {
 			defer func() {
@@ -485,32 +615,31 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 		}
 
 		if handler.Client == nil {
-			errRequest = errors.New("no REST client initialized")
-			actionState.AddErrors(errRequest)
+			failRequest(errors.New("no REST client initialized"))
 			return
 		}
 
-		var host string
-		host, errRequest = getHost(request.Destination)
-		if errRequest != nil {
-			WarnOrError(actionState, logEntry, failOnError, errors.Wrapf(errRequest, "Failed to read REST response to %s", request.Destination))
+		host, err := getHost(request.Destination)
+		if err != nil {
+			failRequest(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
+			return
 		}
 
 		if err := handler.addVirtualProxy(request); err != nil {
-			actionState.AddErrors(err)
+			failRequest(errors.WithStack(err))
 			return
 		}
 
-		if request.ContentReader == nil {
-			if errRequest = handler.performRestCall(handler.ctx, request, handler.Client, handler.headers.GetHeader(host)); errRequest != nil {
-				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
-			}
-		} else {
-			if errRequest = handler.postWithReader(handler.ctx, request, handler.Client, logEntry, handler.headers.GetHeader(host)); errRequest != nil {
-				WarnOrError(actionState, logEntry, failOnError, errors.WithStack(errRequest))
-			}
+		req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
+		if err != nil {
+			failRequest(errors.WithStack(err))
+			return
 		}
-
+		doTs := time.Now()
+		request.response, errRequest = handler.Client.Do(req)
+		if errRequest != nil {
+			WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
+		}
 		if request.response != nil {
 			defer func() {
 				if err := request.response.Body.Close(); err != nil {
@@ -520,7 +649,11 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			request.ResponseStatus = request.response.Status
 			request.ResponseStatusCode = request.response.StatusCode
 			request.ResponseHeaders = request.response.Header
-			request.ResponseBody, errRequest = ioutil.ReadAll(request.response.Body)
+			request.ResponseBody, errRequest = io.ReadAll(request.response.Body)
+			// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
+			if logEntry.ShouldLogTrafficMetrics() && strings.HasPrefix(request.response.Header.Get("Content-Type"), "text/event-stream") {
+				logEntry.LogTrafficMetric(time.Since(doTs).Nanoseconds(), 0, uint64(len(request.ResponseBody)), -1, req.URL.Path, "", "STREAM", "")
+			}
 		}
 	}()
 }
@@ -539,32 +672,6 @@ func (handler *RestHandler) addVirtualProxy(request *RestRequest) error {
 	return nil
 }
 
-func ReadAll(r io.Reader) ([]byte, error) {
-	buf := helpers.GlobalBufferPool.Get()
-	defer helpers.GlobalBufferPool.Put(buf)
-
-	capacity := int64(bytes.MinRead)
-	var err error
-	// If the buffer overflows, we will get bytes.ErrTooLarge.
-	// Return that as an error. Any other panic remains.
-	defer func() {
-		e := recover()
-		if e == nil {
-			return
-		}
-		if panicErr, ok := e.(error); ok && panicErr == bytes.ErrTooLarge {
-			err = panicErr
-		} else {
-			panic(e)
-		}
-	}()
-	if int64(int(capacity)) == capacity {
-		buf.Grow(int(capacity))
-	}
-	_, err = buf.ReadFrom(r)
-	return buf.Bytes(), err
-}
-
 func prependURLPath(aURL, pathToPrepend string) (string, error) {
 	urlObj, err := url.Parse(aURL)
 	if err != nil {
@@ -575,88 +682,49 @@ func prependURLPath(aURL, pathToPrepend string) (string, error) {
 	return urlObj.String(), nil
 }
 
-func (handler *RestHandler) performRestCall(ctx context.Context, request *RestRequest, client *http.Client, headers http.Header) error {
+func newStdRequest(ctx context.Context, request *RestRequest, logEntry *logger.LogEntry, mainHeader http.Header) (*http.Request, error) {
 	var req *http.Request
 	var err error
 
 	switch request.Method {
+	case HEAD:
+		req, err = http.NewRequest(http.MethodHead, request.Destination, nil)
 	case GET:
 		req, err = http.NewRequest(http.MethodGet, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case DELETE:
 		req, err = http.NewRequest(http.MethodDelete, request.Destination, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to create HTTP request")
-		}
 	case POST:
-		req, err = http.NewRequest(http.MethodPost, request.Destination, bytes.NewReader(request.Content))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
+		req, err = http.NewRequest(http.MethodPost, request.Destination, getRequestReader(request))
 	case PUT:
-		req, err = http.NewRequest(http.MethodPut, request.Destination, bytes.NewReader(request.Content))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
+		req, err = http.NewRequest(http.MethodPut, request.Destination, getRequestReader(request))
 	case PATCH:
-		req, err = http.NewRequest(http.MethodPatch, request.Destination, bytes.NewReader(request.Content))
-		if err != nil {
-			return errors.Wrap(err, "Failed to create HTTP request")
-		}
+		req, err = http.NewRequest(http.MethodPatch, request.Destination, getRequestReader(request))
+	case OPTIONS:
+		req, err = http.NewRequest(http.MethodOptions, request.Destination, nil)
 	default:
-		return errors.Errorf("Unsupported REST method<%v>", request.Method)
+		return nil, errors.Errorf("Unsupported REST method<%v>", request.Method)
 	}
-	req = req.WithContext(ctx)
-	handler.newHeader(headers, request, req.Header)
-
-	res, err := client.Do(req)
-	request.response = res
 	if err != nil {
-		return errors.Wrap(err, "HTTP request fail")
+		return nil, errors.Wrap(err, "Failed to create HTTP request")
 	}
-	return nil
-}
-
-func (handler *RestHandler) newHeader(mainHeader http.Header, request *RestRequest, reqHeader http.Header) {
+	addCustomHeaders(req, logEntry)
 	//Set user-agent as special "gopherciser version". version is set from the version package during build.
-	reqHeader.Set("User-Agent", globals.UserAgent())
-
+	req.Header.Set("User-Agent", globals.UserAgent())
 	for k, v := range mainHeader {
-		reqHeader[k] = v
+		req.Header[k] = v
 	}
-	reqHeader.Set("Content-Type", request.ContentType)
+	req.Header.Set("Content-Type", request.ContentType)
 	for k, v := range request.ExtraHeaders {
-		reqHeader.Set(k, v)
+		req.Header.Set(k, v)
 	}
+	return req.WithContext(ctx), nil
 }
 
-func (handler *RestHandler) postWithReader(ctx context.Context, request *RestRequest, client *http.Client, logEntry *logger.LogEntry, headers http.Header) error {
-	var method string
-	switch request.Method {
-	case POST:
-		method = http.MethodPost
-	case PUT:
-		method = http.MethodPut
-	case PATCH:
-		method = http.MethodPatch
-	default:
-		return errors.Errorf("Can only send io.Reader payload with a POST or PUT request. Method<%v>", request.Method)
+func getRequestReader(request *RestRequest) io.Reader {
+	if request.ContentReader != nil {
+		return request.ContentReader
 	}
-
-	req, err := http.NewRequest(method, request.Destination, request.ContentReader)
-	if err != nil {
-		return errors.Wrap(err, "Failed to create HTTP request")
-	}
-	req = req.WithContext(ctx)
-	handler.newHeader(headers, request, req.Header)
-	res, err := client.Do(req)
-	request.response = res
-	if err != nil {
-		return errors.Wrap(err, "HTTP request fail")
-	}
-	return nil
+	return bytes.NewReader(request.Content)
 }
 
 // RoundTrip implement RoundTripper interface
@@ -761,7 +829,17 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 				query = req.URL.RawQuery
 			}
 
-			transport.LogEntry.LogTrafficMetric(recTS.Sub(sentTS).Nanoseconds(), sent, received, -1, buf.String(), query, "REST")
+			// Add trace ID to metric message if exist as header
+			traceID := ""
+			if resp.Header != nil {
+				traceID = resp.Header.Get("x-b3-traceid")
+			}
+			msg := ""
+			if traceID != "" {
+				msg = fmt.Sprintf("traceID:%s", traceID)
+			}
+
+			transport.LogEntry.LogTrafficMetric(recTS.Sub(sentTS).Nanoseconds(), sent, received, -1, buf.String(), query, "REST", msg)
 		}
 	}
 

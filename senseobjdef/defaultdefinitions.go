@@ -690,6 +690,90 @@ var (
 		Select: nil, // TODO support select in grid chart, select using unsupported SelectPivotCells method
 	}
 
+	// DefaultSNTable object definitions for sn-table
+	DefaultSNTable = ObjectDef{
+		DataDef{DataDefHyperCube, "/qHyperCube"},
+		[]Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						DataTypeHyperCubeData,
+						"/qHyperCubeDef",
+						100,
+					},
+				},
+			}},
+		},
+		&Select{SelectTypeHypercubeColumnValues, "/qHyperCubeDef"},
+	}
+
+	// DefaultSNShape object definitions for sn-shape
+	DefaultSNShape = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
+	// DefaultSNText object definitions for sn-text
+	DefaultSNText = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
+	// DefaultSNPivotTable
+	DefaultSNPivotTable = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCube",
+		},
+		Data: []Data{
+			{
+				DataCore{
+					Requests: []GetDataRequests{
+						{
+							Type: DataTypeLayout,
+						},
+					},
+				},
+			},
+		},
+		// TODO Select needs support for SelectPivotCells
+	}
+
+	// DefaultLayoutContainer, container type with all "children" visible
+	DefaultLayoutContainer = ObjectDef{
+		DataDef{DataDefNoData, ""},
+		nil,
+		nil,
+	}
+
+	DefaultTabbedContainer = ObjectDef{
+		DataDef{DataDefNoData, ""},
+		nil,
+		nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -731,5 +815,11 @@ var (
 		"qlik-date-picker":      &DefaultQlikDatePicker,
 		"sn-video-player":       &DefaultSNVideoPlayer,
 		"sn-grid-chart":         &DefaultSNGridChart,
+		"sn-table":              &DefaultSNTable,
+		"sn-shape":              &DefaultSNShape,
+		"sn-text":               &DefaultSNText,
+		"sn-pivot-table":        &DefaultSNPivotTable,
+		"sn-layout-container":   &DefaultLayoutContainer,
+		"sn-tabbed-container":   &DefaultTabbedContainer,
 	}
 )

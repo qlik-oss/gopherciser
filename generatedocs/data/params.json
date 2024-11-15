@@ -82,6 +82,9 @@
     "clickactionbutton.id": [
         "ID of the action-button to click."
     ],
+    "config.connectionSettings.maxframesize" : [
+        "(Default 0 - No limit). Max size in bytes allowed to be read on sense websocket."
+    ],
     "config.connectionSettings.mode": [
         "Authentication mode",
         "`jwt`: JSON Web Token",
@@ -231,7 +234,7 @@
         "This section of the JSON file contains timeout and logging settings for the load scenario"
     ],
     "config.settings.timeout": [
-        "Timeout setting (seconds) for WebSocket requests."
+        "Timeout setting (seconds) for requests."
     ],
     "config.settings.logs.traffic": [
         "Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding."
@@ -303,6 +306,12 @@
     "changesheet.id": [
         "GUID of the sheet to change to."
     ],
+    "changestream.mode" : [
+        "Decides what kind of value the `stream` field contains. Defaults to `name`.",
+        "`name`: `stream` is the name of the stream.",
+        "`id`: `stream` is the ID if the stream."
+    ],
+    "changestream.stream": [],
     "createbookmark.description": [
         "(optional) Description of the bookmark to create."
     ],
@@ -356,6 +365,9 @@
     ],
     "generateodag.linkname": [
         "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
+    ],
+    "getscript.savelog" : [
+        "Save load script to log file under the INFO log labelled *LoadScript*"
     ],
     "hook.content" : [
         "(optional) Content of request."
@@ -449,6 +461,9 @@
     "publishsheet.sheetIds": [
         "(optional) Array of sheet IDs for the `sheetids` mode."
     ],
+    "publishsheet.includePublished": [
+        "Try to publish already published sheets."
+    ],
     "randomaction.iterations": [
         "Number of random actions to perform."
     ],
@@ -475,7 +490,7 @@
         "Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`."
     ],
     "reconnectsettings.backoff" : [
-        "Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:",
+        "Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 8.0, 12.0, 16.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:",
         "`0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect",
         "`1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again",
         "`10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again",
@@ -542,6 +557,9 @@
     ],
     "setscriptvar.value": [
         "Value to set to variable (supports the use of [session variables](#session_variables))."
+    ],
+    "stepdimension.id": [
+        "library ID of the cyclic dimension"
     ],
     "subscribeobjects.clear" : [
         "Remove any previously subscribed objects from the subscription list."

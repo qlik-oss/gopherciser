@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/helpers"
+	"github.com/qlik-oss/gopherciser/logger"
 )
 
 type (
@@ -25,6 +26,8 @@ type (
 		Details string
 		// NoRestartOnDisconnect in the case of using websocket reconnect logic, don't restart action when a reconnect has happened
 		NoRestartOnDisconnect bool
+		// FailOnDisconnect in the case of using webscoket reconnect logic, fail the action instead of trying to restart it
+		FailOnDisconnect bool
 	}
 )
 
@@ -54,4 +57,18 @@ func (as *State) Errors() error {
 	defer as.mu.RUnlock()
 
 	return helpers.FlattenMultiError(as.errors.me)
+}
+
+// DebugErrors logs all actionstate errors to debug log
+func (as *State) DebugErrors(logEntry *logger.LogEntry) {
+	if as.errors.me == nil {
+		return
+	}
+	for _, err := range as.errors.me.Errors {
+		if err == nil {
+			continue
+		}
+		cause := helpers.TrueCause(err)
+		logEntry.LogDebugf("ActionState error<%v> type<%T> cause<%v> type<%T>", err, err, cause, cause)
+	}
 }

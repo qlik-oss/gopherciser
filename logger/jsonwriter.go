@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -89,7 +90,11 @@ func setEphemeralFields(ev *zerolog.Event, e *ephemeralEntry, level LogLevel) {
 	ev.Uint64(FieldReceived, e.Received)
 	ev.Uint64(FieldRequestsSent, e.RequestsSent)
 	ev.Uint64(FieldSent, e.Sent)
-	ev.Str(FieldStack, e.Stack)
+	errMsg := ""
+	if e.Stack != nil {
+		errMsg = fmt.Sprintf("%+v", e.Stack)
+	}
+	ev.Str(FieldStack, errMsg)
 	if level == ResultLevel {
 		ev.Bool(FieldSuccess, e.Success)
 	}

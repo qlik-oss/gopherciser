@@ -1,10 +1,10 @@
 package senseobjdef
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
-	"io/ioutil"
 	"os"
+
+	"github.com/goccy/go-json"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
@@ -295,7 +295,7 @@ func (defs ObjectDefs) OverrideFromFile(cfgFile string) error {
 		return errors.Wrapf(err, "file not found<%s>", cfgFile)
 	}
 
-	jsonOverrides, err := ioutil.ReadFile(cfgFile)
+	jsonOverrides, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return errors.Wrapf(err, "Error reading config from file<%s>", cfgFile)
 	}

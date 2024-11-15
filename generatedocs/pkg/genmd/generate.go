@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"sort"
 
@@ -108,7 +107,7 @@ const (
 func GenerateMarkdown(docs *CompiledDocs) {
 	handleFlags()
 	mdBytes := generateFromCompiled(docs)
-	if err := ioutil.WriteFile(output, mdBytes, 0644); err != nil {
+	if err := os.WriteFile(output, mdBytes, 0644); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 	fmt.Printf("Generated markdown documentation to output<%s>\n", output)

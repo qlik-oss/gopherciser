@@ -1,11 +1,14 @@
 package session_test
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/goccy/go-json"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/users"
 )
 
@@ -32,6 +35,7 @@ func Test_AppSelection_RoundRobin(t *testing.T) {
 			Session: &logger.SessionEntry{},
 			Action:  &logger.ActionEntry{},
 		},
+		ArtifactMap: session.NewArtifactMap(),
 	}
 	entry, err := appSelection.Select(sessionState)
 	if err != nil {
@@ -56,5 +60,83 @@ func verifyRoundPos(t *testing.T, appSelection session.AppSelection, result stri
 	t.Helper()
 	if result != appSelection.AppList[pos] {
 		t.Errorf("app selection mode<%s> failed expected<%s> got<%s>", appSelection.AppMode, appSelection.AppList[pos], result)
+	}
+}
+
+func Test_AppSelection_RoundRobin2(t *testing.T) {
+	sessionState := &session.State{
+		User: &users.User{
+			UserName:  "mytestuser_1",
+			Directory: "mydirectory",
+		},
+		LogEntry: &logger.LogEntry{
+			Session: &logger.SessionEntry{},
+			Action:  &logger.ActionEntry{},
+		},
+		ArtifactMap: session.NewArtifactMap(),
+	}
+
+	appSelection, err := session.NewAppSelection(session.AppModeRoundGUIDFromList, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 1; i < 101; i++ {
+		appSelection.AppList = append(appSelection.AppList, strconv.Itoa(i))
+	}
+
+	for j := 0; j < 2; j++ {
+		for i := 1; i < 101; i++ {
+			entry, err := appSelection.Select(sessionState)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if entry.ID != strconv.Itoa(i) {
+				t.Errorf("expected<%d> got<%s>", i, entry.ID)
+			}
+		}
+	}
+}
+
+func Test_AppSelection_RoundRobin3(t *testing.T) {
+	sessionState := &session.State{
+		User: &users.User{
+			UserName:  "mytestuser_1",
+			Directory: "mydirectory",
+		},
+		LogEntry: &logger.LogEntry{
+			Session: &logger.SessionEntry{},
+			Action:  &logger.ActionEntry{},
+		},
+		ArtifactMap: session.NewArtifactMap(),
+		Counters:    &statistics.ExecutionCounters{},
+	}
+
+	appSelection, err := session.NewAppSelection(session.AppModeRound, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 1; i < 101; i++ {
+		id := fmt.Sprintf("%03d", i)
+		sessionState.ArtifactMap.Append(session.ResourceTypeApp, &session.ArtifactEntry{
+			Name:         id,
+			ID:           id,
+			ItemID:       id,
+			ResourceType: session.ResourceTypeApp,
+			Data:         nil,
+		})
+	}
+
+	for j := 0; j < 2; j++ {
+		for i := 1; i < 101; i++ {
+			entry, err := appSelection.Select(sessionState)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if entry.ID != fmt.Sprintf("%03d", i) {
+				t.Errorf("expected<%d> got<%s>", i, entry.ID)
+			}
+		}
 	}
 }

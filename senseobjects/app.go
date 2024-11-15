@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 )
 
@@ -22,6 +22,8 @@ type (
 		loadmodellist     *LoadModelList
 		fieldlist         *FieldList
 		dimensionList     *DimensionList
+		dimensions        map[string]*enigma.GenericDimension
+		appPropsList      *AppPropsList
 	}
 
 	// App sense app object
@@ -55,10 +57,6 @@ func (app *App) GetSheetList(sessionState SessionState, actionState *action.Stat
 	}
 
 	if err := sessionState.SendRequest(actionState, app.sheetList.UpdateLayout); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if err := sessionState.SendRequest(actionState, app.sheetList.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -155,10 +153,6 @@ func (app *App) GetVariableList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	// update variable list layout when variable list has a change event
 	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
 		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
@@ -175,6 +169,49 @@ func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
 		sessionState.DeRegisterEvent(app.variablelist.enigmaObject.Handle)
 	}
 	app.variablelist = vl
+}
+
+// GetAppsPropsList create or return AppsPropsList
+func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.State) (*AppPropsList, error) {
+	if app.appPropsList != nil {
+		return app.appPropsList, nil
+	}
+
+	createAppPropsList := func(ctx context.Context) error {
+		al, err := CreateAppPropsListObject(ctx, app.Doc)
+		if err != nil {
+			return err
+		}
+		app.setAppPropsList(sessionState, al)
+		return nil
+	}
+
+	if err := sessionState.SendRequest(actionState, createAppPropsList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		return app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
+	}); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	onAppPropsListChanged := func(ctx context.Context, actionState *action.State) error {
+		return errors.WithStack(app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState))
+	}
+	sessionState.RegisterEvent(app.appPropsList.enigmaObject.Handle, onAppPropsListChanged, nil, true)
+
+	return app.appPropsList, nil
+}
+
+func (app *App) setAppPropsList(sessionState SessionState, al *AppPropsList) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	if app.appPropsList != nil && app.appPropsList.enigmaObject != nil && app.appPropsList.enigmaObject.Handle > 0 && al != app.appPropsList {
+		sessionState.DeRegisterEvent(app.appPropsList.enigmaObject.Handle)
+		app.appPropsList.RemoveAllItems(sessionState)
+	}
+	app.appPropsList = al
 }
 
 // GetStoryList create or return existing story list session object
@@ -198,10 +235,6 @@ func (app *App) GetStoryList(sessionState SessionState, actionState *action.Stat
 	}
 
 	if err := sessionState.SendRequest(actionState, app.storylist.UpdateLayout); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if err := sessionState.SendRequest(actionState, app.storylist.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -417,8 +450,15 @@ func (app *App) GetFieldList(sessionState SessionState, actionState *action.Stat
 }
 
 // GetCurrentSelections create current selection session object and add to list
-func (app *App) GetCurrentSelections(sessionState SessionState, actionState *action.State) (*CurrentSelections, error) {
+func (app *App) GetCurrentSelections(sessionState SessionState, actionState *action.State, requestData bool) (*CurrentSelections, error) {
 	if app.currentSelections != nil {
+		if requestData && app.currentSelections.enigmaObject != nil {
+			if f := sessionState.GetEventFunc(app.currentSelections.enigmaObject.Handle); f != nil {
+				if err := f(sessionState.BaseContext(), actionState); err != nil {
+					return app.currentSelections, errors.WithStack(err)
+				}
+			}
+		}
 		return app.currentSelections, nil
 	}
 
@@ -435,20 +475,26 @@ func (app *App) GetCurrentSelections(sessionState SessionState, actionState *act
 		return nil, errors.WithStack(err)
 	}
 
-	// Get layout
-	if err := sessionState.SendRequest(actionState, app.currentSelections.UpdateProperties); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if err := sessionState.SendRequest(actionState, app.currentSelections.UpdateLayout); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+	var once sync.Once
 	// update currentSelection layout when object is changed
 	onCurrentSelectionChanged := func(ctx context.Context, actionState *action.State) error {
+		var err error
+		once.Do(func() {
+			err = sessionState.SendRequest(actionState, app.currentSelections.UpdateProperties)
+		})
+		if err != nil {
+			return errors.WithStack(err)
+		}
 		return errors.WithStack(app.currentSelections.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.currentSelections.enigmaObject.Handle,
-		onCurrentSelectionChanged, nil, true)
+
+	if requestData {
+		if err := onCurrentSelectionChanged(sessionState.BaseContext(), actionState); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	sessionState.RegisterEvent(app.currentSelections.enigmaObject.Handle, onCurrentSelectionChanged, nil, true)
 
 	return app.currentSelections, nil
 }
@@ -496,4 +542,36 @@ func (app *App) setDimensionList(SessionState SessionState, dl *DimensionList) {
 		SessionState.DeRegisterEvent(app.dimensionList.enigmaObject.Handle)
 	}
 	app.dimensionList = dl
+}
+
+func (app *App) GetDimension(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericDimension, error) {
+	dim := app.dimensions[id]
+	if dim != nil {
+		return dim, nil
+	}
+
+	err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		var err error
+		dim, err = app.Doc.GetDimension(ctx, id)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	app.addDimension(dim)
+
+	return dim, nil
+}
+
+func (app *App) addDimension(dim *enigma.GenericDimension) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+
+	if app.dimensions == nil {
+		app.dimensions = map[string]*enigma.GenericDimension{dim.GenericId: dim}
+		return
+	}
+
+	app.dimensions[dim.GenericId] = dim
 }

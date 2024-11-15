@@ -1,12 +1,13 @@
 package session
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	enigma "github.com/qlik-oss/enigma-go/v3"
+	enigma "github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/structs"
 )
@@ -52,6 +53,7 @@ type (
 // Currently known resource types
 const (
 	ResourceTypeApp         = "app"
+	ResourceTypeQVApp       = "qvapp"
 	ResourceTypeGenericLink = "genericlink"
 	ResourceTypeDataset     = "dataset"
 	ResourceTypeDataAsset   = "dataasset"
@@ -63,6 +65,19 @@ const (
 	ArtifactEntryCompareTypeName
 )
 
+func (cmpType ArtifactEntryCompareType) String() string {
+	switch cmpType {
+	case ArtifactEntryCompareTypeName:
+		return "name"
+	case ArtifactEntryCompareTypeID:
+		return "id"
+	case ArtifactEntryCompareTypeItemID:
+		return "itemID"
+	default:
+		return fmt.Sprintf("%T<%v>", cmpType, int(cmpType))
+	}
+}
+
 func (d *ArtifactList) Len() int {
 	if d == nil {
 		return 0
@@ -71,7 +86,7 @@ func (d *ArtifactList) Len() int {
 }
 
 func (d ArtifactList) Less(i, j int) bool {
-	return d.list[i].Name < d.list[j].Name
+	return d.list[i].ID < d.list[j].ID
 }
 
 func (d ArtifactList) Swap(i, j int) {
@@ -116,6 +131,10 @@ func (am *ArtifactMap) Sort(resourceType string) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
+	am.sortNoLock(resourceType)
+}
+
+func (am *ArtifactMap) sortNoLock(resourceType string) {
 	if am.resourceMap[resourceType].Len() < 1 {
 		return
 	}
@@ -252,10 +271,10 @@ func (am *ArtifactMap) getAppEntry(appName string) (*ArtifactEntry, error) {
 
 // GetRandomApp returns a random app for the map, chosen by a uniform distribution
 func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) {
-	am.Sort(ResourceTypeApp)
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+	am.sortNoLock(ResourceTypeApp)
 
 	n := am.resourceMap[ResourceTypeApp].Len()
 	if n < 1 {
@@ -267,10 +286,10 @@ func (am *ArtifactMap) GetRandomApp(sessionState *State) (ArtifactEntry, error) 
 
 // GetRoundRobin returns a app round robin for the map
 func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error) {
-	am.Sort(ResourceTypeApp)
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+	am.sortNoLock(ResourceTypeApp)
 
 	appNumber := sessionState.Counters.AppCounter.Inc() - 1
 	n := am.resourceMap[ResourceTypeApp].Len()
@@ -281,9 +300,31 @@ func (am *ArtifactMap) GetRoundRobin(sessionState *State) (ArtifactEntry, error)
 	return *am.resourceMap[ResourceTypeApp].list[appNumber%uint64(n)], nil
 }
 
+// GetAllOfType gets a copy of a list of the current items with specified resource type
+func (am *ArtifactMap) GetAllOfType(sessionState *State, resourcetype string) []ArtifactEntry {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	artifacts := am.resourceMap[resourcetype]
+	if artifacts == nil {
+		return nil
+	}
+
+	list := artifacts.list
+	cpy := make([]ArtifactEntry, 0, len(list))
+	for _, item := range list {
+		cpy = append(cpy, *item)
+	}
+	return cpy
+}
+
 // LookupAppTitle lookup app using title
 func (am *ArtifactMap) LookupAppTitle(title string) (*ArtifactEntry, error) {
-	return am.Lookup(ResourceTypeApp, title, ArtifactEntryCompareTypeName)
+	entry, err := am.Lookup(ResourceTypeApp, title, ArtifactEntryCompareTypeName)
+	if err != nil {
+		entry, err = am.Lookup(ResourceTypeQVApp, title, ArtifactEntryCompareTypeName)
+	}
+	return entry, err
 }
 
 // LookupItemID lookup resource using Item ID
@@ -295,8 +336,12 @@ func (am *ArtifactMap) LookupItemID(resourcetype, itemID string) (*ArtifactEntry
 func (am *ArtifactMap) LookupAppGUID(guid string) (*ArtifactEntry, error) {
 	entry, err := am.Lookup(ResourceTypeApp, guid, ArtifactEntryCompareTypeID)
 	if err != nil {
-		// GUID not found in map, create new entry with GUID (Supports using openapp with GUID and no preceeding OpenHub)
-		entry = &ArtifactEntry{ID: guid, ResourceType: ResourceTypeApp} // todo how to handle itemID?
+		// try qvapp type
+		entry, err = am.Lookup(ResourceTypeQVApp, guid, ArtifactEntryCompareTypeID)
+		if err != nil {
+			// GUID not found in map, create new entry with GUID (Supports using openapp with GUID and no preceeding OpenHub)
+			entry = &ArtifactEntry{ID: guid, ResourceType: ResourceTypeApp} // todo how to handle itemID?
+		}
 	}
 	return entry, nil
 }

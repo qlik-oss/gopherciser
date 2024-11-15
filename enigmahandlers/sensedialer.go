@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
-	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/wsdialer"
 )
 
@@ -24,14 +23,14 @@ const (
 	SenseWsType = "SenseWebsocket"
 )
 
-func setupDialer(dialer *enigma.Dialer, timeout time.Duration, logEntry *logger.LogEntry, onUnexpectedDisconnect func()) {
+func setupDialer(dialer *enigma.Dialer, timeout time.Duration, onUnexpectedDisconnect func(), maxFrameSize int64) {
 	dialer.CreateSocket = func(ctx context.Context, url string, httpHeader http.Header) (enigma.Socket, error) {
 		nURL, err := neturl.Parse(url)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		senseDialer := SenseDialer{}
-		senseDialer.WsDialer, err = wsdialer.New(nURL, httpHeader, dialer.Jar, timeout, dialer.TLSClientConfig.InsecureSkipVerify, SenseWsType)
+		senseDialer.WsDialer, err = wsdialer.New(nURL, httpHeader, dialer.Jar, timeout, dialer.TLSClientConfig.InsecureSkipVerify, SenseWsType, maxFrameSize)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

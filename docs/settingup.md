@@ -35,6 +35,7 @@ JSON Web Token (JWT), an open standard for creation of access tokens, or WebSock
 * `allowuntrusted`: Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted.
 * `appext`: Replace `app` in the connect URL for the `openapp` action. Defaults to `app`, if omitted.
 * `headers`: Headers to use in requests.
+* `maxframesize`: (Default 0 - No limit). Max size in bytes allowed to be read on sense websocket.
 
 ### Examples
 
@@ -107,7 +108,7 @@ connectionSettings": {
 	"security": true,
 	"virtualproxy" : "header",
 	"headers" : {
-		"X-Qlik-User-Header" : "{{.UserName}}"
+		"X-Sense-User" : "{{.UserName}}"
 }
 ```
 
@@ -992,6 +993,39 @@ Duplicate a sheet, including all objects.
 <hr></details>
 
 <details>
+<summary>getscript</summary>
+
+## GetScript action
+
+Get the load script for the app.
+
+
+* `savelog`: Save load script to log file under the INFO log labelled *LoadScript*
+
+### Example
+
+Get the load script for the app
+
+```json
+{
+    "action": "getscript"
+}
+```
+
+Get the load script for the app and save to log file
+
+```json
+{
+    "action": "getscript",
+    "settings": {
+        "savelog" : true
+    }
+}
+```
+
+<hr></details>
+
+<details>
 <summary>iterated</summary>
 
 ## Iterated action
@@ -1062,60 +1096,6 @@ Perform list object specific selectiontypes in listbox.
          "type": "all",
          "wrap": true,
          "accept": true
-     }
-}
-```
-
-<hr></details>
-
-<details>
-<summary>openapp</summary>
-
-## OpenApp action
-
-Open an app.
-
-**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.
-
-* `appmode`: App selection mode
-    * `current`: (default) Use the current app, selected by an app selection in a previous action
-    * `guid`: Use the app GUID specified by the `app` parameter.
-    * `name`: Use the app name specified by the `app` parameter.
-    * `random`: Select a random app from the artifact map, which is filled by e.g. `openhub`
-    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
-    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
-    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-    * `round`: Select an app from the artifact map according to the round-robin principle.
-    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
-    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
-    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
-    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
-* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
-* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
-* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
-* `externalhost`: (optional) Sets an external host to be used instead of `server` configured in connection settings.
-* `unique`: Create unqiue engine session not re-using session from previous connection with same user. Defaults to false.
-
-### Examples
-
-```json
-{
-     "label": "OpenApp",
-     "action": "OpenApp",
-     "settings": {
-         "appmode": "guid",
-         "app": "7967af99-68b6-464a-86de-81de8937dd56"
-     }
-}
-```
-```json
-{
-     "label": "OpenApp",
-     "action": "OpenApp",
-     "settings": {
-         "appmode": "randomguidfromlist",
-         "list": ["7967af99-68b6-464a-86de-81de8937dd56", "ca1a9720-0f42-48e5-baa5-597dd11b6cad"]
      }
 }
 ```
@@ -1195,6 +1175,60 @@ Search a master object dimension using search terms from a file.
         "source": "fromfile",
         "searchtermsfile": "./resources/objectsearchterms.txt"
     }
+}
+```
+
+<hr></details>
+
+<details>
+<summary>openapp</summary>
+
+## OpenApp action
+
+Open an app.
+
+**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.
+
+* `appmode`: App selection mode
+    * `current`: (default) Use the current app, selected by an app selection in a previous action
+    * `guid`: Use the app GUID specified by the `app` parameter.
+    * `name`: Use the app name specified by the `app` parameter.
+    * `random`: Select a random app from the artifact map, which is filled by e.g. `openhub`
+    * `randomnamefromlist`: Select a random app from a list of app names. The `list` parameter should contain a list of app names.
+    * `randomguidfromlist`: Select a random app from a list of app GUIDs. The `list` parameter should contain a list of app GUIDs.
+    * `randomnamefromfile`: Select a random app from a file with app names. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `randomguidfromfile`: Select a random app from a file with app GUIDs. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+    * `round`: Select an app from the artifact map according to the round-robin principle.
+    * `roundnamefromlist`: Select an app from a list of app names according to the round-robin principle. The `list` parameter should contain a list of app names.
+    * `roundguidfromlist`: Select an app from a list of app GUIDs according to the round-robin principle. The `list` parameter should contain a list of app GUIDs.
+    * `roundnamefromfile`: Select an app from a file with app names according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app name.
+    * `roundguidfromfile`: Select an app from a file with app GUIDs according to the round-robin principle. The `filename` parameter should contain the path to a file in which each line represents an app GUID.
+* `app`: App name or app GUID (supports the use of [session variables](#session_variables)). Used with `appmode` set to `guid` or `name`.
+* `list`: List of apps. Used with `appmode` set to `randomnamefromlist`, `randomguidfromlist`, `roundnamefromlist` or `roundguidfromlist`.
+* `filename`: Path to a file in which each line represents an app. Used with `appmode` set to `randomnamefromfile`, `randomguidfromfile`, `roundnamefromfile` or `roundguidfromfile`.
+* `externalhost`: (optional) Sets an external host to be used instead of `server` configured in connection settings.
+* `unique`: Create unqiue engine session not re-using session from previous connection with same user. Defaults to false.
+
+### Examples
+
+```json
+{
+     "label": "OpenApp",
+     "action": "OpenApp",
+     "settings": {
+         "appmode": "guid",
+         "app": "7967af99-68b6-464a-86de-81de8937dd56"
+     }
+}
+```
+```json
+{
+     "label": "OpenApp",
+     "action": "OpenApp",
+     "settings": {
+         "appmode": "randomguidfromlist",
+         "list": ["7967af99-68b6-464a-86de-81de8937dd56", "ca1a9720-0f42-48e5-baa5-597dd11b6cad"]
+     }
 }
 ```
 
@@ -1288,6 +1322,7 @@ Publish sheets in the current app.
     * `allsheets`: Publish all sheets in the app.
     * `sheetids`: Only publish the sheets specified by the `sheetIds` array.
 * `sheetIds`: (optional) Array of sheet IDs for the `sheetids` mode.
+* `includePublished`: Try to publish already published sheets.
 
 ### Example
 ```json
@@ -2226,6 +2261,30 @@ Unsubscribe from all currently subscribed objects.
 ```
 <hr></details>
 
+<details>
+<summary>stepdimension</summary>
+
+## StepDimension action
+
+Cycle a step in a cyclic dimension
+
+* `id`: library ID of the cyclic dimension
+
+### Example
+
+Cycle one step in the dimension with library ID `aBc123`.
+
+```json
+{
+    "action": "stepdimension",
+    "settings":{
+        "id": "aBc123"
+    }
+}
+```
+
+<hr></details>
+
 <hr></details>
 
 <details>
@@ -2285,7 +2344,7 @@ Generate an on-demand app from an existing On-Demand App Generation (ODAG) link.
 
 ## OpenHub action
 
-Open the hub in a QSEoW environment.
+Open the hub in a QSEoW environment. This also makes the apps included in the response for the users `myspace` available for use by subsequent actions. The action `changestream` can be used to only select from apps in a specific stream.
 
 
 ### Example
@@ -2294,6 +2353,47 @@ Open the hub in a QSEoW environment.
 {
      "action": "OpenHub",
      "label": "Open the hub"
+}
+```
+
+<hr></details>
+
+<details>
+<summary>changestream</summary>
+
+## ChangeStream action
+
+Change to specified stream. This makes the apps in the specified stream selectable by actions such as `openapp`.
+* `mode`: Decides what kind of value the `stream` field contains. Defaults to `name`.
+    * `name`: `stream` is the name of the stream.
+    * `id`: `stream` is the ID if the stream.
+* `stream`: 
+
+### Example
+
+Make apps in stream `Everyone` selectable by subsequent actions.
+
+```json
+{
+     "label": "ChangeStream Everyone",
+     "action": "changestream",
+     "settings": {
+         "mode": "name",
+         "stream" : "Everyone"
+     }
+}
+```
+
+Make  apps in stream with id `ABSCDFSDFSDFO1231234` selectable subsequent actions.
+
+```json
+{
+     "label": "ChangeStream Test1",
+     "action": "changestream",
+     "settings": {
+         "mode": "id",
+         "stream" : "ABSCDFSDFSDFO1231234"
+     }
 }
 ```
 
@@ -2317,6 +2417,12 @@ The following session variables are supported in actions:
 * `Session`: The enumeration of the currently simulated session.
 * `Thread`: The enumeration of the currently simulated "thread" or "concurrent user".
 * `ScriptVars`: A map containing script variables added by the action `setscriptvar`.
+* `Artifacts`:
+  * `GetIDByTypeAndName`: A function that accepts the two string arguments,
+    `artifactType` and `artifactName`, and returns the resource id of the artifact.
+  * `GetNameByTypeAndID`: A function that accepts the two string arguments,
+    `artifactType` and `artifactID`, and returns the name of the artifact.
+
 
 The following variable is supported in the filename of the log file:
 
@@ -2331,6 +2437,7 @@ The following functions are supported:
 * `env`: Retrieve a specific environment variable. Takes one argument - the name of the environment variable to expand.
 * `add`: Adds two integer values together and outputs the sum. E.g. `{{ add 1 2 }}`.
 * `join`: Joins array elements together to a string separated by defined separator. E.g. `{{ join .ScriptVars.MyArray \",\" }}`.
+* `modulo`: Returns modulo of two integer values and output the result. E.g. `{{ modulo 10 4 }}` (will return 2)
 
 ### Example
 
@@ -2382,6 +2489,46 @@ The following functions are supported:
 }
 ```
 
+```json
+{
+  "action": "setscriptvar",
+  "settings": {
+    "name": "MyAppId",
+    "type": "string",
+    "value": "{{.Artifacts.GetIDByTypeAndName \"app\" (print \"an-app-\" .Session)}}"
+  }
+}
+```
+
+Let's assume the case there are 4 apps to be used in the test, all ending with number 0 to 3. The use of modulo in the example will cycle through the app suffix number in following order: 1, 2, 3, 0.
+
+```json
+{
+  "action": "elastictriggersubscription",
+  "label": "trigger reporting task",
+  "settings": {
+    "subscriptiontype": "template-sharing",
+    "limitperpage": 100,
+    "appname": "PS-18566_Test_Levels_Pages- {{ modulo .Session 4}}",
+    "subscriptionmode": "random",
+  }
+}
+```
+
+Very similar case as above but apps have number suffix from 1 to 4. This can be handled combining `modulo` and `add` functions. The cycle through the suffix number will be done in following order: 2, 3, 4, 1.
+```json
+{
+  "action": "elastictriggersubscription",
+  "label": "trigger reporting task",
+  "settings": {
+    "subscriptiontype": "template-sharing",
+    "limitperpage": 100,
+    "appname": "PS-18566_Test_Levels_Pages- {{ modulo .Session 4 | add 1 }}",
+    "subscriptionmode": "random",
+  }
+}
+```
+
 </details>
 
 
@@ -2416,7 +2563,7 @@ Settings specific to the `simple` scheduler.
 * `instance`: Instance number for this instance. Use different instance numbers when running the same script in multiple instances to make sure the randomization is different in each instance. Defaults to 1.
 * `reconnectsettings`: Settings for enabling re-connection attempts in case of unexpected disconnects.
   * `reconnect`: Enable re-connection attempts if the WebSocket is disconnected. Defaults to `false`.
-  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
+  * `backoff`: Re-connection backoff scheme. Defaults to `[0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 8.0, 12.0, 16.0]`, if left empty. An example backoff scheme could be `[0.0, 1.0, 10.0, 20.0]`:
       * `0.0`: If the WebSocket is disconnected, wait 0.0s before attempting to re-connect
       * `1.0`: If the previous attempt to re-connect failed, wait 1.0s before attempting again
       * `10.0`: If the previous attempt to re-connect failed, wait 10.0s before attempting again
@@ -2500,7 +2647,7 @@ Simple scheduler set to attempt re-connection in case of an unexpected WebSocket
 
 This section of the JSON file contains timeout and logging settings for the load scenario.
 
-* `timeout`: Timeout setting (seconds) for WebSocket requests.
+* `timeout`: Timeout setting (seconds) for requests.
 * `logs`: Log settings
   * `traffic`: Log traffic information (`true` / `false`). Defaults to `false`, if omitted. **Note:** This should only be used for debugging purposes as traffic logging is resource-demanding.
   * `debug`: Log debug information (`true` / `false`). Defaults to `false`, if omitted.

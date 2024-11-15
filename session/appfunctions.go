@@ -5,24 +5,28 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 )
 
-// GetActiveDoc get active doc from engine
-func (state *State) GetActiveDoc(actionState *action.State, upLink *enigmahandlers.SenseUplink) (*enigma.Doc, error) {
+// ReOpenDoc get active doc from engine
+func (state *State) ReOpenDoc(actionState *action.State, upLink *enigmahandlers.SenseUplink) (*enigma.Doc, error) {
+
+	if state.CurrentApp == nil || state.CurrentApp.ID == "" {
+		return nil, errors.Errorf("ReOpenDoc: no current app set in state")
+	}
+
 	var doc *enigma.Doc
 	err := state.SendRequest(actionState, func(ctx context.Context) error {
-		activeDoc, err := upLink.Global.GetActiveDoc(ctx)
+		var err error
+		doc, err = upLink.Global.OpenDoc(ctx, state.CurrentApp.ID, "", "", "", false)
 		if err != nil {
 			return errors.WithStack(NoActiveDocError{Err: err})
-		} else if activeDoc == nil {
-			return errors.WithStack(NoActiveDocError{Msg: "No Active doc found on reconnect."})
+		} else if doc == nil {
+			return errors.WithStack(NoActiveDocError{Msg: "No doc found on reconnect."})
 		}
-
-		doc = activeDoc
 		return nil
 	})
 	return doc, errors.WithStack(err)

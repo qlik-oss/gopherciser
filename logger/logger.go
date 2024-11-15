@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,7 +109,7 @@ func (l LogLevel) String() string {
 // NewLog instance
 func NewLog(settings LogSettings) *Log {
 	return &Log{
-		logChan:  make(chan *LogChanMsg, 200),
+		logChan:  make(chan *LogChanMsg, 2000),
 		Settings: settings,
 		Closed:   make(chan interface{}),
 	}
@@ -371,7 +370,7 @@ func CreateStdoutLogger() *Logger {
 
 // CreateDummyLogger auto discarding all entries
 func CreateDummyLogger() *Logger {
-	dummyWriter := NewTSVWriter(nil, ioutil.Discard)
+	dummyWriter := NewTSVWriter(nil, io.Discard)
 	dummyLogger := NewLogger(dummyWriter)
 	return dummyLogger
 }

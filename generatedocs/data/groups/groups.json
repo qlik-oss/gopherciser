@@ -18,10 +18,11 @@
             "disconnectenvironment",
             "dosave",
             "duplicatesheet",
+            "getscript",
             "iterated",
             "listboxselect",
-            "openapp",
             "objectsearch",
+            "openapp",
             "productversion",
             "publishbookmark",
             "publishsheet",
@@ -37,7 +38,8 @@
             "thinktime",
             "unpublishbookmark",
             "unpublishsheet",
-            "unsubscribeobjects"
+            "unsubscribeobjects",
+            "stepdimension"
         ]
     },
     {
@@ -46,7 +48,8 @@
         "actions": [
             "deleteodag",
             "generateodag",
-            "openhub"
+            "openhub",
+            "changestream"
         ]
     }
 ]

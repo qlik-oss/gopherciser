@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -118,7 +117,7 @@ func cfgJsonFromFile() ([]byte, error) {
 		return nil, errors.Errorf("No config file defined")
 	}
 
-	return ioutil.ReadFile(cfgFile)
+	return os.ReadFile(cfgFile)
 }
 
 func overrideScriptValues(cfgJSON []byte, hasPipe bool) ([]byte, []string, error) {

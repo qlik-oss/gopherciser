@@ -10,7 +10,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	enigma "github.com/qlik-oss/enigma-go/v3"
+	enigma "github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/eventws"
@@ -22,7 +22,6 @@ import (
 	"github.com/qlik-oss/gopherciser/senseobjdef"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/statistics"
-	"github.com/qlik-oss/gopherciser/structs"
 	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/wsdialer"
@@ -75,7 +74,6 @@ type (
 		User         *users.User
 		OutputsDir   string
 		CurrentApp   *ArtifactEntry
-		CurrentUser  *structs.User
 		Counters     *statistics.ExecutionCounters
 		// CurrentActionState will contain the state of the latest action to be started
 		CurrentActionState *action.State
@@ -90,6 +88,7 @@ type (
 		rand          *rand
 		trafficLogger enigmahandlers.ITrafficLogger
 		reconnect     ReconnectInfo
+		targetEnv     string
 
 		ctx       context.Context
 		ctxCancel context.CancelFunc
@@ -122,7 +121,7 @@ type (
 	ReconnectInfo struct {
 		err                 error
 		pendingReconnection pending.Handler
-		reconnectFunc       func() (string, error)
+		reconnectFunc       func(bool) (string, error)
 	}
 
 	// SessionVariables is used as a data carrier for session variables.
@@ -132,6 +131,7 @@ type (
 		Thread     uint64
 		ScriptVars map[string]interface{}
 		Local      interface{}
+		Artifacts  *TemplateArtifactMap
 	}
 
 	ObjectHandlerInstance interface {
@@ -158,6 +158,14 @@ const (
 const (
 	EventWsReconnectStarted = "eventws.reconnect.started"
 	EventWsReconnectEnded   = "eventws.reconnect.ended"
+)
+
+// Standard defined target environments
+const (
+	TargetEnvQlikSenseOnWindows = "qseow"
+	TargetEnvStandaloneEngine   = "engine"
+
+	TargetEnvDefault = TargetEnvStandaloneEngine
 )
 
 var (
@@ -194,16 +202,13 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 	sessionCtx, cancel := context.WithCancel(ctx)
 
 	state := &State{
-		Timeout:      timeout,
-		ArtifactMap:  NewArtifactMap(),
-		OutputsDir:   outputsDir,
-		User:         user,
-		HeaderJar:    NewHeaderJar(),
-		VirtualProxy: virtualProxy,
-		// Buffer size for the pendingHandler has been chosen after evaluation tests towards sense
-		// with medium amount of objects in the sheets. Evaluation was done before introducing spinLoopPending
-		// in pendingHandler and could possibly be lowered, this would however require re-evaluation.
-		Pending:        pending.NewHandler(32),
+		Timeout:        timeout,
+		ArtifactMap:    NewArtifactMap(),
+		OutputsDir:     outputsDir,
+		User:           user,
+		HeaderJar:      NewHeaderJar(),
+		VirtualProxy:   virtualProxy,
+		Pending:        pending.NewHandler(),
 		RequestMetrics: &requestmetrics.RequestMetrics{},
 		Counters:       counters,
 		customStates:   make(map[string]interface{}),
@@ -214,7 +219,7 @@ func newSessionState(ctx context.Context, outputsDir string, timeout time.Durati
 		events:    make(map[int]*Event),
 		reconnect: ReconnectInfo{
 			reconnectFunc:       nil,
-			pendingReconnection: pending.NewHandler(32),
+			pendingReconnection: pending.NewHandler(),
 		},
 	}
 
@@ -264,8 +269,8 @@ func (state *State) Reset(ctx context.Context) {
 	state.RequestMetrics = &requestmetrics.RequestMetrics{}
 	state.events = make(map[int]*Event)
 	state.CurrentApp = nil
-	state.CurrentUser = nil
 	state.objects = nil
+	state.customStates = make(map[string]interface{})
 }
 
 // SetLogEntry set the log entry
@@ -278,7 +283,7 @@ func (state *State) SetLogEntry(entry *logger.LogEntry) {
 		state.trafficLogger = enigmahandlers.NewTrafficRequestCounter(state.Counters)
 	}
 
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
 }
 
 // TrafficLogger returns the current trafficLogger
@@ -328,9 +333,6 @@ func (state *State) IsAbortTriggered() bool {
 // Wait for all pending requests to finish, returns true if action state has been marked as failed
 func (state *State) Wait(actionState *action.State) bool {
 	state.Pending.WaitForPending(state.ctx)
-	if state.Rest != nil {
-		state.Rest.WaitForPending()
-	}
 	return actionState.Failed
 }
 
@@ -369,6 +371,15 @@ func (state *State) BaseContext() context.Context {
 // Changes can also be handled "manually" with the help of TriggerContextChanges.
 func (state *State) QueueRequest(f func(ctx context.Context) error, actionState *action.State, failOnError bool, errMsg string) {
 	state.QueueRequestWithCallback(f, actionState, failOnError, errMsg, nil)
+}
+
+// QueueRequestRaw same as QueueRequestAsync but accepts function returning  (json.RawMessage, error), to be used when sending Raw functions
+// where the response is not actually used
+func (state *State) QueueRequestRaw(f func(ctx context.Context) (json.RawMessage, error), actionState *action.State, failOnError bool, errMsg string) {
+	state.QueueRequestWithCallback(func(ctx context.Context) error {
+		_, err := f(ctx)
+		return err
+	}, actionState, failOnError, errMsg, nil)
 }
 
 // QueueRequestWithCallback Async request, add error to action state or log as warning depending on failOnError flag.
@@ -457,6 +468,17 @@ func (state *State) RegisterEvent(handle int,
 		NoFailOnError: !failOnError,
 		Close:         onClose,
 	})
+}
+
+// GetEvent for handle
+func (state *State) GetEventFunc(handle int) func(ctx context.Context, actionState *action.State) error {
+	state.eventMu.Lock()
+	defer state.eventMu.Unlock()
+	event, exist := state.events[handle]
+	if exist && event != nil {
+		return event.F
+	}
+	return nil
 }
 
 // DeRegisterEvents for handles in list
@@ -580,6 +602,52 @@ func (state *State) TriggerContextChanges(ctx context.Context, actionState *acti
 	state.TriggerEvents(actionState, cl.Changed, cl.Closed)
 }
 
+type (
+	TemplateArtifactMap struct {
+		artifactMap *ArtifactMap
+	}
+)
+
+func (artifacts *TemplateArtifactMap) getArtifact(artifactType, lookup string, cmpType ArtifactEntryCompareType,
+	valueLabel string, valueGetter func(*ArtifactEntry) string) (string, error) {
+	if artifactType == "" {
+		return "", errors.New("first argument artifactType is empty string")
+	}
+	if lookup == "" {
+		return "", errors.Errorf("second argument %s is empty string", cmpType)
+	}
+	if artifacts == nil {
+		return "", errors.New("templateArtifactMap is nil")
+	}
+	if artifacts.artifactMap == nil {
+		return "", errors.New("artifactMap is nil")
+	}
+	artifact, err := artifacts.artifactMap.Lookup(artifactType, lookup, cmpType)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	if artifact == nil {
+		return "", errors.New("artifact is nil")
+	}
+	valueStr := valueGetter(artifact)
+	if valueStr == "" {
+		return "", errors.Errorf("%s is empty string", valueLabel)
+	}
+	return valueStr, nil
+}
+
+func (artifacts *TemplateArtifactMap) GetIDByTypeAndName(artifactType, name string) (string, error) {
+	return artifacts.getArtifact(artifactType, name, ArtifactEntryCompareTypeName, "id", func(artifact *ArtifactEntry) string {
+		return artifact.ID
+	})
+}
+
+func (artifacts *TemplateArtifactMap) GetNameByTypeAndID(artifactType, id string) (string, error) {
+	return artifacts.getArtifact(artifactType, id, ArtifactEntryCompareTypeID, "name", func(artifact *ArtifactEntry) string {
+		return artifact.Name
+	})
+}
+
 // GetSessionVariable populates and returns session variables struct
 func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 	if state == nil {
@@ -599,6 +667,7 @@ func (state *State) GetSessionVariable(localData interface{}) SessionVariables {
 		Thread:     thread,
 		Local:      localData,
 		ScriptVars: state.variables,
+		Artifacts:  &TemplateArtifactMap{state.ArtifactMap},
 	}
 
 	if state.User != nil {
@@ -664,7 +733,8 @@ func (state *State) WSFailed() {
 
 			panicErr := helpers.RecoverWithErrorFunc(func() {
 				if err := state.Reconnect(); err != nil {
-					state.LogEntry.LogError(errors.Wrap(err, "failed to reconnect websocket and app"))
+					err = errors.Wrap(err, "failed to reconnect websocket and app")
+					state.LogEntry.LogError(err) // report error directly since errors on "Cancel" will be igonored
 					state.Cancel()
 					return
 				}
@@ -774,9 +844,15 @@ reconnectLoop:
 		reConnectActionState := &action.State{}
 
 		attempts = i + 1
-		if _, err := state.reconnect.reconnectFunc(); err != nil {
-			state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
-			continue reconnectLoop
+		if _, err := state.reconnect.reconnectFunc(true); err != nil {
+			switch helpers.TrueCause(err).(type) {
+			case enigmahandlers.NoSessionOnConnectError:
+				state.reconnect.err = errors.WithStack(err)
+				break reconnectLoop
+			default:
+				state.reconnect.err = errors.Wrap(err, "Failed connecting to sense server")
+				continue reconnectLoop
+			}
 		}
 
 		if err := state.SetupChangeChan(); err != nil {
@@ -786,7 +862,7 @@ reconnectLoop:
 
 		upLink := state.Connection.Sense()
 
-		doc, err := state.GetActiveDoc(reConnectActionState, upLink)
+		doc, err := state.ReOpenDoc(reConnectActionState, upLink)
 		if err != nil {
 			state.reconnect.err = errors.WithStack(err)
 			break reconnectLoop // no active doc, don't try re connecting again
@@ -832,7 +908,7 @@ reconnectLoop:
 }
 
 // SetReconnectFunc sets current app re-connect function
-func (state *State) SetReconnectFunc(f func() (string, error)) {
+func (state *State) SetReconnectFunc(f func(bool) (string, error)) {
 	if state == nil {
 		return
 	}
@@ -850,10 +926,11 @@ func (state *State) IsSenseWebsocketDisconnected(err error) bool {
 	if ok && disconnectErr.Type == enigmahandlers.SenseWsType {
 		return true
 	}
+
 	return false
 }
 
-//CurrentSenseApp returns currently set sense app or error if none found
+// CurrentSenseApp returns currently set sense app or error if none found
 func (state *State) CurrentSenseApp() (*senseobjects.App, error) {
 	uplink, err := state.CurrentSenseUplink()
 	if err != nil {
@@ -969,7 +1046,7 @@ func (lgr *EventMetricsLogger) SocketOpenMetric(url *neturl.URL, duration time.D
 		path = url.Path
 	}
 
-	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS")
+	lgr.LogEntry.LogTrafficMetric(duration.Nanoseconds(), 0, 0, -1, path, "Open", "EventWS", "")
 }
 
 // ClearObjectSubscriptions and currently subscribed objects
@@ -1076,8 +1153,18 @@ func (state *State) LogInfo(infoType, msg string) {
 }
 
 // LogTrafficMetric traffic metric log using current LogEntry
-func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType string) {
+func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, requestID int, method, params, trafficType, msg string) {
 	if state.LogEntry != nil {
-		state.LogEntry.LogTrafficMetric(responseTime, sent, received, requestID, method, params, trafficType)
+		state.LogEntry.LogTrafficMetric(responseTime, sent, received, requestID, method, params, trafficType, msg)
 	}
+}
+
+// TargetEnv currently set target enviroment
+func (state *State) TargetEnv() string {
+	return state.targetEnv
+}
+
+// SetTargetEnv set current target environment
+func (state *State) SetTargetEnv(env string) {
+	state.targetEnv = env
 }

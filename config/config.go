@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -21,6 +20,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/session"
@@ -90,7 +90,7 @@ type (
 
 	// Settings Config settings struct
 	Settings struct {
-		Timeout         int             `json:"timeout" displayname:"WebSocket timeout" doc-key:"config.settings.timeout"` // Timeout in seconds
+		Timeout         int             `json:"timeout" displayname:"Request timeout" doc-key:"config.settings.timeout"` // Timeout in seconds
 		LogSettings     LogSettings     `json:"logs" doc-key:"config.settings.logs"`
 		OutputsSettings OutputsSettings `json:"outputs,omitempty" doc-key:"config.settings.outputs"`
 		MaxErrorCount   uint64          `json:"maxerrors,omitempty" doc-key:"config.settings.maxerrors" displayname:"Max errors"`
@@ -121,6 +121,7 @@ type (
 	// Config setup and scenario to execute
 	Config struct {
 		*cfgCore
+		schedType string
 		Scheduler scheduler.IScheduler `json:"scheduler"`
 
 		// CustomLoggers list of custom loggers.
@@ -444,7 +445,7 @@ func (cfg *Config) UnmarshalJSON(arg []byte) error {
 		return errors.Wrap(err, "no scheduler in config")
 	}
 
-	cfg.Scheduler, err = scheduler.UnmarshalScheduler(rawsched)
+	cfg.Scheduler, cfg.schedType, err = scheduler.UnmarshalScheduler(rawsched)
 	if err != nil {
 		return errors.Wrap(err, "failed unmarhaling scheduler")
 	}
@@ -496,6 +497,19 @@ func (cfg *Config) validateScheduler() error {
 		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
 			return errors.Errorf("No scenario items defined")
 		}
+		for _, act := range cfg.Scenario {
+			if act.Disabled {
+				continue
+			}
+			if schedValidate, ok := act.Settings.(scenario.ValidateActionForScheduler); ok {
+				warnings, err := schedValidate.IsActionValidForScheduler(cfg.schedType)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				cfg.ValidationWarnings = append(cfg.ValidationWarnings, warnings...)
+			}
+		}
+
 	}
 	return nil
 }
@@ -617,6 +631,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 	// Log version information at the start of the log
 	entry := logger.NewLogEntry(log)
 	entry.LogInfo("GopherciserVersion", version.Version)
+	entry.LogInfo("RunID", runid.Get())
 
 	// Log script validation warnings
 	for _, warning := range cfg.ValidationWarnings {
@@ -859,7 +874,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 		if summaryFilename != "" {
 			fileName = summaryFilename
 		}
-		if err := ioutil.WriteFile(fileName, jsn, 0644); err != nil {
+		if err := os.WriteFile(fileName, jsn, 0644); err != nil {
 			_, _ = os.Stderr.WriteString(fmt.Sprint("failed write summary file:", err))
 		}
 		return

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -46,7 +46,7 @@ func (settings CreateBookmarkSettings) Execute(sessionState *session.State, acti
 
 	// Get or create current selection object
 	sessionState.QueueRequest(func(ctx context.Context) error {
-		if _, err := uplink.CurrentApp.GetCurrentSelections(sessionState, actionState); err != nil {
+		if _, err := uplink.CurrentApp.GetCurrentSelections(sessionState, actionState, true); err != nil {
 			return errors.WithStack(err)
 		}
 		return nil

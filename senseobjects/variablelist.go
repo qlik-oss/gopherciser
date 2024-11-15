@@ -2,11 +2,12 @@ package senseobjects
 
 import (
 	"context"
-	"github.com/goccy/go-json"
 	"sync"
 
+	"github.com/goccy/go-json"
+
 	"github.com/pkg/errors"
-	"github.com/qlik-oss/enigma-go/v3"
+	"github.com/qlik-oss/enigma-go/v4"
 )
 
 type (
@@ -14,7 +15,6 @@ type (
 	VariableList struct {
 		enigmaObject *enigma.GenericObject
 		layout       *enigma.GenericObjectLayout
-		properties   *enigma.GenericObjectProperties
 
 		mutex sync.Mutex
 	}
@@ -73,33 +73,4 @@ func (variableList *VariableList) setLayout(layout *enigma.GenericObjectLayout) 
 	defer variableList.mutex.Unlock()
 
 	variableList.layout = layout
-}
-
-// UpdateProperties get and set properties for VariableList
-func (variableList *VariableList) UpdateProperties(ctx context.Context) error {
-	if variableList.enigmaObject == nil {
-		return errors.Errorf("variableList enigma object is nil")
-	}
-
-	propertiesRaw, err := variableList.enigmaObject.GetEffectivePropertiesRaw(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to unmarshal variableList properties")
-	}
-
-	var properties enigma.GenericObjectProperties
-	err = json.Unmarshal(propertiesRaw, &properties)
-	if err != nil {
-		return errors.Wrap(err, "Failed to unmarshal variableList properties")
-	}
-
-	variableList.setProperties(&properties)
-
-	return nil
-}
-
-func (variableList *VariableList) setProperties(properties *enigma.GenericObjectProperties) {
-	variableList.mutex.Lock()
-	defer variableList.mutex.Unlock()
-
-	variableList.properties = properties
 }

@@ -41,7 +41,7 @@ func TestCustomScheduler(t *testing.T) {
 		"type" : "custom",
 		"customsetting" : "MyValue"
 	}`
-	sched, err := scheduler.UnmarshalScheduler([]byte(rawJson))
+	sched, _, err := scheduler.UnmarshalScheduler([]byte(rawJson))
 	if err != nil {
 		t.Fatal(err)
 	}

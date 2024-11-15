@@ -44,10 +44,17 @@ type (
 		AppExt *string `json:"appext,omitempty" doc-key:"config.connectionSettings.appext"`
 		// Header headers to add on the websocket connection
 		Headers map[string]string `json:"headers" doc-key:"config.connectionSettings.headers"`
+		// MaxFrameSize (Default 0 - No limit). Max size in bytes to be read on sense websocket. Limit exceeded yields an error.
+		MaxFrameSize int64 `json:"maxframesize" doc-key:"config.connectionSettings.maxframesize"`
 
 		syncTemplates sync.Once
 		templates     map[string]*template.Template
+		csrfToken     string
 	}
+
+	// ConnectFunc connects to a sense environment, set reconnect to true if it's a reconnect and session in engine
+	// is expected. Returns App GUID.
+	ConnectFunc func(reconnect bool) (string, error)
 )
 
 const (
@@ -118,7 +125,7 @@ func (connectionSettings *ConnectionSettings) Validate() error {
 }
 
 // GetConnectFunc Get function for connecting to sense
-func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (func() (string, error), error) {
+func (connectionSettings *ConnectionSettings) GetConnectFunc(state *session.State, appGUID, externalhost string, customHeaders http.Header) (ConnectFunc, error) {
 	header, err := connectionSettings.GetHeaders(state, externalhost)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -230,20 +237,21 @@ func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (stri
 	}
 
 	// Set protocol
+	port := connection.Port
 	if connection.Security {
 		url = "wss://" + url
-		if connection.Port < 1 {
-			connection.Port = 443
+		if port < 1 {
+			port = 443
 		}
 	} else {
 		url = "ws://" + url
-		if connection.Port < 1 {
-			connection.Port = 80
+		if port < 1 {
+			port = 80
 		}
 	}
 
 	// Add port
-	url += ":" + strconv.Itoa(connection.Port)
+	url += ":" + strconv.Itoa(port)
 
 	// Add virtual proxy
 	if connection.VirtualProxy != "" {
@@ -263,6 +271,10 @@ func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (stri
 		url += "/" + AppExt + appGUID
 	} else {
 		url += "/" + AppExt
+	}
+
+	if connection.csrfToken != "" {
+		url += "?qlik-csrf-token=" + connection.csrfToken
 	}
 
 	return url, nil
@@ -324,4 +336,9 @@ func (connectionSettings *ConnectionSettings) parseTemplates() error {
 // AllowUntrusted implements session.ConnectionSettings interface
 func (connectionSettings *ConnectionSettings) AllowUntrusted() bool {
 	return connectionSettings.Allowuntrusted
+}
+
+// SetCSRFToken setting token that will be added to connect url when connecting to engine
+func (connectionSettings *ConnectionSettings) SetCSRFToken(token string) {
+	connectionSettings.csrfToken = token
 }
