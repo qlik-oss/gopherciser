@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus/push"
 
@@ -40,7 +41,12 @@ func setupMetrics(actions []string, apimetrics bool) error {
 	prometheus.MustRegister(GopherActionLatencyHist)
 	prometheus.MustRegister(BuildInfo)
 
-	err := gopherRegistry.Register(GopherActions)
+	err := gopherRegistry.Register(collectors.NewGoCollector())
+	if err != nil {
+		return err
+	}
+
+	err = gopherRegistry.Register(GopherActions)
 	if err != nil {
 		return err
 	}
@@ -107,7 +113,7 @@ func PushMetrics(ctx context.Context, metricsTarget, job string, groupingKeys, a
 	}
 
 	//Pushes prometheus metrics every minute
-	const interval time.Duration = 1 * time.Minute
+	const interval time.Duration = time.Minute
 	ticker := time.NewTicker(interval)
 	go func() {
 		for {
