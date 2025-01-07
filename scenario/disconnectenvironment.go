@@ -30,12 +30,13 @@ func (settings DisconnectEnvironment) Execute(sessionState *session.State, actio
 	// remove any set re-connect function
 	sessionState.SetReconnectFunc(nil)
 
+	// TODO how to solve this for qlik-trial?
 	// close event websocket if open
-	if eventWS := sessionState.EventWebsocket(); eventWS != nil {
-		if err := eventWS.Close(); err != nil {
-			sessionState.LogEntry.Logf(logger.WarningLevel, "error disconnecting event websocket: %v", err)
-		}
-	}
+	// if eventWS := sessionState.EventWebsocket(); eventWS != nil {
+	// 	if err := eventWS.Close(); err != nil {
+	// 		sessionState.LogEntry.Logf(logger.WarningLevel, "error disconnecting event websocket: %v", err)
+	// 	}
+	// }
 
 	sessionState.Wait(actionState)
 }
