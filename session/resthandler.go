@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -125,6 +126,11 @@ const (
 var (
 	registeredAddCustomHeaders    CustomHeadersFunc = func(CustomHeadersInput, func(key, value string)) {}
 	registerCustomHeadersFuncOnce sync.Once
+	streamContentTypes            = map[string]struct{}{
+		"text/event-stream":       {},
+		"application/stream+json": {},
+		"application/x-ndjson":    {},
+	}
 )
 
 var (
@@ -650,8 +656,17 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 			request.ResponseStatusCode = request.response.StatusCode
 			request.ResponseHeaders = request.response.Header
 			request.ResponseBody, errRequest = io.ReadAll(request.response.Body)
+			contentType := request.response.Header.Get("Content-Type")
+			mediaType := ""
+			if contentType != "" {
+				mediaType, _, err = mime.ParseMediaType(contentType)
+				if err != nil {
+					logEntry.Logf(logger.WarningLevel, "failed to parse content type %s", request.response.Header.Get("Content-Type"))
+				}
+			}
+
 			// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
-			if logEntry.ShouldLogTrafficMetrics() && strings.HasPrefix(request.response.Header.Get("Content-Type"), "text/event-stream") {
+			if _, ok := streamContentTypes[mediaType]; ok && logEntry.ShouldLogTrafficMetrics() {
 				logEntry.LogTrafficMetric(time.Since(doTs).Nanoseconds(), 0, uint64(len(request.ResponseBody)), -1, req.URL.Path, "", "STREAM", "")
 			}
 		}
