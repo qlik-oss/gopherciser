@@ -412,7 +412,7 @@ func UpdateObjectHyperCubeDataAsync(sessionState *State, actionState *action.Sta
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -476,7 +476,7 @@ func UpdateObjectHyperCubeReducedDataAsync(sessionState *State, actionState *act
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -529,7 +529,7 @@ func UpdateObjectHyperCubeBinnedDataAsync(sessionState *State, actionState *acti
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -613,7 +613,7 @@ func UpdateObjectHyperCubeStackDataAsync(sessionState *State, actionState *actio
 			return errors.Errorf("object<%s> has no hypercube", gob.GenericId)
 		}
 
-		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -683,7 +683,7 @@ func UpdateObjectHyperCubeContinuousDataAsync(sessionState *State, actionState *
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		sessionState.LogEntry.LogDebugf("Get continuous data for object<%s>", gob.GenericId)
 		hypercube := obj.HyperCube()
-		if err := checkHyperCubeErrors(gob.GenericId, hypercube, sessionState.LogEntry); err != nil {
+		if err := checkHyperCubeErrors(gob.GenericId, hypercube); err != nil {
 			switch err.(type) {
 			case CalcEvalConditionFailedError:
 				sessionState.LogEntry.Logf(logger.WarningLevel, "object<%s>: %v", obj.ID, err)
@@ -764,7 +764,7 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 	}, actionState, true, fmt.Sprintf("failed to get tree data for object<%s>", gob.GenericId))
 }
 
-func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube, logEntry *logger.LogEntry) error {
+func checkHyperCubeErrors(id string, hypercube *enigmahandlers.HyperCube) error {
 	if hypercube == nil {
 		return errors.Errorf("object<%s> has no hypercube", id)
 	}
