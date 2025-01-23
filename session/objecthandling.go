@@ -750,9 +750,8 @@ func UpdateObjectHyperCubeTreeDataAsync(sessionState *State, actionState *action
 		treeNodes, err := gob.GetHyperCubeTreeData(ctx, requestDef.Path, &enigma.NxTreeDataOption{
 			TreeNodes: nodes,
 		})
+		err = checkEngineErr(err, sessionState, fmt.Sprintf("object<%s>.GetHyperCubeTreeData", gob.GenericId))
 		if err != nil {
-			// this makes sure e.g. calc cond isn't reported as an error, done here as SetTreeDataPages shouldn't be done
-			err = checkEngineErr(err, sessionState, fmt.Sprintf("object<%s>.GetHyperCubeTreeData", gob.GenericId))
 			return errors.WithStack(err)
 		}
 
