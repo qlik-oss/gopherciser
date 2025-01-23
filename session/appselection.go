@@ -131,7 +131,7 @@ func NewAppSelection(appMode AppSelectionModeEnum, app string, list []string) (*
 }
 
 // getRoundAppListEntry returns round robin entry from appList, based on local counter
-func (appSelection *AppSelection) getRoundAppListEntry(sessionState *State, appList []string) string {
+func (appSelection *AppSelection) getRoundAppListEntry(appList []string) string {
 	appNumber := appSelection.listCounter.Inc() - 1
 	return appList[appNumber%uint64(len(appList))]
 }
@@ -217,14 +217,14 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 			return nil, errors.WithStack(err)
 		}
 	case AppModeRoundNameFromList:
-		app := appSelection.getRoundAppListEntry(sessionState, appSelection.AppList)
+		app := appSelection.getRoundAppListEntry(appSelection.AppList)
 		var err error
 		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to find app with title<%s>", app)
 		}
 	case AppModeRoundGUIDFromList:
-		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.AppList)
+		guid := appSelection.getRoundAppListEntry(appSelection.AppList)
 		var err error
 		entry, err = sessionState.ArtifactMap.LookupAppGUID(guid)
 		if err != nil {
@@ -249,14 +249,14 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 			return nil, errors.WithStack(err)
 		}
 	case AppModeRoundNameFromFile:
-		app := appSelection.getRoundAppListEntry(sessionState, appSelection.Filename.Rows())
+		app := appSelection.getRoundAppListEntry(appSelection.Filename.Rows())
 		var err error
 		entry, err = sessionState.ArtifactMap.LookupAppTitle(app)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to find app with title<%s>", app)
 		}
 	case AppModeRoundGUIDFromFile:
-		guid := appSelection.getRoundAppListEntry(sessionState, appSelection.Filename.Rows())
+		guid := appSelection.getRoundAppListEntry(appSelection.Filename.Rows())
 		var err error
 		entry, err = sessionState.ArtifactMap.LookupAppGUID(guid)
 		if err != nil {
