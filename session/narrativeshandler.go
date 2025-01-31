@@ -131,13 +131,13 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 	protocol := sessionState.Rest.Protocol()
 	host := sessionState.Rest.Host()
 
-	sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate", protocol, host), actionState, sessionState.LogEntry, content, nil)
+	_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate", protocol, host), actionState, sessionState.LogEntry, content, nil)
 
 	event := func(ctx context.Context, as *action.State) error {
 		if err := GetObjectLayout(sessionState, as, obj, nil); err != nil {
 			return err
 		}
-		sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate", protocol, host), actionState, sessionState.LogEntry, content, nil)
+		_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate", protocol, host), actionState, sessionState.LogEntry, content, nil)
 		return nil
 	}
 
