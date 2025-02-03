@@ -80,8 +80,6 @@ func (handler *NarrativesHandlerInstance) GetObjectDefinition(objectType string)
 func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	var wg sync.WaitGroup
 
-	fmt.Println("handle object: ", obj.ID)
-
 	wg.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
