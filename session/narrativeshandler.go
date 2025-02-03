@@ -15,9 +15,24 @@ import (
 )
 
 type (
+	NarrativesPropertiesNlgChartObject struct {
+		ChartObjectId string                `json:"chartObjectId"`
+		Label         string                `json:"label"`
+		Type          string                `json:"type"`
+		ExtendsId     string                `json:"qExtendsId"`
+		Dimensions    []*enigma.NxDimension `json:"qDimensions"`
+		Measures      []*enigma.NxMeasure   `json:"qMeasures"`
+	}
+
+	NarrativesProperties struct {
+		*enigma.GenericObjectProperties
+		NlgChartObject *NarrativesPropertiesNlgChartObject `json:"nlgChartObject"`
+	}
+
 	NarrativesHandler         struct{}
 	NarrativesHandlerInstance struct {
-		ID string
+		ID         string
+		Properties *NarrativesProperties
 	}
 
 	NarrativesPayloadExpressionOverrides struct {
@@ -31,6 +46,11 @@ type (
 		Overrides NarrativesPayloadExpressionOverrides `json:"overrides"`
 	}
 
+	NarrativesPayloadLibItem struct {
+		LibId     string      `json:"libId"`
+		Overrides interface{} `json:"overrides"`
+	}
+
 	NarrativesPayload struct {
 		AlternateStateName string                        `json:"alternateStateName"`
 		AnalysisTypes      []interface{}                 `json:"analysisTypes"`
@@ -38,7 +58,7 @@ type (
 		Expressions        []NarrativesPayloadExpression `json:"expressions"`
 		Fields             []interface{}                 `json:"fields"`
 		Lang               string                        `json:"lang"`
-		LibItems           []interface{}                 `json:"libItems"`
+		LibItems           []NarrativesPayloadLibItem    `json:"libItems"`
 		Verbosity          string                        `json:"verbosity"`
 	}
 )
@@ -60,10 +80,12 @@ func (handler *NarrativesHandlerInstance) GetObjectDefinition(objectType string)
 func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State, actionState *action.State, obj *enigmahandlers.Object, genObj *enigma.GenericObject) {
 	var wg sync.WaitGroup
 
+	fmt.Println("handle object: ", obj.ID)
+
 	wg.Add(1)
 	sessionState.QueueRequest(func(ctx context.Context) error {
 		defer wg.Done()
-		return GetObjectProperties(sessionState, actionState, obj)
+		return handler.GetNarrativesProperties(sessionState, actionState, obj)
 	}, actionState, true, "")
 
 	wg.Add(1)
@@ -85,37 +107,59 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		return
 	}
 
-	// TODO check for library id's?
-	expressions := make([]NarrativesPayloadExpression, len(obj.Properties().HyperCubeDef.Measures))
-	for i, measure := range obj.Properties().HyperCubeDef.Measures {
-		expressions[i] = NarrativesPayloadExpression{
+	payload := NarrativesPayload{
+		AppID:         app.ID,
+		Lang:          "en",
+		Verbosity:     "full",
+		Expressions:   []NarrativesPayloadExpression{},
+		AnalysisTypes: []interface{}{},
+		Fields:        []interface{}{},
+		LibItems:      []NarrativesPayloadLibItem{},
+	}
+
+	measures := handler.Properties.HyperCubeDef.Measures
+	if handler.Properties.NlgChartObject != nil {
+		measures = handler.Properties.NlgChartObject.Measures
+	}
+
+	for _, measure := range measures {
+		if measure.LibraryId != "" {
+			payload.LibItems = append(payload.LibItems, NarrativesPayloadLibItem{
+				LibId:     measure.LibraryId,
+				Overrides: struct{}{},
+			})
+			continue
+		}
+		payload.Expressions = append(payload.Expressions, NarrativesPayloadExpression{
 			Expr: measure.Def.Def,
 			Overrides: NarrativesPayloadExpressionOverrides{
 				Classifications: []string{"measure"},
 				Format:          measure.Def.NumFormat,
 			},
 			Label: "",
-		}
+		})
 	}
 
-	for _, dimension := range obj.Properties().HyperCubeDef.Dimensions {
-		expressions = append(expressions, NarrativesPayloadExpression{
+	dimensions := handler.Properties.HyperCubeDef.Dimensions
+	if handler.Properties.NlgChartObject != nil {
+		dimensions = handler.Properties.NlgChartObject.Dimensions
+	}
+
+	for _, dimension := range dimensions {
+		if dimension.LibraryId != "" {
+			payload.LibItems = append(payload.LibItems, NarrativesPayloadLibItem{
+				LibId:     dimension.LibraryId,
+				Overrides: struct{}{},
+			})
+			continue
+		}
+		payload.Expressions = append(payload.Expressions, NarrativesPayloadExpression{
 			Expr: dimension.Def.FieldDefs[0],
 			Overrides: NarrativesPayloadExpressionOverrides{
 				Classifications: []string{"dimension"},
 			},
 			Label: "",
 		})
-	}
-
-	payload := NarrativesPayload{
-		AppID:         app.ID,
-		Lang:          "en",
-		Verbosity:     "full",
-		Expressions:   expressions,
-		AnalysisTypes: nil,
-		Fields:        nil,
-		LibItems:      nil,
 	}
 
 	if obj.HyperCube().StateName != "" && obj.HyperCube().StateName != "$" {
@@ -142,4 +186,28 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 	}
 
 	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+}
+
+func (handler *NarrativesHandlerInstance) GetNarrativesProperties(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
+	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
+	if !ok {
+		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
+	}
+
+	//Get object properties
+	getProperties := func(ctx context.Context) error {
+		raw, err := enigmaObject.GetEffectivePropertiesRaw(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties failed", obj.ID)
+		}
+		err = json.Unmarshal(raw, &handler.Properties)
+		if err != nil {
+			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties unmarshal failed", obj.ID)
+		}
+
+		obj.SetProperties(handler.Properties.GenericObjectProperties)
+		return nil
+	}
+
+	return sessionState.SendRequest(actionState, getProperties)
 }
