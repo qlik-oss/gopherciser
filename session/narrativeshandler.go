@@ -92,12 +92,12 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		return GetObjectLayout(sessionState, actionState, obj, nil)
 	}, actionState, true, "")
 
+	wg.Wait()
+
 	if sessionState.Rest == nil {
 		sessionState.LogEntry.Log(logger.WarningLevel, "no resthandler defined, nl insights object will not generated correctly")
 		return
 	}
-
-	wg.Wait()
 
 	app := sessionState.CurrentApp
 	if app == nil || app.ID == "" {
@@ -105,8 +105,70 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		return
 	}
 
+	content, err := handler.generateNarritivesPayload(app.ID, obj)
+	if err != nil {
+		actionState.AddErrors(err)
+		return
+	}
+
+	protocol := sessionState.Rest.Protocol()
+	host := sessionState.Rest.Host()
+
+	getXrfParam := func() string {
+		xrfKey := ""
+		xrfKeyState, exists := sessionState.GetCustomState(fmt.Sprintf("%s-%s", XrfKeyState, host))
+		if exists {
+			xrfKey = fmt.Sprintf("?xrfkey=%s", xrfKeyState)
+		}
+		return xrfKey
+	}
+
+	_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate%s", protocol, host, getXrfParam()), actionState, sessionState.LogEntry, content, nil)
+
+	event := func(ctx context.Context, as *action.State) error {
+		if err := GetObjectLayout(sessionState, as, obj, nil); err != nil {
+			return err
+		}
+
+		content, err := handler.generateNarritivesPayload(app.ID, obj)
+		if err != nil {
+			return err
+		}
+
+		_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate%s", protocol, host, getXrfParam()), actionState, sessionState.LogEntry, content, nil)
+		return nil
+	}
+
+	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
+}
+
+func (handler *NarrativesHandlerInstance) GetNarrativesProperties(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
+	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
+	if !ok {
+		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
+	}
+
+	//Get object properties
+	getProperties := func(ctx context.Context) error {
+		raw, err := enigmaObject.GetEffectivePropertiesRaw(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties failed", obj.ID)
+		}
+		err = json.Unmarshal(raw, &handler.Properties)
+		if err != nil {
+			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties unmarshal failed", obj.ID)
+		}
+
+		obj.SetProperties(handler.Properties.GenericObjectProperties)
+		return nil
+	}
+
+	return sessionState.SendRequest(actionState, getProperties)
+}
+
+func (handler *NarrativesHandlerInstance) generateNarritivesPayload(appId string, obj *enigmahandlers.Object) ([]byte, error) {
 	payload := NarrativesPayload{
-		AppID:         app.ID,
+		AppID:         appId,
 		Lang:          "en",
 		Verbosity:     "full",
 		Expressions:   []NarrativesPayloadExpression{},
@@ -114,6 +176,16 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		Fields:        []interface{}{},
 		LibItems:      []NarrativesPayloadLibItem{},
 	}
+
+	if handler.Properties == nil {
+		return nil, errors.Errorf("no properties set for nl insights object<%s>", handler.ID)
+	}
+
+	if handler.Properties.HyperCubeDef == nil {
+		return nil, errors.Errorf("no hypercube definition in properties for nl insights object<%s>", handler.ID)
+	}
+
+	payload.AlternateStateName = handler.Properties.StateName
 
 	measures := handler.Properties.HyperCubeDef.Measures
 	if handler.Properties.NlgChartObject != nil {
@@ -151,8 +223,12 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 			})
 			continue
 		}
+		expr := ""
+		if len(dimension.Def.FieldDefs) > 0 {
+			expr = dimension.Def.FieldDefs[0]
+		}
 		payload.Expressions = append(payload.Expressions, NarrativesPayloadExpression{
-			Expr: dimension.Def.FieldDefs[0],
+			Expr: expr,
 			Overrides: NarrativesPayloadExpressionOverrides{
 				Classifications: []string{"dimension"},
 			},
@@ -160,63 +236,9 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		})
 	}
 
-	if obj.HyperCube().StateName != "" && obj.HyperCube().StateName != "$" {
-		payload.AlternateStateName = obj.HyperCube().StateName
-	}
-
 	content, err := json.Marshal(payload)
 	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to marshal narratives payload"))
-		return
+		return nil, errors.Wrap(err, "failed to marshal narratives payload")
 	}
-
-	protocol := sessionState.Rest.Protocol()
-	host := sessionState.Rest.Host()
-
-	xrfKey := ""
-	xrfKeyState, exists := sessionState.GetCustomState(fmt.Sprintf("%s-%s", XrfKeyState, host))
-	if exists {
-		xrfKey = fmt.Sprintf("?xrfkey=%s", xrfKeyState)
-	}
-
-	_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate%s", protocol, host, xrfKey), actionState, sessionState.LogEntry, content, nil)
-
-	event := func(ctx context.Context, as *action.State) error {
-		if err := GetObjectLayout(sessionState, as, obj, nil); err != nil {
-			return err
-		}
-		xrfKey := ""
-		xrfKeyState, exists := sessionState.GetCustomState(fmt.Sprintf("%s-%s", XrfKeyState, host))
-		if exists {
-			xrfKey = fmt.Sprintf("?xrfkey=%s", xrfKeyState)
-		}
-		_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate%s", protocol, host, xrfKey), actionState, sessionState.LogEntry, content, nil)
-		return nil
-	}
-
-	sessionState.RegisterEvent(genObj.Handle, event, nil, true)
-}
-
-func (handler *NarrativesHandlerInstance) GetNarrativesProperties(sessionState *State, actionState *action.State, obj *enigmahandlers.Object) error {
-	enigmaObject, ok := obj.EnigmaObject.(*enigma.GenericObject)
-	if !ok {
-		return errors.Errorf("Failed to cast object<%s> to *enigma.GenericObject", obj.ID)
-	}
-
-	//Get object properties
-	getProperties := func(ctx context.Context) error {
-		raw, err := enigmaObject.GetEffectivePropertiesRaw(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties failed", obj.ID)
-		}
-		err = json.Unmarshal(raw, &handler.Properties)
-		if err != nil {
-			return errors.Wrapf(err, "object<%s>.GetEffectiveProperties unmarshal failed", obj.ID)
-		}
-
-		obj.SetProperties(handler.Properties.GenericObjectProperties)
-		return nil
-	}
-
-	return sessionState.SendRequest(actionState, getProperties)
+	return content, nil
 }
