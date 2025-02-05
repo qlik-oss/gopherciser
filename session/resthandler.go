@@ -598,78 +598,91 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 
 	startTS := time.Now()
 	go func() {
-		stall := time.Since(startTS)
-		defer handler.pending.DecPending()
 		var errRequest error
-		var panicErr error
+		stall := time.Since(startTS)
 		failRequest := func(err error) {
 			errRequest = err
 			actionState.AddErrors(err)
 		}
-		defer helpers.RecoverWithError(&panicErr)
-		if callback != nil {
-			defer func() {
-				if panicErr != nil {
+
+		var panicErr error
+		defer func() {
+			defer handler.pending.DecPending()
+			if callback != nil {
+				if panicErr != nil { // propagate panic error to callback
 					errRequest = panicErr
 				}
-				callback(errRequest, request)
-			}()
-		}
-
-		if stall > constant.MaxStallTime {
-			logEntry.LogDetail(logger.WarningLevel, "Goroutine stall", strconv.FormatInt(stall.Nanoseconds(), 10))
-		}
-
-		if handler.Client == nil {
-			failRequest(errors.New("no REST client initialized"))
-			return
-		}
-
-		host, err := getHost(request.Destination)
-		if err != nil {
-			failRequest(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
-			return
-		}
-
-		if err := handler.addVirtualProxy(request); err != nil {
-			failRequest(errors.WithStack(err))
-			return
-		}
-
-		req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
-		if err != nil {
-			failRequest(errors.WithStack(err))
-			return
-		}
-		doTs := time.Now()
-		request.response, errRequest = handler.Client.Do(req)
-		if errRequest != nil {
-			WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
-		}
-		if request.response != nil {
-			defer func() {
-				if err := request.response.Body.Close(); err != nil {
-					WarnOrError(actionState, logEntry, failOnError, errors.Wrap(err, "failed to close request body"))
+				// recover from and error report any panic inside callback
+				if err := helpers.RecoverWithErrorFunc(func() {
+					callback(errRequest, request)
+				}); err != nil {
+					actionState.AddErrors(err)
 				}
-			}()
-			request.ResponseStatus = request.response.Status
-			request.ResponseStatusCode = request.response.StatusCode
-			request.ResponseHeaders = request.response.Header
-			request.ResponseBody, errRequest = io.ReadAll(request.response.Body)
-			contentType := request.response.Header.Get("Content-Type")
-			mediaType := ""
-			if contentType != "" {
-				mediaType, _, err = mime.ParseMediaType(contentType)
-				if err != nil {
-					logEntry.Logf(logger.WarningLevel, "failed to parse content type %s", request.response.Header.Get("Content-Type"))
-				}
+				return
+			}
+			// no callback handling errors, report panic error directly
+			if panicErr != nil {
+				actionState.AddErrors(panicErr)
+			}
+		}()
+
+		panicErr = helpers.RecoverWithErrorFunc(func() {
+
+			if stall > constant.MaxStallTime {
+				logEntry.LogDetail(logger.WarningLevel, "Goroutine stall", strconv.FormatInt(stall.Nanoseconds(), 10))
 			}
 
-			// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
-			if _, ok := streamContentTypes[mediaType]; ok && logEntry.ShouldLogTrafficMetrics() {
-				logEntry.LogTrafficMetric(time.Since(doTs).Nanoseconds(), 0, uint64(len(request.ResponseBody)), -1, req.URL.Path, "", "STREAM", "")
+			if handler.Client == nil {
+				failRequest(errors.New("no REST client initialized"))
+				return
 			}
-		}
+
+			host, err := getHost(request.Destination)
+			if err != nil {
+				failRequest(errors.Wrapf(err, `Failed to extract host from "%s"`, request.Destination))
+				return
+			}
+
+			if err := handler.addVirtualProxy(request); err != nil {
+				failRequest(errors.WithStack(err))
+				return
+			}
+
+			req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
+			if err != nil {
+				failRequest(errors.WithStack(err))
+				return
+			}
+			doTs := time.Now()
+			request.response, errRequest = handler.Client.Do(req)
+			if errRequest != nil {
+				WarnOrError(actionState, logEntry, failOnError, errors.Wrap(errRequest, "HTTP request fail"))
+			}
+			if request.response != nil {
+				defer func() {
+					if err := request.response.Body.Close(); err != nil {
+						WarnOrError(actionState, logEntry, failOnError, errors.Wrap(err, "failed to close request body"))
+					}
+				}()
+				request.ResponseStatus = request.response.Status
+				request.ResponseStatusCode = request.response.StatusCode
+				request.ResponseHeaders = request.response.Header
+				request.ResponseBody, errRequest = io.ReadAll(request.response.Body)
+				contentType := request.response.Header.Get("Content-Type")
+				mediaType := ""
+				if contentType != "" {
+					mediaType, _, err = mime.ParseMediaType(contentType)
+					if err != nil {
+						logEntry.Logf(logger.WarningLevel, "failed to parse content type %s", request.response.Header.Get("Content-Type"))
+					}
+				}
+
+				// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
+				if _, ok := streamContentTypes[mediaType]; ok && logEntry.ShouldLogTrafficMetrics() {
+					logEntry.LogTrafficMetric(time.Since(doTs).Nanoseconds(), 0, uint64(len(request.ResponseBody)), -1, req.URL.Path, "", "STREAM", "")
+				}
+			}
+		})
 	}()
 }
 
