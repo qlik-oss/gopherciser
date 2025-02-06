@@ -39,7 +39,7 @@ var (
 		DataDef{DataDefHyperCube, "/qHyperCube"},
 		[]Data{
 			{DataCore{
-				[]*Constraint{&Constraint{
+				[]*Constraint{{
 					Path:     "/qHyperCube/qSize/qcy",
 					Value:    ">1000",
 					Required: true,
@@ -132,12 +132,12 @@ var (
 		[]Data{
 			{DataCore{
 				[]*Constraint{
-					&Constraint{
+					{
 						Path:     "/preferContinuousAxis",
 						Value:    "=true",
 						Required: false,
 					},
-					&Constraint{
+					{
 						Path:     "/qHyperCube/qDimensionInfo/[0]/qTags",
 						Value:    "~$numeric",
 						Required: false,
@@ -774,6 +774,24 @@ var (
 		nil,
 	}
 
+	DefaultSnNlgChart = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefHyperCube,
+			Path: "/qHyperCube",
+		},
+		Data: []Data{
+			{
+				DataCore{
+					Requests: []GetDataRequests{
+						{
+							Type: DataTypeLayout,
+						},
+					},
+				},
+			},
+		},
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -821,5 +839,6 @@ var (
 		"sn-pivot-table":        &DefaultSNPivotTable,
 		"sn-layout-container":   &DefaultLayoutContainer,
 		"sn-tabbed-container":   &DefaultTabbedContainer,
+		"sn-nlg-chart":          &DefaultSnNlgChart,
 	}
 )

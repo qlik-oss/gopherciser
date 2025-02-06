@@ -73,6 +73,9 @@ func init() {
 	if err := GlobalObjectHandler.RegisterHandler("sn-tabbed-container", &TabbedContainerHandler{}, false); err != nil {
 		panic(err)
 	}
+	if err := GlobalObjectHandler.RegisterHandler("sn-nlg-chart", &NarrativesHandler{}, false); err != nil {
+		panic(err)
+	}
 }
 
 func (err NxValidationError) Error() string {

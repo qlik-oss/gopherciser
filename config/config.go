@@ -578,7 +578,7 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to set up REST client")
 	}
-	sessionState.Rest.SetClient(client)
+	sessionState.Rest.SetClient(client, "", "")
 
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState
