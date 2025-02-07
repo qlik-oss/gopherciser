@@ -586,6 +586,8 @@ func getHost(fullURL string) (string, error) {
 }
 
 // QueueRequest Async request
+//
+// Deprecated: Use method specific function instead
 func (handler *RestHandler) QueueRequest(actionState *action.State, failOnError bool,
 	request *RestRequest, logEntry *logger.LogEntry) {
 	handler.QueueRequestWithCallback(actionState, failOnError, request, logEntry, nil)

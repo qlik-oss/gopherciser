@@ -164,6 +164,7 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 		actionState.AddErrors(err)
 		//return
 	}
+
 	postRequest := session.RestRequest{
 		Method:      session.POST,
 		ContentType: "application/json",
