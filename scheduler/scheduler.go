@@ -297,7 +297,11 @@ func setupRESTHandler(sessionState *session.State, connectionSettings *connectio
 		return errors.WithStack(err)
 	}
 
-	sessionState.Rest.SetClient(client)
+	restProtocol := "http://"
+	if connectionSettings.Security {
+		restProtocol = "https://"
+	}
+	sessionState.Rest.SetClient(client, host, restProtocol)
 	return nil
 }
 
