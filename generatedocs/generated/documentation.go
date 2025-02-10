@@ -54,6 +54,10 @@ var (
 			Description: "## DeleteBookmark action\n\nDelete one or more bookmarks in the current app.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"deletebookmark\",\n    \"settings\": {\n        \"mode\": \"single\",\n        \"title\": \"My bookmark\"\n    }\n}\n```\n",
 		},
+		"deleteodag": {
+			Description: "## DeleteOdag action\n\nDelete all user-generated on-demand apps for the current user and the specified On-Demand App Generation (ODAG) link.\n",
+			Examples:    "### Example\n\n```json\n{\n    \"action\": \"DeleteOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
+		},
 		"deletesheet": {
 			Description: "## DeleteSheet action\n\nDelete one or more sheets in the current app.\n\n**Note:** Specify *either* `title` *or* `id`, not both.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"deletesheet\",\n    \"settings\": {\n        \"mode\": \"matching\",\n        \"title\": \"Test sheet\"\n    }\n}\n```\n",
@@ -73,6 +77,10 @@ var (
 		"duplicatesheet": {
 			Description: "## DuplicateSheet action\n\nDuplicate a sheet, including all objects.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"action\": \"duplicatesheet\",\n    \"label\": \"Duplicate sheet1\",\n    \"settings\":{\n        \"id\" : \"mBshXB\",\n        \"save\": true,\n        \"changesheet\": true\n    }\n}\n```\n",
+		},
+		"generateodag": {
+			Description: "## GenerateOdag action\n\nGenerate an on-demand app from an existing On-Demand App Generation (ODAG) link.\n",
+			Examples:    "### Example\n\n```json\n{\n    \"action\": \"GenerateOdag\",\n    \"settings\": {\n        \"linkname\": \"Drill to Template App\"\n    }\n}\n```\n",
 		},
 		"getscript": {
 			Description: "## GetScript action\n\nGet the load script for the app.\n\n",
@@ -267,6 +275,7 @@ var (
 		"createsheet.id":                                  {"(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."},
 		"createsheet.title":                               {"Name of the sheet to create."},
 		"deletebookmark.mode":                             {"", "`single`: Delete one bookmark that matches the specified `title` or `id` in the current app.", "`matching`: Delete all bookmarks with the specified `title` in the current app.", "`all`: Delete all bookmarks in the current app."},
+		"deleteodag.linkname":                             {"Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"deletesheet.id":                                  {"(optional) GUID of the sheet to delete."},
 		"deletesheet.mode":                                {"", "`single`: Delete one sheet that matches the specified `title` or `id` in the current app.", "`matching`: Delete all sheets with the specified `title` in the current app.", "`allunpublished`: Delete all unpublished sheets in the current app."},
 		"deletesheet.title":                               {"(optional) Name of the sheet to delete."},
@@ -276,6 +285,7 @@ var (
 		"duplicatesheet.cloneid":                          {"(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."},
 		"duplicatesheet.id":                               {"ID of the sheet to clone."},
 		"duplicatesheet.save":                             {"Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted."},
+		"generateodag.linkname":                           {"Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"getscript.savelog":                               {"Save load script to log file under the INFO log labelled *LoadScript*"},
 		"hook.content":                                    {"(optional) Content of request."},
 		"hook.contenttype":                                {"Request content-type header. Defaults to application/json."},
@@ -403,7 +413,7 @@ var (
 		{
 			Name:    "qseowActions",
 			Title:   "Qlik Sense Enterprise on Windows (QSEoW) actions",
-			Actions: []string{"openhub", "changestream"},
+			Actions: []string{"deleteodag", "generateodag", "openhub", "changestream"},
 			DocEntry: common.DocEntry{
 				Description: "## Qlik Sense Enterprise on Windows (QSEoW) actions\n\nThese actions are only applicable to Qlik Sense Enterprise on Windows (QSEoW) deployments.\n",
 				Examples:    "",

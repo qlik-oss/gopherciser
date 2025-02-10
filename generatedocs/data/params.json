@@ -336,6 +336,9 @@
         "`matching`: Delete all bookmarks with the specified `title` in the current app.",
         "`all`: Delete all bookmarks in the current app."
     ],
+    "deleteodag.linkname": [
+        "Name of the ODAG link from which to delete generated apps. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
+    ],
     "deletesheet.mode": [
         "",
         "`single`: Delete one sheet that matches the specified `title` or `id` in the current app.",
@@ -359,6 +362,9 @@
     ],
     "duplicatesheet.cloneid": [
         "(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."
+    ],
+    "generateodag.linkname": [
+        "Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."
     ],
     "getscript.savelog" : [
         "Save load script to log file under the INFO log labelled *LoadScript*"

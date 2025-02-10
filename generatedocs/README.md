@@ -159,8 +159,9 @@ Example:
 	"name": "qseowActions",
 	"title": "Qlik Sense Enterprise on Windows (QSEoW) actions",
 	"actions": [
-            "openhub",
-            "changestream"
+		"deleteodag",
+		"generateodag",
+		"openhub"
 	]
 }
 ```

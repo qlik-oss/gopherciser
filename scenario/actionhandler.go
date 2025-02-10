@@ -112,6 +112,8 @@ const (
 	ActionConnectWs             = "connectws"
 	ActionOpenApp               = "openapp"
 	ActionOpenHub               = "openhub"
+	ActionGenerateOdag          = "generateodag"
+	ActionDeleteOdag            = "deleteodag"
 	ActionCreateSheet           = "createsheet"
 	ActionCreateBookmark        = "createbookmark"
 	ActionDeleteBookmark        = "deletebookmark"
@@ -223,6 +225,8 @@ func ResetDefaultActions() {
 		ActionConnectWs:             nil,
 		ActionOpenApp:               OpenAppSettings{},
 		ActionOpenHub:               OpenHubSettings{},
+		ActionGenerateOdag:          GenerateOdagSettings{},
+		ActionDeleteOdag:            DeleteOdagSettings{},
 		ActionCreateSheet:           CreateSheetSettings{},
 		ActionCreateBookmark:        CreateBookmarkSettings{},
 		ActionDeleteBookmark:        DeleteBookmarkSettings{},
