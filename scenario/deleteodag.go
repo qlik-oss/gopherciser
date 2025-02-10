@@ -58,19 +58,13 @@ func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 	}
 
 	// find the IDs of each request from this odag link ID
-	id := odagLink.ID
-	odagRequests := session.RestRequest{
-		Method:      session.GET,
-		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/%s/%s/requests", host, odagEndpoint.Main, id),
-	}
-	sessionState.Rest.QueueRequest(actionState, true, &odagRequests, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return errors.New("failed to execute REST request")
-	}
-	if odagRequests.ResponseStatusCode != http.StatusOK {
+	noErrOptions := session.DefaultReqOptions()
+	noErrOptions.FailOnError = false
+	odagRequests, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s/requests", host, odagEndpoint.Main, odagLink.ID), actionState, sessionState.LogEntry, nil)
+	if err != nil {
 		return errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagRequests.ResponseBody))
 	}
+
 	var odagRequestsByLink structs.OdagRequestsByLink
 	if err := json.Unmarshal(odagRequests.ResponseBody, &odagRequestsByLink); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody))
@@ -85,15 +79,11 @@ func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 			continue // the generated app does not exist
 		}
 		idToDelete := odagRequest.ID
-		deleteOdagRequest := session.RestRequest{
-			Method:      session.DELETE,
-			Destination: fmt.Sprintf("%s/%s/%s/app", host, odagEndpoint.Requests, idToDelete),
-		}
-		sessionState.Rest.QueueRequest(actionState, true, &deleteOdagRequest, sessionState.LogEntry)
-		if sessionState.Wait(actionState) {
-			return errors.New("failed during delete request")
-		}
-		if deleteOdagRequest.ResponseStatusCode != http.StatusNoContent {
+
+		deleteOptions := session.DefaultReqOptions()
+		deleteOptions.ExpectedStatusCode = []int{http.StatusNoContent}
+		deleteOdagRequest, err := sessionState.Rest.DeleteSync(fmt.Sprintf("%s/%s/%s/app", host, odagEndpoint.Requests, idToDelete), actionState, sessionState.LogEntry, deleteOptions)
+		if err != nil {
 			actionState.AddErrors(errors.Errorf("unexpected response code <%d> from delete request: %s", deleteOdagRequest.ResponseStatusCode, deleteOdagRequest.ResponseBody))
 			failedDeletedApps = append(failedDeletedApps, idToDelete)
 		} else {

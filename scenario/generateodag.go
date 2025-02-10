@@ -164,19 +164,14 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 		actionState.AddErrors(err)
 		//return
 	}
-	postRequest := session.RestRequest{
-		Method:      session.POST,
-		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/%s/%s/requests", host, odagEndpoint.Main, odagLinkId),
-		Content:     postObjJson,
-	}
-	sessionState.Rest.QueueRequest(actionState, true, &postRequest, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return errors.New("failed during wait for POST ODAG request")
-	}
-	if postRequest.ResponseStatusCode != http.StatusCreated && postRequest.ResponseStatusCode != http.StatusOK {
+
+	postOptions := session.DefaultReqOptions()
+	postOptions.ExpectedStatusCode = []int{http.StatusCreated, http.StatusOK}
+	postRequest, err := sessionState.Rest.PostSync(fmt.Sprintf("%s/%s/%s/requests", host, odagEndpoint.Main, odagLinkId), actionState, sessionState.LogEntry, postObjJson, postOptions)
+	if err != nil {
 		return errors.Errorf("failed to POST ODAG request: unexpected response code %d <%s>", postRequest.ResponseStatusCode, postRequest.ResponseBody)
 	}
+
 	var odagPostResponse structs.OdagPostRequestResponse
 	if err := json.Unmarshal(postRequest.ResponseBody, &odagPostResponse); err != nil {
 		actionState.AddErrors(errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG request POST response: %s", postRequest.ResponseBody)))
@@ -190,18 +185,11 @@ func MakeOdagRequest(sessionState *session.State, actionState *action.State, oda
 			return nil
 		}
 
-		odagRequests := session.RestRequest{
-			Method:      session.GET,
-			ContentType: "application/json",
-			Destination: fmt.Sprintf("%s/%s/%s/requests?pending=true", host, odagEndpoint.Main, odagLinkId),
-		}
-		sessionState.Rest.QueueRequest(actionState, true, &odagRequests, sessionState.LogEntry)
-		if sessionState.Wait(actionState) {
-			return errors.New("Failed to execute REST request")
-		}
-		if odagRequests.ResponseStatusCode != http.StatusOK {
+		odagRequests, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s/requests?pending=true", host, odagEndpoint.Main, odagLinkId), actionState, sessionState.LogEntry, nil)
+		if err != nil {
 			return errors.Errorf("failed to get ODAG requests: %s", odagRequests.ResponseBody)
 		}
+
 		var odagGetRequests structs.OdagGetRequests
 		if err := json.Unmarshal(odagRequests.ResponseBody, &odagGetRequests); err != nil {
 			return errors.Wrapf(err, "failed unmarshaling ODAG requests GET reponse: %s", odagRequests.ResponseBody)
@@ -319,18 +307,12 @@ func getOdagLinkByName(name string, host string, sessionState *session.State,
 	} else {
 		destination = fmt.Sprintf("%s/%s", host, odagEndpoint)
 	}
-	odagLinks := session.RestRequest{
-		Method:      session.GET,
-		ContentType: "application/json",
-		Destination: destination,
-	}
-	sessionState.Rest.QueueRequest(actionState, true, &odagLinks, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return nil, errors.New("Failed to execute REST request")
-	}
-	if odagLinks.ResponseStatusCode != http.StatusOK {
+
+	odagLinks, err := sessionState.Rest.GetSync(destination, actionState, sessionState.LogEntry, nil)
+	if err != nil {
 		return nil, errors.New(fmt.Sprintf("failed to get ODAG links: %s", odagLinks.ResponseBody))
 	}
+
 	var odagGetLinksResponse structs.OdagGetLinks
 	if err := json.Unmarshal(odagLinks.ResponseBody, &odagGetLinksResponse); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG links GET reponse: %s", odagLinks.ResponseBody))
@@ -351,18 +333,12 @@ func getOdagLinkByName(name string, host string, sessionState *session.State,
 // GetOdagSelectionBindings gets information about the ODAG link, including bindings
 func GetOdagSelectionBindings(host string, odagLinkId string, sessionState *session.State,
 	actionState *action.State, odagEndpoint string) ([]structs.OdagLinkBinding, error) {
-	odagLinkInfo := session.RestRequest{
-		Method:      session.GET,
-		ContentType: "application/json",
-		Destination: fmt.Sprintf("%s/%s/%s", host, odagEndpoint, odagLinkId),
-	}
-	sessionState.Rest.QueueRequest(actionState, true, &odagLinkInfo, sessionState.LogEntry)
-	if sessionState.Wait(actionState) {
-		return nil, errors.New("Failed to execute REST request")
-	}
-	if odagLinkInfo.ResponseStatusCode != http.StatusOK {
+
+	odagLinkInfo, err := sessionState.Rest.GetSync(fmt.Sprintf("%s/%s/%s", host, odagEndpoint, odagLinkId), actionState, sessionState.LogEntry, nil)
+	if err != nil {
 		return nil, errors.New(fmt.Sprintf("failed to get ODAG link info: %s", odagLinkInfo.ResponseBody))
 	}
+
 	var odagLinkInfoStruct structs.OdagGetLinkInfo
 	if err := json.Unmarshal(odagLinkInfo.ResponseBody, &odagLinkInfoStruct); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed unmarshaling ODAG links info GET reponse: %s", odagLinkInfo.ResponseBody))
