@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -83,21 +82,13 @@ func DeleteOdag(sessionState *session.State, settings DeleteOdagSettings, action
 
 		deleteOptions := session.DefaultReqOptions()
 		deleteOptions.ExpectedStatusCode = []int{http.StatusNoContent}
-		deleteOptions.FailOnError = false
-
-		// TODO Add sync version of Delete
-		var wg sync.WaitGroup
-		wg.Add(1)
-		sessionState.Rest.DeleteAsyncWithCallback(fmt.Sprintf("%s/%s/%s/app", host, odagEndpoint.Requests, idToDelete), actionState, sessionState.LogEntry, nil, deleteOptions, func(err error, deleteOdagRequest *session.RestRequest) {
-			defer wg.Done()
-			if err != nil {
-				actionState.AddErrors(errors.Errorf("unexpected response code <%d> from delete request: %s", deleteOdagRequest.ResponseStatusCode, deleteOdagRequest.ResponseBody))
-				failedDeletedApps = append(failedDeletedApps, idToDelete)
-			} else {
-				deletedApps = append(deletedApps, idToDelete)
-			}
-		})
-		wg.Wait()
+		deleteOdagRequest, err := sessionState.Rest.DeleteSync(fmt.Sprintf("%s/%s/%s/app", host, odagEndpoint.Requests, idToDelete), actionState, sessionState.LogEntry, deleteOptions)
+		if err != nil {
+			actionState.AddErrors(errors.Errorf("unexpected response code <%d> from delete request: %s", deleteOdagRequest.ResponseStatusCode, deleteOdagRequest.ResponseBody))
+			failedDeletedApps = append(failedDeletedApps, idToDelete)
+		} else {
+			deletedApps = append(deletedApps, idToDelete)
+		}
 	}
 
 	sessionState.LogEntry.LogInfo("NumDeletedApps", fmt.Sprintf("%d", len(deletedApps)))

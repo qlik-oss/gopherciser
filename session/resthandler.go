@@ -489,6 +489,11 @@ func (handler *RestHandler) DeleteAsyncWithCallback(url string, actionState *act
 	return handler.sendAsyncWithCallback(DELETE, url, actionState, logEntry, nil, headers, options, callback)
 }
 
+// DeleteSyncWithCallback send sync DELETE request with options and callback, using options=nil default options are used
+func (handler *RestHandler) DeleteSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(DELETE, url, actionState, logEntry, nil, headers, options, callback)
+}
+
 // DeleteAsyncWithHeaders send async DELETE request with options and headers, using options=nil default options are used
 func (handler *RestHandler) DeleteAsyncWithHeaders(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions) *RestRequest {
 	return handler.DeleteAsyncWithCallback(url, actionState, logEntry, headers, options, nil)
@@ -497,6 +502,11 @@ func (handler *RestHandler) DeleteAsyncWithHeaders(url string, actionState *acti
 // DeleteAsync send async DELETE request with options, using options=nil default options are used
 func (handler *RestHandler) DeleteAsync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) *RestRequest {
 	return handler.DeleteAsyncWithCallback(url, actionState, logEntry, nil, options, nil)
+}
+
+// DeleteSync send sync DELETE request with options, using options=nil default options are used
+func (handler *RestHandler) DeleteSync(url string, actionState *action.State, logEntry *logger.LogEntry, options *ReqOptions) (*RestRequest, error) {
+	return handler.DeleteSyncWithCallback(url, actionState, logEntry, nil, options, nil)
 }
 
 // OptionsAsync send async request with options, using options=nil default options are used
