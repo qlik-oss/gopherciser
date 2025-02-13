@@ -2,9 +2,11 @@ package genmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
@@ -106,14 +108,23 @@ const (
 
 func GenerateMarkdown(docs *CompiledDocs) {
 	handleFlags()
-	mdBytes := generateFromCompiled(docs)
-	if err := os.WriteFile(output, mdBytes, 0644); err != nil {
-		common.Exit(err, ExitCodeFailedWriteResult)
+	if wiki == "" && output == "" {
+		_, _ = os.Stderr.WriteString("must defined at least one of --wiki or --output")
+		return
 	}
-	fmt.Printf("Generated markdown documentation to output<%s>\n", output)
+	if output != "" {
+		mdBytes := generateFullMarkdownFromCompiled(docs)
+		if err := os.WriteFile(output, mdBytes, 0644); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+		fmt.Printf("Generated markdown documentation to output<%s>\n", output)
+	}
+	if wiki != "" {
+		generateWikiFromCompiled(docs)
+	}
 }
 
-func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
+func generateFullMarkdownFromCompiled(compiledDocs *CompiledDocs) []byte {
 	main := compiledDocs.Config["main"]
 	mainNode := NewDocNode(DocEntry(main))
 	addConfigFields(mainNode, compiledDocs)
@@ -121,6 +132,40 @@ func generateFromCompiled(compiledDocs *CompiledDocs) []byte {
 	var buf bytes.Buffer
 	mainNode.WriteTo(&buf)
 	return buf.Bytes()
+}
+
+func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
+	if err := createFolder(wiki); err != nil {
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to create folder<%s>: %v", wiki, err))
+		return
+	}
+	for _, group := range compiledDocs.Groups {
+		fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
+		if err := createFolder(filepath.Join(wiki, group.Name)); err != nil {
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to create folder<%s>: %v", wiki, err))
+			return
+		}
+		for _, action := range group.Actions {
+			folderpath := filepath.Join(wiki, group.Name, action)
+			if verbose {
+				fmt.Printf("creating folder<%s>\n", folderpath)
+			}
+			if err := createFolder(folderpath); err != nil {
+				_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to create folder<%s>: %v", wiki, err))
+				return
+			}
+		}
+	}
+	// TODO warning for ungrouped
+}
+
+func createFolder(path string) error {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, actionSettings map[string]interface{}) {

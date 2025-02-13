@@ -17,7 +17,7 @@ func TestGenerateMarkDown(t *testing.T) {
 		Groups:  generated.Groups,
 		Extra:   generated.Extra,
 	}
-	mdBytes := generateFromCompiled(compiledDocs)
+	mdBytes := generateFullMarkdownFromCompiled(compiledDocs)
 
 	markdown := string(mdBytes)
 	expectedMDBytes, err := os.ReadFile("testdata/settingup.md")
