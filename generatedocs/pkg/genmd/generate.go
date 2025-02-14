@@ -104,6 +104,8 @@ const (
 	ExitCodeFailedWriteResult
 	ExitCodeFailedHandleFields
 	ExitCodeFailedHandleParams
+	ExitCodeFailedCreateFolder
+	ExitCodeFailedDeleteFolder
 )
 
 func GenerateMarkdown(docs *CompiledDocs) {
@@ -120,6 +122,9 @@ func GenerateMarkdown(docs *CompiledDocs) {
 		fmt.Printf("Generated markdown documentation to output<%s>\n", output)
 	}
 	if wiki != "" {
+		if err := os.RemoveAll(wiki); err != nil {
+			common.Exit(err, ExitCodeFailedDeleteFolder)
+		}
 		generateWikiFromCompiled(docs)
 	}
 }
@@ -136,23 +141,25 @@ func generateFullMarkdownFromCompiled(compiledDocs *CompiledDocs) []byte {
 
 func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
 	if err := createFolder(wiki); err != nil {
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to create folder<%s>: %v", wiki, err))
-		return
+		common.Exit(err, ExitCodeFailedCreateFolder)
 	}
 	for _, group := range compiledDocs.Groups {
 		fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
 		if err := createFolder(filepath.Join(wiki, group.Name)); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to create folder<%s>: %v", wiki, err))
-			return
+			common.Exit(err, ExitCodeFailedCreateFolder)
 		}
 		for _, action := range group.Actions {
-			folderpath := filepath.Join(wiki, group.Name, action)
-			if verbose {
-				fmt.Printf("creating folder<%s>\n", folderpath)
+			actionEntry := createActionEntry(compiledDocs, common.Actions(), action)
+			if actionEntry == nil {
+				continue
 			}
-			if err := createFolder(folderpath); err != nil {
-				_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to create folder<%s>: %v", wiki, err))
-				return
+			file := filepath.Join(wiki, group.Name, action)
+			file = fmt.Sprintf("%s.md", file)
+			if verbose {
+				fmt.Printf("creating file<%s>...\n", file)
+			}
+			if err := os.WriteFile(file, []byte(actionEntry.String()), os.ModePerm); err != nil {
+				common.Exit(err, ExitCodeFailedWriteResult)
 			}
 		}
 	}
@@ -170,21 +177,28 @@ func createFolder(path string) error {
 
 func addActions(node DocNode, compiledDocs *CompiledDocs, actions []string, actionSettings map[string]interface{}) {
 	for _, action := range actions {
-		compiledEntry, ok := compiledDocs.Actions[action]
-		if !ok {
-			compiledEntry.Description = "*Missing description*\n"
-		}
-		actionParams := actionSettings[action]
-		if actionParams == nil {
-			os.Stderr.WriteString(fmt.Sprintf("%s gives nil actionparams, skipping...\n", action))
+		actionEntry := createActionEntry(compiledDocs, actionSettings, action)
+		if actionEntry == nil {
 			continue
-		}
-		actionEntry := &DocEntryWithParams{
-			DocEntry: DocEntry(compiledEntry),
-			Params:   MarkdownParams(actionParams, compiledDocs.Params),
 		}
 		newNode := NewFoldedDocNode(action, actionEntry)
 		node.AddChild(newNode)
+	}
+}
+
+func createActionEntry(compiledDocs *CompiledDocs, actionSettings map[string]interface{}, action string) *DocEntryWithParams {
+	compiledEntry, ok := compiledDocs.Actions[action]
+	if !ok {
+		compiledEntry.Description = "*Missing description*\n"
+	}
+	actionParams := actionSettings[action]
+	if actionParams == nil {
+		os.Stderr.WriteString(fmt.Sprintf("%s gives nil actionparams, skipping...\n", action))
+		return nil
+	}
+	return &DocEntryWithParams{
+		DocEntry: DocEntry(compiledEntry),
+		Params:   MarkdownParams(actionParams, compiledDocs.Params),
 	}
 }
 
