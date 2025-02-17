@@ -933,7 +933,7 @@ func SetObjectData(sessionState *State, actionState *action.State, rawLayout jso
 	if obj.HyperCube() != nil {
 		sessionState.LogEntry.LogDebugf("object<%s> type<%s> hypercube mode<%s>", obj.ID, enigmaObject.GenericType, obj.HyperCube().Mode)
 	}
-	if dataRequests == nil || len(dataRequests) < 1 {
+	if len(dataRequests) < 1 {
 		return nil
 	}
 
