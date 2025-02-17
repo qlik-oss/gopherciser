@@ -362,11 +362,10 @@ func fillSelectPosFromPossible(min, max int, possible []int, rnd helpers.Randomi
 		return nil, errors.Errorf("Randomizer not provided")
 	}
 
-	if possible == nil || len(possible) < 1 {
+	possibleLength := len(possible)
+	if possibleLength < 1 {
 		return nil, nil
 	}
-
-	possibleLength := len(possible)
 
 	selectQty := getSelectQty(min, max, possibleLength, rnd)
 	if selectQty < 1 {
@@ -538,7 +537,7 @@ func getHypercubeDataPages(id string, hypercube *enigmahandlers.HyperCube) ([]*e
 		return nil, errors.Errorf("object<%s> has no hypercube", id)
 	}
 	dataPages := hypercube.DataPages
-	if dataPages == nil || len(dataPages) < 1 {
+	if len(dataPages) < 1 {
 		return nil, errors.Errorf("object<%s>  has no datapages", id)
 	}
 	return dataPages, nil
@@ -549,7 +548,7 @@ func getHypercubeStackedDataPages(id string, hypercube *enigmahandlers.HyperCube
 		return nil, errors.Errorf("object<%s> has no hypercube", id)
 	}
 	dataPages := hypercube.StackedDataPages
-	if dataPages == nil || len(dataPages) < 1 {
+	if len(dataPages) < 1 {
 		return nil, errors.Errorf("object<%s>  has no datapages", id)
 	}
 	return dataPages, nil
@@ -561,14 +560,14 @@ func getListObjectDataPages(id string, listObject *enigma.ListObject) ([]*enigma
 	}
 
 	dataPages := listObject.DataPages
-	if dataPages == nil || len(dataPages) < 1 {
+	if len(dataPages) < 1 {
 		return nil, errors.Errorf("object<%s> has no datapages", id)
 	}
 	return dataPages, nil
 }
 
 func getPossibleFromMatrix(matrix []enigma.NxCellRows, id string, dim int, stype SelectionType, binned bool) ([]int, error) {
-	if matrix == nil || len(matrix) < 1 {
+	if len(matrix) < 1 {
 		return nil, errors.Errorf("object<%s> matrix has no rows", id)
 	}
 
@@ -618,7 +617,7 @@ func getPossibleFromStackedHyperCube(id string, hypercube *enigmahandlers.HyperC
 		return nil, errors.WithStack(err)
 	}
 
-	if dataPages == nil || len(dataPages) < 1 {
+	if len(dataPages) < 1 {
 		return nil, errors.Errorf("object<%s> Stacked hypercube contains no datapages", id)
 	}
 
@@ -722,7 +721,7 @@ func getBinsFromStraightHyperCube(id string, hypercube *enigmahandlers.HyperCube
 	bins := make([]string, len(matrix))
 	bins = bins[:0]
 	for _, row := range matrix {
-		if row == nil || len(row) < 1 {
+		if len(row) < 1 {
 			continue
 		}
 
@@ -743,7 +742,7 @@ func getBinsFromStraightHyperCube(id string, hypercube *enigmahandlers.HyperCube
 }
 
 func verifyDimension(id string, dim int, dimensionList []*enigma.NxDimensionInfo) error {
-	if dimensionList == nil || len(dimensionList) < 1 {
+	if len(dimensionList) < 1 {
 		return errors.Errorf("object<%s> does not contain a dimensionlist", id)
 	}
 
@@ -780,7 +779,7 @@ func convertBinToSelectInfo(bin string) (*enigma.NxMultiRangeSelectInfo, error) 
 
 	//Check if a valid bin
 	runes := []rune(bin)
-	if runes == nil || len(runes) < 9 || runes[0] != '[' || runes[len(runes)-1] != ']' {
+	if len(runes) < 9 || runes[0] != '[' || runes[len(runes)-1] != ']' {
 		return nil, errors.Errorf("Invalid bin<%s>", bin)
 	}
 	bin = strings.Trim(bin, "[]")
