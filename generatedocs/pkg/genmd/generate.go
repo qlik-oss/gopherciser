@@ -60,6 +60,11 @@ type (
 		LinkTitle string
 		LinkName  string
 	}
+
+	SortedDocEntryWithParams struct {
+		*DocEntryWithParams
+		Name string
+	}
 )
 
 func NewDocNode(doc fmt.Stringer) DocNode {
@@ -179,6 +184,14 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
+	configEntry := DocEntry(compiledDocs.Config["main"])
+	if _, err := configfile.WriteString(configEntry.Description); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	if _, err := configfile.WriteString("## Sections\n\n"); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
 	configSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", filepath.Join(wiki, GeneratedFolder)))
 	defer func() {
 		if err := configSidebar.Close(); err != nil {
@@ -213,12 +226,14 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 				LinkName:  SessionVariableName,
 			}
 		case "scenario":
-			// action groups
+			if _, err := configSidebar.WriteString("	- [scenario](groups)\n\n"); err != nil {
+				common.Exit(err, ExitCodeFailedWriteResult)
+			}
+			if _, err := configfile.WriteString("scenario\n\n"); err != nil {
+				common.Exit(err, ExitCodeFailedWriteResult)
+			}
 			if verbose {
 				fmt.Println("creating groups.md...")
-			}
-			if _, err := configSidebar.WriteString("	- [Action groups](groups)\n\n"); err != nil {
-				common.Exit(err, ExitCodeFailedWriteResult)
 			}
 			groups := generateWikiGroups(compiledDocs)
 			grouplinks, err := os.Create(fmt.Sprintf("%s/groups.md", filepath.Join(wiki, GeneratedFolder)))
@@ -239,15 +254,14 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 				if _, err := grouplinks.WriteString(groupslink); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
+				if _, err := configfile.WriteString(fmt.Sprintf("- %s", groupslink)); err != nil {
+					common.Exit(err, ExitCodeFailedWriteResult)
+				}
 			}
-
-			section = ConfigSection{
-				LinkTitle: "Scenario actions",
-				LinkName:  "groups",
-			}
+			continue
 		case "scheduler":
-			// addSchedulers(newNode, compiledDocs)
-			continue // TODO needs special handling
+			generateWikiSchedulers(compiledDocs, configfile, configSidebar)
+			continue
 		default:
 			fieldEntry := &DocEntryWithParams{
 				DocEntry: DocEntry(compiledDocs.Config[name]),
@@ -286,6 +300,10 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		if _, err := configSidebar.WriteString(fmt.Sprintf("	- %s", linkString)); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
+	}
+
+	if _, err := configfile.WriteString(configEntry.Examples); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 }
 
@@ -339,6 +357,33 @@ func generateWikiGroup(compiledDocs *CompiledDocs, group common.GroupsEntry) {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
 		if _, err := actionsSidebar.WriteString(fmt.Sprintf("			- [%s](%s)\n\n", action, action)); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+	}
+}
+
+func generateWikiSchedulers(compiledDocs *CompiledDocs, configFile, sidebar *os.File) {
+	if _, err := sidebar.WriteString("	- Schedulers\n\n"); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	if _, err := configFile.WriteString("scheduler\n\n"); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	for _, entry := range createSchedulerEntrys(compiledDocs) {
+		if verbose {
+			fmt.Printf("Generating wiki scheduler entry for %s...\n", entry.Name)
+		}
+		file := fmt.Sprintf("%s/%s.md", filepath.Join(wiki, GeneratedFolder), entry.Name)
+		if verbose {
+			fmt.Printf("creating file<%s>...\n", file)
+		}
+		if err := os.WriteFile(file, []byte(entry.DocEntryWithParams.String()), os.ModePerm); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+		if _, err := sidebar.WriteString(fmt.Sprintf("		- [%s](%s)\n\n", entry.Name, entry.Name)); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+		if _, err := configFile.WriteString(fmt.Sprintf("- [%s](%s)\n\n", entry.Name, entry.Name)); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
 	}
@@ -411,12 +456,24 @@ func addGroups(node DocNode, compiledDocs *CompiledDocs) {
 }
 
 func addSchedulers(node DocNode, compiledDocs *CompiledDocs) {
+	entries := createSchedulerEntrys(compiledDocs)
+	for _, entry := range entries {
+		newNode := NewFoldedDocNode(entry.Name, entry.DocEntryWithParams)
+		node.AddChild(newNode)
+	}
+}
+
+func createSchedulerEntrys(compiledDocs *CompiledDocs) []SortedDocEntryWithParams {
 	schedulerSettings := common.Schedulers()
+
+	// sort
 	schedulers := make([]string, 0, len(schedulerSettings))
 	for sched := range schedulerSettings {
 		schedulers = append(schedulers, sched)
 	}
 	sort.Strings(schedulers)
+
+	schedulerEntries := make([]SortedDocEntryWithParams, 0, len(schedulers))
 	for _, sched := range schedulers {
 		compiledEntry, ok := compiledDocs.Schedulers[sched]
 		if !ok {
@@ -427,13 +484,15 @@ func addSchedulers(node DocNode, compiledDocs *CompiledDocs) {
 			os.Stderr.WriteString(fmt.Sprintf("%s gives nil schedparams, skipping...\n", sched))
 			continue
 		}
-		schedEntry := &DocEntryWithParams{
-			DocEntry: DocEntry(compiledEntry),
-			Params:   MarkdownParams(schedParams, compiledDocs.Params),
-		}
-		newNode := NewFoldedDocNode(sched, schedEntry)
-		node.AddChild(newNode)
+		schedulerEntries = append(schedulerEntries, SortedDocEntryWithParams{
+			Name: sched,
+			DocEntryWithParams: &DocEntryWithParams{
+				DocEntry: DocEntry(compiledEntry),
+				Params:   MarkdownParams(schedParams, compiledDocs.Params),
+			},
+		})
 	}
+	return schedulerEntries
 }
 
 func addExtra(node DocNode, compiledDocs *CompiledDocs, name string) {
