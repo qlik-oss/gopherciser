@@ -177,7 +177,10 @@ func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
 	if err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
-	groupsSidebar.WriteString("[Home](home)\n\n- [Groups](groups)\n\n")
+	if _, err := groupsSidebar.WriteString("[Home](home)\n\n- [Action groups](groups)\n\n"); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
 	for _, group := range compiledDocs.Groups {
 		if verbose {
 			fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
@@ -187,8 +190,12 @@ func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
 		}
 
 		groupslink := fmt.Sprintf("[%s](%s)\n\n", group.Title, group.Name)
-		groupsSidebar.WriteString(fmt.Sprintf("	- %s", groupslink))
-		grouplińks.WriteString(groupslink)
+		if _, err := groupsSidebar.WriteString(fmt.Sprintf("	- %s", groupslink)); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+		if _, err := grouplińks.WriteString(groupslink); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
 		generateWikiGroup(compiledDocs, group)
 	}
 }
@@ -211,7 +218,7 @@ func generateWikiGroup(compiledDocs *CompiledDocs, group common.GroupsEntry) {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
-	if _, err := actionsSidebar.WriteString(fmt.Sprintf("[Home](home)\n\n- [Groups](groups)\n\n	- [%s](%s)\n\n", group.Title, group.Name)); err != nil {
+	if _, err := actionsSidebar.WriteString(fmt.Sprintf("[Home](home)\n\n- [Action Groups](groups)\n\n	- [%s](%s)\n\n", group.Title, group.Name)); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
