@@ -1,6 +1,9 @@
 
 ## Example
 
+<details>
+<summary></summary>
+
 ```json
 {
   "settings": {
@@ -123,3 +126,4 @@
 }
 ```
 
+</details>

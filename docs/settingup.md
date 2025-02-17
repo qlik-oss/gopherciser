@@ -5,6 +5,9 @@ A load scenario is defined in a JSON file with a number of sections.
 
 ## Example
 
+<details>
+<summary></summary>
+
 ```json
 {
   "settings": {
@@ -127,7 +130,7 @@ A load scenario is defined in a JSON file with a number of sections.
 }
 ```
 
-
+</details>
 <details>
 <summary>connectionSettings</summary>
 
