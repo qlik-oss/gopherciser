@@ -143,9 +143,6 @@ func GenerateMarkdown(docs *CompiledDocs) {
 		if err := os.RemoveAll(filepath.Join(wiki, GeneratedFolder)); err != nil {
 			common.Exit(err, ExitCodeFailedDeleteFolder)
 		}
-		if err := os.Remove(fmt.Sprintf("%s/_Sidebar.md", wiki)); err != nil && !errors.Is(err, os.ErrNotExist) {
-			common.Exit(err, ExitCodeFailedDeleteFile)
-		}
 		generateWikiFromCompiled(docs)
 	}
 }
