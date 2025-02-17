@@ -14,6 +14,10 @@ import (
 
 var unitTestMode = false
 
+const (
+	ActionsFolder = "actions"
+)
+
 type (
 	DocNodeStruct struct {
 		doc      fmt.Stringer
@@ -106,6 +110,7 @@ const (
 	ExitCodeFailedHandleParams
 	ExitCodeFailedCreateFolder
 	ExitCodeFailedDeleteFolder
+	ExitCodeFailedDeleteFile
 )
 
 func GenerateMarkdown(docs *CompiledDocs) {
@@ -122,8 +127,11 @@ func GenerateMarkdown(docs *CompiledDocs) {
 		fmt.Printf("Generated markdown documentation to output<%s>\n", output)
 	}
 	if wiki != "" {
-		if err := os.RemoveAll(wiki); err != nil {
+		if err := os.RemoveAll(filepath.Join(wiki, ActionsFolder)); err != nil {
 			common.Exit(err, ExitCodeFailedDeleteFolder)
+		}
+		if err := os.Remove(fmt.Sprintf("%s/_Sidebar.md", wiki)); err != nil && !errors.Is(err, os.ErrNotExist) {
+			common.Exit(err, ExitCodeFailedDeleteFile)
 		}
 		generateWikiFromCompiled(docs)
 	}
@@ -140,35 +148,99 @@ func generateFullMarkdownFromCompiled(compiledDocs *CompiledDocs) []byte {
 }
 
 func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
-	if err := createFolder(wiki); err != nil {
+	// TODO warning (error?)for ungrouped
+
+	if err := createFolder(filepath.Join(wiki, ActionsFolder), true); err != nil {
 		common.Exit(err, ExitCodeFailedCreateFolder)
 	}
+	if verbose {
+		fmt.Println("creating groups sidebar...")
+	}
+	groupsSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", wiki))
+	defer func() {
+		if err := groupsSidebar.Close(); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+		}
+	}()
+	if err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	if verbose {
+		fmt.Println("creating groups.md...")
+	}
+	grouplińks, err := os.Create(fmt.Sprintf("%s/groups.md", filepath.Join(wiki, ActionsFolder)))
+	defer func() {
+		if err := grouplińks.Close(); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+		}
+	}()
+	if err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	groupsSidebar.WriteString("[Home](home)\n\n- [Groups](groups)\n\n")
 	for _, group := range compiledDocs.Groups {
-		fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
-		if err := createFolder(filepath.Join(wiki, group.Name)); err != nil {
+		if verbose {
+			fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
+		}
+		if err := createFolder(filepath.Join(wiki, ActionsFolder, group.Name), false); err != nil {
 			common.Exit(err, ExitCodeFailedCreateFolder)
 		}
-		for _, action := range group.Actions {
-			actionEntry := createActionEntry(compiledDocs, common.Actions(), action)
-			if actionEntry == nil {
-				continue
-			}
-			file := filepath.Join(wiki, group.Name, action)
-			file = fmt.Sprintf("%s.md", file)
-			if verbose {
-				fmt.Printf("creating file<%s>...\n", file)
-			}
-			if err := os.WriteFile(file, []byte(actionEntry.String()), os.ModePerm); err != nil {
-				common.Exit(err, ExitCodeFailedWriteResult)
-			}
-		}
+
+		groupslink := fmt.Sprintf("[%s](%s)\n\n", group.Title, group.Name)
+		groupsSidebar.WriteString(fmt.Sprintf("	- %s", groupslink))
+		grouplińks.WriteString(groupslink)
+		generateWikiGroup(compiledDocs, group)
 	}
-	// TODO warning for ungrouped
 }
 
-func createFolder(path string) error {
+func generateWikiGroup(compiledDocs *CompiledDocs, group common.GroupsEntry) {
+	file := fmt.Sprintf("%s/%s.md", filepath.Join(wiki, ActionsFolder, group.Name), group.Name)
+	if verbose {
+		fmt.Printf("creating file<%s>...\n", file)
+	}
+	if err := os.WriteFile(file, []byte(DocEntry(group.DocEntry).String()), os.ModePerm); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	actionsSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", filepath.Join(wiki, ActionsFolder, group.Name)))
+	defer func() {
+		if err := actionsSidebar.Close(); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+		}
+	}()
+	if err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
+	if _, err := actionsSidebar.WriteString(fmt.Sprintf("[Home](home)\n\n- [Groups](groups)\n\n	- [%s](%s)\n\n", group.Title, group.Name)); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
+	for _, action := range group.Actions {
+		actionEntry := createActionEntry(compiledDocs, common.Actions(), action)
+		if actionEntry == nil {
+			continue
+		}
+		file = fmt.Sprintf("%s/%s.md", filepath.Join(wiki, ActionsFolder, group.Name), action)
+		if verbose {
+			fmt.Printf("creating file<%s>...\n", file)
+		}
+		if err := os.WriteFile(file, []byte(actionEntry.String()), os.ModePerm); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+		if _, err := actionsSidebar.WriteString(fmt.Sprintf("		- [%s](%s)\n\n", action, action)); err != nil {
+			common.Exit(err, ExitCodeFailedWriteResult)
+		}
+	}
+}
+
+func createFolder(path string, footer bool) error {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			return err
+		}
+	}
+	if footer {
+		if err := os.WriteFile(fmt.Sprintf("%s/_Footer.md", path), []byte("The file has been generated, do not edit manually\n"), os.ModePerm); err != nil {
 			return err
 		}
 	}
