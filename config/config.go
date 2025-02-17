@@ -488,7 +488,7 @@ func (cfg *Config) validateScheduler() error {
 	}
 
 	if cfg.Scheduler.RequireScenario() {
-		if cfg.Scenario == nil || len(cfg.Scenario) < 1 {
+		if len(cfg.Scenario) < 1 {
 			return errors.Errorf("No scenario items defined")
 		}
 		for _, act := range cfg.Scenario {

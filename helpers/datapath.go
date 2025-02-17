@@ -1,9 +1,10 @@
 package helpers
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
@@ -18,22 +19,22 @@ type (
 	NoDataFound string
 )
 
-//Error no steps in data path
+// Error no steps in data path
 func (err NoStepsError) Error() string {
 	return fmt.Sprintf("No steps to take in datapath<%s>", string(err))
 }
 
-//Error no data found in data path
+// Error no data found in data path
 func (err NoDataFound) Error() string {
 	return fmt.Sprintf("No data found in datapath<%s>", string(err))
 }
 
-//NewDataPath new instance
+// NewDataPath new instance
 func NewDataPath(path string) DataPath {
 	return DataPath(path)
 }
 
-//String string representation of datapath
+// String string representation of datapath
 func (path *DataPath) String() string {
 	return string(*path)
 }
@@ -56,7 +57,7 @@ func (path DataPath) LookupNoQuotes(data json.RawMessage) (json.RawMessage, erro
 func (path DataPath) lookup(data json.RawMessage, quoteString bool) (json.RawMessage, error) {
 	steps := path.steps()
 
-	if steps == nil || len(steps) < 1 {
+	if len(steps) < 1 {
 		return nil, errors.WithStack(NoStepsError(string(path)))
 	}
 
@@ -82,7 +83,7 @@ func (path DataPath) lookup(data json.RawMessage, quoteString bool) (json.RawMes
 func (path DataPath) Set(data []byte, newValue []byte) ([]byte, error) {
 	steps := path.steps()
 
-	if steps == nil || len(steps) < 1 {
+	if len(steps) < 1 {
 		return data, errors.WithStack(NoStepsError(string(path)))
 	}
 
@@ -156,7 +157,7 @@ func (path DataPath) LookupMulti(data json.RawMessage, separator string) ([]json
 	return rawArray, nil
 }
 
-//Contains Check if path contains value
+// Contains Check if path contains value
 func (path DataPath) Contains(val string) bool {
 	str := string(path)
 	if str == "" || val == "" {
