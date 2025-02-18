@@ -8,11 +8,7 @@ Gopherciser is used for load testing (that is, stress testing and performance me
 
 Gopherciser can run standalone, but is also included in the Qlik Sense Enterprise Scalability Tools (QSEST), which are available for download [here](https://community.qlik.com/t5/Qlik-Scalability/Qlik-Sense-Enterprise-Scalability-Tools/gpm-p/1579916).
 
-More information on Gopherciser is available here:
-
-* [Load testing - an introduction](./docs/README.md)
-* [Setting up load scenarios](./docs/settingup.md)
-* [Architecture and code structure](./architecture.md)
+For more information on how to perform load testing with Gopherciser see the [wiki](https://github.com/qlik-oss/gopherciser/wiki/introduction), this readme documents building and development of gopherciser.
 
 ## Building Gopherciser
 
