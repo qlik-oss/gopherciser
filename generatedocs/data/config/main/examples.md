@@ -1,8 +1,6 @@
 
-## Example
-
 <details>
-<summary></summary>
+<summary>Example</summary>
 
 ```json
 {

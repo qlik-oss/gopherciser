@@ -3,10 +3,8 @@
 A load scenario is defined in a JSON file with a number of sections.
 
 
-## Example
-
 <details>
-<summary></summary>
+<summary>Example</summary>
 
 ```json
 {

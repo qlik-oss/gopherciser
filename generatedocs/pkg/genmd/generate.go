@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
@@ -306,7 +307,18 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 
 func generateWikiGroups(compiledDocs *CompiledDocs) map[string]string {
 	groups := make(map[string]string)
-	for _, group := range compiledDocs.Groups {
+
+	// make sure generated same order every time
+	groupNames := make([]string, len(compiledDocs.Groups))
+	mapForSorting := make(map[string]common.GroupsEntry, len(compiledDocs.Groups))
+	for i := 0; i < len(compiledDocs.Groups); i++ {
+		groupNames[i] = compiledDocs.Groups[i].Name
+		mapForSorting[compiledDocs.Groups[i].Name] = compiledDocs.Groups[i]
+	}
+	slices.Sort(groupNames)
+
+	for _, groupName := range groupNames {
+		group := mapForSorting[groupName]
 		if verbose {
 			fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
 		}
