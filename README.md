@@ -24,6 +24,8 @@ If repo was cloned manually, the wiki submodule can be checkd out using
 git submodule update --init --recursive
 ```
 
+**Note**  the submodule will by default be in it's `master` branch. Any changes done and pushed in the submodule master branch will instantly update the wiki (i.e. don't make changes intended for a PR directly here).
+
 ## Building Gopherciser
 
 ### Prerequisites
