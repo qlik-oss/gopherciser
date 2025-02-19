@@ -23,5 +23,6 @@ jobs:
 
     - name: Check submodule
       run: |
+        make initwiki
         cd gopherciser.wiki
         ls
