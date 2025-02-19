@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
@@ -209,6 +210,8 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	if verbose {
 		fmt.Printf("creating file<%s>...\n", filename)
 	}
+	// hack to fix login_settings link for wiki, remove if settingup.md generation is no longer used
+	docEntry.Description = strings.Replace(docEntry.Description, "#login_settings", "loginSettings", 1)
 	if err := os.WriteFile(filename, []byte(DocEntry(docEntry).String()), os.ModePerm); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
