@@ -10,6 +10,20 @@ Gopherciser can run standalone, but is also included in the Qlik Sense Enterpris
 
 For more information on how to perform load testing with Gopherciser see the [wiki](https://github.com/qlik-oss/gopherciser/wiki/introduction), this readme documents building and development of gopherciser.
 
+## Cloning repo
+
+This repo contains the wiki as a submodule, to clone sub modules when cloning the project 
+
+```bash
+git clone --recurse-submodules git@github.com:qlik-oss/gopherciser.wiki.git
+```
+
+If repo was cloned manually, the wiki submodule can be checkd out using
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Building Gopherciser
 
 ### Prerequisites

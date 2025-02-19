@@ -1,0 +1,3 @@
+[submodule "gopherciser.wiki"]
+	path = gopherciser.wiki
+	url = git@github.com:qlik-oss/gopherciser.wiki.git
