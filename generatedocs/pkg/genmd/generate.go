@@ -123,6 +123,7 @@ const (
 	ExitCodeFailedWriteResult
 	ExitCodeFailedHandleFields
 	ExitCodeFailedHandleParams
+	ExitCodeFailedHandleGroups
 	ExitCodeFailedCreateFolder
 	ExitCodeFailedDeleteFolder
 	ExitCodeFailedDeleteFile
@@ -160,19 +161,25 @@ func generateFullMarkdownFromCompiled(compiledDocs *CompiledDocs) []byte {
 }
 
 func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
-	// TODO warning (error?)for ungrouped
-
+	if verbose {
+		fmt.Printf("creating %s...\n", GeneratedFolder)
+	}
 	if err := createFolder(filepath.Join(wiki, GeneratedFolder), true); err != nil {
 		common.Exit(err, ExitCodeFailedCreateFolder)
 	}
-	if verbose {
-		fmt.Println("creating groups sidebar...")
+
+	ungroupedActions := UngroupedActions(compiledDocs.Groups)
+	if len(ungroupedActions) > 0 {
+		common.Exit(fmt.Errorf("found ungrouped actions, add this to a group: %s", strings.Join(ungroupedActions, ",")), ExitCodeFailedHandleGroups)
 	}
 
 	generateWikiConfigSections(compiledDocs)
 }
 
 func generateWikiConfigSections(compiledDocs *CompiledDocs) {
+	if verbose {
+		fmt.Println("creating config.md...")
+	}
 	configfile, err := os.Create(fmt.Sprintf("%s/config.md", filepath.Join(wiki, GeneratedFolder)))
 	defer func() {
 		if err := configfile.Close(); err != nil {
@@ -188,6 +195,9 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
+	if verbose {
+		fmt.Println("creating config sidebar...")
+	}
 	configSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", filepath.Join(wiki, GeneratedFolder)))
 	defer func() {
 		if err := configSidebar.Close(); err != nil {
@@ -201,7 +211,6 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
-	// TODO remove extra expander in session variable section
 	docEntry, ok := compiledDocs.Extra[SessionVariableName]
 	if !ok {
 		common.Exit(fmt.Errorf("\"Extra\" section<%s> not found", SessionVariableName), ExitCodeFailedReadTemplate)
