@@ -52,9 +52,17 @@ If you use Git Bash, but do not have `make.exe` installed, do the following to i
 #### Building the documentation
 
 The documentation can be generated from json with:
+
 ```bash
 go generate
 ```
+
+To generate wiki run
+
+```bash
+make genwiki
+```
+
 For more information, see [Generating Gopherciser documentation](./generatedocs/README.md).
 
 ### Build commands
