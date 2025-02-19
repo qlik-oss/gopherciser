@@ -2,7 +2,9 @@ name: Publish wiki
 
 on:
   workflow_dispatch:
-
+  push:
+      branches:
+        - "documentation/1584-actions-to-wiki"
 jobs:
   generatewiki:
     name: Generate WIKI
