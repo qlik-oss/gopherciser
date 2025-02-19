@@ -186,9 +186,6 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	if _, err := configfile.WriteString(configEntry.Description); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
-	if _, err := configfile.WriteString("## Sections\n\n"); err != nil {
-		common.Exit(err, ExitCodeFailedWriteResult)
-	}
 
 	configSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", filepath.Join(wiki, GeneratedFolder)))
 	defer func() {
@@ -203,26 +200,42 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
+	// TODO remove extra expander in session variable section
+	docEntry, ok := compiledDocs.Extra[SessionVariableName]
+	if !ok {
+		common.Exit(fmt.Errorf("\"Extra\" section<%s> not found", SessionVariableName), ExitCodeFailedReadTemplate)
+	}
+	filename := fmt.Sprintf("%s/%s/%s.md", wiki, GeneratedFolder, SessionVariableName)
+	if verbose {
+		fmt.Printf("creating file<%s>...\n", filename)
+	}
+	if err := os.WriteFile(filename, []byte(DocEntry(docEntry).String()), os.ModePerm); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
+	linkString := fmt.Sprintf("[%s](%s)\n\n", SessionVariableName, SessionVariableName)
+	if _, err := configfile.WriteString(fmt.Sprintf("\nSome settings support the use of %s", linkString)); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+	if _, err := configSidebar.WriteString(fmt.Sprintf("	- %s", linkString)); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
+	if _, err := configfile.WriteString(configEntry.Examples); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
+	if _, err := configfile.WriteString("\n\n## Sections\n\n"); err != nil {
+		common.Exit(err, ExitCodeFailedWriteResult)
+	}
+
 	configFields, err := common.Fields()
 	if err != nil {
 		common.Exit(err, ExitCodeFailedHandleFields)
 	}
-	configFields[SessionVariableName] = struct{}{} // TODO adding here for now, but figure out best placement in link structure
 	for _, name := range sortedKeys(configFields) {
 		var section ConfigSection
 		switch name {
-		case SessionVariableName:
-			// TODO remove extra expander in session variable section
-			docEntry, ok := compiledDocs.Extra[SessionVariableName]
-			if !ok {
-				common.Exit(fmt.Errorf("\"Extra\" section<%s> not found", SessionVariableName), ExitCodeFailedReadTemplate)
-			}
-			section = ConfigSection{
-				Data:      DocEntry(docEntry).String(),
-				FilePath:  fmt.Sprintf("%s/%s/%s.md", wiki, GeneratedFolder, SessionVariableName),
-				LinkTitle: SessionVariableName,
-				LinkName:  SessionVariableName,
-			}
 		case "scenario":
 			if _, err := configSidebar.WriteString("	- [scenario](groups)\n\n"); err != nil {
 				common.Exit(err, ExitCodeFailedWriteResult)
@@ -298,10 +311,6 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		if _, err := configSidebar.WriteString(fmt.Sprintf("	- %s", linkString)); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
-	}
-
-	if _, err := configfile.WriteString(configEntry.Examples); err != nil {
-		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 }
 

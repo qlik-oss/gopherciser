@@ -2528,9 +2528,6 @@ Make  apps in stream with id `ABSCDFSDFSDFO1231234` selectable subsequent action
 
 This section describes the session variables that can be used with some of the actions.
 
-<details>
-<summary><a name="session_variables"></a>Session variables</summary>
-
 Some action parameters support session variables. A session variable is defined by putting the variable, prefixed by a dot, within double curly brackets, such as `{{.UserName}}`.
 
 The following session variables are supported in actions:
@@ -2650,8 +2647,6 @@ Very similar case as above but apps have number suffix from 1 to 4. This can be 
   }
 }
 ```
-
-</details>
 
 
 <hr></details>
