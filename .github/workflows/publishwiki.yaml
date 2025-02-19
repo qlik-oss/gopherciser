@@ -23,4 +23,14 @@ jobs:
 
     - name: Generate wiki
       run: |
-        make genwiki
+        make genwiki PARAM=--verbose
+
+    - name: Publish if any changes
+      run: |
+        cd gopherciser.wiki
+        git diff --cached --quiet
+        if [[ "$?" != "0" ]]; then
+          echo "should publish"
+        else
+          echo "no changes skipping publish"
+        fi
