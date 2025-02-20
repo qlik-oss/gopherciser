@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
       branches:
-        - "documentation/1584-actions-to-wiki"
+        - "master"
 jobs:
   generatewiki:
     name: Generate WIKI
