@@ -1,0 +1,43 @@
+name: Check generated documentation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  checkdocs:
+    name: Check if documentation genereation is needed
+    runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: 'true'
+
+    - name: Set up GO
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.23
+
+    - name: Cache go modules
+      id: cache-go
+      uses: actions/cache@v3
+      env:
+        cache-name: dependency-cache-1.23
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Generate docs
+      run: |
+        go generate
+
+    - name: Verifty nothing to generate
+      run: if [[ "$(g diff --name-only -- generatedocs/generated/documentation.go)" != "" ]]; then; echo "documentation not generated"; exit 1; fi
