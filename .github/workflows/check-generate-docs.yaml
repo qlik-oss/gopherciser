@@ -1,4 +1,4 @@
-name: Check generated documentation
+name: Documentation check
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   checkdocs:
-    name: Check if documentation generation is needed
+    name: Verify generated
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
         run: |
           go generate
 
-      - name: Verifty nothing to generate
+      - name: Verify nothing to generate
         run: |
           if [[ "$(git diff --name-only -- generatedocs/generated/documentation.go)" != "" ]]; then
             echo "documentation not generated"
