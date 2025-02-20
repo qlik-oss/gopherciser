@@ -46,8 +46,9 @@ jobs:
           git status
           echo "publishing wiki"
           set -e
-          git add -A
-          git commit -m "Github action automatically generated wiki"
+          git config user.email "scalabilitylab@qlik.com"
+          git config user.name "Qlik Performance Robot"
+          git commit -a -m "Github action automatically generated wiki"
           git push
         else
           echo "no changes skipping publish"
