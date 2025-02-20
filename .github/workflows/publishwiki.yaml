@@ -41,11 +41,10 @@ jobs:
     - name: Publish if any changes
       run: |
         git status
-        git diff --cached --quiet
-        if [[ "$?" != "0" ]]; then
-          echo "publishing wiki"
-          cd gopherciser.wiki
+        cd gopherciser.wiki
+        if [[ "$(git diff --name-only)" != "" ]]; then
           git status
+          echo "publishing wiki"
           set -e
           git add -A
           git commit -m "Github action automatically generated wiki"
