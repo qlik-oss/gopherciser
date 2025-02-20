@@ -45,6 +45,7 @@ jobs:
         if [[ "$(git diff --name-only)" != "" ]]; then
           git status
           echo "publishing wiki"
+          git checkout master
           set -e
           git config user.email "scalabilitylab@qlik.com"
           git config user.name "Qlik Performance Robot"
