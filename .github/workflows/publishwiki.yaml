@@ -72,7 +72,8 @@ jobs:
           git add generatedocs/generated/documentation.go
           git add gopherciser.wiki
           git status
-          #TODO push
+          git commit -m "Github action automatically added generated documentation"
+          git push
         else
           echo "nothing to add"
         fi
