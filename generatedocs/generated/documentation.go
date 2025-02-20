@@ -67,7 +67,7 @@ var (
 			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from server\",\n    \"action\" : \"disconnectapp\"\n}\n```\n",
 		},
 		"disconnectenvironment": {
-			Description: "## DisconnectEnvironment action\n\nDisconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environmentsor uses custom actions towards external environment, it should be used directly after the last action towards the environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
+			Description: "## DisconnectEnvironment action\n\nDisconnect from an environment. This action will disconnect open websockets towards sense and events. The action is not needed for most scenarios, however if a scenario mixes different types of environments or uses custom actions towards external environment, it should be used directly after the last action towards the environment.\n\nSince the action also disconnects any open websocket to Sense apps, it does not need to be preceeded with a `disconnectapp` action.\n",
 			Examples:    "### Example\n\n```json\n{\n    \"label\": \"Disconnect from environment\",\n    \"action\" : \"disconnectenvironment\"\n}\n```\n",
 		},
 		"dosave": {
