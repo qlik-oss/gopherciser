@@ -40,7 +40,7 @@ jobs:
 
       - name: Verifty nothing to generate
         run: |
-          if [[ "$(g diff --name-only -- generatedocs/generated/documentation.go)" != "" ]]; then
+          if [[ "$(git diff --name-only -- generatedocs/generated/documentation.go)" != "" ]]; then
             echo "documentation not generated"
             exit 1
           fi
