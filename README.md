@@ -18,10 +18,16 @@ This repo contains the wiki as a submodule, to clone sub modules when cloning th
 git clone --recurse-submodules git@github.com:qlik-oss/gopherciser.wiki.git
 ```
 
-If repo was cloned manually, the wiki submodule can be checkd out using
+If repo was cloned manually, the wiki submodule can be checked out using
 
 ```bash
 git submodule update --init --recursive
+```
+
+Updating submodule to version defined by current branch commit:
+
+```bash
+git submodule update
 ```
 
 **Note**  the submodule will by default be in it's `master` branch. Any changes done and pushed in the submodule master branch will instantly update the wiki (i.e. don't make changes intended for a PR directly here).
