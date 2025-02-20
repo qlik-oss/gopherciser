@@ -30,7 +30,11 @@ jobs:
         cd gopherciser.wiki
         git diff --cached --quiet
         if [[ "$?" != "0" ]]; then
-          echo "should publish"
+          echo "publishing wiki"
+          set -e
+          git add -A
+          git commit -m "Github action automatically generated wiki"
+          git push
         else
           echo "no changes skipping publish"
         fi
