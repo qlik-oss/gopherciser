@@ -21,16 +21,31 @@ jobs:
       with:
         go-version: 1.23
 
+    - name: Cache go modules
+      id: cache-go
+      uses: actions/cache@v3
+      env:
+        cache-name: dependency-cache-1.23
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
     - name: Generate wiki
       run: |
         make genwiki PARAM=--verbose
 
     - name: Publish if any changes
       run: |
-        cd gopherciser.wiki
+        git status
         git diff --cached --quiet
         if [[ "$?" != "0" ]]; then
           echo "publishing wiki"
+          cd gopherciser.wiki
+          git status
           set -e
           git add -A
           git commit -m "Github action automatically generated wiki"
