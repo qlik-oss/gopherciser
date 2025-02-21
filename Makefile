@@ -16,7 +16,6 @@ ifeq ($(UNAME_S),Darwin)
 	OSFLAG += ./$(BIN)/$(BIN_NAME)_osx
 endif
 endif
-PARAM ?=
 
 .PHONY: clean build unit-test-cover unit-test-cover-ext codeclimate lint test alltests
 
