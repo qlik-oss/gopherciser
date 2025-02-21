@@ -15,7 +15,7 @@ For more information on how to perform load testing with Gopherciser see the [wi
 This repo contains the wiki as a submodule, to clone sub modules when cloning the project 
 
 ```bash
-git clone --recurse-submodules git@github.com:qlik-oss/gopherciser.wiki.git
+git clone --recurse-submodules git@github.com:qlik-oss/gopherciser.git
 ```
 
 If repo was cloned manually, the wiki submodule can be checked out using
