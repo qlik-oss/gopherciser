@@ -12,27 +12,15 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: 'true'
 
     - name: Set up GO
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.23
-
-    - name: Cache go modules
-      id: cache-go
-      uses: actions/cache@v3
-      env:
-        cache-name: dependency-cache-1.23
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+        go-version: '1.23'
+        check-latest: true
 
     - name: Generate wiki
       run: |
