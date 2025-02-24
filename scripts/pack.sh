@@ -47,8 +47,8 @@ if [[ ! -e licenses.txt ]]; then
 fi
 
 # check for documentation
-if [[ ! -d "$BIN"/docs ]]; then
-  echo "generated docs folder not found"
+if [[ ! -e "$BIN"/Readme.txt ]]; then
+  echo "Readme.txt not found"
   exit 6
 fi
 
@@ -93,8 +93,7 @@ Pack(){
   cp licenses.txt "$PACK"/"$destination"
 
   # copy documentation
-  mkdir "$PACK"/"$destination"/docs
-  cp -r "$BIN"/docs/* "$PACK"/"$destination"/docs/
+  cp -r "$BIN"/Readme.txt "$PACK"/"$destination"/Readme.txt
 
 
   # zip folders
