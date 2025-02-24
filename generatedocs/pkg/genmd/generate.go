@@ -18,6 +18,8 @@ var unitTestMode = false
 const (
 	GeneratedFolder     = "generated"
 	SessionVariableName = "sessionvariables"
+	ConfigLinkName      = "Load test scenario"
+	ConfigLinkFile      = "Load-test-scenario"
 )
 
 type (
@@ -177,9 +179,9 @@ func generateWikiFromCompiled(compiledDocs *CompiledDocs) {
 
 func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	if verbose {
-		fmt.Println("creating config.md...")
+		fmt.Printf("creating %s.md...\n", ConfigLinkFile)
 	}
-	configfile, err := os.Create(fmt.Sprintf("%s/config.md", filepath.Join(wiki, GeneratedFolder)))
+	configfile, err := os.Create(fmt.Sprintf("%s/%s.md", filepath.Join(wiki, GeneratedFolder), ConfigLinkFile))
 	defer func() {
 		if err := configfile.Close(); err != nil {
 			_, _ = os.Stderr.WriteString(err.Error())
@@ -206,7 +208,7 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	if err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
-	if _, err := configSidebar.WriteString("[Home](home)\n\n- [Config](config)\n\n"); err != nil {
+	if _, err := configSidebar.WriteString(fmt.Sprintf("[Home](Home)\n\n- [%s](%s)\n\n", ConfigLinkName, ConfigLinkFile)); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
@@ -362,7 +364,7 @@ func generateWikiGroup(compiledDocs *CompiledDocs, group common.GroupsEntry) {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
-	if _, err := actionsSidebar.WriteString(fmt.Sprintf("[Home](home)\n\n- [Config](config)\n\n	- [Action Groups](groups)\n\n		- [%s](%s)\n\n", group.Title, group.Name)); err != nil {
+	if _, err := actionsSidebar.WriteString(fmt.Sprintf("[Home](Home)\n\n- [%s](%s)\n\n	- [Action Groups](groups)\n\n		- [%s](%s)\n\n", ConfigLinkName, ConfigLinkFile, group.Title, group.Name)); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
