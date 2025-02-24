@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 
@@ -52,7 +51,7 @@ type (
 		Schedulers map[string]common.DocEntry
 		Params     map[string][]string
 		Config     map[string]common.DocEntry
-		Groups     []common.GroupsEntry
+		Groups     common.GroupsEntries
 		Extra      map[string]common.DocEntry
 	}
 
@@ -269,15 +268,14 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 				common.Exit(err, ExitCodeFailedWriteResult)
 			}
 
-			for name, title := range groups {
-				groupslink := fmt.Sprintf("[%s](%s)\n\n", title, name)
-				if _, err := configSidebar.WriteString(fmt.Sprintf("		- %s", groupslink)); err != nil {
+			for _, grouplink := range groups {
+				if _, err := configSidebar.WriteString(fmt.Sprintf("		- %s", grouplink)); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
-				if _, err := grouplinks.WriteString(groupslink); err != nil {
+				if _, err := grouplinks.WriteString(grouplink); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
-				if _, err := configfile.WriteString(fmt.Sprintf("- %s", groupslink)); err != nil {
+				if _, err := configfile.WriteString(fmt.Sprintf("- %s", grouplink)); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
 			}
@@ -326,29 +324,23 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	}
 }
 
-func generateWikiGroups(compiledDocs *CompiledDocs) map[string]string {
-	groups := make(map[string]string)
-
+func generateWikiGroups(compiledDocs *CompiledDocs) []string {
 	// make sure generated same order every time
-	groupNames := make([]string, len(compiledDocs.Groups))
-	mapForSorting := make(map[string]common.GroupsEntry, len(compiledDocs.Groups))
-	for i := 0; i < len(compiledDocs.Groups); i++ {
-		groupNames[i] = compiledDocs.Groups[i].Name
-		mapForSorting[compiledDocs.Groups[i].Name] = compiledDocs.Groups[i]
-	}
-	slices.Sort(groupNames)
+	sort.Sort(compiledDocs.Groups)
+	groups := make([]string, len(compiledDocs.Groups))
 
-	for _, groupName := range groupNames {
-		group := mapForSorting[groupName]
+	for i := 0; i < len(compiledDocs.Groups); i++ {
+		group := compiledDocs.Groups[i]
+		groups[i] = fmt.Sprintf("[%s](%s)\n\n", group.Title, group.Name)
 		if verbose {
 			fmt.Printf("Generating wiki actions for GROUP %s...\n", group.Name)
 		}
 		if err := createFolder(filepath.Join(wiki, GeneratedFolder, group.Name), false); err != nil {
 			common.Exit(err, ExitCodeFailedCreateFolder)
 		}
-		groups[group.Name] = group.Title
 		generateWikiGroup(compiledDocs, group)
 	}
+
 	return groups
 }
 
@@ -426,7 +418,7 @@ func createFolder(path string, footer bool) error {
 		}
 	}
 	if footer {
-		if err := os.WriteFile(fmt.Sprintf("%s/_Footer.md", path), []byte("The file has been generated, do not edit manually\n"), os.ModePerm); err != nil {
+		if err := os.WriteFile(fmt.Sprintf("%s/_Footer.md", path), []byte("This file has been automatically generated, do not edit manually\n"), os.ModePerm); err != nil {
 			return err
 		}
 	}
