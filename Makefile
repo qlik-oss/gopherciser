@@ -46,7 +46,7 @@ clean:
 
 # Build documentation
 docbuild:
-	./scripts/docbuild.sh $(BIN)
+	cp ./docs/Readme.txt ./build/Readme.txt
 
 # Build for current platform only, does not clean, does not do full rebuild, does not create folders, does not set the version nor strip DWARF tables etc.
 # Meant to be used during development only
