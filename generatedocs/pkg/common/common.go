@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"sort"
@@ -20,6 +21,9 @@ type (
 		// Examples Information subsequent to parameters
 		Examples string
 	}
+
+	GroupsEntries []GroupsEntry
+
 	// GroupsEntry definition of group of actions
 	GroupsEntry struct {
 		// Name of the group
@@ -31,6 +35,11 @@ type (
 		DocEntry
 	}
 )
+
+// Implements Sort interface
+func (entries GroupsEntries) Len() int           { return len(entries) }
+func (entries GroupsEntries) Less(i, j int) bool { return entries[i].Name < entries[j].Name }
+func (entries GroupsEntries) Swap(i, j int)      { entries[i], entries[j] = entries[j], entries[i] }
 
 // Shared global variables for compile and generate documentation
 var (
@@ -167,7 +176,7 @@ func ReadFile(path string) ([]byte, error) {
 
 // Exit prints errors message and exits program with code
 func Exit(err error, code int) {
-	_, _ = os.Stderr.WriteString(err.Error())
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("%v\n", err.Error()))
 	os.Exit(code)
 }
 

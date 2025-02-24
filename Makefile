@@ -63,3 +63,14 @@ alltests:
 
 # Run quickbuild test and linting. Good to run e.g. before pushing to remote
 verify: quickbuild test lint-min
+
+# init submodule and get latest version
+initwiki:
+	git submodule update --init --recursive --remote
+	git submodule foreach --recursive git checkout master
+
+# generate config and action documenation
+genwiki: initwiki
+	set -e
+	go generate
+	go run ./generatedocs/cmd/generatemarkdown $(PARAM) --wiki ./gopherciser.wiki

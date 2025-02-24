@@ -8,11 +8,29 @@ Gopherciser is used for load testing (that is, stress testing and performance me
 
 Gopherciser can run standalone, but is also included in the Qlik Sense Enterprise Scalability Tools (QSEST), which are available for download [here](https://community.qlik.com/t5/Qlik-Scalability/Qlik-Sense-Enterprise-Scalability-Tools/gpm-p/1579916).
 
-More information on Gopherciser is available here:
+For more information on how to perform load testing with Gopherciser see the [wiki](https://github.com/qlik-oss/gopherciser/wiki/introduction), this readme documents building and development of gopherciser.
 
-* [Load testing - an introduction](./docs/README.md)
-* [Setting up load scenarios](./docs/settingup.md)
-* [Architecture and code structure](./architecture.md)
+## Cloning repo
+
+This repo contains the wiki as a submodule, to clone sub modules when cloning the project 
+
+```bash
+git clone --recurse-submodules git@github.com:qlik-oss/gopherciser.git
+```
+
+If repo was cloned manually, the wiki submodule can be checked out using
+
+```bash
+git submodule update --init --recursive
+```
+
+Updating submodule to version defined by current branch commit:
+
+```bash
+git submodule update
+```
+
+**Note**  the submodule will by default be in it's `master` branch. Any changes done and pushed in the submodule master branch will instantly update the wiki (i.e. don't make changes intended for a PR directly here).
 
 ## Building Gopherciser
 
@@ -40,9 +58,17 @@ If you use Git Bash, but do not have `make.exe` installed, do the following to i
 #### Building the documentation
 
 The documentation can be generated from json with:
+
 ```bash
 go generate
 ```
+
+To generate wiki run
+
+```bash
+make genwiki
+```
+
 For more information, see [Generating Gopherciser documentation](./generatedocs/README.md).
 
 ### Build commands
