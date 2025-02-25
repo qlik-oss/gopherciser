@@ -46,7 +46,7 @@ clean:
 
 # Build documentation
 docbuild:
-	./scripts/docbuild.sh $(BIN)
+	cp ./docs/Readme.txt ./build/Readme.txt
 
 # Build for current platform only, does not clean, does not do full rebuild, does not create folders, does not set the version nor strip DWARF tables etc.
 # Meant to be used during development only
@@ -68,6 +68,7 @@ verify: quickbuild test lint-min
 initwiki:
 	git submodule update --init --recursive --remote
 	git submodule foreach --recursive git checkout master
+	git submodule foreach --recursive git pull
 
 # generate config and action documenation
 genwiki: initwiki

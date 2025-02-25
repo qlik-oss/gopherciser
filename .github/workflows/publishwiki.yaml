@@ -44,24 +44,3 @@ jobs:
         else
           echo "no changes skipping publish"
         fi
-
-    - name: Update submodule and generated go file in branch
-      env:
-        GIT_USER_EMAIL: ${{ secrets.PERBOT_EMAIL }}
-        GIT_USER_NAME: ${{ secrets.PERBOT_USERNAME }}
-      run: |
-        pwd
-        git status
-        if [[ "$(git diff --name-only)" != "" ]]; then
-          echo "add generated documentation and wiki sha to branch"
-          set -e
-          git config user.email "$GIT_USER_EMAIL"
-          git config user.name "$GIT_USER_NAME"
-          git add generatedocs/generated/documentation.go
-          git add gopherciser.wiki
-          git status
-          git commit -m "Github action automatically added generated documentation"
-          git push
-        else
-          echo "nothing to add"
-        fi
