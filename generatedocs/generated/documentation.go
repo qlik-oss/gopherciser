@@ -100,7 +100,7 @@ var (
 		},
 		"openapp": {
 			Description: "## OpenApp action\n\nOpen an app.\n\n**Note:** If the app name is used to specify which app to open, this action cannot be the first action in the scenario. It must be preceded by an action that can populate the artifact map, such as `openhub`.\n",
-			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"guid\",\n         \"app\": \"7967af99-68b6-464a-86de-81de8937dd56\"\n     }\n}\n```\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"randomguidfromlist\",\n         \"list\": [\"7967af99-68b6-464a-86de-81de8937dd56\", \"ca1a9720-0f42-48e5-baa5-597dd11b6cad\"]\n     }\n}\n```\n",
+			Examples:    "### Examples\n\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"guid\",\n         \"app\": \"7967af99-68b6-464a-86de-81de8937dd56\"\n     }\n}\n```\n\n```json\n{\n     \"label\": \"OpenApp\",\n     \"action\": \"OpenApp\",\n     \"settings\": {\n         \"appmode\": \"randomguidfromlist\",\n         \"list\": [\"7967af99-68b6-464a-86de-81de8937dd56\", \"ca1a9720-0f42-48e5-baa5-597dd11b6cad\"]\n     }\n}\n```\n",
 		},
 		"openhub": {
 			Description: "## OpenHub action\n\nOpen the hub in a QSEoW environment. This also makes the apps included in the response for the users `myspace` available for use by subsequent actions. The action `changestream` can be used to only select from apps in a specific stream.\n",

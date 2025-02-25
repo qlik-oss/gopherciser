@@ -68,6 +68,7 @@ verify: quickbuild test lint-min
 initwiki:
 	git submodule update --init --recursive --remote
 	git submodule foreach --recursive git checkout master
+	git submodule foreach --recursive git pull
 
 # generate config and action documenation
 genwiki: initwiki
