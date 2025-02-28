@@ -2,7 +2,6 @@ GO := go
 PKG_NAME := gopherciser
 BIN_NAME := gopherciser
 PREFIX := .
-TEST_REPORTS := $(PREFIX)/.cover
 BIN := build
 OSFLAG :=
 ifeq ($(OS),Windows_NT)
@@ -17,7 +16,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 endif
 
-.PHONY: clean build lint test alltests initwiki genwiki build-docker attribution test-cover
+.PHONY: clean build lint test alltests initwiki genwiki build-docker attribution
 
 # Compile Go packages
 build: clean
@@ -34,7 +33,7 @@ lint-min:
 
 # Clear and clean folder
 clean:
-	./scripts/clean.sh $(PREFIX) $(BIN) $(TEST_REPORTS)
+	./scripts/clean.sh $(PREFIX) $(BIN)
 
 # Build documentation
 docbuild:
