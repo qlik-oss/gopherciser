@@ -111,50 +111,9 @@ Do the following:
 2. Run `go mod tidy` to remove any unused modules.
 3. Run `go mod verify` to add packages needed for test packages etc.
 
-## Pulling the Docker image
+## Gopherciser in a docker container
 
-A Docker login is needed before the images can be pulled. 
-
-### Create a token
-1. Create a new token with the scope `read:packages` [here](https://github.com/settings/tokens).
-2. Save your token to, for example, a file (or use an environment variable or similar).
-
-### Log in
-
-Log in with Docker to `ghcr.io`.
-
-Using a token stored in the file github.token: 
-
-```bash
-docker login -u yourgithubusername --password=$(cat github.token) ghcr.io
-```
-
-Using the token in the environmental variable GITHUB_TOKEN:
-
-```bash
-docker login -u yourgithubusername --password=$GITHUB_TOKEN ghcr.io
-```
-
-### Pull docker image
-
-The latest master version:
-
-```bash
-docker pull ghcr.io/qlik-oss/gopherciser/gopherciser:latest
-```
-
-Specific released version:
-
-```bash
-docker pull ghcr.io/qlik-oss/gopherciser/gopherciser:0.21.1
-```
-
-## Building a local Docker image
-
-To create a Docker image locally, run the following make command:
-```bash
-make build-docker
-```
+Documentation how to build docker images and run gopherciser from a docker container can be found [here](./docs/dev/docker.md).
 
 ## VSCode snippets for gopherciser development in VSCode
 
