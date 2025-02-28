@@ -4,10 +4,9 @@ This document describes how to generate the Gopherciser documentation.
 
 ## What
 
-The tools for generating the documentation first combine the documentation data and then generate a `documentation.go` file and subsequently a `settingup.md` file:
+The tools for generating the documentation first combine the documentation data and then generate a `documentation.go` file this is used by the GUI and for generating the [wiki](https://github.com/qlik-oss/gopherciser/wiki).
 
 * `documentation.go`: Contains a set of variables that can be used for accessing the documentation programmatically.
-* `settingup.md`: A markdown formatted file to be rendered by a markdown reader or the GitHub project page.
 
 ## Why
 
@@ -15,7 +14,7 @@ The reason for having an intermediate "programmatically readable" step is to all
 
 ## How: Generating the documentation
 
-To generate new `documentation.go` and `settingup.md` files after updating the documentation data, use the following command in the project root:
+To generate new `documentation.go` file after updating the documentation data, use the following command in the project root:
 
 ```bash
 go generate
@@ -25,12 +24,11 @@ The Gopherciser `main.go` file contains the following commands for `go generate`
 
 ```
 //go:generate go run ./generatedocs/cmd/compiledocs
-//go:generate go run ./generatedocs/cmd/generatemarkdown --output ./docs/settingup.md
 ```
 
 ### Compiling documentation data to be used by the GUI and for markdown generation
 
-To only generate a new `documentation.go` file, use the following command:
+To directly invoke generation of a new `documentation.go` file, use the following command:
 
 ```
 go run ./generatedocs/cmd/compiledocs
@@ -40,18 +38,6 @@ go run ./generatedocs/cmd/compiledocs
 
 * `--output string`: Filepath to the generated file. Defaults to `generatedocs/generated/documentation.go`.
 * `--data`: Comma separated filepaths to the data to read. Filepaths Defaults to `generatedocs/data`.
-
-### Generating markdown files
-
-To only generate a new `settingup.md` file, use the following command:
-
-```
-go run ./generatedocs/generate/generate.go --output ./docs/settingup.md
-```
-
-#### Optional flags
-
-* `--output`: Defaults to `generatedocs/generated/settingup.md`.
 
 ## How: Updating/adding data
 
@@ -166,13 +152,13 @@ Example:
 }
 ```
 
-If an action does not belong to a group, it is added to an `Ungrouped actions` section.
+If an action does not belong to a group, there will be a warning when running `go generate`, and action will not be added to documentation.
 
 ### Extra folders
 
 Any subfolder in the `extra` subfolder is added as a DocEntry in the `Extra` map in `documentation.go`.
 
-## How: Extending existing documetation
+## How: Extending existing documentation
 
 ### Extending `documentation.go`
 
@@ -197,9 +183,9 @@ func main() {
 }
 ```
 
-### Extending `settingup.md`
+### Extending wiki generation
 
-The extended `settingup.md` shall then import the extended programatically readble documentation and use the [genmd](pkg/genmd) package to generate the markdown documentation.
+The extended wiki generator shall then import the extended programatically readble documentation and use the [genmd](pkg/genmd) package to generate the markdown documentation.
 
 ```go
 package main
