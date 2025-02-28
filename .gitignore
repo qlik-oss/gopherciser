@@ -50,6 +50,8 @@ localtests/
 build/
 changelog.md
 *.structure
+coverage.html
+coverage.csv
 
 # Temporary files
 *~

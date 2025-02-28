@@ -17,7 +17,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 endif
 
-.PHONY: clean build unit-test-cover unit-test-cover-ext codeclimate lint test alltests initwiki genwiki build-docker
+.PHONY: clean build lint test alltests initwiki genwiki build-docker attribution test-cover
 
 # Compile Go packages
 build: clean
@@ -31,14 +31,6 @@ lint:
 # Minimum level of linting for PR's to be accepted
 lint-min:
 	./scripts/lint.sh MIN
-
-# Unit test and coverage
-unit-test-cover: clean
-	./scripts/unit-test-cover.sh $(TEST_REPORTS) $(BIN_NAME)
-
-# Unit test and cover extended, creates html file for viewing: ${TEST_REPORTS}/c.html
-unit-test-cover-ext: unit-test-cover
-	./scripts/unit-test-cover-ext.sh $(TEST_REPORTS)
 
 # Clear and clean folder
 clean:
@@ -59,7 +51,9 @@ test:
 
 # Run all tests with verbose output
 alltests:
-	go test -race -mod=readonly -v ./... -count=1
+	set -eu
+	go test -race -mod=readonly -v ./... -count=1 -cover -coverprofile=coverage.csv
+	go tool cover -html=coverage.csv -o coverage.html
 
 # Run quickbuild test and linting. Good to run e.g. before pushing to remote
 verify: quickbuild test lint-min
@@ -76,5 +70,11 @@ genwiki: initwiki
 	go generate
 	go run ./generatedocs/cmd/generatemarkdown $(PARAM) --wiki ./gopherciser.wiki
 
+# build docker image
 build-docker: 
 	DOCKERBUILD=y ./scripts/build.sh $(PREFIX) $(BIN) $(BIN_NAME)
+
+# Generate licences.txt
+attribution:
+	go install github.com/google/go-licenses@latest
+	./scripts/createattribution.sh

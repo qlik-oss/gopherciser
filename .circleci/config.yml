@@ -61,6 +61,12 @@ jobs:
       - store_artifacts:
           path: build/version
           destination: version
+      - store_artifacts:
+          path: coverage.html
+          destionation: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destionation: coverage.csv
       - persist_to_workspace:
           root: ./
           paths:
@@ -101,6 +107,12 @@ jobs:
       - store_artifacts:
           path: build
           destination: build
+      - store_artifacts:
+          path: coverage.html
+          destionation: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destionation: coverage.csv
 
   publish-github:
     <<: *defaults

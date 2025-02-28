@@ -56,7 +56,7 @@ This runs all normal tests.
 
 `make alltests`
 
-This runs all tests with verbose output and without relying on cache.
+This runs all tests with verbose output and without relying on cache. This also creates coverage files in csv and html format.
 
 ## Linting commands
 
