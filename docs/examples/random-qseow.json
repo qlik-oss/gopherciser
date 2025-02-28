@@ -2,7 +2,7 @@
 	"settings": {
 		"timeout": 300,
 		"logs": {
-			"filename": "logs/random-qsefew.tsv"
+			"filename": "./logs/random-qsefew.tsv"
 		}
 	},
 	"scheduler": {
