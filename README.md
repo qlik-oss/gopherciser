@@ -40,10 +40,10 @@ Documentation how to build the gopherciser can be found [here](./docs/dev/buildi
 
 Documentation how to build docker images and run gopherciser from a docker container can be found [here](./docs/dev/docker.md).
 
-## VSCode snippets for gopherciser development in VSCode
-
-Documentation how to use snippets to help with development of gopherciser actions when using VSCodium or VSCode can be found [here](./docs/vscode/Readme.md).
-
 ## Gopherciser architecture
 
 A description of the gopherciser architecture can be found [here](./docs/dev/architecture.md)
+
+## Adding actions and features
+
+Documentation how and where to develop additions to gopherciser can be found [here](./docs/dev/develop.md)

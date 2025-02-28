@@ -16,7 +16,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 endif
 
-.PHONY: clean build lint test alltests initwiki genwiki build-docker attribution
+.PHONY: clean build lint test alltests initwiki genwiki build-docker attribution changelog
 
 # Compile Go packages
 build: clean
@@ -77,3 +77,7 @@ build-docker:
 attribution:
 	go install github.com/google/go-licenses@latest
 	./scripts/createattribution.sh
+
+# Generate changelog
+changelog:
+	./scripts/generateChangeLog.sh changelog.md

@@ -44,7 +44,7 @@ jobs:
       - run:
           name: Create changelog
           command: |
-            ./scripts/generateChangeLog.sh changelog.md
+            make changelog
       - run:
           name: Zip files
           command: |
