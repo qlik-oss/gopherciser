@@ -68,7 +68,6 @@ jobs:
             - build/*
             - changelog.md
             - Dockerfile
-            - artifacts
 
   test-go-version:
     <<: *defaults
