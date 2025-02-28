@@ -17,7 +17,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 endif
 
-.PHONY: clean build unit-test-cover unit-test-cover-ext codeclimate lint test alltests
+.PHONY: clean build unit-test-cover unit-test-cover-ext codeclimate lint test alltests initwiki genwiki build-docker
 
 # Compile Go packages
 build: clean
@@ -51,15 +51,15 @@ docbuild:
 # Build for current platform only, does not clean, does not do full rebuild, does not create folders, does not set the version nor strip DWARF tables etc.
 # Meant to be used during development only
 quickbuild:
-	GO111MODULE=on go build -mod=readonly -o $(OSFLAG)
+	go build -mod=readonly -o $(OSFLAG)
 
 # Run standard tests
 test:
-	GO111MODULE=on go test -race -mod=readonly ./...
+	go test -race -mod=readonly ./...
 
 # Run all tests with verbose output
 alltests:
-	GO111MODULE=on go test -race -mod=readonly -v ./... -count=1
+	go test -race -mod=readonly -v ./... -count=1
 
 # Run quickbuild test and linting. Good to run e.g. before pushing to remote
 verify: quickbuild test lint-min
@@ -75,3 +75,6 @@ genwiki: initwiki
 	set -e
 	go generate
 	go run ./generatedocs/cmd/generatemarkdown $(PARAM) --wiki ./gopherciser.wiki
+
+build-docker: 
+	DOCKERBUILD=y ./scripts/build.sh $(PREFIX) $(BIN) $(BIN_NAME)

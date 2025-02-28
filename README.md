@@ -38,32 +38,17 @@ git submodule update
 
 #### Golang build environment
 
-Gopherciser requires a Golang 1.13 build environment or later.
-
-#### Installing tools
-
-**Note:** Since Gopherciser uses Go modules, do not install tools using the `go get` command while inside the Gopherciser repository. 
-
-To install tools, use the `cd` command to leave the Gopherciser repository directory and then use `go get`.
-
-#### Windows-specific prerequisites
-
-If you use Git Bash, but do not have `make.exe` installed, do the following to install it: 
-
-1. Go to [ezwinports](https://sourceforge.net/projects/ezwinports/).
-2. Download `make-4.x-y-without-guile-w32-bin.zip` (make sure to get the version without guile).
-3. Extract the ZIP file.
-4. Copy the contents to the `Git\mingw64\` directory (the default location of mingw64 is `C:\Program Files\Git\mingw64`), but **do not** overwrite or replace any existing files.
+Gopherciser requires a Golang 1.23 build environment or later.
 
 #### Building the documentation
 
-The documentation can be generated from json with:
+The file `documentation.go`, used to generate wiki and tooltips in the GUI, can be generated using:
 
 ```bash
 go generate
 ```
 
-To generate wiki run
+The wiki is updated on any push to master, however it can be generated locally:
 
 ```bash
 make genwiki
@@ -105,6 +90,16 @@ This runs all normal tests.
 
 This runs all tests with verbose output and without relying on cache.
 
+### Linting commands
+
+You can run linter using 
+
+`make lint` or `make lint-min` lint-min will run minimal lint for PR to be accepted.
+
+### Verify command
+
+`make verify` will run `quickbuild`, `test` and `lint-min`, this is a good command to run before pushing a commit to make sure CI will pass green.
+
 ## Updating Gopherciser dependencies
 
 Do the following:
@@ -118,43 +113,48 @@ Do the following:
 
 ## Pulling the Docker image
 
-Unfortunately, the GitHub packages Docker repo is not very "public" (see this [community thread](https://github.community/t5/GitHub-Actions/docker-pull-from-public-GitHub-Package-Registry-fail-with-quot/td-p/32782)). This means a Docker login is needed before the images can be pulled. 
+A Docker login is needed before the images can be pulled. 
 
-Do the following:
-
+### Create a token
 1. Create a new token with the scope `read:packages` [here](https://github.com/settings/tokens).
 2. Save your token to, for example, a file (or use an environment variable or similar).
-3. Log in with Docker to `docker.pkg.github.com`.
+
+### Log in
+
+Log in with Docker to `ghcr.io`.
 
 Using a token stored in the file github.token: 
 
 ```bash
-docker login -u yourgithubusername --password=$(cat github.token) docker.pkg.github.com
+docker login -u yourgithubusername --password=$(cat github.token) ghcr.io
 ```
 
 Using the token in the environmental variable GITHUB_TOKEN:
 
 ```bash
-docker login -u yourgithubusername --password=$GITHUB_TOKEN docker.pkg.github.com
+docker login -u yourgithubusername --password=$GITHUB_TOKEN ghcr.io
 ```
 
-4. Pull the Docker image.
+### Pull docker image
 
 The latest master version:
 
 ```bash
-docker pull docker.pkg.github.com/qlik-oss/gopherciser/gopherciser:latest
+docker pull ghcr.io/qlik-oss/gopherciser/gopherciser:latest
 ```
 
 Specific released version:
 
 ```bash
-docker pull docker.pkg.github.com/qlik-oss/gopherciser/gopherciser:0.4.10
+docker pull ghcr.io/qlik-oss/gopherciser/gopherciser:0.21.1
 ```
 
-### Using the image in Kubernetes
+## Building a local Docker image
 
-To use the image in Kubernetes (for example, to perform executions as part of a Kubernetes job), credentials for the GitHub package registry need to be added the same way a private registry is used, see documentation [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+To create a Docker image locally, run the following make command:
+```bash
+make build-docker
+```
 
 ## VSCode snippets for gopherciser development in VSCode
 
