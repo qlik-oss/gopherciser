@@ -1,4 +1,12 @@
+[build-cli]: ./build.md
+[build-docker]: ./docker.md
+[architecture]: ./architecture.md
+[develop]: ./develop.md
+[generate-docs]: ../../generatedocs/README.md
+
 # Working with docker
+
+[build-cli] | [build-docker] | [develop] | [generate-docs] | [architecture]
 
 ## Pulling the Docker image
 

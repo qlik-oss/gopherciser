@@ -13,7 +13,7 @@
 
 [![CircleCI](https://circleci.com/gh/qlik-oss/gopherciser.svg?style=svg)](https://circleci.com/gh/qlik-oss/gopherciser)
 
-[wiki] | [QSEST] | [enigma-go] | [build-cli] | [build-docker] | [develop] | [architecture] | [generate-docs]
+[wiki] | [QSEST] | [enigma-go] | [build-cli] | [build-docker] | [develop] | [generate-docs] | [architecture]
 
 # Overview
 
