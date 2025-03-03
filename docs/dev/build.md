@@ -1,4 +1,12 @@
+[build-cli]: ./build.md
+[build-docker]: ./docker.md
+[architecture]: ./architecture.md
+[develop]: ./develop.md
+[generate-docs]: ../../generatedocs/README.md
+
 # Building Gopherciser
+
+[build-cli] | [build-docker] | [develop] | [generate-docs] | [architecture]
 
 ## Prerequisites
 
@@ -24,7 +32,7 @@ To do a cleaning before building, run `make clean`.
 
 ### Docker build
 
-Information how to work with docker images can be found [here](./docker.md)
+Information how to work with docker images can be found at [build-docker].
 
 ### Building the documentation
 
@@ -40,7 +48,7 @@ The wiki is updated on any push to master, however it can be generated locally:
 make genwiki
 ```
 
-For more information, see [Generating Gopherciser documentation](../../generatedocs/README.md).
+For more information, see [generate-docs].
 
 ## Test commands
 

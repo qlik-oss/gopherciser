@@ -1,8 +1,14 @@
+[sense-object-definitions]: https://github.com/qlik-oss/gopherciser/wiki/sense-object-definitions
+[add-action]:./action.md
+[extending-gopherciser]: https://github.com/qlik-oss/gopherciser-extended-example
+
 # Adding a new action
+
+[sense-object-definitions] | [add-action] | [extending-gopherciser]
 
 ## VSCode snippets for gopherciser development in VSCode
 
-Documentation how to use snippets to help with development of gopherciser actions when using VSCodium or VSCode can be found [here](./docs/vscode/Readme.md).
+Documentation how to use snippets to help with development of gopherciser actions when using VSCodium or VSCode can be found [here](../vscode/Readme.md).
 
 ## Action interface
 

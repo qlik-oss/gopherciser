@@ -5,6 +5,7 @@
 [build-docker]: ./docs/dev/docker.md
 [architecture]: ./docs/dev/architecture.md
 [develop]: ./docs/dev/develop.md
+[generate-docs]: ../../generatedocs/README.md
 
 ![Gopherciser logo](docs/images/logo.png)
 
@@ -12,7 +13,7 @@
 
 [![CircleCI](https://circleci.com/gh/qlik-oss/gopherciser.svg?style=svg)](https://circleci.com/gh/qlik-oss/gopherciser)
 
-[wiki] | [QSEST] | [enigma-go] | [build-cli] | [build-docker] | [develop] | [architecture]
+[wiki] | [QSEST] | [enigma-go] | [build-cli] | [build-docker] | [develop] | [architecture] | [generate-docs]
 
 # Overview
 
@@ -52,3 +53,4 @@ git submodule update
 | [build-docker] | Documentation how to build docker images and run gopherciser from a docker container. |
 | [develop] |  Documentation how and where to develop additions to gopherciser. |
 | [architecture] | A description of the gopherciser architecture. |
+| [generate-docs] | Documentation on how to generate documentation |

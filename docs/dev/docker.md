@@ -52,7 +52,3 @@ make build-docker
 ```bash
 docker run ghcr.io/qlik-oss/gopherciser/gopherciser:latest ./gopherciser -h
 ```
-
-## VSCode snippets for gopherciser development in VSCode
-
-Documentation how to use snippets to help with development of gopherciser actions when using VSCodium or VSCode can be found [here](./docs/vscode/Readme.md).
