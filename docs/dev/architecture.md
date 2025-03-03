@@ -1,10 +1,18 @@
-# gopherciser code architecture
+[build-cli]: ./build.md
+[build-docker]: ./docker.md
+[architecture]: ./architecture.md
+[develop]: ./develop.md
+[generate-docs]: ../../generatedocs/README.md
+
+# Gopherciser code architecture
+
+[build-cli] | [build-docker] | [develop] | [generate-docs] | [architecture]
 
 Root of the project and main function.
 
 ## Main packages
 
-![Main packages](docs/images/architecture-flowchart.png)
+![Main packages](../images/architecture-flowchart.png)
 
 ### cmd
 
