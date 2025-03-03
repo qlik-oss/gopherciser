@@ -4,12 +4,8 @@ Support for custom object types can be added without making code changes by maki
 
 ## Creating new actions
 
-<!-- TODO -->
-
-### VSCode snippets for gopherciser development in VSCode
-
-Documentation how to use snippets to help with development of gopherciser actions when using VSCodium or VSCode can be found [here](./docs/vscode/Readme.md).
+Documentation how to add a new action can be found [here](./action.md).
 
 ## Extending gopherciser with custom logic
 
-<!-- TODO -->
+A forkable template repo on how to extend gopherciser can be [here](extending-gopherciser).
