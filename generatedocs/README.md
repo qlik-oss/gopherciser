@@ -39,6 +39,16 @@ go run ./generatedocs/cmd/compiledocs
 * `--output string`: Filepath to the generated file. Defaults to `generatedocs/generated/documentation.go`.
 * `--data`: Comma separated filepaths to the data to read. Filepaths Defaults to `generatedocs/data`.
 
+### Manually generate wiki
+
+Normally updates should be made by the github action running automatically, so generating these files locally should not be needed. However to manually generate files to the wiki submodule, with a `documentation.go` generated, run the command:
+
+```bash
+make genwiki
+```
+
+Files in the submodule will now have been update if needed. To directly publish these update to wiki, make a commit and push the changes in the submodule repo.
+
 ## How: Updating/adding data
 
 The structure of the `data` folder is as follows:
