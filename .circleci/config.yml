@@ -111,11 +111,8 @@ jobs:
           paths:
             - "/home/circleci/go/pkg/mod"
       - store_artifacts:
-          path: coverage.html
-          destionation: coverage.html
-      - store_artifacts:
-          path: coverage.csv
-          destionation: coverage.csv
+          path: coverage
+          destionation: coverage
       - store_artifacts:
           path: build
           destination: build
