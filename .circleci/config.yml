@@ -25,6 +25,12 @@ jobs:
           name: Run Golang tests
           command: |
             make alltests
+      - store_artifacts:
+          path: coverage.html
+          destination: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destination: coverage.csv
       - run:
           name: Minimum linting required for Pull Requests to be accepted.
           command: |
@@ -61,12 +67,6 @@ jobs:
       - store_artifacts:
           path: build/version
           destination: version
-      - store_artifacts:
-          path: coverage.html
-          destionation: coverage.html
-      - store_artifacts:
-          path: coverage.csv
-          destionation: coverage.csv
       - persist_to_workspace:
           root: ./
           paths:
@@ -96,12 +96,12 @@ jobs:
           name: Run Golang tests
           command: |
             make alltests
-      - run:
-          name: Save coverage files (otherwise removed by clean)
-          command: |
-            mkdir -p ./coverage
-            mv coverage.html ./coverage
-            mv coverage.csv ./coverage
+      - store_artifacts:
+          path: coverage.html
+          destination: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destination: coverage.csv
       - run:
           name: Build gopherciser for Linux, Darwin and Windows (amd64)
           command: |
@@ -110,9 +110,6 @@ jobs:
           key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"
-      - store_artifacts:
-          path: coverage
-          destination: coverage
       - store_artifacts:
           path: build
           destination: build
