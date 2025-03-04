@@ -96,12 +96,12 @@ jobs:
           name: Run Golang tests
           command: |
             make alltests
-      - store_artifacts:
-          path: coverage.html
-          destionation: coverage.html
-      - store_artifacts:
-          path: coverage.csv
-          destionation: coverage.csv
+      - run:
+          name: Save coverage files (otherwise removed by clean)
+          command: |
+            mkdir -p ./coverage
+            mv coverage.html ./coverage
+            mv coverage.csv ./coverage
       - run:
           name: Build gopherciser for Linux, Darwin and Windows (amd64)
           command: |
@@ -110,6 +110,12 @@ jobs:
           key: dependency-cache-<< parameters.version >>{{ checksum "go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"
+      - store_artifacts:
+          path: coverage.html
+          destionation: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destionation: coverage.csv
       - store_artifacts:
           path: build
           destination: build
