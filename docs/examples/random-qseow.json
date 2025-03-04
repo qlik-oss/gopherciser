@@ -32,7 +32,7 @@
 	"loginSettings": {
 		"type": "prefix",
 		"settings": {
-			"prefix": "gopher",
+			"prefix": "testuser",
 			"directory": "<my-domain>"
 		}
 	},

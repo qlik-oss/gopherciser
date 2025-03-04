@@ -22,6 +22,7 @@ func TestExamples(t *testing.T) {
 
 			continue
 		}
+		t.Logf("Test file %s\n", f.Name())
 		err := testFile(f.Name())
 		if err != nil {
 			t.Error(err.Error())
