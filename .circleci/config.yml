@@ -96,6 +96,12 @@ jobs:
           name: Run Golang tests
           command: |
             make alltests
+      - store_artifacts:
+          path: coverage.html
+          destionation: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destionation: coverage.csv
       - run:
           name: Build gopherciser for Linux, Darwin and Windows (amd64)
           command: |
@@ -107,12 +113,6 @@ jobs:
       - store_artifacts:
           path: build
           destination: build
-      - store_artifacts:
-          path: coverage.html
-          destionation: coverage.html
-      - store_artifacts:
-          path: coverage.csv
-          destionation: coverage.csv
 
   publish-github:
     <<: *defaults
