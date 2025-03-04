@@ -6,9 +6,9 @@ import (
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompilerflag"
 )
 
-func ExtendOSSDocs() {
+func ExtendOSSDocs() []error {
 	compiler := doccompiler.New()
 	compiler.AddDataFromGenerated(generated.Actions, generated.Schedulers, generated.Config, generated.Extra, generated.Params, generated.Groups)
 	compiler.AddDataFromDir(doccompilerflag.DataRoot())
-	compiler.CompileToFile(doccompilerflag.OutputFile())
+	return compiler.CompileToFile(doccompilerflag.OutputFile())
 }

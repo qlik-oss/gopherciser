@@ -75,7 +75,7 @@ func TestCompile(t *testing.T) {
 	} {
 
 		t.Run(tc.name, func(t *testing.T) {
-			generatedDocs := tc.compiler().Compile()
+			generatedDocs, _ := tc.compiler().Compile()
 			expectedDocs, err := os.ReadFile(expectedOutput)
 			if err != nil {
 				t.Fatal(err)

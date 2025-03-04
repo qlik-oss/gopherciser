@@ -1,8 +1,6 @@
 package doccompiler
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
@@ -15,11 +13,11 @@ var checks = []check{
 	checkAllActionsInGroup,
 }
 
-func checkAndWarn(data *docData) {
-	for _, finding := range checkAll(data) {
-		fmt.Printf("WARNING: %v\n", finding)
-	}
-}
+// func checkAndWarn(data *docData) {
+// 	for _, finding := range checkAll(data) {
+// 		fmt.Printf("WARNING: %v\n", finding)
+// 	}
+// }
 
 func checkAll(data *docData) []error {
 	findings := []error{}
