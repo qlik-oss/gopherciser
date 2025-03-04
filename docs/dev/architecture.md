@@ -12,8 +12,6 @@ Root of the project and main function.
 
 ## Main packages
 
-![Main packages](../images/architecture-flowchart.png)
-
 ### cmd
 
 Command-line interface for controlling `gopherciser`. The main command is `execute`, which is used to run a test.
