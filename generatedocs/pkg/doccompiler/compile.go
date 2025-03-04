@@ -52,9 +52,9 @@ type (
 
 	DocCompiler interface {
 		// Compile documentation to golang represented as bytes
-		Compile() ([]byte, []error)
+		Compile() ([]byte, error)
 		// CompileToFile compiles the data to file
-		CompileToFile(file string) []error
+		CompileToFile(file string) error
 		// Add documentation data from directory
 		AddDataFromDir(dir string)
 		// Add documentation data from variables in generated code
@@ -76,7 +76,7 @@ func New() DocCompiler {
 	return newData()
 }
 
-func (data *docData) Compile() ([]byte, []error) {
+func (data *docData) Compile() ([]byte, error) {
 	data.sort()
 	docs := generateDocs(data)
 	formattedDocs, err := format.Source(docs)
@@ -87,13 +87,16 @@ func (data *docData) Compile() ([]byte, []error) {
 	return formattedDocs, checkAll(data)
 }
 
-func (data *docData) CompileToFile(fileName string) []error {
-	docs, errs := data.Compile()
+func (data *docData) CompileToFile(fileName string) error {
+	docs, err := data.Compile()
+	if err != nil {
+		return err
+	}
 	if err := os.WriteFile(fileName, docs, 0644); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 	fmt.Printf("Compiled documentation to %s\n", fileName)
-	return errs
+	return nil
 }
 
 func (data *docData) AddDataFromGenerated(actions, schedulers, config, extra map[string]common.DocEntry, params map[string][]string, groups []common.GroupsEntry) {

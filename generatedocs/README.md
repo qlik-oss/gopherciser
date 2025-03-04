@@ -196,11 +196,8 @@ import (
 )
 
 func main() {
-	errs := extenddocs.ExtendOSSDocs()
-	for _, err := range errs {
-		fmt.Println("Error: ", err)
-	}
-	if len(errs) > 0 {
+	if err := extenddocs.ExtendOSSDocs(); err != nil {
+		fmt.Printf("Errors:\n%v", err)
 		os.Exit(1)
 	}
 }

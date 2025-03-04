@@ -1,11 +1,13 @@
 package doccompiler
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+	"fmt"
+
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 )
 
-type check func(data *docData) []error
+type check func(data *docData) error
 
 var checks = []check{
 	checkAllActionsDocumented,
@@ -13,42 +15,36 @@ var checks = []check{
 	checkAllActionsInGroup,
 }
 
-// func checkAndWarn(data *docData) {
-// 	for _, finding := range checkAll(data) {
-// 		fmt.Printf("WARNING: %v\n", finding)
-// 	}
-// }
-
-func checkAll(data *docData) []error {
-	findings := []error{}
+func checkAll(data *docData) error {
+	var findings error
 	for _, check := range checks {
-		findings = append(findings, check(data)...)
+		findings = errors.Join(findings, check(data))
 	}
 	return findings
 }
 
-func checkAllActionsDocumented(data *docData) []error {
-	findings := []error{}
+func checkAllActionsDocumented(data *docData) error {
+	var findings error
 	allActions := common.ActionStrings()
 	for _, a := range allActions {
 		docEntry, ok := data.ActionMap[a]
 		if !ok {
-			findings = append(findings, errors.Errorf(`action "%s" is not documented`, a))
+			findings = errors.Join(findings, fmt.Errorf(`action "%s" is not documented`, a))
 			continue
 		}
 
 		if docEntry.Description == "" {
-			findings = append(findings, errors.Errorf(`action "%s" has no description`, a))
+			findings = errors.Join(findings, fmt.Errorf(`action "%s" has no description`, a))
 		}
 		if docEntry.Examples == "" {
-			findings = append(findings, errors.Errorf(`action "%s" has no examples`, a))
+			findings = errors.Join(findings, fmt.Errorf(`action "%s" has no examples`, a))
 		}
 	}
 	return findings
 }
 
-func checkAllConfigFieldsDocumented(data *docData) []error {
-	findings := []error{}
+func checkAllConfigFieldsDocumented(data *docData) error {
+	var findings error
 	// Get all config fields
 	expectedConfigFields, err := common.FieldsString()
 	if err != nil {
@@ -59,22 +55,23 @@ func checkAllConfigFieldsDocumented(data *docData) []error {
 	for _, field := range expectedConfigFields {
 		docEntry, ok := data.ConfigMap[field]
 		if !ok {
-			findings = append(findings, errors.Errorf(`config field "%s" is not documented`, field))
+			findings = errors.Join(findings, fmt.Errorf(`config field "%s" is not documented`, field))
 			continue
 		}
 
 		if docEntry.Description == "" {
-			findings = append(findings, errors.Errorf(`config field "%s" has no description`, field))
+			findings = errors.Join(findings, fmt.Errorf(`config field "%s" has no description`, field))
 		}
 		if docEntry.Examples == "" {
-			findings = append(findings, errors.Errorf(`config field "%s" has no examples`, field))
+			findings = errors.Join(findings, fmt.Errorf(`config field "%s" has no examples`, field))
 		}
 	}
+
 	return findings
 }
 
-func checkAllActionsInGroup(data *docData) []error {
-	findings := []error{}
+func checkAllActionsInGroup(data *docData) error {
+	var findings error
 
 	// map actions to groups
 	actionToGroups := map[string][]string{}
@@ -92,9 +89,9 @@ func checkAllActionsInGroup(data *docData) []error {
 		lenGroups := len(groups)
 		switch {
 		case lenGroups == 0:
-			findings = append(findings, errors.Errorf(`action "%s" does not belong to a group`, action))
+			findings = errors.Join(findings, fmt.Errorf(`action "%s" does not belong to a group`, action))
 		case lenGroups > 1:
-			findings = append(findings, errors.Errorf(`action "%s" belong to %d groups %v`, action, lenGroups, groups))
+			findings = errors.Join(findings, fmt.Errorf(`action "%s" belong to %d groups %v`, action, lenGroups, groups))
 		}
 	}
 
