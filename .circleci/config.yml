@@ -4,7 +4,7 @@ version: 2.1
 defaults: &defaults
   working_directory: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
   environment:
-    DOCKER_REPO: docker.pkg.github.com/qlik-oss/gopherciser/gopherciser
+    DOCKER_REPO: ghcr.io/qlik-oss/gopherciser/gopherciser
 
 jobs:
   build:
@@ -25,6 +25,12 @@ jobs:
           name: Run Golang tests
           command: |
             make alltests
+      - store_artifacts:
+          path: coverage.html
+          destination: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destination: coverage.csv
       - run:
           name: Minimum linting required for Pull Requests to be accepted.
           command: |
@@ -44,7 +50,7 @@ jobs:
       - run:
           name: Create changelog
           command: |
-            ./scripts/generateChangeLog.sh changelog.md
+            make changelog
       - run:
           name: Zip files
           command: |
@@ -68,7 +74,6 @@ jobs:
             - build/*
             - changelog.md
             - Dockerfile
-            - artifacts
 
   test-go-version:
     <<: *defaults
@@ -91,6 +96,12 @@ jobs:
           name: Run Golang tests
           command: |
             make alltests
+      - store_artifacts:
+          path: coverage.html
+          destination: coverage.html
+      - store_artifacts:
+          path: coverage.csv
+          destination: coverage.csv
       - run:
           name: Build gopherciser for Linux, Darwin and Windows (amd64)
           command: |
@@ -157,11 +168,11 @@ jobs:
           name: Build Docker image
           command: |
             VER=$(cat build/version)
-            docker build . -t $DOCKER_REPO:$VER
+            make build-docker
       - run:
           name: Login to GitHub packages
           command: |
-            echo $GITHUB_TOKEN | docker login docker.pkg.github.com -u ${GITHUB_USER} --password-stdin
+            echo $GITHUB_TOKEN | docker login ghcr.io -u ${GITHUB_USER} --password-stdin
       - run:
           name: Push docker image
           command: |
@@ -183,9 +194,9 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
-      # - test-go-version:
-      #     name: "Test Go 1.22"
-      #     version: "1.22"
+      - test-go-version:
+          name: "Test Go 1.24"
+          version: "1.24"
       - publish-github:
           requires:
             - build

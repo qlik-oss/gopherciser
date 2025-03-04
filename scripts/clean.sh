@@ -3,14 +3,13 @@ set -eu
 
 PREFIX=$1
 BIN=$2
-TEST_REPORTS=$3
 
-if [[ "$#" -eq 3 ]]; then
+if [[ "$#" -eq 2 ]]; then
 
     rm -Rf "${PREFIX:?}/$BIN"
-    rm -Rf "${PREFIX:?}/$TEST_REPORTS"
-    rm -f c.out
+    rm -f "${PREFIX:?}/coverage.csv"
+    rm -f "${PREFIX:?}/coverage.html"
 
 else
-   echo "Illegal number of arguments, please run with ./clean.sh <PREFIX> <BIN_FOLDER> <REPORTS_FOLDER>"
+   echo "Illegal number of arguments, please run with ./clean.sh <PREFIX> <BIN_FOLDER>"
 fi

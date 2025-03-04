@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# make sure we can build within GOPATH
-export GO111MODULE=on
-
 # Purpose: This script compiles the Go packages and dependencies.
 # Instructions: make build <BINARY>
 
@@ -18,7 +15,7 @@ REVISION_FLAG="-X $VERSIONPKG.Revision=$REVISION"
 VERSION_FLAG=""
 BUILD_TIME_FLAG="-X $VERSIONPKG.BuildTime=$BUILD_TIME"
 RELEASE_VERSION=""
-
+DOCKERBUILD=${DOCKERBUILD:-}
 
 # Check if integration or release based on if tag was set
 CURRENT_REVISION=$(git rev-parse HEAD)
@@ -44,8 +41,20 @@ if mkdir -p "$PREFIX/$BIN"; then
 
     echo "$RELEASE_VERSION" > "$PREFIX/$BIN/version"
 
+    if [ ! -z "$DOCKERBUILD" ]; then
+      BINARY="$3_docker"
+      # no clean so "clean" here
+      if [ -e "$PREFIX/$BIN/$BINARY" ]; then
+        rm "$PREFIX/$BIN/$BINARY"
+      fi
+      GOOS=linux GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
+      docker build . -t "ghcr.io/qlik-oss/gopherciser/gopherciser:$RELEASE_VERSION"
+      echo "docker build image built, run a container with:"
+      echo "docker run ghcr.io/qlik-oss/gopherciser/gopherciser:$RELEASE_VERSION ./gopherciser -h"
+      exit 0
+    fi
+
     # Build for three targets Windows (amd64), Linux (amd64), Darwin (amd64)
-    # rm -f "$BINARY" done already via clean?
 
     # Linux amd64
     BINARY="$3"

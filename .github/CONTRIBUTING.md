@@ -24,7 +24,6 @@ please be prepared to discuss the changes with us so we can cooperate on how to 
 
 Submit your feature by creating a Pull Request, following the [GIT guidelines](#git). Include any related documentation changes.
 
-
 ## <a name="documentation"></a> Documentation changes
 
 Documentation changes can be requested by adding issues in the repository.

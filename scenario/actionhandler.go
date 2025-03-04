@@ -37,7 +37,6 @@ type (
 	// container action containing other actions. A container action will not log result as a normal action,
 	// instead result will be logged as level=info, infotype: containeractionend
 	// Returns if action is to be considered a container action.
-	// ContainerAction can't be used in conjunction with StartActionOverrider interface
 	ContainerAction interface {
 		IsContainerAction()
 	}

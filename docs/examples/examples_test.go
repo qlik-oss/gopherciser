@@ -1,19 +1,19 @@
 package examples
 
 import (
-	"github.com/goccy/go-json"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 )
 
 func TestExamples(t *testing.T) {
-	files, err := ioutil.ReadDir("./")
+	files, err := os.ReadDir("./")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	for _, f := range files {
@@ -22,15 +22,16 @@ func TestExamples(t *testing.T) {
 
 			continue
 		}
+		t.Logf("Test file %s\n", f.Name())
 		err := testFile(f.Name())
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 	}
 }
 
 func testFile(filename string) error {
-	jsonConfig, err := ioutil.ReadFile(filename)
+	jsonConfig, err := os.ReadFile(filename)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to open file <%s>", filename)
 	}

@@ -66,15 +66,14 @@
         "wrap": false,
         "min": 1,
         "max": 10,
-        "dim": 0,
-        "values": null
+        "dim": 0
       }
     }
   ],
   "settings": {
     "timeout": 300,
     "logs": {
-      "filename": "scenarioresult.tsv"
+      "filename": "./logs/scenarioresult.tsv"
     },
     "outputs": {
       "dir": ""
