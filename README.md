@@ -5,7 +5,7 @@
 [build-docker]: ./docs/dev/docker.md
 [architecture]: ./docs/dev/architecture.md
 [develop]: ./docs/dev/develop.md
-[generate-docs]: ../../generatedocs/README.md
+[generate-docs]: ./generatedocs/README.md
 
 ![Gopherciser logo](docs/images/logo.png)
 
