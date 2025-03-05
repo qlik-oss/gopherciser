@@ -138,7 +138,7 @@ func checkActionTags(action string, value reflect.Value, paramDocs map[string][]
 		return checkActionTags(action, elem, paramDocs, level+1)
 	case reflect.Struct:
 		if level > 20 {
-			return fmt.Errorf("action<%s> recursive generation of paramater docs: add \"rec\" to struct tag `doc-key:\"a.doc.key,rec\"` of recursive struct member", action)
+			return fmt.Errorf("action<%s> recursive generation of parameter docs: add \"recursive\" to struct tag `doc-key:\"a.doc.key,recursive\"` of recursive struct member", action)
 		}
 		var findings error
 	fieldLoop:
@@ -151,7 +151,7 @@ func checkActionTags(action string, value reflect.Value, paramDocs map[string][]
 			// stop if recursive data type
 			docKeyTag := field.Tag.Get("doc-key")
 			for _, flag := range strings.Split(docKeyTag, ",")[1:] {
-				if strings.TrimSpace(flag) == "rec" {
+				if strings.TrimSpace(flag) == "recursive" {
 					continue fieldLoop
 				}
 			}
@@ -221,7 +221,7 @@ func checkFieldTags(action string, field reflect.StructField, fieldDocs map[stri
 	}
 
 	if displayName == "" {
-		return fmt.Errorf("action<%s> field<%s> does not have a displayName", action, field.Name)
+		fmt.Printf("WARNING: action<%s> field<%s> does not have a displayName.\n", action, field.Name)
 	}
 
 	return nil
