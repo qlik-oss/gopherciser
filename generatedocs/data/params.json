@@ -311,7 +311,9 @@
         "`name`: `stream` is the name of the stream.",
         "`id`: `stream` is the ID if the stream."
     ],
-    "changestream.stream": [],
+    "changestream.stream": [
+        "Name or id of stream to change to depending on `mode`."
+    ],
     "createbookmark.description": [
         "(optional) Description of the bookmark to create."
     ],
