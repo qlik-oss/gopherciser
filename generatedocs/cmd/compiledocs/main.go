@@ -12,7 +12,7 @@ func main() {
 	compiler := doccompiler.New()
 	compiler.AddDataFromDir(doccompilerflag.DataRoot())
 	if err := compiler.CompileToFile(doccompilerflag.OutputFile()); err != nil {
-		fmt.Printf("Errors:\n%v", err)
+		fmt.Printf("Errors:\n%v\n", err)
 		common.Exit(fmt.Errorf("incomplete documentation"), doccompiler.ExitCodeUndocumented)
 	}
 }

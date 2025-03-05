@@ -197,7 +197,7 @@ import (
 
 func main() {
 	if err := extenddocs.ExtendOSSDocs(); err != nil {
-		fmt.Printf("Errors:\n%v", err)
+		fmt.Printf("Errors:\n%v\n", err)
 		os.Exit(1)
 	}
 }
