@@ -73,7 +73,6 @@ jobs:
             - pack/*
             - build/*
             - changelog.md
-            - Dockerfile
 
   test-go-version:
     <<: *defaults
@@ -149,8 +148,7 @@ jobs:
     docker:
       - image: cimg/go:1.23
     steps:
-      - attach_workspace:
-          at: /home/circleci/go/src/github.com/qlik-oss/gopherciser/
+      - checkout
       - setup_remote_docker
       - run:
           name: Check environment variables
