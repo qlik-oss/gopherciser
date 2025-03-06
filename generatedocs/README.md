@@ -180,6 +180,9 @@ In a project which extends the `github.com/qlik-oss/gopherciser` the following `
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/extenddocs"
 
 	// Make sure to register any new actions that shall be included in the
@@ -189,7 +192,10 @@ import (
 )
 
 func main() {
-	extenddocs.ExtendOSSDocs()
+	if err := extenddocs.ExtendOSSDocs(); err != nil {
+		fmt.Printf("Errors:\n%v\n", err)
+		os.Exit(1)
+	}
 }
 ```
 

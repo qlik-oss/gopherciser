@@ -205,7 +205,7 @@ var (
 		"bookmark.title":                                  {"Name of the bookmark (supports the use of [variables](#session_variables))."},
 		"changesheet.id":                                  {"GUID of the sheet to change to."},
 		"changestream.mode":                               {"Decides what kind of value the `stream` field contains. Defaults to `name`.", "`name`: `stream` is the name of the stream.", "`id`: `stream` is the ID if the stream."},
-		"changestream.stream":                             {""},
+		"changestream.stream":                             {"Name or id of stream to change to depending on `mode`."},
 		"clearfield.name":                                 {"Name of field to clear."},
 		"clickactionbutton.id":                            {"ID of the action-button to click."},
 		"config.connectionSettings.allowuntrusted":        {"Allow untrusted (for example, self-signed) certificates (`true` / `false`). Defaults to `false`, if omitted."},
