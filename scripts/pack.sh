@@ -4,22 +4,14 @@ set -eo pipefail
 # Optional arguments enumerated
 # 1 - Build folder
 # 2 - Pack folder : folder where to put zipped files
-# 3 - Artifacts folder
 
 BIN=${1:-build}
 PACK=${2:-pack}
-ARTIFACTS=${3:-artifacts}
 
 # Does build folder exist?
 if [[ ! -d "$BIN" ]]; then
   echo "no build folder";
   exit 1;
-fi
-
-# Does artifacts folder exist?
-if [[ ! -d "$ARTIFACTS" ]]; then
-  echo "artifacts folder not found"
-  exit 2
 fi
 
 # Delete current pack folder if existing
@@ -77,9 +69,6 @@ Pack(){
 
   # copy binaries
   cp "$binary" "$PACK"/"$destination"
-
-  # copy artifacts
-  cp "${ARTIFACTS:?}"/* "$PACK"/"$destination"
 
   # copy changelog
   if [[ ! -e changelog.md ]]; then
