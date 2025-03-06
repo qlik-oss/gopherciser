@@ -62,11 +62,11 @@ data
 	-> extra
 		-> extra folders
 	-> groups
-		-> groups folders
+		-> group folders
 		-> groups.json
-	-> documentation.template
+	-> schedulers
+		-> scheduler folders
 	-> params.json
-	-> settingup.md.template
 ```
 
 Data can be overloaded by passing a comma separated list to the `--data` flag, e.g. `--data=path/to/data1,path/to/data2`. The overload precedence goes from low to high within the list, meaning `data1` will be overloaded by `data2`.
