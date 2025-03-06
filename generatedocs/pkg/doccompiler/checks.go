@@ -27,27 +27,27 @@ func checkAll(data *docData) error {
 }
 
 func checkAllActionsDocumented(data *docData) error {
-	var findings error
+	var findings []error
 	allActions := common.ActionStrings()
 	for _, a := range allActions {
 		docEntry, ok := data.ActionMap[a]
 		if !ok {
-			findings = errors.Join(findings, fmt.Errorf(`action "%s" is not documented`, a))
+			findings = append(findings, fmt.Errorf(`action "%s" is not documented`, a))
 			continue
 		}
 
 		if docEntry.Description == "" {
-			findings = errors.Join(findings, fmt.Errorf(`action "%s" has no description`, a))
+			findings = append(findings, fmt.Errorf(`action "%s" has no description`, a))
 		}
 		if docEntry.Examples == "" {
-			findings = errors.Join(findings, fmt.Errorf(`action "%s" has no examples`, a))
+			findings = append(findings, fmt.Errorf(`action "%s" has no examples`, a))
 		}
 	}
-	return findings
+	return errors.Join(findings...)
 }
 
 func checkAllConfigFieldsDocumented(data *docData) error {
-	var findings error
+	var findings []error
 	// Get all config fields
 	expectedConfigFields, err := common.FieldsString()
 	if err != nil {
@@ -58,23 +58,23 @@ func checkAllConfigFieldsDocumented(data *docData) error {
 	for _, field := range expectedConfigFields {
 		docEntry, ok := data.ConfigMap[field]
 		if !ok {
-			findings = errors.Join(findings, fmt.Errorf(`config field "%s" is not documented`, field))
+			findings = append(findings, fmt.Errorf(`config field "%s" is not documented`, field))
 			continue
 		}
 
 		if docEntry.Description == "" {
-			findings = errors.Join(findings, fmt.Errorf(`config field "%s" has no description`, field))
+			findings = append(findings, fmt.Errorf(`config field "%s" has no description`, field))
 		}
 		if docEntry.Examples == "" {
-			findings = errors.Join(findings, fmt.Errorf(`config field "%s" has no examples`, field))
+			findings = append(findings, fmt.Errorf(`config field "%s" has no examples`, field))
 		}
 	}
 
-	return findings
+	return errors.Join(findings...)
 }
 
 func checkAllActionsInGroup(data *docData) error {
-	var findings error
+	var findings []error
 
 	// map actions to groups
 	actionToGroups := map[string][]string{}
@@ -92,30 +92,30 @@ func checkAllActionsInGroup(data *docData) error {
 		lenGroups := len(groups)
 		switch {
 		case lenGroups == 0:
-			findings = errors.Join(findings, fmt.Errorf(`action "%s" does not belong to a group`, action))
+			findings = append(findings, fmt.Errorf(`action "%s" does not belong to a group`, action))
 		case lenGroups > 1:
-			findings = errors.Join(findings, fmt.Errorf(`action "%s" belong to %d groups %v`, action, lenGroups, groups))
+			findings = append(findings, fmt.Errorf(`action "%s" belong to %d groups %v`, action, lenGroups, groups))
 		}
 	}
 
-	return findings
+	return errors.Join(findings...)
 }
 
 func checkAllActionTags(data *docData) error {
 	actionSettings := common.Actions()
-	var tagErrors error
+	var tagErrors []error
 	for _, action := range data.Actions {
 		actionParams, exists := actionSettings[action]
 		if !exists {
-			tagErrors = errors.Join(tagErrors, fmt.Errorf("action<%s> couldn't be found in action list", action))
+			tagErrors = append(tagErrors, fmt.Errorf("action<%s> couldn't be found in action list", action))
 			continue
 		}
 
 		if err := checkActionTags(action, reflect.ValueOf(actionParams), data.ParamMap, 0); err != nil {
-			tagErrors = errors.Join(tagErrors, err)
+			tagErrors = append(tagErrors, err)
 		}
 	}
-	return tagErrors
+	return errors.Join(tagErrors...)
 }
 
 func checkActionTags(action string, value reflect.Value, paramDocs map[string][]string, level int) error {
@@ -140,7 +140,7 @@ func checkActionTags(action string, value reflect.Value, paramDocs map[string][]
 		if level > 20 {
 			return fmt.Errorf("action<%s> recursive generation of parameter docs: add \"recursive\" to struct tag `doc-key:\"a.doc.key,recursive\"` of recursive struct member", action)
 		}
-		var findings error
+		var findings []error
 	fieldLoop:
 		for i := range value.NumField() {
 			field := reflect.Indirect(value).Type().Field(i)
@@ -162,15 +162,15 @@ func checkActionTags(action string, value reflect.Value, paramDocs map[string][]
 
 			if value.Field(i).CanInterface() {
 				if err := checkFieldTags(action, field, paramDocs); err != nil {
-					findings = errors.Join(findings, err)
+					findings = append(findings, err)
 				}
 			}
 
 			if err := checkActionTags(action, value.Field(i), paramDocs, level+1); err != nil {
-				findings = errors.Join(findings, err)
+				findings = append(findings, err)
 			}
 		}
-		return findings
+		return errors.Join(findings...)
 	case reflect.Array, reflect.Slice:
 		if value.CanInterface() {
 			if err := checkActionTags(action, reflect.New(value.Type().Elem()), paramDocs, level+1); err != nil {
