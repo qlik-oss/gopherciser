@@ -2,7 +2,7 @@
 	"settings": {
 		"timeout": 300,
 		"logs": {
-			"filename": "logs/scenario.tsv"
+			"filename": "./logs/scenario.tsv"
 		}
 	},
 	"scheduler": {

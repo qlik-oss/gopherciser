@@ -2,7 +2,6 @@ GO := go
 PKG_NAME := gopherciser
 BIN_NAME := gopherciser
 PREFIX := .
-TEST_REPORTS := $(PREFIX)/.cover
 BIN := build
 OSFLAG :=
 ifeq ($(OS),Windows_NT)
@@ -17,7 +16,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 endif
 
-.PHONY: clean build unit-test-cover unit-test-cover-ext codeclimate lint test alltests
+.PHONY: clean build lint test alltests initwiki genwiki build-docker attribution changelog
 
 # Compile Go packages
 build: clean
@@ -32,17 +31,9 @@ lint:
 lint-min:
 	./scripts/lint.sh MIN
 
-# Unit test and coverage
-unit-test-cover: clean
-	./scripts/unit-test-cover.sh $(TEST_REPORTS) $(BIN_NAME)
-
-# Unit test and cover extended, creates html file for viewing: ${TEST_REPORTS}/c.html
-unit-test-cover-ext: unit-test-cover
-	./scripts/unit-test-cover-ext.sh $(TEST_REPORTS)
-
 # Clear and clean folder
 clean:
-	./scripts/clean.sh $(PREFIX) $(BIN) $(TEST_REPORTS)
+	./scripts/clean.sh $(PREFIX) $(BIN)
 
 # Build documentation
 docbuild:
@@ -51,15 +42,17 @@ docbuild:
 # Build for current platform only, does not clean, does not do full rebuild, does not create folders, does not set the version nor strip DWARF tables etc.
 # Meant to be used during development only
 quickbuild:
-	GO111MODULE=on go build -mod=readonly -o $(OSFLAG)
+	go build -mod=readonly -o $(OSFLAG)
 
 # Run standard tests
 test:
-	GO111MODULE=on go test -race -mod=readonly ./...
+	go test -race -mod=readonly ./...
 
 # Run all tests with verbose output
 alltests:
-	GO111MODULE=on go test -race -mod=readonly -v ./... -count=1
+	set -eu
+	go test -race -mod=readonly -v ./... -count=1 -cover -coverprofile=coverage.csv
+	go tool cover -html=coverage.csv -o coverage.html
 
 # Run quickbuild test and linting. Good to run e.g. before pushing to remote
 verify: quickbuild test lint-min
@@ -75,3 +68,16 @@ genwiki: initwiki
 	set -e
 	go generate
 	go run ./generatedocs/cmd/generatemarkdown $(PARAM) --wiki ./gopherciser.wiki
+
+# build docker image
+build-docker: 
+	DOCKERBUILD=y ./scripts/build.sh $(PREFIX) $(BIN) $(BIN_NAME)
+
+# Generate licences.txt
+attribution:
+	go install github.com/google/go-licenses@latest
+	./scripts/createattribution.sh
+
+# Generate changelog
+changelog:
+	./scripts/generateChangeLog.sh changelog.md
