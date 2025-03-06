@@ -165,7 +165,6 @@ jobs:
       - run:
           name: Build Docker image
           command: |
-            VER=$(cat build/version)
             make build-docker
       - run:
           name: Login to GitHub packages
