@@ -40,8 +40,8 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 	}
 
 	// "Think"
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
+	timer := helpers.GlobalTimerPool.Get(delay)
+	defer helpers.GlobalTimerPool.Put(timer)
 	select {
 	case <-sessionState.BaseContext().Done():
 		// returning without updating end time makes log result log info: aborted instead of result: true
