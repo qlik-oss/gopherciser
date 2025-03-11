@@ -24,3 +24,19 @@ func TestTimerPool(t *testing.T) {
 		t.Fatal("timer took more than 10% longer than expected")
 	}
 }
+
+func BenchmarkTimerPool(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		tmr := helpers.GlobalTimerPool.Get(time.Millisecond)
+		<-tmr.C
+		helpers.GlobalTimerPool.Put(tmr)
+	}
+}
+
+func BenchmarkTimer(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		tmr := time.NewTimer(time.Millisecond)
+		<-tmr.C
+		tmr.Stop()
+	}
+}
