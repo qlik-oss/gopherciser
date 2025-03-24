@@ -22,11 +22,11 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if version.Version != "" {
-		os.Stderr.WriteString(fmt.Sprintf("Version: %v\n", version.Version))
+		_, _ = fmt.Fprintf(os.Stderr, "Version: %v\n", version.Version)
 	}
 
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 }

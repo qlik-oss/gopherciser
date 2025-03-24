@@ -169,7 +169,7 @@ var executeCmd = &cobra.Command{
 			var panicErr error = nil
 			helpers.RecoverWithError(&panicErr)
 			if panicErr != nil {
-				_, _ = os.Stderr.WriteString(fmt.Sprintf("%+v", panicErr))
+				_, _ = fmt.Fprintf(os.Stderr, "%+v", panicErr)
 			}
 		}()
 
@@ -340,11 +340,11 @@ func execute() error {
 		buf := make([]byte, 1<<16)
 		runtime.Stack(buf, true)
 
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing file %s...", stackFile))
+		fmt.Fprintf(os.Stderr, "Writing file %s...", stackFile)
 		if err := helpers.WriteToFile(stackFile, buf); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to write %s: %v\n", stackFile, err))
+			_, _ = fmt.Fprintf(os.Stderr, "failed to write %s: %v\n", stackFile, err)
 		} else {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("stack file written to: %s\n", stackFile))
+			_, _ = fmt.Fprintf(os.Stderr, "stack file written to: %s\n", stackFile)
 		}
 
 		os.Exit(ExitCodeForceQuit)

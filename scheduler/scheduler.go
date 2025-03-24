@@ -85,7 +85,7 @@ func init() {
 func (typ SchedulerType) GetEnumMap() *enummap.EnumMap {
 	m, err := cpSchedulerHandlerToEnumMap()
 	if err != nil {
-		os.Stderr.WriteString(fmt.Sprint("failed to convery scheduler handler to enum map:", err))
+		fmt.Fprint(os.Stderr, "failed to convery scheduler handler to enum map:", err)
 		return nil
 	}
 	return m

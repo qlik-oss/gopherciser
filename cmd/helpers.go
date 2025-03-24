@@ -142,7 +142,7 @@ func overrideScriptValues(cfgJSON []byte, hasPipe bool) ([]byte, []string, error
 			go func() {
 				select {
 				case <-time.After(time.Second):
-					os.Stdin.Close()
+					_ = os.Stdin.Close()
 				case <-readingCtx.Done():
 				}
 			}()
@@ -245,11 +245,11 @@ func PrintOverrides(overrides []string) {
 	if len(overrides) < 1 {
 		return
 	}
-	os.Stderr.WriteString("=== Script overrides ===\n")
+	_, _ = os.Stderr.WriteString("=== Script overrides ===\n")
 	for _, override := range overrides {
-		os.Stderr.WriteString(override)
+		_, _ = os.Stderr.WriteString(override)
 	}
-	os.Stderr.WriteString("========================\n")
+	_, _ = os.Stderr.WriteString("========================\n")
 }
 
 // HasPipe discovers if process has a chardevice attached
