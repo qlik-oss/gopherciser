@@ -218,7 +218,6 @@ func GetSignedJwtToken(key []byte, token *jwt.Token) (string, error) {
 		return "", errors.Errorf("No jwt key provided")
 	}
 
-	// parsedKeyFormat, err := parseAlgo(key)
 	var privKey any
 	var err error
 	switch token.Method {
