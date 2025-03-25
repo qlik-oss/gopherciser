@@ -950,14 +950,14 @@ func (structure *GeneratedAppStructure) GetWarningsList() []AppStructureWarning 
 }
 
 func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
-	if obj.MetaDef.Title != "" {
+	if obj.Title != "" {
 		return // We already have a title
 	}
 
 	for _, path := range paths {
 		title := stringFromDataPath(path, properties)
 		if title != "" {
-			obj.MetaDef.Title = title
+			obj.Title = title
 			return
 		}
 	}

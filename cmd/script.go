@@ -124,7 +124,7 @@ var validateCmd = &cobra.Command{
 		if printJSON {
 			result, err := json.MarshalIndent(cfg, "", "  ")
 			if err != nil {
-				_, _ = os.Stderr.WriteString(fmt.Sprintf("failed to marshal result JSON, err: %v\n", err))
+				_, _ = fmt.Fprintf(os.Stderr, "failed to marshal result JSON, err: %v\n", err)
 				os.Exit(ExitCodeJSONParseError)
 			}
 			fmt.Println(string(result))

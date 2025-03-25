@@ -26,7 +26,9 @@ func TestNewWriter(t *testing.T) {
 	assert.NoError(t, err)
 	_, statErr := os.Stat(file)
 	assert.NoError(t, statErr)
-	os.Remove(file)
+	if err := os.Remove(file); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestNewWriter_withFolder(t *testing.T) {
@@ -40,5 +42,7 @@ func TestNewWriter_withFolder(t *testing.T) {
 	assert.NoError(t, err)
 	_, statErr := os.Stat(filePath)
 	assert.NoError(t, statErr)
-	os.RemoveAll(dir)
+	if err := os.RemoveAll(dir); err != nil {
+		t.Error()
+	}
 }

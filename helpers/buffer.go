@@ -44,7 +44,7 @@ func (buffer *Buffer) WriteBytes(p []byte) {
 }
 
 // WriteByte appends the byte c to the buffer, growing the buffer as needed.
-func (buffer *Buffer) WriteByte(c byte) {
+func (buffer *Buffer) WriteByte(c byte) { //nolint:govet
 	if buffer == nil || buffer.B == nil {
 		return
 	}
@@ -68,7 +68,8 @@ func (buffer *Buffer) WriteRune(r rune) {
 }
 
 // WriteTo writes data to w until the buffer is drained or an error occurs., errors written to stderr
-func (buffer *Buffer) WriteTo(w io.Writer) {
+// lint:stdmethods
+func (buffer *Buffer) WriteTo(w io.Writer) { //nolint:govet
 	if buffer == nil || buffer.B == nil {
 		return
 	}
