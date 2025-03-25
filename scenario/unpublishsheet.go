@@ -20,7 +20,7 @@ func (unPublishSheetSettings UnPublishSheetSettings) Execute(sessionState *sessi
 	actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
 	unPublishAction := func(sheet *senseobjects.Sheet, ctx context.Context) error {
-		return sheet.GenericObject.UnPublish(ctx)
+		return sheet.UnPublish(ctx)
 	}
 
 	executePubUnPubAction(unPublishSheetSettings.Mode, unPublishSheetSettings.SheetIDs,

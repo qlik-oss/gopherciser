@@ -86,7 +86,11 @@ func (file *RowFile) readRows() error {
 		if err != nil {
 			fileReadErr = errors.Wrapf(err, "error reading from file<%s>", file.filepath)
 		}
-		defer bin.Close()
+		defer func() {
+			if err := bin.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "error closing file<%s> err: %v\n", file.filepath, err)
+			}
+		}()
 
 		scanner := bufio.NewScanner(bin)
 		for scanner.Scan() {

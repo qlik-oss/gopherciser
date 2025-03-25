@@ -1,10 +1,12 @@
 package logger
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	"github.com/qlik-oss/gopherciser/version"
 )
@@ -58,7 +60,9 @@ func (logger *regressionLogger) write(record ...string) {
 	for i, r := range record {
 		record[i] = replacer.Replace(r)
 	}
-	fmt.Fprintln(logger.w, strings.Join(record, "\t"))
+	if _, err := fmt.Fprintln(logger.w, strings.Join(record, "\t")); err != nil {
+		_, _ = fmt.Fprint(os.Stderr, "error writting to regressionlogger", err)
+	}
 }
 
 // NewRegressionLogger creates a new RegressionLoggerCloser with headerEntries

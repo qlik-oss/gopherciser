@@ -786,8 +786,8 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 	// log errors on current action if we have one
 	logErrors := func(err error) {
 		// Set error on action state if we have one.
-		if transport.State != nil && transport.State.CurrentActionState != nil {
-			transport.State.CurrentActionState.AddErrors(err)
+		if transport.State != nil && transport.CurrentActionState != nil {
+			transport.CurrentActionState.AddErrors(err)
 			return
 		}
 		if transport.LogEntry != nil {
@@ -813,10 +813,7 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 		logErrors(errors.Wrap(err, "failed to update sent request metrics"))
 	}
 
-	body := true
-	if isApp || reqSize > constant.MaxBodySize {
-		body = false // avoid logging large bodies
-	}
+	body := !isApp && reqSize <= constant.MaxBodySize // avoid logging large bodies
 	LogTrafficOut(req, body, transport.trafficLogger, transport.LogEntry, requestID)
 
 	resp, err := transport.Transport.RoundTrip(req)
@@ -831,9 +828,9 @@ func (transport *Transport) RoundTrip(req *http.Request) (*http.Response, error)
 	if apiPath != "" {
 		actionString := "unknown"
 		labelString := ""
-		if transport.State.LogEntry.Action != nil {
-			actionString = transport.State.LogEntry.Action.Action
-			labelString = transport.State.LogEntry.Action.Label
+		if transport.LogEntry.Action != nil {
+			actionString = transport.LogEntry.Action.Action
+			labelString = transport.LogEntry.Action.Label
 		}
 		buildmetrics.ReportApiResult(actionString, labelString,
 			apiPath, req.Method, resp.StatusCode, recTS.Sub(sentTS))

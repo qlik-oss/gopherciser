@@ -857,7 +857,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	if summary == SummaryTypeFile {
 		jsn, err := json.Marshal(summaryData)
 		if err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprint("failed to marshal summary file:", err))
+			_, _ = fmt.Fprint(os.Stderr, "failed to marshal summary file:", err)
 			return
 		}
 		fileName := DefaultSummaryFilename
@@ -865,7 +865,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			fileName = summaryFilename
 		}
 		if err := os.WriteFile(fileName, jsn, 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprint("failed write summary file:", err))
+			_, _ = fmt.Fprint(os.Stderr, "failed write summary file:", err)
 		}
 		return
 	}

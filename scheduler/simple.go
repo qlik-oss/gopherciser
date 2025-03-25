@@ -139,11 +139,7 @@ func (sched SimpleScheduler) iterator(ctx context.Context, timeout time.Duration
 		innerIterations = sched.Settings.Iterations
 	}
 
-	for {
-		if helpers.IsContextTriggered(ctx) {
-			break
-		}
-
+	for !helpers.IsContextTriggered(ctx) {
 		iteration++
 		if outerIterations > 0 && iteration > outerIterations {
 			break

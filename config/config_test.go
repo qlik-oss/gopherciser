@@ -23,7 +23,11 @@ func TestConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tmpKeyFile.Close()
+	defer func() {
+		if err := tmpKeyFile.Close(); err != nil {
+			_, _ = fmt.Fprint(os.Stderr, "error closing file:", err)
+		}
+	}()
 
 	_, err = tmpKeyFile.WriteString(`-----BEGIN RSA PRIVATE KEY-----
 	yadyaydasydyadsydasyd

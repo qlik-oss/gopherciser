@@ -235,8 +235,8 @@ func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 	if err != nil {
 		return err
 	}
-	settings.AskHubAdvisorSettingsCore.ThinkTimeSettings = thinkTimeWithFallback(
-		settings.AskHubAdvisorSettingsCore.ThinkTimeSettings,
+	settings.ThinkTimeSettings = thinkTimeWithFallback(
+		settings.ThinkTimeSettings,
 		askHubAdvisorDefaultThinktimeSettings,
 	)
 	switch settings.QuerySource {
@@ -251,7 +251,11 @@ func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to open texts file<%s>", settings.FileName)
 		}
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "error closing file<%s>: %v\n", file.Name(), err)
+			}
+		}()
 		wqs, err := ParseWeightedQueries(file)
 		if err != nil {
 			return errors.Wrapf(err, "failed parsing query-file<%s>", settings.FileName)
@@ -267,7 +271,7 @@ func (settings *AskHubAdvisorSettings) UnmarshalJSON(bytes []byte) error {
 }
 
 func (settings AskHubAdvisorSettings) MarshalJSON() ([]byte, error) {
-	settings.AskHubAdvisorSettingsCore.ThinkTimeSettings = thinkTimeWithFallback(
+	settings.ThinkTimeSettings = thinkTimeWithFallback(
 		settings.ThinkTimeSettings,
 		askHubAdvisorDefaultThinktimeSettings,
 	)

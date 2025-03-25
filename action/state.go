@@ -33,11 +33,11 @@ type (
 
 // AddErrors to error list
 func (as *State) AddErrors(errs ...error) {
-	as.errors.mu.Lock()
+	as.mu.Lock()
 	defer as.mu.Unlock()
 
-	as.errors.me = multierror.Append(as.errors.me, errs...)
-	if as.errors.me != nil && len(as.errors.me.Errors) > 0 {
+	as.me = multierror.Append(as.me, errs...)
+	if as.me != nil && len(as.me.Errors) > 0 {
 		as.Failed = true
 	}
 }
@@ -56,15 +56,15 @@ func (as *State) Errors() error {
 	as.mu.RLock()
 	defer as.mu.RUnlock()
 
-	return helpers.FlattenMultiError(as.errors.me)
+	return helpers.FlattenMultiError(as.me)
 }
 
 // DebugErrors logs all actionstate errors to debug log
 func (as *State) DebugErrors(logEntry *logger.LogEntry) {
-	if as.errors.me == nil {
+	if as.me == nil {
 		return
 	}
-	for _, err := range as.errors.me.Errors {
+	for _, err := range as.me.Errors {
 		if err == nil {
 			continue
 		}

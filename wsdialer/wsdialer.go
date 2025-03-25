@@ -169,7 +169,7 @@ func (dialer *WsDialer) Dial(ctx context.Context) error {
 	_, hasDeadline := ctx.Deadline()
 	if !hasDeadline {
 		// make sure we have a timeout on connect
-		dialer.Dialer.Timeout = time.Minute
+		dialer.Timeout = time.Minute
 	}
 
 	var err error

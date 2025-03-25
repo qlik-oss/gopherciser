@@ -177,7 +177,9 @@ func (log *Log) CloseWithTimeout(timeout time.Duration) error {
 		log.loggers = nil
 	}
 	if log.regressionLogger != nil {
-		log.regressionLogger.Close()
+		if err := log.regressionLogger.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "error closing regressionLogger: %v\n", err)
+		}
 	}
 
 	return errors.WithStack(helpers.FlattenMultiError(mErr))
