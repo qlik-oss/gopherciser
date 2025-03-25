@@ -19,8 +19,6 @@ import (
 	"github.com/qlik-oss/gopherciser/version"
 )
 
-const AppGroupKey = "app"
-
 func setupMetrics(actions []string, apimetrics bool) error {
 	if apimetrics { // If not used these api calls would still be registered. Likely no issue
 		prometheus.MustRegister(ApiCallDuration)
@@ -44,7 +42,9 @@ func setupMetrics(actions []string, apimetrics bool) error {
 	prometheus.MustRegister(GopherActionLatencyHist)
 	prometheus.MustRegister(BuildInfo)
 
-	err := gopherRegistry.Register(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	err := gopherRegistry.Register(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
+		Namespace: promNS,
+	}))
 	if err != nil {
 		return err
 	}
@@ -112,21 +112,12 @@ func PushMetrics(ctx context.Context, metricsTarget, job string, groupingKeys, a
 
 	var addr = flag.String("push-address", metricsTarget, "The address to push prometheus metrics")
 	pusher := push.New(*addr, job).Gatherer(gopherRegistry)
-	var appAdded bool
 	for _, gk := range groupingKeys {
 		kv := strings.SplitN(gk, "=", 2)
 		if len(kv) < 2 || len(kv[0]) == 0 {
 			return fmt.Errorf("can't parse grouping key %q: must be in 'key=value' form", gk)
 		}
 		pusher = pusher.Grouping(kv[0], kv[1])
-		if kv[0] == AppGroupKey {
-			appAdded = true
-		}
-	}
-
-	// Automatically add group key app=gropherciser if app not already set
-	if !appAdded {
-		pusher = pusher.Grouping(AppGroupKey, "gopherciser")
 	}
 
 	//Pushes prometheus metrics every minute
