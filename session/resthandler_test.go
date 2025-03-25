@@ -18,11 +18,15 @@ import (
 func TestResthandler(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			fmt.Fprint(w, "get!")
+			if _, err := fmt.Fprint(w, "get!"); err != nil {
+				t.Error(err)
+			}
 			return
 		}
 		if r.Method == http.MethodPost {
-			fmt.Fprint(w, r.Body)
+			if _, err := fmt.Fprint(w, r.Body); err != nil {
+				t.Error(err)
+			}
 			return
 		}
 		w.WriteHeader(400)

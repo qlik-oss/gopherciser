@@ -63,7 +63,7 @@ func (otn *OdagToolbarNavpoint) GetHypercubeData(ctx context.Context) ([]*enigma
 			Left:   0,
 			Top:    0,
 			Width:  1,
-			Height: otn.layout.GenericObjectLayout.HyperCube.Size.Cy,
+			Height: otn.layout.HyperCube.Size.Cy,
 		},
 	})
 }

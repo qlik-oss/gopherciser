@@ -36,7 +36,7 @@ type (
 	DocEntry common.DocEntry
 
 	DocNode interface {
-		WriteTo(io.Writer)
+		WriteTo(io.Writer) //nolint:govet
 		AddChild(DocNode)
 		Children() []DocNode
 	}
@@ -101,19 +101,19 @@ func (doc DocEntryWithParams) String() string {
 	return fmt.Sprintf("%s\n%s\n%s\n", doc.Description, doc.Params, doc.Examples)
 }
 
-func (node *DocNodeStruct) WriteTo(writer io.Writer) {
-	fmt.Fprintf(writer, "%s", node.doc)
+func (node *DocNodeStruct) WriteTo(writer io.Writer) { //nolint:govet
+	_, _ = fmt.Fprintf(writer, "%s", node.doc)
 	for _, childNode := range node.children {
 		childNode.WriteTo(writer)
 	}
 }
 
-func (node *FoldedDocNode) WriteTo(writer io.Writer) {
-	fmt.Fprint(writer, "<details>\n")
-	fmt.Fprintf(writer, "<summary>%s</summary>\n\n", node.Name)
+func (node *FoldedDocNode) WriteTo(writer io.Writer) { //nolint:govet
+	_, _ = fmt.Fprint(writer, "<details>\n")
+	_, _ = fmt.Fprintf(writer, "<summary>%s</summary>\n\n", node.Name)
 	node.DocNode.WriteTo(writer)
-	fmt.Fprint(writer, "<hr>")
-	fmt.Fprint(writer, "</details>\n\n")
+	_, _ = fmt.Fprint(writer, "<hr>")
+	_, _ = fmt.Fprint(writer, "</details>\n\n")
 }
 
 const (
@@ -202,13 +202,13 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	configSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", filepath.Join(wiki, GeneratedFolder)))
 	defer func() {
 		if err := configSidebar.Close(); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
+			_, _ = os.Stderr.Write([]byte(err.Error()))
 		}
 	}()
 	if err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
-	if _, err := configSidebar.WriteString(fmt.Sprintf("[Home](Home)\n\n- [%s](%s)\n\n", ConfigLinkName, ConfigLinkFile)); err != nil {
+	if _, err := fmt.Fprintf(configSidebar, "[Home](Home)\n\n- [%s](%s)\n\n", ConfigLinkName, ConfigLinkFile); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
@@ -227,10 +227,10 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 	}
 
 	linkString := fmt.Sprintf("[%s](%s)\n\n", SessionVariableName, SessionVariableName)
-	if _, err := configfile.WriteString(fmt.Sprintf("\nSome settings support the use of %s", linkString)); err != nil {
+	if _, err := fmt.Fprintf(configfile, "\nSome settings support the use of %s", linkString); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
-	if _, err := configSidebar.WriteString(fmt.Sprintf("	- %s", linkString)); err != nil {
+	if _, err := fmt.Fprintf(configSidebar, "	- %s", linkString); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
@@ -263,7 +263,7 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 			grouplinks, err := os.Create(fmt.Sprintf("%s/groups.md", filepath.Join(wiki, GeneratedFolder)))
 			defer func() {
 				if err := grouplinks.Close(); err != nil {
-					os.Stderr.Write([]byte(err.Error()))
+					_, _ = os.Stderr.Write([]byte(err.Error()))
 				}
 			}()
 			if err != nil {
@@ -271,13 +271,13 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 			}
 
 			for _, grouplink := range groups {
-				if _, err := configSidebar.WriteString(fmt.Sprintf("		- %s", grouplink)); err != nil {
+				if _, err := fmt.Fprintf(configSidebar, "		- %s", grouplink); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
 				if _, err := grouplinks.WriteString(grouplink); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
-				if _, err := configfile.WriteString(fmt.Sprintf("- %s", grouplink)); err != nil {
+				if _, err := fmt.Fprintf(configfile, "- %s", grouplink); err != nil {
 					common.Exit(err, ExitCodeFailedWriteResult)
 				}
 			}
@@ -305,7 +305,7 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 			sectionfile, err := os.Create(section.FilePath)
 			defer func() {
 				if err := sectionfile.Close(); err != nil {
-					_, _ = os.Stderr.WriteString(fmt.Sprintf("%v", err))
+					_, _ = fmt.Fprintf(os.Stderr, "%v", err)
 				}
 			}()
 			if err != nil {
@@ -320,7 +320,7 @@ func generateWikiConfigSections(compiledDocs *CompiledDocs) {
 		if _, err := configfile.WriteString(linkString); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
-		if _, err := configSidebar.WriteString(fmt.Sprintf("	- %s", linkString)); err != nil {
+		if _, err := fmt.Fprintf(configSidebar, "	- %s", linkString); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
 	}
@@ -357,14 +357,14 @@ func generateWikiGroup(compiledDocs *CompiledDocs, group common.GroupsEntry) {
 	actionsSidebar, err := os.Create(fmt.Sprintf("%s/_Sidebar.md", filepath.Join(wiki, GeneratedFolder, group.Name)))
 	defer func() {
 		if err := actionsSidebar.Close(); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
+			_, _ = os.Stderr.Write([]byte(err.Error()))
 		}
 	}()
 	if err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
-	if _, err := actionsSidebar.WriteString(fmt.Sprintf("[Home](Home)\n\n- [%s](%s)\n\n	- [Action Groups](groups)\n\n		- [%s](%s)\n\n", ConfigLinkName, ConfigLinkFile, group.Title, group.Name)); err != nil {
+	if _, err := fmt.Fprintf(actionsSidebar, "[Home](Home)\n\n- [%s](%s)\n\n	- [Action Groups](groups)\n\n		- [%s](%s)\n\n", ConfigLinkName, ConfigLinkFile, group.Title, group.Name); err != nil {
 		common.Exit(err, ExitCodeFailedWriteResult)
 	}
 
@@ -380,7 +380,7 @@ func generateWikiGroup(compiledDocs *CompiledDocs, group common.GroupsEntry) {
 		if err := os.WriteFile(file, []byte(actionEntry.String()), os.ModePerm); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
-		if _, err := actionsSidebar.WriteString(fmt.Sprintf("			- [%s](%s)\n\n", action, action)); err != nil {
+		if _, err := fmt.Fprintf(actionsSidebar, "			- [%s](%s)\n\n", action, action); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
 	}
@@ -401,13 +401,13 @@ func generateWikiSchedulers(compiledDocs *CompiledDocs, configFile, sidebar *os.
 		if verbose {
 			fmt.Printf("creating file<%s>...\n", file)
 		}
-		if err := os.WriteFile(file, []byte(entry.DocEntryWithParams.String()), os.ModePerm); err != nil {
+		if err := os.WriteFile(file, []byte(entry.String()), os.ModePerm); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
-		if _, err := sidebar.WriteString(fmt.Sprintf("		- [%s](%s)\n\n", entry.Name, entry.Name)); err != nil {
+		if _, err := fmt.Fprintf(sidebar, "		- [%s](%s)\n\n", entry.Name, entry.Name); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
-		if _, err := configFile.WriteString(fmt.Sprintf("- [%s](%s)\n\n", entry.Name, entry.Name)); err != nil {
+		if _, err := fmt.Fprintf(configFile, "- [%s](%s)\n\n", entry.Name, entry.Name); err != nil {
 			common.Exit(err, ExitCodeFailedWriteResult)
 		}
 	}
@@ -445,7 +445,7 @@ func createActionEntry(compiledDocs *CompiledDocs, actionSettings map[string]int
 	}
 	actionParams := actionSettings[action]
 	if actionParams == nil {
-		os.Stderr.WriteString(fmt.Sprintf("%s gives nil actionparams, skipping...\n", action))
+		fmt.Fprintf(os.Stderr, "%s gives nil actionparams, skipping...\n", action)
 		return nil
 	}
 	return &DocEntryWithParams{
@@ -505,7 +505,7 @@ func createSchedulerEntrys(compiledDocs *CompiledDocs) []SortedDocEntryWithParam
 		}
 		schedParams := schedulerSettings[sched]
 		if schedParams == nil {
-			os.Stderr.WriteString(fmt.Sprintf("%s gives nil schedparams, skipping...\n", sched))
+			fmt.Fprintf(os.Stderr, "%s gives nil schedparams, skipping...\n", sched)
 			continue
 		}
 		schedulerEntries = append(schedulerEntries, SortedDocEntryWithParams{

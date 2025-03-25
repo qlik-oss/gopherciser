@@ -94,7 +94,7 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 
 		sessionState.LogDebugf(`publishing %s sheet<%s> "%s"`, accessLevel, sheet.ID, title)
 
-		err = sheet.GenericObject.Publish(ctx)
+		err = sheet.Publish(ctx)
 		if err != nil {
 			return errors.Wrapf(
 				err,

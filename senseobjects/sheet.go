@@ -99,7 +99,7 @@ func (sheet *Sheet) GetProperties(ctx context.Context) (*SheetProperties, error)
 		return nil, errors.New("sheet is nil")
 	}
 
-	raw, err := sheet.GenericObject.GetEffectivePropertiesRaw(ctx)
+	raw, err := sheet.GetEffectivePropertiesRaw(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get properties for sheet<%s>", sheet.ID)
 	}
@@ -122,7 +122,7 @@ func (sheet *Sheet) GetLayout(ctx context.Context) (*SheetLayout, error) {
 		return nil, errors.New("sheet is nil")
 	}
 
-	raw, err := sheet.GenericObject.GetLayoutRaw(ctx)
+	raw, err := sheet.GetLayoutRaw(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get layout for sheet<%s>", sheet.ID)
 	}
@@ -150,7 +150,7 @@ func (sheet *Sheet) SetProperties(ctx context.Context) error {
 		return errors.Wrapf(err, "failed marshaling properties for sheet<%s>", sheet.ID)
 	}
 
-	err = sheet.GenericObject.SetPropertiesRaw(ctx, raw)
+	err = sheet.SetPropertiesRaw(ctx, raw)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set properties for sheet<%s>", sheet.ID)
 	}

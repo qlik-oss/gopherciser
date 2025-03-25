@@ -36,7 +36,7 @@ func setupDialer(dialer *enigma.Dialer, timeout time.Duration, onUnexpectedDisco
 		}
 		senseDialer.OnUnexpectedDisconnect = onUnexpectedDisconnect
 
-		if err := senseDialer.WsDialer.Dial(ctx); err != nil {
+		if err := senseDialer.Dial(ctx); err != nil {
 			return nil, errors.WithStack(err)
 		}
 

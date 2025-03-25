@@ -29,7 +29,7 @@ func (settings ThinkTimeSettings) Execute(sessionState *session.State, actionSta
 		sessionState.LogEntry.Log(logger.WarningLevel, "Faking sent message in timer delay failed")
 	}
 
-	delay, err := settings.DistributionSettings.RandDuration(sessionState.Randomizer())
+	delay, err := settings.RandDuration(sessionState.Randomizer())
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
@@ -64,11 +64,11 @@ func (settings ThinkTimeSettings) Validate() ([]string, error) {
 
 // LogDetails log think time settings
 func (settings ThinkTimeSettings) LogDetails() string {
-	switch settings.DistributionSettings.Type {
+	switch settings.Type {
 	case helpers.StaticDistribution:
-		return fmt.Sprintf("delay:%s", strconv.FormatFloat(settings.DistributionSettings.Delay, 'f', -1, 64))
+		return fmt.Sprintf("delay:%s", strconv.FormatFloat(settings.Delay, 'f', -1, 64))
 	case helpers.UniformDistribution:
-		return fmt.Sprintf("mean:%f;deviation:%f", settings.DistributionSettings.Mean, settings.DistributionSettings.Deviation)
+		return fmt.Sprintf("mean:%f;deviation:%f", settings.Mean, settings.Deviation)
 	default:
 		return ""
 	}

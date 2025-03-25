@@ -148,8 +148,8 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 	if err != nil {
 		return err
 	}
-	settings.SmartSearchSettingsCore.SelectionThinkTime = thinkTimeWithFallback(
-		settings.SmartSearchSettingsCore.SelectionThinkTime,
+	settings.SelectionThinkTime = thinkTimeWithFallback(
+		settings.SelectionThinkTime,
 		smartSearchDefaultThinktimeSettings,
 	)
 	switch settings.SearchTextSource {
@@ -167,8 +167,8 @@ func (settings *SmartSearchSettings) UnmarshalJSON(bytes []byte) error {
 }
 
 func (settings SmartSearchSettings) MarshalJSON() ([]byte, error) {
-	settings.SmartSearchSettingsCore.SelectionThinkTime = thinkTimeWithFallback(
-		settings.SmartSearchSettingsCore.SelectionThinkTime,
+	settings.SelectionThinkTime = thinkTimeWithFallback(
+		settings.SelectionThinkTime,
 		smartSearchDefaultThinktimeSettings,
 	)
 	return json.Marshal(settings.SmartSearchSettingsCore)

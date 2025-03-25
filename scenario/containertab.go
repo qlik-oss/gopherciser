@@ -152,7 +152,7 @@ func (settings ContainerTabSettings) Execute(sessionState *session.State, action
 		idx := sessionState.Randomizer().Rand(visibleChildCount)
 		newActive = visibleChildren[idx]
 	case ContainerTabModeIndex:
-		if !(settings.Index < childCount) {
+		if settings.Index >= childCount {
 			actionState.AddErrors(errors.Errorf("container<%s> tab index<%d> defined, but container has only %d tabs", id, settings.Index, childCount))
 			return
 		}

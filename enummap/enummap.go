@@ -90,7 +90,7 @@ func NewEnumMap(m map[string]int) (*EnumMap, error) {
 func NewEnumMapOrPanic(m map[string]int) *EnumMap {
 	enumMap, err := NewEnumMap(m)
 	if err != nil {
-		panic(fmt.Errorf("Invalid EnumMap: %s", err))
+		panic(fmt.Errorf("invalid EnumMap: %s", err))
 	}
 	return enumMap
 }

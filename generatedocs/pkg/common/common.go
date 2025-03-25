@@ -176,7 +176,7 @@ func ReadFile(path string) ([]byte, error) {
 
 // Exit prints errors message and exits program with code
 func Exit(err error, code int) {
-	_, _ = os.Stderr.WriteString(fmt.Sprintf("%v\n", err.Error()))
+	_, _ = fmt.Fprintf(os.Stderr, "%v\n", err.Error())
 	os.Exit(code)
 }
 

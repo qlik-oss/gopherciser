@@ -99,9 +99,9 @@ func (settings ApplyBookmarkSettings) Execute(sessionState *session.State, actio
 
 // AffectsAppObjectsAction implements AffectsAppObjectsAction interface
 func (settings ApplyBookmarkSettings) AffectsAppObjectsAction(structure appstructure.AppStructure) ([]*appstructure.AppStructurePopulatedObjects, []string, bool) {
-	id := settings.BookMarkSettings.ID
+	id := settings.ID
 	if id == "" { // No ID, specified, search by title
-		title := settings.BookMarkSettings.Title.String()
+		title := settings.Title.String()
 		for _, v := range structure.Bookmarks {
 			if v.Title == title {
 				id = v.ID

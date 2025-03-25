@@ -14,7 +14,11 @@ func TestUsersFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	_, err = f.WriteString(`testuser_1;NOTDEF
 testuser_2
