@@ -66,9 +66,9 @@ type (
 	// ****************************************************************
 
 	ActionCore struct {
-		Type     string `json:"action" doc-key:"config.scenario.action"`
-		Label    string `json:"label" doc-key:"config.scenario.label"`
-		Disabled bool   `json:"disabled" doc-key:"config.scenario.disabled"`
+		Type     string `json:"action" doc-key:"config.scenario.action" displayname:"Type"`
+		Label    string `json:"label" doc-key:"config.scenario.label" displayname:"Label"`
+		Disabled bool   `json:"disabled" doc-key:"config.scenario.disabled" displayname:"Disabled"`
 	}
 
 	actionTemp struct {
@@ -79,7 +79,7 @@ type (
 	// Action simulated user action
 	Action struct {
 		ActionCore
-		Settings ActionSettings `json:"settings,omitempty" doc-key:"config.scenario.settings"`
+		Settings ActionSettings `json:"settings,omitempty" doc-key:"config.scenario.settings" displayname:"Settings"`
 	}
 
 	// AbortedError action was aborted

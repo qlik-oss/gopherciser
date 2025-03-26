@@ -12,7 +12,7 @@ import (
 type (
 	// GetscriptSettings Getscript gets load script
 	GetscriptSettings struct {
-		SaveLog bool `json:"savelog" doc-key:"getscript.savelog"`
+		SaveLog bool `json:"savelog" doc-key:"getscript.savelog" displayname:"Save log"`
 	}
 )
 
