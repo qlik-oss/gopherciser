@@ -2,12 +2,11 @@ package connection
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/cookiejar"
 	"os"
 	"sync"
-
-	"maps"
 
 	"github.com/goccy/go-json"
 	"github.com/golang-jwt/jwt/v5"
