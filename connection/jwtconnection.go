@@ -2,10 +2,10 @@ package connection
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/cookiejar"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/goccy/go-json"
@@ -146,9 +146,7 @@ func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, 
 	if errJwtHeader != nil {
 		return nil, errors.WithStack(errJwtHeader)
 	}
-	for k, v := range jwtHeader {
-		token.Header[k] = v
-	}
+	maps.Copy(token.Header, jwtHeader)
 
 	// sign JWT
 	signedToken, err := GetSignedJwtToken(key, token)
@@ -163,20 +161,6 @@ func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, 
 	header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken))
 
 	return header, err
-}
-
-func parseAlgo(key []byte) (string, error) {
-	str := string(key)
-	startMarker := "BEGIN "
-	endMarker := " PRIVATE"
-	startIndex := strings.Index(str, startMarker) + len(startMarker)
-	endIndex := strings.Index(str, endMarker)
-	diff := endIndex - startIndex
-	if startIndex == -1 || endIndex == -1 || diff < 1 {
-		return "", errors.New("algorithm not declared")
-	}
-	algo := str[startIndex:endIndex]
-	return algo, nil
 }
 
 func (connectJWT *ConnectJWTSettings) executeClaimsTemplates(sessionState *session.State) (map[string]interface{}, error) {
@@ -233,14 +217,20 @@ func GetSignedJwtToken(key []byte, token *jwt.Token) (string, error) {
 		return "", errors.Errorf("No jwt key provided")
 	}
 
-	parsedKeyFormat, err := parseAlgo(key)
-	var privKey interface{}
-	if err == nil && parsedKeyFormat == "EC" {
+	var privKey any
+	var err error
+	switch token.Method {
+	case jwt.SigningMethodES256, jwt.SigningMethodES384, jwt.SigningMethodES512:
 		privKey, err = jwt.ParseECPrivateKeyFromPEM(key)
-	} else { // Key is either RSA *or* fallback
+	case jwt.SigningMethodEdDSA:
+		privKey, err = jwt.ParseEdPrivateKeyFromPEM(key)
+	case jwt.SigningMethodRS256, jwt.SigningMethodRS384, jwt.SigningMethodRS512, jwt.SigningMethodPS256, jwt.SigningMethodPS384, jwt.SigningMethodPS512:
 		privKey, err = jwt.ParseRSAPrivateKeyFromPEM(key)
+	case jwt.SigningMethodNone:
+		return token.SigningString()
+	default:
+		return "", errors.Errorf("alg<%s> not supported", token.Method.Alg())
 	}
-
 	if err != nil {
 		return "", errors.Wrap(err, "Error parsing private key")
 	}

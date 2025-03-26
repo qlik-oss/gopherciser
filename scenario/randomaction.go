@@ -27,13 +27,13 @@ type (
 	// ActionTypeSettings settings for specific ActionType
 	ActionTypeSettings struct {
 		// Type of action
-		Type ActionType `json:"type" doc-key:"randomaction.actions.type"`
+		Type ActionType `json:"type" doc-key:"randomaction.actions.type" displayname:"Type"`
 		// Uniform likelihood for action (weight)
-		Weight int `json:"weight" doc-key:"randomaction.actions.weight"`
+		Weight int `json:"weight" doc-key:"randomaction.actions.weight" displayname:"weight"`
 		// Overrides override arbitrary properties of the settings corresponding to this action
-		Overrides map[string]interface{} `json:"overrides,omitempty" doc-key:"randomaction.actions.overrides"`
+		Overrides map[string]any `json:"overrides,omitempty" doc-key:"randomaction.actions.overrides" displayname:"Overrides"`
 
-		itemSettings interface{}
+		itemSettings any
 	}
 )
 
@@ -43,7 +43,7 @@ type (
 		// List of the different actions and their weights
 		ActionTypes []ActionTypeSettings `json:"actions" displayname:"Actions" doc-key:"randomaction.actions"`
 		// ThinkTime in between random actions
-		InterThinkTimeSettings *ThinkTimeSettings `json:"thinktimesettings,omitempty" doc-key:"randomaction.thinktimesettings"`
+		InterThinkTimeSettings *ThinkTimeSettings `json:"thinktimesettings,omitempty" doc-key:"randomaction.thinktimesettings" displayname:"Think time inbetween actions"`
 		// Number of random actions to execute
 		Iterations int `json:"iterations" displayname:"Iterations" doc-key:"randomaction.iterations"`
 	}

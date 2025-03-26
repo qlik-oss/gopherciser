@@ -12,7 +12,7 @@ import (
 type (
 	// StepDimensionSettings cycle a step in a cyclic dimension
 	StepDimensionSettings struct {
-		Id string `json:"id" doc-key:"stepdimension.id"`
+		Id string `json:"id" doc-key:"stepdimension.id" displayname:"id"`
 	}
 )
 
