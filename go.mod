@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.21.1
 	github.com/qlik-oss/enigma-go/v4 v4.2.0
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/zerolog v1.34.0
 	github.com/shiena/ansicolor v0.0.0-20230509054315-a9deabde6e02
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
