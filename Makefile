@@ -8,12 +8,17 @@ ifeq ($(OS),Windows_NT)
 	OSFLAG += $(BIN)/$(BIN_NAME).exe
 else
 	UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-	OSFLAG += ./$(BIN)/$(BIN_NAME)
-endif
-ifeq ($(UNAME_S),Darwin)
-	OSFLAG += ./$(BIN)/$(BIN_NAME)_osx
-endif
+	ifeq ($(UNAME_S),Linux)
+		UNAME_M := $(shell uname -m)
+		ifeq ($(UNAME_M),aarch64)
+			OSFLAG += ./$(BIN)/$(BIN_NAME)_arm64
+		else
+			OSFLAG += ./$(BIN)/$(BIN_NAME)
+		endif
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OSFLAG += ./$(BIN)/$(BIN_NAME)_osx
+	endif
 endif
 
 .PHONY: clean build lint test alltests initwiki genwiki build-docker attribution changelog

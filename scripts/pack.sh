@@ -20,10 +20,21 @@ if [[ -d "$PACK" ]]; then
 fi
 
 # check for all binaries
-# TODO check for correct version of all binaries
 if [[ ! -x "$BIN"/gopherciser ]]; then
   echo "Linux binary not found"
   exit 3
+fi
+if [[ ! -x "$BIN"/gopherciser_arm64 ]]; then
+  echo "Linux arm64 binary not found"
+  exit 10
+fi
+if [[ ! -x "$BIN"/gopherciser.exe ]]; then
+  echo "Windows binary not found"
+  exit 11
+fi
+if [[ ! -x "$BIN"/gopherciser_osx ]]; then
+  echo "OSX binary not found"
+  exit 12
 fi
 
 # check for zip command
@@ -94,5 +105,6 @@ Pack(){
 }
 
 Pack "${BIN:?}"/gopherciser gopherciser_linux
+Pack "$BIN"/gopherciser_arm64 gopherciser_linux_arm64
 Pack "$BIN"/gopherciser.exe gopherciser_windows
 Pack "$BIN"/gopherciser_osx gopherciser_osx

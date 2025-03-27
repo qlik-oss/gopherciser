@@ -60,13 +60,17 @@ if mkdir -p "$PREFIX/$BIN"; then
     BINARY="$3"
     GOOS=linux GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
 
+    # Linux arm64
+    BINARY="$3_arm64"
+    GOOS=linux GOARCH=arm64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
+
     # Windows amd64
     BINARY="$3.exe"
     GOOS=windows GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -s -w"
 
     # Darwin amd64
     BINARY="$3_osx"
-    GOOS=darwin GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -s -w"
+    GOOS=darwin GOARCH=arm64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -s -w"
 
 else
 

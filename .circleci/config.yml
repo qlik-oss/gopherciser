@@ -137,7 +137,8 @@ jobs:
             for f in \
               ./pack/gopherciser_linux.zip \
               ./pack/gopherciser_windows.zip \
-              ./pack/gopherciser_osx.zip
+              ./pack/gopherciser_osx.zip \
+              ./pack/gopherciser_linux_arm64.zip
             do
               echo uploading "$f" to github
               github-release upload -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -t "$TAG" -n $(basename "$f") -R -f "$f"
