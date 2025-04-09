@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
-	"sync"
 
 	"github.com/goccy/go-json"
 	"github.com/golang-jwt/jwt/v5"
@@ -19,7 +18,7 @@ import (
 type (
 
 	// ConnectJWTSettings app and server settings using JWT
-	ConnectJWTSettings struct {
+	ConnectJWTSettingsCore struct {
 		// KeyPath path to jwt signing key
 		KeyPath string `json:"keypath,omitempty" doc-key:"config.connectionSettings.jwtsettings.keypath"`
 		// JwtHeader JWT headers as escaped json string. Custom headers to be added to the JWT header.
@@ -45,12 +44,72 @@ type (
 
 		// Alg is the signing method to be used for the JWT. Defaults to RS512 if omitted
 		Alg string `json:"alg,omitempty" doc-key:"config.connectionSettings.jwtsettings.alg"`
+	}
 
-		// handle jwt private key
-		key     []byte
-		readKey sync.Once
+	ConnectJWTSettings struct {
+		ConnectJWTSettingsCore
+		key           any // parsed private key
+		signingMethod jwt.SigningMethod
 	}
 )
+
+func (connectJWT *ConnectJWTSettings) UnmarshalJSON(arg []byte) error {
+	if err := json.Unmarshal(arg, &connectJWT.ConnectJWTSettingsCore); err != nil {
+		return err
+	}
+
+	key, err := os.ReadFile(connectJWT.KeyPath)
+	if err != nil {
+		return errors.Wrapf(err, "error reading private key from file<%s>", connectJWT.KeyPath)
+	}
+
+	if connectJWT.Alg != "" {
+		connectJWT.signingMethod = jwt.GetSigningMethod(connectJWT.Alg)
+		if connectJWT.signingMethod == nil {
+			return errors.Errorf("unknown signing method<%s>", connectJWT.Alg)
+		}
+		var err error
+		switch connectJWT.signingMethod {
+		case jwt.SigningMethodES256, jwt.SigningMethodES384, jwt.SigningMethodES512:
+			connectJWT.key, err = jwt.ParseECPrivateKeyFromPEM(key)
+		case jwt.SigningMethodEdDSA:
+			connectJWT.key, err = jwt.ParseEdPrivateKeyFromPEM(key)
+		case jwt.SigningMethodRS256, jwt.SigningMethodRS384, jwt.SigningMethodRS512, jwt.SigningMethodPS256, jwt.SigningMethodPS384, jwt.SigningMethodPS512:
+			connectJWT.key, err = jwt.ParseRSAPrivateKeyFromPEM(key)
+		case jwt.SigningMethodNone:
+		default:
+			err = errors.Errorf("alg<%s> not supported", connectJWT.signingMethod.Alg())
+		}
+		if err != nil {
+			return errors.Wrap(err, "Error parsing private key")
+		}
+	} else {
+		// Discover from key
+		connectJWT.signingMethod = jwt.SigningMethodRS512
+		connectJWT.key, err = jwt.ParseRSAPrivateKeyFromPEM(key)
+		if err != nil {
+			connectJWT.signingMethod = jwt.SigningMethodEdDSA
+			connectJWT.key, err = jwt.ParseEdPrivateKeyFromPEM(key)
+			if err != nil {
+				key, err := jwt.ParseECPrivateKeyFromPEM(key)
+				if err != nil {
+					return errors.Errorf("no alg defined and could not autodetect private key type")
+				}
+				connectJWT.key = key
+				switch key.Curve.Params().Name {
+				case "P-256":
+					connectJWT.signingMethod = jwt.SigningMethodES256
+				case "P-384":
+					connectJWT.signingMethod = jwt.SigningMethodES384
+				case "P-521":
+					connectJWT.signingMethod = jwt.SigningMethodES512
+				}
+			}
+		}
+	}
+
+	return nil
+}
 
 // GetConnectFunc which establishes a connection to Qlik Sense
 func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) ConnectFunc {
@@ -106,24 +165,21 @@ func (connectJWT *ConnectJWTSettings) Validate() error {
 		return errors.New("no JWT settings defined")
 	}
 
-	// Do we have a key? (if so, also read into memory)
-	key, err := connectJWT.getPrivateKey()
-	if err != nil {
-		return errors.Wrapf(err, "Error reading private key from file<%s>", connectJWT.KeyPath)
-	}
-
-	if len(key) < 1 {
-		return errors.Errorf("No key in keyfile")
+	if connectJWT.key == nil {
+		return errors.Errorf("No private key found")
 	}
 	return nil
 }
 
 // GetJwtHeader get Authorization header
 func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, header http.Header) (http.Header, error) {
-	// Do we have a key? (then read into memory)
-	key, err := connectJWT.getPrivateKey()
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error reading private key from file<%s>", connectJWT.KeyPath)
+
+	if connectJWT.signingMethod == nil {
+		return nil, errors.Errorf("no signing method set")
+	}
+
+	if connectJWT.signingMethod != jwt.SigningMethodNone && connectJWT.key == nil {
+		return nil, errors.Errorf("no private key set")
 	}
 
 	// replace variables in jwt claims and create token
@@ -131,15 +187,7 @@ func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, 
 	if errClaims != nil {
 		return nil, errors.WithStack(errClaims)
 	}
-	alg := connectJWT.Alg
-	if alg == "" {
-		alg = "RS512"
-	}
-	signingMethod := jwt.GetSigningMethod(alg)
-	if signingMethod == nil {
-		return nil, errors.Errorf("Unknown signing method<%s>", alg)
-	}
-	token := jwt.NewWithClaims(signingMethod, jwt.MapClaims(claims))
+	token := jwt.NewWithClaims(connectJWT.signingMethod, jwt.MapClaims(claims))
 
 	// replace variables and set jwt headers
 	jwtHeader, errJwtHeader := connectJWT.executeJWTHeaderTemplates(sessionState)
@@ -149,7 +197,7 @@ func (connectJWT *ConnectJWTSettings) GetJwtHeader(sessionState *session.State, 
 	maps.Copy(token.Header, jwtHeader)
 
 	// sign JWT
-	signedToken, err := GetSignedJwtToken(key, token)
+	signedToken, err := GetSignedJwtToken(connectJWT.key, token)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error signing token with key from file<%s>", connectJWT.KeyPath)
 	}
@@ -197,42 +245,13 @@ func (connectJWT *ConnectJWTSettings) executeJWTHeaderTemplates(sessionState *se
 	return m, nil
 }
 
-func (connectJWT *ConnectJWTSettings) getPrivateKey() ([]byte, error) {
-	// read private key into memory
-	var readKeyErr error
-	connectJWT.readKey.Do(func() {
-		connectJWT.key, readKeyErr = os.ReadFile(connectJWT.KeyPath)
-	})
-
-	if readKeyErr != nil {
-		return nil, errors.Wrapf(readKeyErr, "Error reading private key from file<%s>", connectJWT.KeyPath)
-	}
-
-	return connectJWT.key, nil
-}
-
 // GetSignedJwtToken Sign token with key
-func GetSignedJwtToken(key []byte, token *jwt.Token) (string, error) {
-	if key == nil {
-		return "", errors.Errorf("No jwt key provided")
-	}
-
-	var privKey any
-	var err error
-	switch token.Method {
-	case jwt.SigningMethodES256, jwt.SigningMethodES384, jwt.SigningMethodES512:
-		privKey, err = jwt.ParseECPrivateKeyFromPEM(key)
-	case jwt.SigningMethodEdDSA:
-		privKey, err = jwt.ParseEdPrivateKeyFromPEM(key)
-	case jwt.SigningMethodRS256, jwt.SigningMethodRS384, jwt.SigningMethodRS512, jwt.SigningMethodPS256, jwt.SigningMethodPS384, jwt.SigningMethodPS512:
-		privKey, err = jwt.ParseRSAPrivateKeyFromPEM(key)
-	case jwt.SigningMethodNone:
+func GetSignedJwtToken(privKey any, token *jwt.Token) (string, error) {
+	if token.Method == jwt.SigningMethodNone {
 		return token.SigningString()
-	default:
-		return "", errors.Errorf("alg<%s> not supported", token.Method.Alg())
 	}
-	if err != nil {
-		return "", errors.Wrap(err, "Error parsing private key")
+	if privKey == nil {
+		return "", errors.Errorf("No private key provided")
 	}
 
 	signedToken, err := token.SignedString(privKey)

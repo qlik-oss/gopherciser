@@ -106,7 +106,7 @@
         "JWT claims as an escaped JSON string."
     ],
     "config.connectionSettings.jwtsettings.alg": [
-        "The signing method used for the JWT. Defaults to `RS512`, if omitted.",
+        "The signing method used for the JWT. Defaults to `RS512` for RSA private keys if omitted.",
         "For keyfiles in RSA format, supports `RS256`, `RS384`, `RS512`, `PS256`, `PS384` and `PS512`.",
         "For keyfiles in EC format, supports `ES256`, `ES384` or `ES512`.",
         "For keyfiles in ed25519 format, supports `EdDSA`"

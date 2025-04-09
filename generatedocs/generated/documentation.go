@@ -212,7 +212,7 @@ var (
 		"config.connectionSettings.appext":                {"Replace `app` in the connect URL for the `openapp` action. Defaults to `app`, if omitted."},
 		"config.connectionSettings.headers":               {"Headers to use in requests."},
 		"config.connectionSettings.jwtsettings":           {"(JWT only) Settings for the JWT connection."},
-		"config.connectionSettings.jwtsettings.alg":       {"The signing method used for the JWT. Defaults to `RS512`, if omitted.", "For keyfiles in RSA format, supports `RS256`, `RS384`, `RS512`, `PS256`, `PS384` and `PS512`.", "For keyfiles in EC format, supports `ES256`, `ES384` or `ES512`.", "For keyfiles in ed25519 format, supports `EdDSA`"},
+		"config.connectionSettings.jwtsettings.alg":       {"The signing method used for the JWT. Defaults to `RS512` for RSA private keys if omitted.", "For keyfiles in RSA format, supports `RS256`, `RS384`, `RS512`, `PS256`, `PS384` and `PS512`.", "For keyfiles in EC format, supports `ES256`, `ES384` or `ES512`.", "For keyfiles in ed25519 format, supports `EdDSA`"},
 		"config.connectionSettings.jwtsettings.claims":    {"JWT claims as an escaped JSON string."},
 		"config.connectionSettings.jwtsettings.jwtheader": {"JWT headers as an escaped JSON string. Custom headers to be added to the JWT header."},
 		"config.connectionSettings.jwtsettings.keypath":   {"Local path to the JWT key file."},

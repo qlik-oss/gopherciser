@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -19,28 +18,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	tmpKeyFile, err := os.CreateTemp("", "priv.pem")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := tmpKeyFile.Close(); err != nil {
-			_, _ = fmt.Fprint(os.Stderr, "error closing file:", err)
-		}
-	}()
-
-	_, err = tmpKeyFile.WriteString(`-----BEGIN RSA PRIVATE KEY-----
-	yadyaydasydyadsydasyd
-	-----END RSA PRIVATE KEY-----
-	`)
-	if err != nil {
-		t.Fatal("Failed writing mock private key to tmp file")
-	}
-
-	tmpKeyFilePath, err := json.Marshal(tmpKeyFile.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	tmpKeyFilePath := "../docs/examples/mock.pem"
 
 	JSONConfigFile := `{
 		"settings" : {
@@ -61,7 +39,7 @@ func TestConfig(t *testing.T) {
 			"virtualproxy": "myvp",
 			"security": true,
 			"jwtsettings": {
-				"keypath" : ` + string(tmpKeyFilePath) + `,
+				"keypath" : "` + tmpKeyFilePath + `",
 				"claims" : "{\"user\":\"{{.UserName}}\",\"directory\":\"{{.Directory}}\"}"
 			}
 		},
@@ -107,7 +85,7 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = json.Marshal(cfg)
+	_, err := json.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,7 +202,7 @@ func TestConfig(t *testing.T) {
 		t.Errorf("Action(1): unexpected value1<%d>, expected<2>", settings.Values[0])
 	}
 
-	err = settingsTest(&cfg, tmpKeyFile.Name())
+	err = settingsTest(&cfg, tmpKeyFilePath)
 	if err != nil {
 		t.Fatal(err)
 	}
