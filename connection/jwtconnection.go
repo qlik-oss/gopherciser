@@ -77,7 +77,6 @@ func (connectJWT *ConnectJWTSettings) UnmarshalJSON(arg []byte) error {
 		case jwt.SigningMethodRS256, jwt.SigningMethodRS384, jwt.SigningMethodRS512, jwt.SigningMethodPS256, jwt.SigningMethodPS384, jwt.SigningMethodPS512:
 			connectJWT.key, err = jwt.ParseRSAPrivateKeyFromPEM(key)
 		case jwt.SigningMethodNone:
-		// 	return token.SigningString()
 		default:
 			err = errors.Errorf("alg<%s> not supported", connectJWT.signingMethod.Alg())
 		}
