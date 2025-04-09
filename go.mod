@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.21.1
+	github.com/prometheus/client_golang v1.22.0
 	github.com/qlik-oss/enigma-go/v4 v4.3.0
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
 	github.com/rs/zerolog v1.34.0
@@ -34,7 +34,6 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
@@ -48,6 +47,6 @@ require (
 	github.com/tus/tusd v1.3.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
