@@ -44,3 +44,22 @@ func TrueCause(err error) error {
 		}
 	}
 }
+
+func FindRankedCause(err error, ranker func(error) int) (int, error) {
+	err = errors.Cause(err)
+	switch err := err.(type) {
+	case *multierror.Error:
+		var rankedErr error
+		rank := -1 // -1 makes sure unranked gets higher rank
+		for _, e := range err.Errors {
+			r, cause := FindRankedCause(e, ranker)
+			if r > rank {
+				rank = r
+				rankedErr = cause
+			}
+		}
+		return rank, rankedErr
+	default:
+		return ranker(err), err
+	}
+}
