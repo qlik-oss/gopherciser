@@ -45,6 +45,7 @@ func TrueCause(err error) error {
 	}
 }
 
+// FindRankedCause helper to filter through hierarchy of errors to find most suitable to expose
 func FindRankedCause(err error, ranker func(error) int) (int, error) {
 	err = errors.Cause(err)
 	switch err := err.(type) {
@@ -62,4 +63,9 @@ func FindRankedCause(err error, ranker func(error) int) (int, error) {
 	default:
 		return ranker(err), err
 	}
+}
+
+// MultiErrorAppend helper for test cases to append list of errors to multi error without direct import of multi error package
+func MultiErrorAppend(baseErr error, appendErr ...error) error {
+	return multierror.Append(baseErr, appendErr...)
 }
