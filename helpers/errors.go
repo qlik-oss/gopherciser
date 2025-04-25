@@ -45,15 +45,16 @@ func TrueCause(err error) error {
 	}
 }
 
-// FindRankedCause helper to filter through hierarchy of errors to find most suitable to expose
-func FindRankedCause(err error, ranker func(error) int) (int, error) {
+// RankedCause helper to filter through hierarchy of errors to find most suitable cause to expose
+// ranker: should return the most important cause as the higher number
+func RankedCause(err error, ranker func(error) int) (int, error) {
 	err = errors.Cause(err)
 	switch err := err.(type) {
 	case *multierror.Error:
 		var rankedErr error
 		rank := -1 // -1 makes sure unranked gets higher rank
 		for _, e := range err.Errors {
-			r, cause := FindRankedCause(e, ranker)
+			r, cause := RankedCause(e, ranker)
 			if r > rank {
 				rank = r
 				rankedErr = cause
