@@ -459,6 +459,16 @@ func (handler *RestHandler) PatchAsyncWithCallback(url string, actionState *acti
 	return handler.sendAsyncWithCallback(PATCH, url, actionState, logEntry, content, headers, options, callback)
 }
 
+// PatchSync send sync PATCH request with options, using options=nil default options are used
+func (handler *RestHandler) PatchSync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) (*RestRequest, error) {
+	return handler.PatchSyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
+}
+
+// PatchSyncWithCallback send sync PATCH request with options and callback, using options=nil default options are used
+func (handler *RestHandler) PatchSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+	return handler.sendSyncWithCallback(PATCH, url, actionState, logEntry, content, headers, options, callback)
+}
+
 // PostAsync send async POST request with options, using options=nil default options are used
 func (handler *RestHandler) PostAsync(url string, actionState *action.State, logEntry *logger.LogEntry, content []byte, options *ReqOptions) *RestRequest {
 	return handler.PostAsyncWithCallback(url, actionState, logEntry, content, nil, options, nil)
@@ -514,8 +524,8 @@ func (handler *RestHandler) OptionsAsync(url string, actionState *action.State, 
 	return handler.sendAsyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, nil)
 }
 
-// OptionsAsyncWitCallback send async request with options and callback, using options=nil default options are used
-func (handler *RestHandler) OptionsAsyncWitCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
+// OptionsAsyncWithCallback send async request with options and callback, using options=nil default options are used
+func (handler *RestHandler) OptionsAsyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) *RestRequest {
 	return handler.sendAsyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, callback)
 }
 
@@ -524,8 +534,8 @@ func (handler *RestHandler) OptionsSync(url string, actionState *action.State, l
 	return handler.sendSyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, nil)
 }
 
-// OptionsSyncWitCallback send sync request with options and callback, using options=nil default options are used
-func (handler *RestHandler) OptionsSyncWitCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
+// OptionsSyncWithCallback send sync request with options and callback, using options=nil default options are used
+func (handler *RestHandler) OptionsSyncWithCallback(url string, actionState *action.State, logEntry *logger.LogEntry, headers map[string]string, options *ReqOptions, callback func(err error, req *RestRequest)) (*RestRequest, error) {
 	return handler.sendSyncWithCallback(OPTIONS, url, actionState, logEntry, nil, headers, options, callback)
 }
 
