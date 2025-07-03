@@ -157,6 +157,8 @@ func (appSelection *AppSelection) Select(sessionState *State) (*ArtifactEntry, e
 		if sessionState.CurrentApp == nil {
 			return nil, errors.New("no current app defined, make sure to have preceeding app selection when using app selection mode<current>.")
 		}
+		sessionState.LogEntry.Session.AppName = sessionState.CurrentApp.Name
+		sessionState.LogEntry.Session.AppGUID = sessionState.CurrentApp.ID
 		return sessionState.CurrentApp, nil
 	case AppModeGUID:
 		app, err := sessionState.ReplaceSessionVariables(&appSelection.App)
