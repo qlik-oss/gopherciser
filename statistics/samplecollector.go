@@ -73,13 +73,6 @@ func (collector *SampleCollector) emptyHotBuffer() {
 		newSum += float64(v)
 	}
 
-	// first time around ?
-	if collector.count < 1 {
-		collector.curAvg = newSum / newCount
-		collector.count = newCount
-		return
-	}
-
 	// avoiding (curAvg*count + newAvg*newCount)/(count+newCount) for overflow protection, below equation equates to the same value
 	collector.curAvg = collector.curAvg/(1+newCount/collector.count) + newSum/(collector.count+newCount)
 	collector.count += newCount
