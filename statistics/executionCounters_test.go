@@ -1,38 +1,99 @@
 package statistics
 
 import (
-	"math"
+	"sync"
 	"testing"
+
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
+type collectTestDefSamples struct {
+	Path  string
+	Count uint64
+	Size  uint64
+}
+
+type collectTestDef struct {
+	Name    string
+	Samples []collectTestDefSamples
+}
+
 func TestCounters(t *testing.T) {
+	testDef := []collectTestDef{
+		{
+			Name: "1 path 10148 samples",
+			Samples: []collectTestDefSamples{
+				{
+					Count: 10148,
+					Path:  "/test/path/1",
+					Size:  123456,
+				},
+			},
+		},
+		{
+			Name: "2 path 2048 samples",
+			Samples: []collectTestDefSamples{
+				{
+					Count: 1024,
+					Path:  "/test/path/1",
+					Size:  12345,
+				},
+				{
+					Count: 1024,
+					Path:  "/test/path/2",
+					Size:  12345678,
+				},
+			},
+		},
+	}
+
+	for _, def := range testDef {
+		t.Run(def.Name, func(t *testing.T) {
+			collectorTest(t, def)
+		})
+	}
+}
+
+func collectorTest(t *testing.T, def collectTestDef) {
 	collector := NewCollector()
 	collector.SetLevel(StatsLevelFull)
-	t.Log("collector level is full:", collector.IsFull())
-	t.Log("collector is on:", collector.IsOn())
 
 	if collector.Level != StatsLevelFull {
-		t.Fatalf("incorrect stats level: %v", collector.Level)
+		t.Errorf("incorrect stats level: %v", collector.Level)
+		return
 	}
 
 	if !collector.IsOn() {
-		t.Fatalf("collector not on")
+		t.Errorf("collector not on")
+		return
 	}
 
-	n := 10148
-	var stats *RequestStats
-	for range n {
-		stats = collector.GetOrAddRequestStats("head", "/test/path/1")
-		if stats == nil {
-			t.Fatal("stats returned nil")
-		}
-		stats.RespAvg.AddSample(uint64(123456))
+	var wg sync.WaitGroup
+
+	for _, sample := range def.Samples {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			stats := collector.GetOrAddRequestStats("head", sample.Path)
+			if stats == nil {
+				t.Errorf("stats returned nil for sample<%v>", sample)
+				return
+			}
+
+			for range sample.Count {
+				stats.RespAvg.AddSample(sample.Size)
+			}
+
+			average, requests := stats.RespAvg.Average()
+			if !helpers.NearlyEqual(requests, float64(sample.Count)) {
+				t.Errorf("path<%s> expected sample count<%d> got<%f>", sample.Path, sample.Count, requests)
+			}
+			if !helpers.NearlyEqual(average, float64(sample.Size)) {
+				t.Errorf("path<%s> expected average<%d> got<%f>", sample.Path, sample.Size, average)
+			}
+		}()
 	}
 
-	_, requests := stats.RespAvg.Average()
-	current := uint64(math.Round(requests))
-	expected := uint64(n)
-	if current != expected {
-		t.Errorf("expected<%d> got<%d>", expected, current)
-	}
+	wg.Wait()
 }
