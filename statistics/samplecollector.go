@@ -11,7 +11,7 @@ type (
 		bufLock sync.Mutex
 
 		curAvg         float64
-		count          float64
+		count          uint64
 		bufPurgeExpiry time.Duration
 		bufPurgeTs     time.Time
 	}
@@ -61,9 +61,9 @@ func (collector *SampleCollector) AddSample(sample uint64) {
 
 // emptyHotBuffer should only be called by function holding collector.bufLock
 func (collector *SampleCollector) emptyHotBuffer() {
-	newCount := float64(len(collector.hotBuf))
+	newCount := uint64(len(collector.hotBuf))
 
-	if newCount < 0.5 {
+	if newCount < 1 {
 		// nothing in buffer
 		return
 	}
@@ -73,22 +73,15 @@ func (collector *SampleCollector) emptyHotBuffer() {
 		newSum += float64(v)
 	}
 
-	// first time around ?
-	if collector.count < 1 {
-		collector.curAvg = newSum / newCount
-		collector.count = newCount
-		return
-	}
-
 	// avoiding (curAvg*count + newAvg*newCount)/(count+newCount) for overflow protection, below equation equates to the same value
-	collector.curAvg = collector.curAvg/(1+newCount/collector.count) + newSum/(collector.count+newCount)
+	collector.curAvg = collector.curAvg/(1+float64(newCount)/float64(collector.count)) + newSum/float64(collector.count+newCount)
 	collector.count += newCount
 	collector.hotBuf = collector.hotBuf[0:0]
 	collector.bufPurgeTs = time.Now().Add(collector.bufPurgeExpiry)
 }
 
 // Average empties hot buffer and calculates current running average, returns average, total samples.
-func (collector *SampleCollector) Average() (float64, float64) {
+func (collector *SampleCollector) Average() (float64, uint64) {
 	defer collector.bufLock.Unlock()
 	collector.bufLock.Lock()
 

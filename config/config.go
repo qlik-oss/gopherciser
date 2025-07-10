@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -918,7 +917,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			if failed < 1 {
 				successRate = 100.0
 			} else {
-				successRate = successful / (successful + float64(failed)) * 100
+				successRate = float64(successful) / float64(successful+failed) * 100
 			}
 		}
 
@@ -989,7 +988,7 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			Method:   stats.Method(),
 			Path:     stats.Path(),
 			AvgResp:  time.Duration(resp).Round(time.Millisecond).String(),
-			Requests: fmt.Sprintf("%d", uint64(math.Round(requests))),
+			Requests: strconv.FormatUint(requests, 10),
 			Sent:     stats.Sent.String(),
 			Received: stats.Received.String(),
 		}
