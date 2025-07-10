@@ -56,7 +56,9 @@ func TestCounters(t *testing.T) {
 
 func collectorTest(t *testing.T, def collectTestDef) {
 	collector := NewCollector()
-	collector.SetLevel(StatsLevelFull)
+	if err := collector.SetLevel(StatsLevelFull); err != nil {
+		t.Fatal(err)
+	}
 
 	if collector.Level != StatsLevelFull {
 		t.Errorf("incorrect stats level: %v", collector.Level)
@@ -86,8 +88,8 @@ func collectorTest(t *testing.T, def collectTestDef) {
 			}
 
 			average, requests := stats.RespAvg.Average()
-			if !helpers.NearlyEqual(requests, float64(sample.Count)) {
-				t.Errorf("path<%s> expected sample count<%d> got<%f>", sample.Path, sample.Count, requests)
+			if requests != sample.Count {
+				t.Errorf("path<%s> expected sample count<%d> got<%d>", sample.Path, sample.Count, requests)
 			}
 			if !helpers.NearlyEqual(average, float64(sample.Size)) {
 				t.Errorf("path<%s> expected average<%d> got<%f>", sample.Path, sample.Size, average)
