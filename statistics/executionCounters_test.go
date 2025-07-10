@@ -31,7 +31,7 @@ func TestCounters(t *testing.T) {
 			},
 		},
 		{
-			Name: "2 path 2048 samples",
+			Name: "2 paths 2048 samples",
 			Samples: []collectTestDefSamples{
 				{
 					Count: 1024,
@@ -42,6 +42,26 @@ func TestCounters(t *testing.T) {
 					Count: 1024,
 					Path:  "/test/path/2",
 					Size:  12345678,
+				},
+			},
+		},
+		{
+			Name: "large sample count",
+			Samples: []collectTestDefSamples{
+				{
+					Count: 64000000,
+					Path:  "/test/path/1",
+					Size:  12345,
+				},
+			},
+		},
+		{
+			Name: "large sample size",
+			Samples: []collectTestDefSamples{
+				{
+					Count: 1024,
+					Path:  "/test/path/1",
+					Size:  1024 * 1024 * 1024,
 				},
 			},
 		},
