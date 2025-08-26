@@ -110,13 +110,13 @@ var validateCmd = &cobra.Command{
 	Short:   "validate a scenario config file",
 	Long:    `validate a scenario config file`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := unmarshalConfigFile()
+		cfg, err := UnmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(ExitCodeJSONParseError)
 		}
 
-		if err := validateConfigAndPrintWarnings(cfg); err != nil {
+		if err := ValidateConfigAndPrintWarnings(cfg); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(ExitCodeJSONValidateError)
 		}
@@ -140,7 +140,7 @@ var testConnectionCmd = &cobra.Command{
 	Short:   "test connection",
 	Long:    `test connection using settings provided by the config file`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := unmarshalConfigFile()
+		cfg, err := UnmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeJSONParseError)
@@ -168,7 +168,7 @@ Will save one .structure file per app in script in the folder defined by output 
 			os.Exit(ExitCodeObjectDefError)
 		}
 
-		cfg, err := unmarshalConfigFile()
+		cfg, err := UnmarshalConfigFile()
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 			os.Exit(ExitCodeJSONParseError)
@@ -196,24 +196,3 @@ Will save one .structure file per app in script in the folder defined by output 
 	},
 }
 
-func validateConfigAndPrintWarnings(cfg *config.Config) error {
-	err := cfg.Validate()
-	if err != nil {
-		return err
-	}
-
-	warningsCount := len(cfg.ValidationWarnings)
-	if warningsCount < 1 {
-		return nil
-	}
-
-	_, _ = fmt.Fprintf(os.Stderr, "%d script validation warnings:\n", warningsCount)
-	for i, warning := range cfg.ValidationWarnings {
-		_, _ = fmt.Fprintf(os.Stderr, "%d. %s\n", i+1, warning)
-		if i == 9 {
-			_, _ = fmt.Fprintf(os.Stderr, "...(%d) additional warnings\n", warningsCount-i+1)
-			return nil
-		}
-	}
-	return nil
-}
