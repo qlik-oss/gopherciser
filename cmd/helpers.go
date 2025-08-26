@@ -59,7 +59,7 @@ func AddLoggingParameters(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&summaryType, "summary", "", getSummaryTypeHelpString())
 }
 
-func unmarshalConfigFile() (*config.Config, error) {
+func UnmarshalConfigFile() (*config.Config, error) {
 	var err error
 	var cfgJSON []byte
 	var hasPipe bool
@@ -118,6 +118,28 @@ func cfgJsonFromFile() ([]byte, error) {
 	}
 
 	return os.ReadFile(cfgFile)
+}
+
+func ValidateConfigAndPrintWarnings(cfg *config.Config) error {
+	err := cfg.Validate()
+	if err != nil {
+		return err
+	}
+
+	warningsCount := len(cfg.ValidationWarnings)
+	if warningsCount < 1 {
+		return nil
+	}
+
+	_, _ = fmt.Fprintf(os.Stderr, "%d script validation warnings:\n", warningsCount)
+	for i, warning := range cfg.ValidationWarnings {
+		_, _ = fmt.Fprintf(os.Stderr, "%d. %s\n", i+1, warning)
+		if i == 9 {
+			_, _ = fmt.Fprintf(os.Stderr, "...(%d) additional warnings\n", warningsCount-i+1)
+			return nil
+		}
+	}
+	return nil
 }
 
 func overrideScriptValues(cfgJSON []byte, hasPipe bool) ([]byte, []string, error) {

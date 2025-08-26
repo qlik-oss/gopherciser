@@ -272,12 +272,12 @@ func init() {
 func execute() error {
 
 	// === config section ===
-	cfg, errUnmarshal := unmarshalConfigFile()
+	cfg, errUnmarshal := UnmarshalConfigFile()
 	if errUnmarshal != nil {
 		return JSONParseError(errUnmarshal.Error())
 	}
 
-	if err := validateConfigAndPrintWarnings(cfg); err != nil {
+	if err := ValidateConfigAndPrintWarnings(cfg); err != nil {
 		return JSONValidateError(err.Error())
 	}
 
