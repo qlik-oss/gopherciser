@@ -682,7 +682,9 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 				return
 			}
 
-			req, err := newStdRequest(handler.ctx, request, logEntry, handler.headers.GetHeader(host))
+			reqCtx, cancel := context.WithTimeout(handler.ctx, handler.timeout)
+			defer cancel()
+			req, err := newStdRequest(reqCtx, request, logEntry, handler.headers.GetHeader(host))
 			if err != nil {
 				failRequest(errors.WithStack(err))
 				return
