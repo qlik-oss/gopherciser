@@ -324,7 +324,6 @@ func execute() error {
 		defer cancel()
 		<-killcontext.Done()
 
-		_, _ = os.Stderr.WriteString("force quitting, writing stack file...")
 		stackFile := fmt.Sprintf("%s_%d_hang.stack", path.Base(os.Args[0]), os.Getpid())
 
 		_, _ = os.Stderr.WriteString("5 minutes passed since process was cancelled, creating stack file for debugging and force quitting!")
