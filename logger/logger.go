@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -60,14 +59,14 @@ type (
 
 	// Log main struct to keep track of and propagate log entries to loggers. Close finished will be signaled on Closed channel.
 	Log struct {
-		loggers   []*Logger
-		logChan   chan *LogChanMsg
-		closeFlag atomic.Value
+		loggers []*Logger
+		logChan chan *LogChanMsg
 
-		Closed   chan interface{}
+		Closed   chan struct{}
 		Settings LogSettings
 
 		regressionLogger RegressionLoggerCloser
+		stopListen       func()
 	}
 )
 
@@ -111,7 +110,7 @@ func NewLog(settings LogSettings) *Log {
 	return &Log{
 		logChan:  make(chan *LogChanMsg, 2000),
 		Settings: settings,
-		Closed:   make(chan interface{}),
+		Closed:   make(chan struct{}),
 	}
 }
 
@@ -158,15 +157,17 @@ func (log *Log) SetRegressionLoggerFile(fileName string) error {
 	return nil
 }
 
-// CloseWithTimeout functions with custom timeout
+// CloseWithTimeout waits for the context used in "Startlogger" to cancel or max duration of timeout
 func (log *Log) CloseWithTimeout(timeout time.Duration) error {
-	log.closeFlag.Store(true)
-
-	//wait for all logs to be written or max 5 minutes
+	//wait for all logs to be written or max duration
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	WaitForChanClose(ctx, log.Closed)
+	if log.stopListen != nil {
+		log.stopListen() // signal to start logging shutdown procedure
+	}
+	WaitForChanClose(ctx, log.Closed) // wait for listener to be finished or timeout
 
+	// close down log writers
 	var mErr *multierror.Error
 	if log.loggers != nil {
 		for _, v := range log.loggers {
@@ -196,35 +197,26 @@ func (log *Log) StartLogger(ctx context.Context) {
 }
 
 func (log *Log) logListen(ctx context.Context) {
-	doClose := false
+	ctx, cancel := context.WithCancel(ctx)
+	log.stopListen = cancel
+	defer cancel()
 	for {
-		if flag, ok := log.closeFlag.Load().(bool); ok && flag {
-			doClose = true
-		}
-
 		select {
 		case msg, ok := <-log.logChan:
 			if log.onLogChanMsg(msg, ok) {
 				return
 			}
 		case <-ctx.Done():
-			doClose = true
-			for {
+			for { // empty channel from messages, best effort
 				select {
 				case msg, ok := <-log.logChan:
 					if log.onLogChanMsg(msg, ok) {
 						return
 					}
-				case <-time.After(time.Millisecond * 50):
-					// logChan is never closed, but this is only executed when the program terminates
-
-					close(log.Closed)
+				case <-time.After(time.Millisecond * 200):
+					close(log.Closed) // no straggling logs, stop reading and mark channel closed
 					return
 				}
-			}
-		case <-time.After(time.Millisecond * 50):
-			if doClose {
-				close(log.logChan)
 			}
 		}
 	}
@@ -378,7 +370,7 @@ func CreateDummyLogger() *Logger {
 }
 
 // WaitForChanClose which ever comes first context cancel or c closed. Returns instantly if channel is nil.
-func WaitForChanClose(ctx context.Context, c chan interface{}) {
+func WaitForChanClose(ctx context.Context, c chan struct{}) {
 	if c == nil {
 		return
 	}

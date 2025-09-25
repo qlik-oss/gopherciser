@@ -605,10 +605,12 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 }
 
 // Execute scenario (will be replaced by scheduler)
-func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error {
+func (cfg *Config) Execute(ctx context.Context, templateData any) error {
 	timeout := time.Duration(cfg.Settings.Timeout) * time.Second
 	// Setup logging
-	log, err := setupLogging(ctx, cfg.Settings.LogSettings, cfg.CustomLoggers, templateData, &cfg.Counters)
+	logCtx, logCancel := context.WithCancel(ctx)
+	log, err := setupLogging(logCtx, cfg.Settings.LogSettings, cfg.CustomLoggers, templateData, &cfg.Counters)
+	defer logCancel()
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -616,6 +618,7 @@ func (cfg *Config) Execute(ctx context.Context, templateData interface{}) error 
 		return errors.New("setup logging returned nil logger")
 	}
 	defer func() {
+		logCancel() // signal logging to start emptying log channel (above cancel would be triggered after this defer and is mostly for the error returns)
 		if err := log.Close(); err != nil {
 			_, _ = fmt.Fprintln(os.Stderr, "Error closing log: ", err)
 		}
@@ -1203,7 +1206,7 @@ func setupLogging(ctx context.Context, settings LogSettings, customLoggers []*lo
 }
 
 // statusPrinter should be started as goroutine
-func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan chan interface{}, counters *statistics.ExecutionCounters) {
+func statusPrinter(ctx context.Context, statusDelay time.Duration, closeChan chan struct{}, counters *statistics.ExecutionCounters) {
 	errorColor := ansiStatus
 	warningColor := ansiStatus
 

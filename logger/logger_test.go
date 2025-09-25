@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -69,7 +68,7 @@ func TestLogging(t *testing.T) {
 	})
 
 	log.AddLoggers(lgr)
-	log.StartLogger(context.Background())
+	log.StartLogger(t.Context())
 	buf.wait(t, false)
 
 	// Verify written header
@@ -147,7 +146,7 @@ func TestLogging(t *testing.T) {
 	expectedString = ""
 	verifyString(t, buf.String(), expectedString)
 
-	if err := log.Close(); err != nil {
+	if err := log.CloseWithTimeout(30 * time.Second); err != nil {
 		t.Error("Error closing logger:", err)
 	}
 }
