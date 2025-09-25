@@ -320,7 +320,7 @@ func execute() error {
 	// If process is not killed 5 minutes after context cancelled, create hang.stack file and force quit.
 	go func() {
 		<-ctx.Done()
-		killcontext, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		killcontext, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 		<-killcontext.Done()
 
