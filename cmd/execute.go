@@ -314,25 +314,17 @@ func execute() error {
 	}
 
 	// === Handle SIGINT ===
-	// this could be replaced by
-	// 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	// when moving above go 1.15
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		cancel()
-	}()
 
 	// If process is not killed 5 minutes after context cancelled, create hang.stack file and force quit.
 	go func() {
 		<-ctx.Done()
-		killcontext, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		killcontext, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
 		<-killcontext.Done()
 
+		_, _ = os.Stderr.WriteString("force quitting, writing stack file...")
 		stackFile := fmt.Sprintf("%s_%d_hang.stack", path.Base(os.Args[0]), os.Getpid())
 
 		_, _ = os.Stderr.WriteString("5 minutes passed since process was cancelled, creating stack file for debugging and force quitting!")
