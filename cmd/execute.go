@@ -314,17 +314,8 @@ func execute() error {
 	}
 
 	// === Handle SIGINT ===
-	// this could be replaced by
-	// 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	// when moving above go 1.15
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		cancel()
-	}()
 
 	// If process is not killed 5 minutes after context cancelled, create hang.stack file and force quit.
 	go func() {
