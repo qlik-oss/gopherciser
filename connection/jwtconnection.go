@@ -20,7 +20,7 @@ type (
 	// ConnectJWTSettings app and server settings using JWT
 	ConnectJWTSettingsCore struct {
 		// KeyPath path to jwt signing key
-		KeyPath string `json:"keypath,omitempty" doc-key:"config.connectionSettings.jwtsettings.keypath"`
+		KeyPath string `json:"keypath,omitempty" doc-key:"config.connectionSettings.jwtsettings.keypath" displayname:"Key Path"`
 		// JwtHeader JWT headers as escaped json string. Custom headers to be added to the JWT header.
 		// The strings for JwtHeader and Claims will be processed as a GO template
 		// where User struct can be used
@@ -33,17 +33,17 @@ type (
 		// The entries for "alg" and "typ" are added automatically to the header.
 		// E.g. to add a key id header, "kid" add the following string
 		// "{\"kid\":\"myKeyId\"}"
-		JwtHeader synced.Template `json:"jwtheader,omitempty" doc-key:"config.connectionSettings.jwtsettings.jwtheader"`
+		JwtHeader synced.Template `json:"jwtheader" doc-key:"config.connectionSettings.jwtsettings.jwtheader"  displayname:"JWT Header"`
 		// Claims JWT claims as escaped json string. E.g. for an on prem JWT auth (with user and directory set as keys in QMC):
 		// "{\"user\": \"{{.UserName}}\",\"directory\": \"{{.Directory}}\"}"
 		// to add "iat":
 		// "{\"iat\":{{now.Unix}}}"
 		// or to add "exp" with 5 hours expiration
 		// "{\"exp\":{{(now.Add 18000000000000).Unix}}}"
-		Claims synced.Template `json:"claims,omitempty" doc-key:"config.connectionSettings.jwtsettings.claims"`
+		Claims synced.Template `json:"claims" doc-key:"config.connectionSettings.jwtsettings.claims" displayname:"Claims"`
 
 		// Alg is the signing method to be used for the JWT. Defaults to RS512 if omitted
-		Alg string `json:"alg,omitempty" doc-key:"config.connectionSettings.jwtsettings.alg"`
+		Alg string `json:"alg,omitempty" doc-key:"config.connectionSettings.jwtsettings.alg" displayname:"Algoritm"`
 	}
 
 	ConnectJWTSettings struct {
