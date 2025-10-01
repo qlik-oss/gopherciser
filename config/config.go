@@ -311,7 +311,7 @@ func NewExampleConfig() (*Config, error) {
 	selectAction.Type = scenario.ActionSelect
 	selectAction.Label = "select 1-10 values in object uvxyz"
 
-	logFileName, err := synced.New("scenarioresult.tsv")
+	logFileName, err := synced.New("./logs/{{.ConfigFile}}.tsv")
 	if err != nil {
 		return nil, err
 	}
