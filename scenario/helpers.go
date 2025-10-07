@@ -48,7 +48,7 @@ func GetCurrentSheet(uplink *enigmahandlers.SenseUplink) (*senseobjects.Sheet, e
 	}
 	sheetObj, ok := sheets[0].EnigmaObject.(*senseobjects.Sheet)
 	if !ok {
-		return nil, errors.Errorf("failed to cast object id<%s> to sheet object", sheetObj.GenericId)
+		return nil, errors.Errorf("failed to cast object id<%s> to sheet object", sheets[0].ID)
 	}
 	return sheetObj, nil
 }
