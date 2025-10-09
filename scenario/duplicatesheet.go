@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
@@ -92,22 +91,21 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 	}, actionState, true, fmt.Sprintf("failed to get child infos for sheet<%s>", sheet.ID))
 
 	// change title, work directly on map interface instead of decoding to structure to be non destructive of unknown properties
-	var metaDef *senseobjects.SheetMetaDef
 	if sheet.Properties == nil {
 		actionState.AddErrors(errors.Errorf("sheet properties are nil"))
 		return
 	}
-	if err := mapstructure.Decode((*sheet.Properties)["qMetaDef"], &metaDef); err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to decode metaDef"))
+	metaDefAny := (*sheet.Properties)["qMetaDef"]
+	if metaDefAny == nil {
+		actionState.AddErrors(errors.Errorf("qMetaDef not found"))
 		return
 	}
-
-	if metaDef != nil {
-		metaDef.Title = fmt.Sprintf("%s (Cloned by %s)", metaDef.Title, sessionState.LogEntry.Session.User)
-	} else {
-		sessionState.LogEntry.Log(logger.WarningLevel, "sheet metaDef was nil")
+	metaDef, ok := metaDefAny.(map[string]any)
+	if !ok {
+		actionState.AddErrors(errors.Errorf("failed to cast metaDef type<%T> to map[string]any", metaDefAny))
+		return
 	}
-
+	metaDef["title"] = fmt.Sprintf("%s (Cloned by %s)", metaDef["title"], sessionState.LogEntry.Session.User)
 	(*sheet.Properties)["qMetaDef"] = metaDef
 
 	wg.Wait()
