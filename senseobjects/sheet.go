@@ -30,17 +30,8 @@ type (
 		Rowspan int    `json:"rowspan,omitempty"`
 	}
 
-	// SheetProperties properties of sense sheet
+	// SheetProperties properties of sense sheet, keep as map to be non destructive since this is sent in updates
 	SheetProperties map[string]any
-	//struct {
-	// 	Info      *enigma.NxInfo   `json:"qInfo"`
-	// 	MetaDef   *SheetMetaDef    `json:"qMetaDef"`
-	// 	Rank      float64          `json:"rank,omitempty"`
-	// 	Thumbnail *SheetThumbnail  `json:"thumbnail,omitempty"`
-	// 	Columns   helpers.FuzzyInt `json:"columns,omitempty"`
-	// 	Rows      helpers.FuzzyInt `json:"rows,omitempty"`
-	// 	Cells     []*SheetCells    `json:"cells"`
-	// }
 
 	// SheetLayout layout of sense sheet
 	SheetLayout struct {
