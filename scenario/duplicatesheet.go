@@ -112,11 +112,12 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 
 	wg.Wait()
 	var newChildInfos []*enigma.NxInfo
-	sessionState.SendRequest(actionState, func(ctx context.Context) error {
+	err = sessionState.SendRequest(actionState, func(ctx context.Context) error {
 		newChildInfos, err = sheet.GetChildInfos(ctx)
 		return err
 	})
-	if actionState.Failed {
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
 
