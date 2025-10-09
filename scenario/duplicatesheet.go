@@ -3,8 +3,11 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"sync"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -42,6 +45,9 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		return
 	}
 
+	var wg sync.WaitGroup
+	var oldChildInfos []*enigma.NxInfo
+
 	// Clone sheet
 	var sheetID string
 	cloneObject := func(ctx context.Context) error {
@@ -53,8 +59,12 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 			return errors.WithStack(err)
 		}
 
+		wg.Add(1)
 		// Send GetChildInfos request for original sheet for api compliance
-		getSheetChildInfosAsync(sessionState, actionState, app, origSheetId)
+		getSheetChildInfosAsync(sessionState, actionState, app, origSheetId, func(infos []*enigma.NxInfo, err error) {
+			defer wg.Done()
+			oldChildInfos = infos
+		})
 
 		return nil
 	}
@@ -77,8 +87,88 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		return
 	}
 
+	sessionState.QueueRequest(func(ctx context.Context) error {
+		return nil
+	}, actionState, true, fmt.Sprintf("failed to get child infos for sheet<%s>", sheet.ID))
+
 	// change title
-	sheet.Properties.MetaDef.Title = fmt.Sprintf("%s (Cloned by %s)", sheet.Properties.MetaDef.Title, sessionState.LogEntry.Session.User)
+	var metaDef *senseobjects.SheetMetaDef
+	if sheet.Properties == nil {
+		actionState.AddErrors(errors.Errorf("sheet properties are nil"))
+		return
+	}
+	if err := mapstructure.Decode((*sheet.Properties)["qMetaDef"], &metaDef); err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to decode metaDef"))
+		return
+	}
+
+	if metaDef != nil {
+		metaDef.Title = fmt.Sprintf("%s (Cloned by %s)", metaDef.Title, sessionState.LogEntry.Session.User)
+	} else {
+		sessionState.LogEntry.Log(logger.WarningLevel, "sheet metaDef was nil")
+	}
+
+	(*sheet.Properties)["MetaDef"] = metaDef
+
+	wg.Wait()
+	var newChildInfos []*enigma.NxInfo
+	sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		newChildInfos, err = sheet.GetChildInfos(ctx)
+		return err
+	})
+	if actionState.Failed {
+		return
+	}
+
+	if len(oldChildInfos) != len(newChildInfos) {
+		actionState.AddErrors(
+			errors.Errorf("source sheet<%s> child count<%d> not same as destination sheet<%s> child count<%d>", sheetID, len(oldChildInfos), sheet.ID, len(newChildInfos)),
+		)
+		return
+	}
+
+	cellsAny := (*sheet.Properties)["cells"]
+	if cellsAny == nil {
+		actionState.AddErrors(errors.Errorf("sheet<%s> has no cells", sheet.ID))
+		return
+	}
+	cells, ok := cellsAny.([]any)
+	if !ok {
+		actionState.AddErrors(errors.Errorf("failed to cast sheet cells type<%T> to []any", cellsAny))
+		return
+	}
+
+	newCells := make([]map[string]any, len(cells))
+	for i, cellAny := range cells {
+		cell, ok := cellAny.(map[string]any)
+		if !ok {
+			actionState.AddErrors(errors.Errorf("failed to cast cell<%d> type<%T> to map[string]any", i, cellAny))
+			return
+		}
+		oldNameAny := cell["name"]
+		if oldNameAny == nil {
+			actionState.AddErrors(errors.Errorf("item<%d> cell<%v> does not have a name", i, cell))
+			return
+		}
+		oldName, ok := cell["name"].(string)
+		if !ok {
+			actionState.AddErrors(errors.Errorf("could not cast %v type<%T> to string", oldNameAny, oldNameAny))
+			return
+		}
+
+		// Find position in old infos
+		for j, oldInfo := range oldChildInfos {
+			if oldInfo.Id == oldName {
+				// replace cell name with that position in newinfo
+				cell["name"] = newChildInfos[j].Id
+				newCells[i] = cell
+				break
+			}
+		}
+	}
+
+	// replace cells with new cells
+	(*sheet.Properties)["cells"] = newCells
 
 	// update sheet properties
 	if err := sessionState.SendRequest(actionState, sheet.SetProperties); err != nil {
@@ -93,13 +183,6 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 			return
 		}
 	}
-
-	// Send GetChildInfos request for cloned sheet for api compliance
-	sessionState.QueueRequest(func(ctx context.Context) error {
-		_, err := sheet.GetChildInfos(ctx)
-		return errors.WithStack(err)
-	}, actionState, false, fmt.Sprintf("failed to get child infos for sheet<%s>", sheet.ID))
-
 	// Set new sheet as the "active" sheet
 	if settings.ChangeSheet {
 		sessionState.Wait(actionState) // wait until sheetList has been updated
@@ -139,14 +222,17 @@ func (settings DuplicateSheetSettings) AffectsAppObjectsAction(structure appstru
 	}
 }
 
-func getSheetChildInfosAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id string) {
-	sessionState.QueueRequest(func(ctx context.Context) error {
+func getSheetChildInfosAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id string,
+	callback func(infos []*enigma.NxInfo, err error)) {
+	sessionState.QueueRequestWithCallback(func(ctx context.Context) error {
 		sheetObject, err := senseobjects.GetSheet(ctx, app, id)
 		if err != nil {
+			callback(nil, err)
 			return errors.WithStack(err)
 		}
 
-		_, err = sheetObject.GetChildInfos(ctx)
+		infos, err := sheetObject.GetChildInfos(ctx)
+		callback(infos, err)
 		return errors.WithStack(err)
-	}, actionState, false, fmt.Sprintf("failed to get child infos for sheet<%s>", id))
+	}, actionState, true, fmt.Sprintf("failed to get child infos for sheet<%s>", id), func(err error) {})
 }
