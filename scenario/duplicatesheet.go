@@ -91,7 +91,7 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		return nil
 	}, actionState, true, fmt.Sprintf("failed to get child infos for sheet<%s>", sheet.ID))
 
-	// change title
+	// change title, work directly on map interface instead of decoding to structure to be non destructive of unknown properties
 	var metaDef *senseobjects.SheetMetaDef
 	if sheet.Properties == nil {
 		actionState.AddErrors(errors.Errorf("sheet properties are nil"))
