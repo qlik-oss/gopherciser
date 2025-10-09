@@ -108,7 +108,7 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 		sessionState.LogEntry.Log(logger.WarningLevel, "sheet metaDef was nil")
 	}
 
-	(*sheet.Properties)["MetaDef"] = metaDef
+	(*sheet.Properties)["qMetaDef"] = metaDef
 
 	wg.Wait()
 	var newChildInfos []*enigma.NxInfo
