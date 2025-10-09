@@ -355,7 +355,7 @@
         "(optional) GUID of the sheet to delete."
     ],
     "duplicatesheet.id": [
-        "ID of the sheet to clone."
+        "(optional) ID of the sheet to clone. If no id provided the current sheet will be duplicated (e.g. from previous `changesheet` action)."
     ],
     "duplicatesheet.save": [
         "Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted."

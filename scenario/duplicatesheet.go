@@ -47,11 +47,20 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 	var wg sync.WaitGroup
 	var oldChildInfos []*enigma.NxInfo
 
+	var origSheetId string
+	if settings.ID != "" {
+		origSheetId = sessionState.IDMap.Get(settings.ID)
+	} else {
+		currentSheet, _ := GetCurrentSheet(uplink)
+		if currentSheet != nil {
+			origSheetId = currentSheet.ID
+		}
+	}
+
 	// Clone sheet
 	var sheetID string
 	cloneObject := func(ctx context.Context) error {
 		var err error
-		origSheetId := sessionState.IDMap.Get(settings.ID)
 		sheetID, err = app.Doc.CloneObject(ctx, origSheetId)
 
 		if err != nil {
@@ -205,10 +214,6 @@ func (settings DuplicateSheetSettings) Execute(sessionState *session.State, acti
 
 // Validate clone object settings
 func (settings DuplicateSheetSettings) Validate() ([]string, error) {
-	if settings.ID == "" {
-		return nil, errors.New("Duplicate sheet needs an id of a sheet to duplicate")
-	}
-
 	return nil, nil
 }
 
