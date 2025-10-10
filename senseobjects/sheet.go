@@ -6,7 +6,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v4"
-	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 type (
@@ -31,16 +30,8 @@ type (
 		Rowspan int    `json:"rowspan,omitempty"`
 	}
 
-	// SheetProperties properties of sense sheet
-	SheetProperties struct {
-		Info      *enigma.NxInfo   `json:"qInfo"`
-		MetaDef   *SheetMetaDef    `json:"qMetaDef"`
-		Rank      float64          `json:"rank,omitempty"`
-		Thumbnail *SheetThumbnail  `json:"thumbnail,omitempty"`
-		Columns   helpers.FuzzyInt `json:"columns,omitempty"`
-		Rows      helpers.FuzzyInt `json:"rows,omitempty"`
-		Cells     []*SheetCells    `json:"cells"`
-	}
+	// SheetProperties properties of sense sheet, keep as map to be non destructive since this is sent in updates
+	SheetProperties map[string]any
 
 	// SheetLayout layout of sense sheet
 	SheetLayout struct {

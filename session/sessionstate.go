@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	neturl "net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -166,7 +167,12 @@ const (
 
 var (
 	defaultReconnectBackoff = wsdialer.DefaultBackoff // current set to same as event ws backoff, but keeping constant so it could be independently changed
+	TargetEnvOverride       = ""
 )
+
+func init() {
+	TargetEnvOverride = os.Getenv("TARGETENV")
+}
 
 // Error implements error interface
 func (err NoActiveDocError) Error() string {
@@ -1082,6 +1088,9 @@ func (state *State) LogTrafficMetric(responseTime int64, sent, received uint64, 
 
 // TargetEnv currently set target enviroment
 func (state *State) TargetEnv() string {
+	if TargetEnvOverride != "" {
+		return TargetEnvOverride
+	}
 	return state.targetEnv
 }
 

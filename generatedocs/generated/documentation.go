@@ -283,7 +283,7 @@ var (
 		"destinationspace.destinationspacename":           {"Specify destination space by name."},
 		"duplicatesheet.changesheet":                      {"Clear the objects currently subscribed to and then subribe to all objects on the cloned sheet (which essentially corresponds to using the `changesheet` action to go to the cloned sheet) (`true` / `false`). Defaults to `false`, if omitted."},
 		"duplicatesheet.cloneid":                          {"(optional) ID to be used to identify the sheet in any subsequent `changesheet`, `duplicatesheet`, `publishsheet` or `unpublishsheet` action."},
-		"duplicatesheet.id":                               {"ID of the sheet to clone."},
+		"duplicatesheet.id":                               {"(optional) ID of the sheet to clone. If no id provided the current sheet will be duplicated (e.g. from previous `changesheet` action)."},
 		"duplicatesheet.save":                             {"Execute `saveobjects` after the cloning operation to save all modified objects (`true` / `false`). Defaults to `false`, if omitted."},
 		"generateodag.linkname":                           {"Name of the ODAG link from which to generate an app. The name is displayed in the ODAG navigation bar at the bottom of the *selection app*."},
 		"getscript.savelog":                               {"Save load script to log file under the INFO log labelled *LoadScript*"},
