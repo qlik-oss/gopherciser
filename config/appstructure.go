@@ -312,12 +312,16 @@ func (cfg *Config) GetAppStructures(ctx context.Context, includeRaw bool) error 
 	return nil
 }
 
-func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, includeRaw bool) error {
+func (structure *GeneratedAppStructure) getStructureForObjectSync(sessionState *session.State, actionState *action.State, app *senseobjects.App, id, typ string, includeRaw bool) error {
 	if structure == nil {
 		return errors.New("appStructure object is nil")
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	sessionState.QueueRequest(func(ctx context.Context) error {
+		defer wg.Done()
 		obj := appstructure.AppStructureObject{
 			AppObjectDef: appstructure.AppObjectDef{
 				Id:   id,
@@ -376,6 +380,7 @@ func (structure *GeneratedAppStructure) getStructureForObjectAsync(sessionState 
 		return nil
 	}, actionState, true, "")
 
+	wg.Done()
 	return nil
 }
 
