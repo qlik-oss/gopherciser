@@ -1,8 +1,6 @@
 package helpers
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -16,11 +14,8 @@ type (
 	}
 )
 
-func (pool *WorkerPool) worker(id int) {
-	i := 0
+func (pool *WorkerPool) worker() {
 	for task := range pool.taskChan {
-		i++
-		fmt.Printf("Worker<%d> processing task<%d>\n", id, i) // TODO remove
 		pool.resultChan <- task()
 		if pool.handledTasks.Inc() >= pool.total {
 			close(pool.resultChan)
@@ -39,6 +34,7 @@ func NewWorkerPool(concurrency, total int) (*WorkerPool, error) {
 	if total < 1 {
 		return nil, errors.Errorf("total tasks not set")
 	}
+
 	pool := &WorkerPool{
 		taskChan:   make(chan func() error, concurrency),
 		resultChan: make(chan error, total),
@@ -46,8 +42,8 @@ func NewWorkerPool(concurrency, total int) (*WorkerPool, error) {
 	}
 
 	// Start the workers
-	for i := 1; i <= concurrency; i++ {
-		go pool.worker(i)
+	for range concurrency {
+		go pool.worker()
 	}
 
 	return pool, nil
