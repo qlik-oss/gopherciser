@@ -380,7 +380,7 @@ func (structure *GeneratedAppStructure) getStructureForObjectSync(sessionState *
 		return nil
 	}, actionState, true, "")
 
-	wg.Done()
+	wg.Wait()
 	return nil
 }
 
