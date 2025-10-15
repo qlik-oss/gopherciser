@@ -10,7 +10,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: cimg/go:1.24
+      - image: cimg/go:1.25
     resource_class: large
     steps:
       - checkout
@@ -21,7 +21,7 @@ jobs:
             set -x
             mkdir -p build
       - restore_cache:
-          key: dependency-cache-1.24{{ checksum "go.sum" }}
+          key: dependency-cache-1.25{{ checksum "go.sum" }}
       - run:
           name: Run Golang tests
           command: |
@@ -41,7 +41,7 @@ jobs:
           command: |
             make build
       - save_cache:
-          key: dependency-cache-1.24{{ checksum "go.sum" }}
+          key: dependency-cache-1.25{{ checksum "go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"
       - run:
@@ -80,7 +80,7 @@ jobs:
     parameters:
       version:
         type: string
-        default: "1.23"
+        default: "1.25"
     docker:
       - image: cimg/go:<< parameters.version >>
     resource_class: large
@@ -149,7 +149,7 @@ jobs:
   build-publish-docker:
     <<: *defaults
     docker:
-      - image: cimg/go:1.24
+      - image: cimg/go:1.25
     steps:
       - checkout
       - setup_remote_docker
@@ -194,9 +194,9 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+/
-      - test-go-version:
-          name: "Test Go 1.24"
-          version: "1.24"
+      # - test-go-version:
+      #     name: "Test Go 1.26"
+      #     version: "1.26"
       - publish-github:
           requires:
             - build

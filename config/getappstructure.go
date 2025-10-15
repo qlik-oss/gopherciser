@@ -9,6 +9,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/appstructure"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
@@ -70,13 +71,27 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 		structure.logEntry = sessionState.LogEntry
 	}
 
+	pool, err := helpers.NewWorkerPool(10, len(allInfos))
+	if err != nil {
+		actionState.AddErrors(errors.Wrap(err, "failed to start worker pool"))
+		return
+	}
+
 	for _, info := range allInfos {
-		if info == nil {
-			continue
-		}
-		if err := structure.getStructureForObjectAsync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw); err != nil {
+		if err := pool.AddTask(func() error {
+			if info == nil {
+				return nil
+			}
+
+			return structure.getStructureForObjectSync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw)
+		}); err != nil {
 			actionState.AddErrors(err)
-			return
+		}
+	}
+
+	for result := range pool.Results() {
+		if result != nil {
+			actionState.AddErrors(result)
 		}
 	}
 
