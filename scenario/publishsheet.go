@@ -10,6 +10,7 @@ import (
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
@@ -20,10 +21,10 @@ type (
 	PublishSheetMode int
 	// PublishSheetSettings contains details for publishing sheet(s)
 	PublishSheetSettings struct {
-		Mode             PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
-		SheetIDs         []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
-		IncludePublished bool             `json:"includePublished" displayname:"Try to publish already published sheets" doc-key:"publishsheet.includePublished"`
-		Thinktime        time.Duration    `json:"thinktime" displayname:"Think time" doc-key:"publishsheet.thinktime"`
+		Mode             PublishSheetMode     `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
+		SheetIDs         []string             `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
+		IncludePublished bool                 `json:"includePublished" displayname:"Try to publish already published sheets" doc-key:"publishsheet.includePublished"`
+		Thinktime        helpers.TimeDuration `json:"thinktime" displayname:"Think time" doc-key:"publishsheet.thinktime"`
 	}
 )
 

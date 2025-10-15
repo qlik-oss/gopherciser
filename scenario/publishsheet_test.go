@@ -3,6 +3,8 @@ package scenario
 import (
 	"testing"
 	"time"
+
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 func TestUnmarshalPublishSheetMode(t *testing.T) {
@@ -67,12 +69,12 @@ func TestValidatePublishSheetSettings(t *testing.T) {
 		input   PublishSheetSettings
 		isValid bool
 	}{
-		{PublishSheetSettings{AllSheets, nil, false, time.Nanosecond}, true},
-		{PublishSheetSettings{AllSheets, []string{"A", "B", "C"}, false, time.Nanosecond}, false},
-		{PublishSheetSettings{AllSheets, []string{}, true, time.Nanosecond}, true},
-		{PublishSheetSettings{SheetIDs, nil, false, time.Nanosecond}, false},
-		{PublishSheetSettings{SheetIDs, []string{}, true, time.Nanosecond}, false},
-		{PublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, false, time.Nanosecond}, true},
+		{PublishSheetSettings{AllSheets, nil, false, helpers.TimeDuration(time.Nanosecond)}, true},
+		{PublishSheetSettings{AllSheets, []string{"A", "B", "C"}, false, helpers.TimeDuration(time.Nanosecond)}, false},
+		{PublishSheetSettings{AllSheets, []string{}, true, helpers.TimeDuration(time.Nanosecond)}, true},
+		{PublishSheetSettings{SheetIDs, nil, false, helpers.TimeDuration(time.Nanosecond)}, false},
+		{PublishSheetSettings{SheetIDs, []string{}, true, helpers.TimeDuration(time.Nanosecond)}, false},
+		{PublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, false, helpers.TimeDuration(time.Nanosecond)}, true},
 	}
 
 	for _, tc := range tt {
