@@ -467,6 +467,9 @@
     "publishsheet.includePublished": [
         "Try to publish already published sheets."
     ],
+    "publishsheet.thinktime" : [
+        "Duration to 'think' inbetween publishing sheets (for example, `1h`, `30s` or `1m10s`). Defaults to 100ms."
+    ],
     "randomaction.iterations": [
         "Number of random actions to perform."
     ],
@@ -606,6 +609,9 @@
     ],
     "unpublishsheet.sheetIds": [
         "(optional) Array of sheet IDs for the `sheetids` mode."
+    ],
+    "unpublishsheet.thinktime" : [
+        "Duration to 'think' inbetween unpublishing sheets (for example, `1h`, `30s` or `1m10s`). Defaults to 100ms."
     ],
     "setsensevariable.name": [
         "Name of the Qlik Sense variable to set."
