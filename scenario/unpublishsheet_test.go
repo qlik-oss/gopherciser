@@ -3,6 +3,8 @@ package scenario
 import (
 	"testing"
 	"time"
+
+	"github.com/qlik-oss/gopherciser/helpers"
 )
 
 func TestValidateUnPublishSheetSettings(t *testing.T) {
@@ -12,12 +14,12 @@ func TestValidateUnPublishSheetSettings(t *testing.T) {
 		input   UnPublishSheetSettings
 		isValid bool
 	}{
-		{UnPublishSheetSettings{AllSheets, nil, time.Nanosecond}, true},
-		{UnPublishSheetSettings{AllSheets, []string{"A", "B", "C"}, time.Nanosecond}, false},
-		{UnPublishSheetSettings{AllSheets, []string{}, time.Nanosecond}, true},
-		{UnPublishSheetSettings{SheetIDs, nil, time.Nanosecond}, false},
-		{UnPublishSheetSettings{SheetIDs, []string{}, time.Nanosecond}, false},
-		{UnPublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, time.Nanosecond}, true},
+		{UnPublishSheetSettings{AllSheets, nil, helpers.TimeDuration(time.Nanosecond)}, true},
+		{UnPublishSheetSettings{AllSheets, []string{"A", "B", "C"}, helpers.TimeDuration(time.Nanosecond)}, false},
+		{UnPublishSheetSettings{AllSheets, []string{}, helpers.TimeDuration(time.Nanosecond)}, true},
+		{UnPublishSheetSettings{SheetIDs, nil, helpers.TimeDuration(time.Nanosecond)}, false},
+		{UnPublishSheetSettings{SheetIDs, []string{}, helpers.TimeDuration(time.Nanosecond)}, false},
+		{UnPublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, helpers.TimeDuration(time.Nanosecond)}, true},
 	}
 
 	for _, tc := range tt {

@@ -116,7 +116,7 @@ var (
 		},
 		"publishsheet": {
 			Description: "## PublishSheet action\n\nPublish sheets in the current app.\n",
-			Examples:    "### Example\n```json\n{\n     \"label\": \"PublishSheets\",\n     \"action\": \"publishsheet\",\n     \"settings\": {\n       \"mode\": \"sheetids\",\n       \"sheetIds\": [\"qmGcYS\", \"bKbmgT\"]\n     }\n}\n```\n",
+			Examples:    "### Example\n\nPublish two sheets\n\n```json\n{\n     \"label\": \"PublishSheets\",\n     \"action\": \"publishsheet\",\n     \"settings\": {\n       \"mode\": \"sheetids\",\n       \"sheetIds\": [\"qmGcYS\", \"bKbmgT\"]\n     }\n}\n```\n\nPublish all unpublished sheets with 5 seconds think time in between each one\n\n```json\n{\n     \"label\": \"PublishSheets\",\n     \"action\": \"publishsheet\",\n     \"settings\": {\n       \"mode\": \"allsheets\",\n       \"thinktime\": \"5s\"\n     }\n}\n```\n",
 		},
 		"randomaction": {
 			Description: "## RandomAction action\n\nRandomly select other actions to perform. This meta-action can be used as a starting point for your testing efforts, to simplify script authoring or to add background load.\n\n`randomaction` accepts a list of action types between which to randomize. An execution of `randomaction` executes one or more of the listed actions (as determined by the `iterations` parameter), randomly chosen by a weighted probability. If nothing else is specified, each action has a default random mode that is used. An override is done by specifying one or more parameters of the original action.\n\nEach action executed by `randomaction` is followed by a customizable `thinktime`.\n\n**Note:** The recommended way to use this action is to prepend it with an `openapp` and a `changesheet` action as this ensures that a sheet is always in context.\n",

@@ -5,6 +5,7 @@ import (
 
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/senseobjects"
 	"github.com/qlik-oss/gopherciser/session"
 
@@ -13,9 +14,9 @@ import (
 
 // UnPublishSheetSettings specifies un-publish sheet settings
 type UnPublishSheetSettings struct {
-	Mode      PublishSheetMode `json:"mode" displayname:"Un-publish mode" doc-key:"unpublishsheet.mode"`
-	SheetIDs  []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"unpublishsheet.sheetIds"`
-	Thinktime time.Duration    `json:"thinktime" displayname:"Think time" doc-key:"publishsheet.thinktime"`
+	Mode      PublishSheetMode     `json:"mode" displayname:"Un-publish mode" doc-key:"unpublishsheet.mode"`
+	SheetIDs  []string             `json:"sheetIds" displayname:"Sheet IDs" doc-key:"unpublishsheet.sheetIds"`
+	Thinktime helpers.TimeDuration `json:"thinktime" displayname:"Think time" doc-key:"unpublishsheet.thinktime"`
 }
 
 // Execute performs the un-publish sheet action
