@@ -1,6 +1,9 @@
 package scenario
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestValidateUnPublishSheetSettings(t *testing.T) {
 	t.Parallel()
@@ -9,12 +12,12 @@ func TestValidateUnPublishSheetSettings(t *testing.T) {
 		input   UnPublishSheetSettings
 		isValid bool
 	}{
-		{UnPublishSheetSettings{AllSheets, nil}, true},
-		{UnPublishSheetSettings{AllSheets, []string{"A", "B", "C"}}, false},
-		{UnPublishSheetSettings{AllSheets, []string{}}, true},
-		{UnPublishSheetSettings{SheetIDs, nil}, false},
-		{UnPublishSheetSettings{SheetIDs, []string{}}, false},
-		{UnPublishSheetSettings{SheetIDs, []string{"A", "B", "C"}}, true},
+		{UnPublishSheetSettings{AllSheets, nil, time.Nanosecond}, true},
+		{UnPublishSheetSettings{AllSheets, []string{"A", "B", "C"}, time.Nanosecond}, false},
+		{UnPublishSheetSettings{AllSheets, []string{}, time.Nanosecond}, true},
+		{UnPublishSheetSettings{SheetIDs, nil, time.Nanosecond}, false},
+		{UnPublishSheetSettings{SheetIDs, []string{}, time.Nanosecond}, false},
+		{UnPublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, time.Nanosecond}, true},
 	}
 
 	for _, tc := range tt {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
@@ -22,6 +23,7 @@ type (
 		Mode             PublishSheetMode `json:"mode" displayname:"Publish mode" doc-key:"publishsheet.mode"`
 		SheetIDs         []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"publishsheet.sheetIds"`
 		IncludePublished bool             `json:"includePublished" displayname:"Try to publish already published sheets" doc-key:"publishsheet.includePublished"`
+		Thinktime        time.Duration    `json:"thinktime" displayname:"Think time" doc-key:"publishsheet.thinktime"`
 	}
 )
 
@@ -31,6 +33,8 @@ const (
 	// SheetIDs publishes sheets specified in the sheetIds array
 	SheetIDs
 )
+
+const DefaultPublishSheetThinkTime = 100 * time.Millisecond
 
 var publishSheetModeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"allsheets": int(AllSheets),
@@ -105,13 +109,19 @@ func (publishSheetSettings PublishSheetSettings) Execute(sessionState *session.S
 		return nil
 	}
 
-	executePubUnPubAction(publishSheetSettings.Mode, publishSheetSettings.SheetIDs,
+	thinkTime := time.Duration(publishSheetSettings.Thinktime)
+	if thinkTime < 1 {
+		sessionState.LogDebugf("no thinktime set, using default<%s>", DefaultPublishSheetThinkTime)
+		thinkTime = DefaultPublishSheetThinkTime
+	}
+
+	executePubUnPubAction(publishSheetSettings.Mode, publishSheetSettings.SheetIDs, thinkTime,
 		publishAction, "failed to publish sheet(s)",
 		sessionState, actionState)
 }
 
 // executePubUnPubAction executes the publish/un-publish sheet action
-func executePubUnPubAction(mode PublishSheetMode, sheetIDs []string,
+func executePubUnPubAction(mode PublishSheetMode, sheetIDs []string, thinkTime time.Duration,
 	action func(*senseobjects.Sheet, context.Context) error, errMsg string,
 	sessionState *session.State,
 	actionState *action.State) {
@@ -155,7 +165,7 @@ func executePubUnPubAction(mode PublishSheetMode, sheetIDs []string,
 		}
 	}
 
-	for _, sheetId := range selectedIDs {
+	for i, sheetId := range selectedIDs {
 		var sheetObject *senseobjects.Sheet
 		sheetId = sessionState.IDMap.Get(sheetId)
 		getSheet := func(ctx context.Context) error {
@@ -163,6 +173,11 @@ func executePubUnPubAction(mode PublishSheetMode, sheetIDs []string,
 			sheetObject, err = senseobjects.GetSheet(ctx, app, sheetId)
 			return err
 		}
+
+		if i != 0 {
+			<-time.After(time.Duration(thinkTime))
+		}
+
 		if err := sessionState.SendRequest(actionState, getSheet); err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return

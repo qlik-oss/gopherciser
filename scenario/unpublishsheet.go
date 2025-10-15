@@ -1,6 +1,8 @@
 package scenario
 
 import (
+	"time"
+
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/senseobjects"
@@ -11,8 +13,9 @@ import (
 
 // UnPublishSheetSettings specifies un-publish sheet settings
 type UnPublishSheetSettings struct {
-	Mode     PublishSheetMode `json:"mode" displayname:"Un-publish mode" doc-key:"unpublishsheet.mode"`
-	SheetIDs []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"unpublishsheet.sheetIds"`
+	Mode      PublishSheetMode `json:"mode" displayname:"Un-publish mode" doc-key:"unpublishsheet.mode"`
+	SheetIDs  []string         `json:"sheetIds" displayname:"Sheet IDs" doc-key:"unpublishsheet.sheetIds"`
+	Thinktime time.Duration    `json:"thinktime" displayname:"Think time" doc-key:"publishsheet.thinktime"`
 }
 
 // Execute performs the un-publish sheet action
@@ -23,7 +26,13 @@ func (unPublishSheetSettings UnPublishSheetSettings) Execute(sessionState *sessi
 		return sheet.UnPublish(ctx)
 	}
 
-	executePubUnPubAction(unPublishSheetSettings.Mode, unPublishSheetSettings.SheetIDs,
+	thinkTime := time.Duration(unPublishSheetSettings.Thinktime)
+	if thinkTime < 1 {
+		sessionState.LogDebugf("no thinktime set, using default<%s>", DefaultPublishSheetThinkTime)
+		thinkTime = DefaultPublishSheetThinkTime
+	}
+
+	executePubUnPubAction(unPublishSheetSettings.Mode, unPublishSheetSettings.SheetIDs, thinkTime,
 		unPublishAction, "failed to un-publish sheet(s)",
 		sessionState, actionState)
 }

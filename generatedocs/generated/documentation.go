@@ -320,6 +320,7 @@ var (
 		"publishsheet.includePublished":                   {"Try to publish already published sheets."},
 		"publishsheet.mode":                               {"", "`allsheets`: Publish all sheets in the app.", "`sheetids`: Only publish the sheets specified by the `sheetIds` array."},
 		"publishsheet.sheetIds":                           {"(optional) Array of sheet IDs for the `sheetids` mode."},
+		"publishsheet.thinktime":                          {"Duration to 'think' inbetween publishing sheets (for example, `1h`, `30s` or `1m10s`). Defaults to 100ms."},
 		"randomaction.actions":                            {"List of actions from which to randomly pick an action to execute. Each item has a number of possible parameters."},
 		"randomaction.actions.overrides":                  {"(optional) Static overrides to the action. The overrides can include any or all of the settings from the original action, as determined by the `type` field. If nothing is specified, the default values are used."},
 		"randomaction.actions.type":                       {"Type of action", "`thinktime`: See the `thinktime` action.", "`sheetobjectselection`: Make random selections within objects visible on the current sheet. See the `select` action.", "`changesheet`: See the `changesheet` action.", "`clearall`: See the `clearall` action."},
@@ -365,6 +366,7 @@ var (
 		"tus.timeout":                                     {"Duration after which the upload times out (for example, `1h`, `30s` or `1m10s`). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, and `h`."},
 		"unpublishsheet.mode":                             {"", "`allsheets`: Unpublish all sheets in the app.", "`sheetids`: Only unpublish the sheets specified by the `sheetIds` array."},
 		"unpublishsheet.sheetIds":                         {"(optional) Array of sheet IDs for the `sheetids` mode."},
+		"unpublishsheet.thinktime":                        {"Duration to 'think' inbetween unpublishing sheets (for example, `1h`, `30s` or `1m10s`). Defaults to 100ms."},
 		"unsubscribeobjects.clear":                        {"Remove any previously subscribed objects from the subscription list."},
 		"unsubscribeobjects.ids":                          {"List of object IDs to unsubscribe from."},
 	}
