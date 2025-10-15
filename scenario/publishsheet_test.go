@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"testing"
+	"time"
 )
 
 func TestUnmarshalPublishSheetMode(t *testing.T) {
@@ -66,12 +67,12 @@ func TestValidatePublishSheetSettings(t *testing.T) {
 		input   PublishSheetSettings
 		isValid bool
 	}{
-		{PublishSheetSettings{AllSheets, nil, false}, true},
-		{PublishSheetSettings{AllSheets, []string{"A", "B", "C"}, false}, false},
-		{PublishSheetSettings{AllSheets, []string{}, true}, true},
-		{PublishSheetSettings{SheetIDs, nil, false}, false},
-		{PublishSheetSettings{SheetIDs, []string{}, true}, false},
-		{PublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, false}, true},
+		{PublishSheetSettings{AllSheets, nil, false, time.Nanosecond}, true},
+		{PublishSheetSettings{AllSheets, []string{"A", "B", "C"}, false, time.Nanosecond}, false},
+		{PublishSheetSettings{AllSheets, []string{}, true, time.Nanosecond}, true},
+		{PublishSheetSettings{SheetIDs, nil, false, time.Nanosecond}, false},
+		{PublishSheetSettings{SheetIDs, []string{}, true, time.Nanosecond}, false},
+		{PublishSheetSettings{SheetIDs, []string{"A", "B", "C"}, false, time.Nanosecond}, true},
 	}
 
 	for _, tc := range tt {
