@@ -480,10 +480,10 @@
         "(optional) Custom timeouts for connect and open part of `openapp`."
     ],
     "openapp.timeouts.connect": [
-        "(optional) Custom timeout for connecting to engine"
+        "(optional) Custom timeout for connecting to engine (for example, `10m`, `30s` or `1m10s`)"
     ],
     "openapp.timeouts.open": [
-        "(optional) Custom timeout for openapp request"
+        "(optional) Custom timeout for openapp request (for example, `10m`, `30s` or `1m10s`)"
     ],
     "openapp.unique": [
         "Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."
