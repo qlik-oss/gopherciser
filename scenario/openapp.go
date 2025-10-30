@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
@@ -17,9 +18,14 @@ import (
 )
 
 type (
+	OpenAppSettingsTimeouts struct {
+		Connect helpers.TimeDuration `json:"connect" displayname:"Connection timeout" doc-key:"openapp.timeouts.connect"`
+		Open    helpers.TimeDuration `json:"open" displayname:"Open app timeout" doc-key:"openapp.timeouts.open"`
+	}
 	OpenAppSettingsCore struct {
-		ExternalHost  string `json:"externalhost" displayname:"External hostname" doc-key:"openapp.externalhost"`
-		UniqueSession bool   `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
+		ExternalHost  string                  `json:"externalhost" displayname:"External hostname" doc-key:"openapp.externalhost"`
+		UniqueSession bool                    `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
+		Timeouts      OpenAppSettingsTimeouts `json:"timeouts" displayname:"Timeouts" doc-key:"openapp.timeouts"`
 	}
 	// OpenAppSettings app and server settings
 	OpenAppSettings struct {
@@ -29,6 +35,7 @@ type (
 
 	connectWsSettings struct {
 		ConnectFunc func(bool) (string, error)
+		Timeout     time.Duration
 	}
 )
 
@@ -72,7 +79,13 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		headers = make(http.Header, 1)
 		headers.Add("X-Qlik-Session", uuid.NewString())
 	}
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID, openApp.ExternalHost, headers)
+
+	timeout := time.Duration(openApp.Timeouts.Connect)
+	if timeout < 1 {
+		timeout = sessionState.Timeout
+	}
+
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, appEntry.ID, openApp.ExternalHost, headers, timeout)
 	if err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to get connect function"))
 		return
@@ -84,7 +97,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 		wsLabel = fmt.Sprintf("%s - WS", label)
 	}
 
-	connectWs := GetConnectWsAction(wsLabel, connectFunc)
+	connectWs := GetConnectWsAction(wsLabel, time.Duration(openApp.Timeouts.Connect), connectFunc)
 
 	//Connect websocket and logs as separate action
 	actionState.NoResults = true // temporary set to not report while doing sub action.
@@ -133,7 +146,7 @@ func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID st
 	return uplink.SetCurrentApp(appGUID, doc)
 }
 
-func GetConnectWsAction(wsLabel string, connectFunc func(bool) (string, error)) Action {
+func GetConnectWsAction(wsLabel string, timeout time.Duration, connectFunc func(bool) (string, error)) Action {
 	connectWs := Action{
 		ActionCore{
 			Type:  ActionConnectWs,
@@ -141,6 +154,7 @@ func GetConnectWsAction(wsLabel string, connectFunc func(bool) (string, error)) 
 		},
 		connectWsSettings{
 			ConnectFunc: connectFunc,
+			Timeout:     timeout,
 		},
 	}
 	return connectWs

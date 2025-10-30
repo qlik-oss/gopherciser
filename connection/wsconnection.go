@@ -1,8 +1,10 @@
 package connection
 
 import (
+	"maps"
 	"net/http"
 	"net/http/cookiejar"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
@@ -15,7 +17,7 @@ type (
 )
 
 // GetConnectFunc get ws connect function
-func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) ConnectFunc {
+func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header, timeout time.Duration) ConnectFunc {
 	return func(reconnect bool) (string, error) {
 		if sessionState == nil {
 			return appGUID, errors.New("Session state is nil")
@@ -48,14 +50,9 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 
 		// combine headers for connection
 		connectHeaders := make(http.Header)
-		for k, v := range headers {
-			connectHeaders[k] = v
-		}
-		for k, v := range customHeaders {
-			connectHeaders[k] = v
-		}
-
-		if err := sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
+		maps.Copy(connectHeaders, headers)
+		maps.Copy(connectHeaders, customHeaders)
+		if err := sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, timeout, reconnect); err != nil {
 			return appGUID, errors.Wrap(err, "Failed connecting to sense server")
 		}
 

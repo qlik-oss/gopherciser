@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/golang-jwt/jwt/v5"
@@ -112,7 +113,7 @@ func (connectJWT *ConnectJWTSettings) UnmarshalJSON(arg []byte) error {
 }
 
 // GetConnectFunc which establishes a connection to Qlik Sense
-func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header) ConnectFunc {
+func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header, timeout time.Duration) ConnectFunc {
 	connectFunc := func(reconnect bool) (string, error) {
 		url, err := connectionSettings.GetURL(appGUID, externalhost)
 		if err != nil {
@@ -142,13 +143,9 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 
 		// combine headers for connection
 		connectHeaders := make(http.Header)
-		for k, v := range headers {
-			connectHeaders[k] = v
-		}
-		for k, v := range customHeaders {
-			connectHeaders[k] = v
-		}
-		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, sessionState.Timeout, reconnect); err != nil {
+		maps.Copy(connectHeaders, headers)
+		maps.Copy(connectHeaders, customHeaders)
+		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, timeout, reconnect); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
 		sense.OnUnexpectedDisconnect(sessionState.WSFailed)
