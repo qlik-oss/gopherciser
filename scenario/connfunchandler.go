@@ -45,12 +45,12 @@ func defaultGuidWsConnectTest(connectionSettings *connection.ConnectionSettings,
 
 	TrySetCSRFToken(sessionState, actionState, connectionSettings)
 
-	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "00000000-0000-0000-0000-000000000000", "", nil)
+	connectFunc, err := connectionSettings.GetConnectFunc(sessionState, "00000000-0000-0000-0000-000000000000", "", nil, sessionState.Timeout)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get connect function")
 	}
 
-	connectWs := GetConnectWsAction("", connectFunc)
+	connectWs := GetConnectWsAction("", sessionState.Timeout, connectFunc)
 	if err := connectWs.Execute(sessionState, connectionSettings); err != nil {
 		return errors.Wrap(err, "failed to connect to engine over web socket")
 	}

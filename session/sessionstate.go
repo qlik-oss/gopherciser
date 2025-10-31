@@ -353,11 +353,16 @@ func (state *State) ContextChangeList() (context.Context, *enigma.ChangeLists) {
 	return ctxWithCL, &cl
 }
 
-// ReqContext context to be used on request, includes timeout and changeList to be used for synchronizing changes.
+// ReqContext context to be used requests, includes timeout and changeList to be used for synchronizing changes.
 // A request context is automatically added when using QueueRequest functions.
 func (state *State) ReqContext() (context.Context, *enigma.ChangeLists, context.CancelFunc) {
+	return state.ReqContextWithTimeout(state.Timeout)
+}
+
+// ReqContext context to be used on requests, this is the same as ReqContext but with a custom timeout
+func (state *State) ReqContextWithTimeout(timeout time.Duration) (context.Context, *enigma.ChangeLists, context.CancelFunc) {
 	ctx, cl := state.ContextChangeList()
-	ctx, cancel := state.ContextWithTimeout(ctx)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	return ctx, cl, cancel
 }
 
@@ -562,7 +567,16 @@ func (state *State) TriggerEvents(actionState *action.State, chHandles, clHandle
 
 // SendRequest and trigger any object changes synchronously
 func (state *State) SendRequest(actionState *action.State, f func(ctx context.Context) error) error {
-	ctx, cl, cancel := state.ReqContext()
+	return state.SendRequestWithTimeout(actionState, 0, f)
+}
+
+// SendRequestWithTimeout is the same as SendRequest but with a custom timeout
+func (state *State) SendRequestWithTimeout(actionState *action.State, timeout time.Duration, f func(ctx context.Context) error) error {
+	if timeout < 1 {
+		timeout = state.Timeout
+
+	}
+	ctx, cl, cancel := state.ReqContextWithTimeout(timeout)
 	defer cancel()
 
 	if err := f(ctx); err != nil {
@@ -576,7 +590,15 @@ func (state *State) SendRequest(actionState *action.State, f func(ctx context.Co
 
 // SendRequestRaw send request, trigger any object changes synchronously and return raw json response.
 func (state *State) SendRequestRaw(actionState *action.State, f func(ctx context.Context) (json.RawMessage, error)) (json.RawMessage, error) {
-	ctx, cl, cancel := state.ReqContext()
+	return state.SendRequestRawWithTimeout(actionState, 0, f)
+}
+
+// SendRequestRaw send request, trigger any object changes synchronously and return raw json response.
+func (state *State) SendRequestRawWithTimeout(actionState *action.State, timeout time.Duration, f func(ctx context.Context) (json.RawMessage, error)) (json.RawMessage, error) {
+	if timeout < 1 {
+		timeout = state.Timeout
+	}
+	ctx, cl, cancel := state.ReqContextWithTimeout(timeout)
 	defer cancel()
 
 	raw, err := f(ctx)
