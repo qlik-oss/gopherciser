@@ -1,6 +1,6 @@
 package helpers_test
 
-// Disabling test due to require go 1.24
+// Disabling test due to go 1.25 has memory leak bug, should be re-enabled once bumping back up to >1.24
 // import (
 // 	"testing"
 // 	"testing/synctest"
