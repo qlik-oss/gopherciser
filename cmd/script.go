@@ -13,6 +13,7 @@ import (
 
 var (
 	scriptOverwrite bool
+	scriptEmpty     bool
 
 	// structure command parameters
 	outputFolder string
@@ -38,6 +39,7 @@ func init() {
 	// template sub command
 	AddConfigParameter(templateCmd)
 	templateCmd.Flags().BoolVarP(&scriptOverwrite, "force", "f", false, "overwrite existing script file")
+	templateCmd.Flags().BoolVarP(&scriptEmpty, "empty", "e", false, "generate empty template")
 
 	// structure sub command
 	scriptCmd.AddCommand(structureCmd)
@@ -76,9 +78,18 @@ var templateCmd = &cobra.Command{
 			return
 		}
 
-		cfg, err := config.NewExampleConfig()
+		var (
+			cfg *config.Config
+			err error
+		)
+		if !scriptEmpty {
+			cfg, err = config.NewExampleConfig()
+		} else {
+			cfg, err = config.NewEmptyConfig()
+		}
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "creating example config:\n%v\n", err)
+			return
 		}
 
 		jsonCfg, err := json.MarshalIndent(cfg, "", "  ")
@@ -195,4 +206,3 @@ Will save one .structure file per app in script in the folder defined by output 
 		}
 	},
 }
-
