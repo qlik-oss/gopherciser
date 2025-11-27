@@ -21,7 +21,7 @@ type (
 	// ConnectJWTSettings app and server settings using JWT
 	ConnectJWTSettingsCore struct {
 		// KeyPath path to jwt signing key
-		KeyPath string `json:"keypath,omitempty" doc-key:"config.connectionSettings.jwtsettings.keypath" displayname:"Key Path"`
+		KeyPath string `json:"keypath,omitempty" doc-key:"config.connectionSettings.jwtsettings.keypath" displayname:"Key Path" displayelement:"file"`
 		// JwtHeader JWT headers as escaped json string. Custom headers to be added to the JWT header.
 		// The strings for JwtHeader and Claims will be processed as a GO template
 		// where User struct can be used
