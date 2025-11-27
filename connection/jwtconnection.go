@@ -59,6 +59,10 @@ func (connectJWT *ConnectJWTSettings) UnmarshalJSON(arg []byte) error {
 		return err
 	}
 
+	if connectJWT.KeyPath == "" {
+		return nil // don't give unmarshal error when no key is set, let validate take care of it
+	}
+
 	key, err := os.ReadFile(connectJWT.KeyPath)
 	if err != nil {
 		return errors.Wrapf(err, "error reading private key from file<%s>", connectJWT.KeyPath)
