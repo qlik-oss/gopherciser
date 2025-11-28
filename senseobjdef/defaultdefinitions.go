@@ -792,6 +792,23 @@ var (
 		},
 	}
 
+	// DefaultSnNavMenu object definitions for sn-nav-menu
+	DefaultSnNavMenu = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -840,5 +857,6 @@ var (
 		"sn-layout-container":   &DefaultLayoutContainer,
 		"sn-tabbed-container":   &DefaultTabbedContainer,
 		"sn-nlg-chart":          &DefaultSnNlgChart,
+		"sn-nav-menu":           &DefaultSnNavMenu,
 	}
 )
