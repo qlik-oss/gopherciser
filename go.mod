@@ -20,7 +20,7 @@ require (
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
 	github.com/rs/zerolog v1.34.0
 	github.com/shiena/ansicolor v0.0.0-20230509054315-a9deabde6e02
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 )
