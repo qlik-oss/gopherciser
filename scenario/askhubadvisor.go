@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/goccy/go-json"
 
@@ -127,6 +128,8 @@ type (
 		SelectedRecommendation    *recommendation     `json:"selectedRecommendation"`
 		ItemTokens                []interface{}       `json:"itemTokens"`
 		ValueTokens               []interface{}       `json:"valueTokens"`
+		EnableVisualizations      bool
+		VisualizationTypes        []string
 	}
 
 	hubAdvisorResponse struct {
@@ -386,6 +389,8 @@ func HubAdvisorQuery(text string, options ...HubAdvisorOption) *hubAdvisorQuery 
 		EnableFollowups:           true,
 		ItemTokens:                []interface{}{},
 		ValueTokens:               []interface{}{},
+		EnableVisualizations:      true,
+		VisualizationTypes:        []string{"barchart", "linechart", "piechart", "mekkochart", "qlik-funnel-chart-ext", "qlik-sankey-chart-ext", "boxplot", "histogram", "distributionplot", "sn-grid-chart"},
 	}
 
 	for _, applyOption := range options {
@@ -758,6 +763,53 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 	if label == "" {
 		label = "hubadvisorquery"
 	}
+
+	host, err := connection.GetRestUrl()
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+
+	reqHeaders := map[string]string{"x-qlik-client-capability": "static"}
+	reqOptions := session.DefaultReqOptions()
+	reqOptions.ExpectedStatusCode = []int{http.StatusOK, http.StatusCreated}
+	reqOptions.ContentType = "application/json"
+	reqOptions.FailOnError = true
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+	query := HubAdvisorQuery("clear", Language(settings.Lang))
+	payload, err := json.Marshal(query)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+	sessionState.Rest.PostAsyncWithCallback(fmt.Sprintf("%v/%v", host, hubAdvisorEndpoint), actionState, sessionState.LogEntry, payload, reqHeaders, reqOptions, func(err error, req *session.RestRequest) {
+		wg.Done()
+	})
+
+	query = HubAdvisorQuery("Start", Language(settings.Lang))
+	payload, err = json.Marshal(query)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+	sessionState.Rest.PostAsyncWithCallback(fmt.Sprintf("%v/%v", host, hubAdvisorEndpoint), actionState, sessionState.LogEntry, payload, reqHeaders, reqOptions, func(err error, req *session.RestRequest) {
+		wg.Done()
+	})
+
+	query = HubAdvisorQuery("Questions", Language(settings.Lang))
+	payload, err = json.Marshal(query)
+	if err != nil {
+		actionState.AddErrors(errors.WithStack(err))
+		return
+	}
+	sessionState.Rest.PostAsyncWithCallback(fmt.Sprintf("%v/%v", host, hubAdvisorEndpoint), actionState, sessionState.LogEntry, payload, reqHeaders, reqOptions, func(err error, req *session.RestRequest) {
+		wg.Done()
+	})
+
+	wg.Wait()
+
 	// choose a random query from querysource
 	randInt, err := sessionState.Randomizer().RandWeightedInt(Weights(settings.QueryList))
 	if err != nil {
@@ -765,25 +817,25 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 		return
 	}
 	sentence := settings.QueryList[randInt].Query
-	query := HubAdvisorQuery(sentence, Language(settings.Lang))
+	query = HubAdvisorQuery(sentence, Language(settings.Lang))
 
-	settings.askHubAdvisorRec(sessionState, actionState, connection, query, label, 0)
+	settings.askHubAdvisorRec(sessionState, actionState, connection, query, host, label, 0)
 }
 
 // askHubAdvisorRec performs a hubAdvisorQuery and asks followup queries created
 // using the response. This is done recursively until there is no followup
 // queries in response or until configured recursion depth is reached.
 func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.State, actionState *action.State,
-	connection *connection.ConnectionSettings, query *hubAdvisorQuery, label string, depth uint) {
+	connection *connection.ConnectionSettings, query *hubAdvisorQuery, host string, label string, depth uint) {
 	if query == nil || depth == settings.FollowupDepth+1 {
 		return
 	}
 
-	host, err := connection.GetRestUrl()
-	if err != nil {
-		actionState.AddErrors(errors.WithStack(err))
-		return
-	}
+	// host, err := connection.GetRestUrl()
+	// if err != nil {
+	// 	actionState.AddErrors(errors.WithStack(err))
+	// 	return
+	// }
 
 	var subLabel string
 	if depth == 0 {
@@ -821,7 +873,7 @@ func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.Sta
 	followupQueries = followupsOfType(settings.FollowupTypes, followupQueries)
 	for _, fq := range followupQueries {
 		sessionState.LogEntry.LogDebugf("has followup<%s> of type<%s>", fq.query.Text, fq.typ)
-		settings.askHubAdvisorRec(sessionState, actionState, connection, fq.query, label, depth+1)
+		settings.askHubAdvisorRec(sessionState, actionState, connection, fq.query, host, label, depth+1)
 	}
 }
 
