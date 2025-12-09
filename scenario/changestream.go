@@ -144,8 +144,12 @@ func (settings ChangestreamSettings) Execute(sessionState *session.State, action
 		}
 	})
 
-	// Same request again for api compliance
-	sessionState.Rest.GetAsync(streamsUrl, actionState, sessionState.LogEntry, nil)
+	// Same request again for api compliance, once per session only.
+
+	baseStreamUrl := fmt.Sprintf("%s/api/hub/v1/apps/stream/", host)
+	sessionState.Once(fmt.Sprintf("ChangeStreamGET%s", baseStreamUrl), func() {
+		sessionState.Rest.GetAsyncWithCallback(fmt.Sprintf("%s%s?xrfkey=%s", baseStreamUrl, streamID, xrfkey), actionState, sessionState.LogEntry, nil, nil)
+	})
 
 	sessionState.Wait(actionState)
 }
