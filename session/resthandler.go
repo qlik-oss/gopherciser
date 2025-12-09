@@ -39,6 +39,7 @@ type (
 	RestMethod int
 
 	// RestHandler handles waiting for pending requests and responses
+
 	RestHandler struct {
 		timeout         time.Duration
 		Client          *http.Client
@@ -49,6 +50,7 @@ type (
 		pending         *pending.Handler
 		defaultHost     string
 		defaultProtocol string
+		defaultUrl      *url.URL
 	}
 
 	// RestRequest represents a REST request and its response
@@ -310,18 +312,20 @@ func DefaultReqOptions() *ReqOptions {
 }
 
 // SetClient set HTTP client for this RestHandler
-func (handler *RestHandler) SetClient(client *http.Client, defaultHost, defaultProtocol string) {
+func (handler *RestHandler) SetClient(client *http.Client, defaultUrl *url.URL) {
 	handler.Client = client
-	handler.defaultHost = defaultHost
-	handler.defaultProtocol = defaultProtocol
+	handler.defaultUrl = defaultUrl
+
+	handler.defaultHost = defaultUrl.Host
+	handler.defaultProtocol = defaultUrl.Scheme + "://"
 }
 
 func (handler *RestHandler) Host() string {
 	return handler.defaultHost
 }
 
-func (handler *RestHandler) Protocol() string {
-	return handler.defaultProtocol
+func (handler *RestHandler) BaseUrl() string {
+	return handler.defaultUrl.String()
 }
 
 // GetSync sends synchronous GET request with options, using options=nil default options are used

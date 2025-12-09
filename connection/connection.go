@@ -49,7 +49,14 @@ type (
 
 		syncTemplates sync.Once
 		templates     map[string]*template.Template
-		csrfToken     string
+
+		syncEngineUrl sync.Once
+		engineUrl     *url.URL
+
+		syncRestUrl sync.Once
+		restUrl     *url.URL
+
+		csrfToken string
 	}
 
 	// ConnectFunc connects to a sense environment, set reconnect to true if it's a reconnect and session in engine
@@ -179,105 +186,163 @@ func (connectionSettings *ConnectionSettings) GetHeaders(state *session.State, e
 	return header, nil
 }
 
+func (connectionSettings *ConnectionSettings) parseRestUrl() error {
+	var parseError error
+	connectionSettings.syncRestUrl.Do(func() {
+		server := connectionSettings.Server
+		if !strings.Contains(connectionSettings.Server, "://") {
+			server = "http"
+			if connectionSettings.Security {
+				server += "s"
+			}
+			server += "://" + connectionSettings.Server
+		}
+		urlObj, err := url.Parse(server)
+		if err != nil {
+			parseError = err
+			return
+		}
+		host := strings.Split(urlObj.Host+urlObj.Path, "/")[0]
+		if host == "" {
+			parseError = errors.Errorf("Failed to extract hostname from <%v>", connectionSettings.Server)
+			return
+		}
+
+		restProtocol := "http://"
+		if connectionSettings.Security {
+			restProtocol = "https://"
+		}
+
+		var restUrlString string
+		if connectionSettings.Port > 0 {
+			restUrlString = fmt.Sprintf("%v%v:%d", restProtocol, host, connectionSettings.Port)
+		} else {
+			restUrlString = fmt.Sprintf("%v%v", restProtocol, host)
+		}
+		// TODO rewrite above code
+
+		connectionSettings.restUrl, parseError = url.Parse(restUrlString)
+	})
+	return parseError
+}
+
+// Host, returns host or host:port
+func (connectionSettings *ConnectionSettings) Host() (string, error) {
+	if err := connectionSettings.parseRestUrl(); err != nil {
+		return "", err
+	}
+
+	return connectionSettings.restUrl.Host, nil
+}
+
 // GetHost get hostname
+// deprecated: use Host()
 func (connectionSettings *ConnectionSettings) GetHost() (string, error) {
-	urlObj, err := url.Parse(connectionSettings.Server)
-	if err != nil {
-		return "", err
-	}
-	host := strings.Split(urlObj.Host+urlObj.Path, "/")[0]
-	if host == "" {
-		return "", errors.Errorf("Failed to extract hostname from <%v>", connectionSettings.Server)
-	}
-
-	return host, nil
+	return connectionSettings.Host()
 }
 
-func (connection *ConnectionSettings) GetRestUrl() (string, error) {
-	restProtocol := "http://"
-	if connection.Security {
-		restProtocol = "https://"
-	}
-
-	host, err := connection.GetHost()
-	if err != nil {
+// GetRestUrl
+func (connectionSettings *ConnectionSettings) GetRestUrl() (string, error) {
+	if err := connectionSettings.parseRestUrl(); err != nil {
 		return "", err
 	}
-
-	if connection.Port > 0 {
-		return fmt.Sprintf("%v%v:%d", restProtocol, host, connection.Port), nil
-	} else {
-		return fmt.Sprintf("%v%v", restProtocol, host), nil
-	}
+	return connectionSettings.restUrl.String(), nil
 }
 
-// GetURL get websocket URL
-func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (string, error) {
-	if connection.RawURL != "" {
-		return connection.RawURL, nil
-	}
+// GetEngineUrl get websocket URL
+func (connectionSettings *ConnectionSettings) GetEngineUrl(appGUID, externalhost string) (*url.URL, error) {
 
-	// Remove protocol
-	var url string
-	if externalhost == "" {
-		url = connection.Server
-	} else {
-		url = externalhost
-	}
-
-	splitUrl := strings.Split(url, "://")
-	if len(splitUrl) > 1 {
-		url = splitUrl[1]
-	}
-
-	// Remove trailing path
-	pathIndex := strings.IndexRune(url, '/')
-	if pathIndex > -1 {
-		url = url[0:pathIndex]
-	}
-
-	// Set protocol
-	port := connection.Port
-	if connection.Security {
-		url = "wss://" + url
-		if port < 1 {
-			port = 443
+	var err error
+	connectionSettings.syncEngineUrl.Do(func() {
+		if connectionSettings.RawURL != "" {
+			connectionSettings.engineUrl, err = url.Parse(connectionSettings.RawURL)
+			return
 		}
-	} else {
-		url = "ws://" + url
-		if port < 1 {
-			port = 80
+
+		// Remove protocol
+		var buildUrl string
+		if externalhost == "" {
+			buildUrl = connectionSettings.Server
+		} else {
+			buildUrl = externalhost
 		}
+
+		splitUrl := strings.Split(buildUrl, "://")
+		if len(splitUrl) > 1 {
+			buildUrl = splitUrl[1]
+		}
+
+		// Remove trailing path
+		pathIndex := strings.IndexRune(buildUrl, '/')
+		if pathIndex > -1 {
+			buildUrl = buildUrl[0:pathIndex]
+		}
+
+		// Set protocol
+		port := connectionSettings.Port
+		if connectionSettings.Security {
+			buildUrl = "wss://" + buildUrl
+			if port < 1 {
+				port = 443
+			}
+		} else {
+			buildUrl = "ws://" + buildUrl
+			if port < 1 {
+				port = 80
+			}
+		}
+
+		if connectionSettings.AppExt == nil {
+			AppExt := "app"
+			connectionSettings.AppExt = &AppExt
+		}
+
+		// Add port
+		buildUrl += ":" + strconv.Itoa(port)
+
+		// TODO rewrite above code
+		connectionSettings.engineUrl, err = url.Parse(buildUrl)
+	})
+
+	if connectionSettings.engineUrl == nil || err != nil {
+		return nil, err
 	}
 
-	// Add port
-	url += ":" + strconv.Itoa(port)
+	// clone url
+	engineUrl, err := url.Parse(connectionSettings.engineUrl.String())
+	if err != nil {
+		return nil, err
+	}
 
+	if externalhost != "" {
+		engineUrl.Host = externalhost // TODO verify port part, maybe even parse verify externalhost?
+	}
+
+	engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)
 	// Add virtual proxy
-	if connection.VirtualProxy != "" {
-		url += "/" + connection.VirtualProxy
-	}
+	// if connectionSettings.VirtualProxy != "" {
+	// 	buildUrl += "/" + connectionSettings.VirtualProxy
+	// }
 
 	// Add path to app
-	if connection.AppExt == nil {
-		AppExt := "app"
-		connection.AppExt = &AppExt
-	}
-	AppExt := *connection.AppExt
-	if *connection.AppExt != "" {
-		AppExt = *connection.AppExt + "/"
-	}
-	if appGUID != "" {
-		url += "/" + AppExt + appGUID
-	} else {
-		url += "/" + AppExt
+	// AppExt := *connectionSettings.AppExt
+	// if *connectionSettings.AppExt != "" {
+	// 	AppExt = *connectionSettings.AppExt + "/"
+	// }
+	// if appGUID != "" {
+	// 	buildUrl += "/" + AppExt + appGUID
+	// } else {
+	// 	buildUrl += "/" + AppExt
+	// }
+
+	if connectionSettings.csrfToken != "" {
+		query := engineUrl.Query()
+		query.Add("qlik-csrf-token", connectionSettings.csrfToken)
+		engineUrl.RawQuery = query.Encode()
+		// buildUrl += "?qlik-csrf-token=" + connectionSettings.csrfToken
 	}
 
-	if connection.csrfToken != "" {
-		url += "?qlik-csrf-token=" + connection.csrfToken
-	}
-
-	return url, nil
+	return engineUrl, err
 }
 
 func (connectionSettings *ConnectionSettings) addReqHeaders(data *users.User, header http.Header) (http.Header, error) {
@@ -304,7 +369,7 @@ func (connectionSettings *ConnectionSettings) addReqHeaders(data *users.User, he
 			return header, errors.Wrapf(err, "failed executing %s template", tmpl.Name())
 		}
 
-		header.Set(k, buf.String()) // todo decide to use add or set?
+		header.Set(k, buf.String())
 	}
 
 	return header, nil

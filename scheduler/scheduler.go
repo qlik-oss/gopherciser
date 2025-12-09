@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -286,22 +287,30 @@ func setupRESTHandler(sessionState *session.State, connectionSettings *connectio
 	if err != nil {
 		return errors.Wrap(err, "failed to get connection settings headers")
 	}
-	host, err := connectionSettings.GetHost()
+
+	restUrl, err := connectionSettings.GetRestUrl()
 	if err != nil {
-		return errors.Wrap(err, "failed to extract hostname")
+		return errors.Wrap(err, "failed to extract server information")
 	}
-	sessionState.HeaderJar.SetHeader(host, headers)
+
+	defaultUrl, err := url.Parse(restUrl)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	defaultUrl.Scheme = "http"
+	if connectionSettings.Security {
+		defaultUrl.Scheme = "https"
+	}
+
+	sessionState.HeaderJar.SetHeader(defaultUrl.Host, headers)
 
 	client, err := session.DefaultClient(connectionSettings.Allowuntrusted, sessionState)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	restProtocol := "http://"
-	if connectionSettings.Security {
-		restProtocol = "https://"
-	}
-	sessionState.Rest.SetClient(client, host, restProtocol)
+	sessionState.Rest.SetClient(client, defaultUrl)
 	return nil
 }
 

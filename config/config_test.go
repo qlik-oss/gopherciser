@@ -350,22 +350,22 @@ func settingsTest(cfg *config.Config, keypath string) error {
 		return fmt.Errorf("expected key path<%s> got<%s>", keypath, cfg.ConnectionSettings.JwtSettings.KeyPath)
 	}
 
-	url, err := cfg.ConnectionSettings.GetURL("", "")
+	engineUrl, err := cfg.ConnectionSettings.GetEngineUrl("", "")
 	if err != nil {
 		return fmt.Errorf("error getting open app url, err: %v", err)
 	}
 
-	if url != "wss://myserver:443/myvp/app/" {
-		return fmt.Errorf("expected open app url<wss://myserver:443/myvp/app/> got<%s>", url)
+	if engineUrl.String() != "wss://myserver:443/myvp/app" {
+		return fmt.Errorf("expected open app url<wss://myserver:443/myvp/app> got<%s>", engineUrl.String())
 	}
 
-	url, err = cfg.ConnectionSettings.GetURL("1a8859ad-643c-49be-85cd-17f54ffa7aa4", "")
+	engineUrl, err = cfg.ConnectionSettings.GetEngineUrl("1a8859ad-643c-49be-85cd-17f54ffa7aa4", "")
 	if err != nil {
 		return fmt.Errorf("error getting open app url, err: %v", err)
 	}
 
-	if url != "wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4" {
-		return fmt.Errorf("expected open app url<wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4> got<%s>", url)
+	if engineUrl.String() != "wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4" {
+		return fmt.Errorf("expected open app url<wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4> got<%s>", engineUrl.String())
 	}
 
 	return nil
