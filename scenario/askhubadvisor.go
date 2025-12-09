@@ -755,17 +755,16 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 	reqHeaders := map[string]string{"x-qlik-client-capability": "static"}
 	reqOptions := session.DefaultReqOptions()
 	reqOptions.ExpectedStatusCode = []int{http.StatusOK, http.StatusCreated}
-	reqOptions.ContentType = "application/json"
-	reqOptions.FailOnError = true
 
 	var wg sync.WaitGroup
-	wg.Add(3)
+
 	query := HubAdvisorQuery("clear", Language(settings.Lang))
 	payload, err := json.Marshal(query)
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
+	wg.Add(1)
 	sessionState.Rest.PostAsyncWithCallback(fmt.Sprintf("%v/%v", host, hubAdvisorEndpoint), actionState, sessionState.LogEntry, payload, reqHeaders, reqOptions, func(err error, req *session.RestRequest) {
 		wg.Done()
 	})
@@ -776,6 +775,7 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
+	wg.Add(1)
 	sessionState.Rest.PostAsyncWithCallback(fmt.Sprintf("%v/%v", host, hubAdvisorEndpoint), actionState, sessionState.LogEntry, payload, reqHeaders, reqOptions, func(err error, req *session.RestRequest) {
 		wg.Done()
 	})
@@ -786,6 +786,7 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 		actionState.AddErrors(errors.WithStack(err))
 		return
 	}
+	wg.Add(1)
 	sessionState.Rest.PostAsyncWithCallback(fmt.Sprintf("%v/%v", host, hubAdvisorEndpoint), actionState, sessionState.LogEntry, payload, reqHeaders, reqOptions, func(err error, req *session.RestRequest) {
 		wg.Done()
 	})
