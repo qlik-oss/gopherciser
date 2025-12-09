@@ -41,16 +41,14 @@ type (
 	// RestHandler handles waiting for pending requests and responses
 
 	RestHandler struct {
-		timeout         time.Duration
-		Client          *http.Client
-		trafficLogger   enigma.TrafficLogger
-		headers         *HeaderJar
-		virtualProxy    string
-		ctx             context.Context
-		pending         *pending.Handler
-		defaultHost     string
-		defaultProtocol string
-		defaultUrl      *url.URL
+		timeout       time.Duration
+		Client        *http.Client
+		trafficLogger enigma.TrafficLogger
+		headers       *HeaderJar
+		virtualProxy  string
+		ctx           context.Context
+		pending       *pending.Handler
+		defaultUrl    *url.URL
 	}
 
 	// RestRequest represents a REST request and its response
@@ -315,13 +313,13 @@ func DefaultReqOptions() *ReqOptions {
 func (handler *RestHandler) SetClient(client *http.Client, defaultUrl *url.URL) {
 	handler.Client = client
 	handler.defaultUrl = defaultUrl
-
-	handler.defaultHost = defaultUrl.Host
-	handler.defaultProtocol = defaultUrl.Scheme + "://"
 }
 
 func (handler *RestHandler) Host() string {
-	return handler.defaultHost
+	if handler.defaultUrl == nil {
+		return ""
+	}
+	return handler.defaultUrl.Host
 }
 
 func (handler *RestHandler) BaseUrl() string {
