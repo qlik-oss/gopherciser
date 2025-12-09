@@ -117,17 +117,16 @@ type (
 // Messages used by hubAdvisorEndpont
 type (
 	hubAdvisorQuery struct {
-		App                       *app                `json:"app,omitempty"`
-		Text                      string              `json:"text"`
-		Lang                      language            `json:"lang"`
-		LimitedAccess             bool                `json:"limitedAccess"`
-		GenerateNarrative         bool                `json:"generateNarrative"`
-		EnableFollowups           bool                `json:"enableFollowups"`
-		EnableConversationContext bool                `json:"enableConversationContext"`
-		ConversationContext       conversationContext `json:"conversationContext"`
-		SelectedRecommendation    *recommendation     `json:"selectedRecommendation"`
-		ItemTokens                []interface{}       `json:"itemTokens"`
-		ValueTokens               []interface{}       `json:"valueTokens"`
+		App                       *app            `json:"app,omitempty"`
+		Text                      string          `json:"text"`
+		Lang                      language        `json:"lang"`
+		LimitedAccess             bool            `json:"limitedAccess"`
+		GenerateNarrative         bool            `json:"generateNarrative"`
+		EnableFollowups           bool            `json:"enableFollowups"`
+		EnableConversationContext bool            `json:"enableConversationContext"`
+		SelectedRecommendation    *recommendation `json:"selectedRecommendation"`
+		ItemTokens                []interface{}   `json:"itemTokens"`
+		ValueTokens               []interface{}   `json:"valueTokens"`
 		EnableVisualizations      bool
 		VisualizationTypes        []string
 	}
@@ -150,10 +149,7 @@ type (
 	}
 
 	conversationContext struct {
-		App             *app            `json:"app"`
-		Entity          json.RawMessage `json:"entity,omitempty"`
-		ParserResults   json.RawMessage `json:"parserResults,omitempty"`
-		Recommendations json.RawMessage `json:"recommendations,omitempty"`
+		App *app `json:"app"`
 	}
 
 	recommendation struct {
@@ -173,7 +169,7 @@ type (
 		SpaceName      string `json:"space_name,omitempty"`
 		SpaceType      string `json:"space_type,omitempty"`
 		LastReloadDate string `json:"last_reload_date,omitempty"`
-		URL            string `json:"url,omitempty"`
+		LimitedAccess  bool   `json:"limited_access"`
 	}
 )
 
@@ -357,19 +353,6 @@ func Language(lang language) HubAdvisorOption {
 func App(app *app) HubAdvisorOption {
 	return func(q *hubAdvisorQuery) {
 		q.App = app
-	}
-}
-
-func ConversationContext(convContext conversationContext) HubAdvisorOption {
-	return func(q *hubAdvisorQuery) {
-		q.EnableConversationContext = true
-		q.ConversationContext = convContext
-		if q.ConversationContext.App != nil {
-			q.App = q.ConversationContext.App
-			if q.ConversationContext.App.ID != "" {
-				q.ConversationContext.App.URL = fmt.Sprintf("/sense/app/%s/insightadvisor", q.ConversationContext.App.ID)
-			}
-		}
 	}
 }
 
@@ -639,7 +622,7 @@ func createFollowupQuery(sessionState *session.State, actionState *action.State,
 	if currentApp != nil && currentApp.ID != "" && currentApp.Name != "" && !containVariable(res.FollowupSentence) {
 		return &followupQuery{
 			typ:   followupSentence,
-			query: HubAdvisorQuery(res.FollowupSentence, Language(language), ConversationContext(convContext)),
+			query: HubAdvisorQuery(res.FollowupSentence, Language(language)),
 		}
 	}
 
@@ -707,7 +690,6 @@ func createFollowupQuery(sessionState *session.State, actionState *action.State,
 		fq.query = HubAdvisorQuery(
 			substituteVariable(res.FollowupSentence, pickedInfoValue),
 			Language(language),
-			ConversationContext(convContext),
 		)
 		return fq
 
@@ -735,7 +717,7 @@ func createFollowupQuery(sessionState *session.State, actionState *action.State,
 				substituteVariable(res.FollowupSentence, pickedRecommendation.Name),
 				SelectedRecommendation(pickedRecommendation),
 				Language(language),
-				ConversationContext(convContext),
+				App(currentApp),
 			),
 		}
 
@@ -830,12 +812,6 @@ func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.Sta
 	if query == nil || depth == settings.FollowupDepth+1 {
 		return
 	}
-
-	// host, err := connection.GetRestUrl()
-	// if err != nil {
-	// 	actionState.AddErrors(errors.WithStack(err))
-	// 	return
-	// }
 
 	var subLabel string
 	if depth == 0 {
