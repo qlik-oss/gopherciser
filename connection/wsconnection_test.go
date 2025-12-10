@@ -76,3 +76,106 @@ func validateHeaders(t *testing.T, header http.Header) {
 		t.Errorf("unexpected combined header<%s>, expected<directory1\\\\user1>", combined)
 	}
 }
+
+func TestConnectionStrings(t *testing.T) {
+	type ExpectedValues struct {
+		Server    string
+		Mode      AuthenticationMode
+		Url       string
+		EngineUrl string
+	}
+	tests := []struct {
+		Name         string
+		Raw          []byte
+		AppGUID      string
+		ExternalHost string
+		Expected     ExpectedValues
+	}{
+		{
+			Name:    "basic host",
+			Raw:     []byte(`{"server" : "myhost","mode" : "ws"}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "http://myhost",
+				EngineUrl: "ws://myhost:80/app/appGUID1234",
+			},
+		},
+		{
+			Name:    "https host",
+			Raw:     []byte(`{"server" : "myhost","mode" : "ws", "security": true}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost",
+				EngineUrl: "wss://myhost:443/app/appGUID1234",
+			},
+		},
+		{
+			Name:    "https host with port",
+			Raw:     []byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost:1234",
+				EngineUrl: "wss://myhost:1234/app/appGUID1234",
+			},
+		},
+		{
+			Name:         "external host",
+			Raw:          []byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`),
+			AppGUID:      "appGUID1234",
+			ExternalHost: "myexternalserver",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost:1234",
+				EngineUrl: "wss://myexternalserver/app/appGUID1234",
+			},
+		},
+		{
+			Name:         "external host with porst",
+			Raw:          []byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`),
+			AppGUID:      "appGUID1234",
+			ExternalHost: "myexternalserver:5678",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost:1234",
+				EngineUrl: "wss://myexternalserver:5678/app/appGUID1234",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			var connectionSettings ConnectionSettings
+			if err := json.Unmarshal([]byte(test.Raw), &connectionSettings); err != nil {
+				t.Fatalf("failed to unmarshal connectionsettings<%s>: %v", string(test.Raw), err)
+			}
+			if connectionSettings.Mode != test.Expected.Mode {
+				t.Errorf("expected mode %d got %d", test.Expected.Mode, connectionSettings.Mode)
+			}
+			if connectionSettings.Server != test.Expected.Server {
+				t.Errorf("expected host<%s>, got host<%s>", test.Expected.Server, connectionSettings.Server)
+			}
+			restUrl, err := connectionSettings.GetRestUrl()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if restUrl != test.Expected.Url {
+				t.Errorf("expected url<%s> got<%s>", test.Expected.Url, restUrl)
+			}
+			engineUrl, err := connectionSettings.GetEngineUrl(test.AppGUID, test.ExternalHost)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if engineUrl.String() != test.Expected.EngineUrl {
+				t.Errorf("expected engine url<%s> got<%s>", test.Expected.EngineUrl, engineUrl.String())
+			}
+		})
+	}
+}
