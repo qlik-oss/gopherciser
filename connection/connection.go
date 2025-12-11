@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -20,7 +21,7 @@ import (
 type (
 	AuthenticationMode int
 
-	ConnectionSettings struct {
+	ConnectionSettingsCore struct {
 		// Mode authentication mode, either JWT or WS
 		Mode AuthenticationMode `json:"mode" doc-key:"config.connectionSettings.mode"`
 		// JwtSettings JWT mode specific settings
@@ -46,6 +47,10 @@ type (
 		Headers map[string]string `json:"headers" doc-key:"config.connectionSettings.headers"`
 		// MaxFrameSize (Default 0 - No limit). Max size in bytes to be read on sense websocket. Limit exceeded yields an error.
 		MaxFrameSize int64 `json:"maxframesize" doc-key:"config.connectionSettings.maxframesize"`
+	}
+
+	ConnectionSettings struct {
+		ConnectionSettingsCore
 
 		syncTemplates sync.Once
 		templates     map[string]*template.Template
@@ -76,6 +81,29 @@ var (
 		"now": time.Now,
 	}
 )
+
+// UnmarshalJSON implements unmarshal interface
+func (connectionSettings *ConnectionSettings) UnmarshalJSON(arg []byte) error {
+	if err := json.Unmarshal(arg, &connectionSettings.ConnectionSettingsCore); err != nil {
+		return err
+	}
+
+	server := connectionSettings.Server
+	if !strings.Contains(server, "://") {
+		// temporarily add a scheme otherwise host ends up in url.path instead of host
+		server = fmt.Sprintf("https://%s", server)
+	}
+
+	urlObj, err := url.Parse(server)
+	if err != nil {
+		return err
+	}
+
+	// keep host part only
+	connectionSettings.Server = urlObj.Hostname()
+
+	return nil
+}
 
 func (value AuthenticationMode) GetEnumMap() *enummap.EnumMap {
 	enumMap, _ := enummap.NewEnumMap(map[string]int{
@@ -189,39 +217,23 @@ func (connectionSettings *ConnectionSettings) GetHeaders(state *session.State, e
 func (connectionSettings *ConnectionSettings) parseRestUrl() error {
 	var parseError error
 	connectionSettings.syncRestUrl.Do(func() {
-		server := connectionSettings.Server
-		if !strings.Contains(connectionSettings.Server, "://") {
-			server = "http"
-			if connectionSettings.Security {
-				server += "s"
-			}
-			server += "://" + connectionSettings.Server
-		}
-		urlObj, err := url.Parse(server)
-		if err != nil {
-			parseError = err
-			return
-		}
-		host := strings.Split(urlObj.Host+urlObj.Path, "/")[0]
-		if host == "" {
-			parseError = errors.Errorf("Failed to extract hostname from <%v>", connectionSettings.Server)
-			return
-		}
-
-		restProtocol := "http://"
+		// force set scheme
+		restScheme := "http"
 		if connectionSettings.Security {
-			restProtocol = "https://"
+			restScheme = "https"
 		}
 
-		var restUrlString string
+		// possibly override port
+		port := ""
 		if connectionSettings.Port > 0 {
-			restUrlString = fmt.Sprintf("%v%v:%d", restProtocol, host, connectionSettings.Port)
-		} else {
-			restUrlString = fmt.Sprintf("%v%v", restProtocol, host)
+			port = fmt.Sprintf(":%d", connectionSettings.Port)
 		}
-		// TODO rewrite above code
-
-		connectionSettings.restUrl, parseError = url.Parse(restUrlString)
+		vp := ""
+		if connectionSettings.VirtualProxy != "" {
+			vp = fmt.Sprintf("/%s", connectionSettings.VirtualProxy)
+		}
+		restUrl := fmt.Sprintf("%s://%s%s%s", restScheme, connectionSettings.Server, port, vp)
+		connectionSettings.restUrl, parseError = url.Parse(restUrl)
 	})
 	return parseError
 }
@@ -254,53 +266,36 @@ func (connectionSettings *ConnectionSettings) GetEngineUrl(appGUID, externalhost
 
 	var err error
 	connectionSettings.syncEngineUrl.Do(func() {
+		// Set default app extension if nothing set
+		if connectionSettings.AppExt == nil {
+			AppExt := "app"
+			connectionSettings.AppExt = &AppExt
+		}
+
 		if connectionSettings.RawURL != "" {
 			connectionSettings.engineUrl, err = url.Parse(connectionSettings.RawURL)
 			return
 		}
 
-		// Remove protocol
-		var buildUrl string
-		if externalhost == "" {
-			buildUrl = connectionSettings.Server
-		} else {
-			buildUrl = externalhost
-		}
-
-		splitUrl := strings.Split(buildUrl, "://")
-		if len(splitUrl) > 1 {
-			buildUrl = splitUrl[1]
-		}
-
-		// Remove trailing path
-		pathIndex := strings.IndexRune(buildUrl, '/')
-		if pathIndex > -1 {
-			buildUrl = buildUrl[0:pathIndex]
-		}
+		buildUrl := connectionSettings.Server
 
 		// Set protocol
 		port := connectionSettings.Port
-		if connectionSettings.Security {
+		switch connectionSettings.Security {
+		case true:
 			buildUrl = "wss://" + buildUrl
 			if port < 1 {
 				port = 443
 			}
-		} else {
+		case false:
 			buildUrl = "ws://" + buildUrl
 			if port < 1 {
 				port = 80
 			}
 		}
 
-		if connectionSettings.AppExt == nil {
-			AppExt := "app"
-			connectionSettings.AppExt = &AppExt
-		}
-
 		// Add port
 		buildUrl += ":" + strconv.Itoa(port)
-
-		// TODO rewrite above code
 		connectionSettings.engineUrl, err = url.Parse(buildUrl)
 	})
 
@@ -315,31 +310,16 @@ func (connectionSettings *ConnectionSettings) GetEngineUrl(appGUID, externalhost
 	}
 
 	if externalhost != "" {
+		// TODO use more straight off
 		engineUrl.Host = externalhost // TODO verify port part, maybe even parse verify externalhost?
 	}
 
 	engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)
-	// Add virtual proxy
-	// if connectionSettings.VirtualProxy != "" {
-	// 	buildUrl += "/" + connectionSettings.VirtualProxy
-	// }
-
-	// Add path to app
-	// AppExt := *connectionSettings.AppExt
-	// if *connectionSettings.AppExt != "" {
-	// 	AppExt = *connectionSettings.AppExt + "/"
-	// }
-	// if appGUID != "" {
-	// 	buildUrl += "/" + AppExt + appGUID
-	// } else {
-	// 	buildUrl += "/" + AppExt
-	// }
 
 	if connectionSettings.csrfToken != "" {
 		query := engineUrl.Query()
 		query.Add("qlik-csrf-token", connectionSettings.csrfToken)
 		engineUrl.RawQuery = query.Encode()
-		// buildUrl += "?qlik-csrf-token=" + connectionSettings.csrfToken
 	}
 
 	return engineUrl, err

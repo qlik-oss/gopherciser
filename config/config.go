@@ -319,14 +319,16 @@ func NewExampleConfig() (*Config, error) {
 	cfg := &Config{
 		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
-				Mode:           connection.WS,
-				WsSettings:     nil,
-				Server:         "localhost",
-				VirtualProxy:   "header",
-				Security:       true,
-				Allowuntrusted: true,
-				Headers: map[string]string{
-					"Qlik-User-Header": "{{.UserName}}",
+				ConnectionSettingsCore: connection.ConnectionSettingsCore{
+					Mode:           connection.WS,
+					WsSettings:     nil,
+					Server:         "localhost",
+					VirtualProxy:   "header",
+					Security:       true,
+					Allowuntrusted: true,
+					Headers: map[string]string{
+						"Qlik-User-Header": "{{.UserName}}",
+					},
 				},
 			},
 			LoginSettings: users.NewUserGeneratorPrefix("testuser"),
@@ -382,13 +384,15 @@ func NewEmptyConfig() (*Config, error) {
 	cfg := &Config{
 		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
-				Mode:           connection.WS,
-				WsSettings:     nil,
-				Server:         "localhost",
-				VirtualProxy:   "",
-				Security:       true,
-				Allowuntrusted: true,
-				Headers:        map[string]string{},
+				ConnectionSettingsCore: connection.ConnectionSettingsCore{
+					Mode:           connection.WS,
+					WsSettings:     nil,
+					Server:         "localhost",
+					VirtualProxy:   "",
+					Security:       true,
+					Allowuntrusted: true,
+					Headers:        map[string]string{},
+				},
 			},
 			LoginSettings: users.NewUserGeneratorPrefix("testuser"),
 			Settings: Settings{

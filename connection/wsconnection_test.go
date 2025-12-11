@@ -92,6 +92,28 @@ func TestConnectionStrings(t *testing.T) {
 		Expected     ExpectedValues
 	}{
 		{
+			Name:    "non clean server",
+			Raw:     []byte(`{"server" : "https://myhost.example","mode" : "ws"}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost.example",
+				Mode:      WS,
+				Url:       "http://myhost.example",
+				EngineUrl: "ws://myhost.example:80/app/appGUID1234",
+			},
+		},
+		{
+			Name:    "basic host with domain",
+			Raw:     []byte(`{"server" : "myhost.example","mode" : "ws"}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost.example",
+				Mode:      WS,
+				Url:       "http://myhost.example",
+				EngineUrl: "ws://myhost.example:80/app/appGUID1234",
+			},
+		},
+		{
 			Name:    "basic host",
 			Raw:     []byte(`{"server" : "myhost","mode" : "ws"}`),
 			AppGUID: "appGUID1234",
@@ -115,7 +137,7 @@ func TestConnectionStrings(t *testing.T) {
 		},
 		{
 			Name:    "https host with port",
-			Raw:     []byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`),
+			Raw:     []byte(`{"server" : "myhost:4321","mode" : "ws", "security": true, "port": 1234}`),
 			AppGUID: "appGUID1234",
 			Expected: ExpectedValues{
 				Server:    "myhost",
@@ -148,6 +170,39 @@ func TestConnectionStrings(t *testing.T) {
 				EngineUrl: "wss://myexternalserver:5678/app/appGUID1234",
 			},
 		},
+		{
+			Name:    "virtual proxy",
+			Raw:     []byte(`{"server" : "myhost","mode" : "ws", "security": true, "virtualproxy":"myvp"}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost/myvp",
+				EngineUrl: "wss://myhost:443/myvp/app/appGUID1234",
+			},
+		},
+		{
+			Name:    "custom app extension",
+			Raw:     []byte(`{"server" : "myhost","mode" : "ws", "security": true, "appext": "customapp"}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost",
+				EngineUrl: "wss://myhost:443/customapp/appGUID1234",
+			},
+		},
+		{
+			Name:    "no app extension",
+			Raw:     []byte(`{"server" : "myhost","mode" : "ws", "security": true, "appext": ""}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "myhost",
+				Mode:      WS,
+				Url:       "https://myhost",
+				EngineUrl: "wss://myhost:443/appGUID1234",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -177,5 +232,29 @@ func TestConnectionStrings(t *testing.T) {
 				t.Errorf("expected engine url<%s> got<%s>", test.Expected.EngineUrl, engineUrl.String())
 			}
 		})
+	}
+
+	// TODO multiple externalhost
+	var connectionSettings ConnectionSettings
+	if err := json.Unmarshal([]byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`), &connectionSettings); err != nil {
+		t.Fatal("failed to unmarshal connectionsettings: ", err)
+	}
+	engineUrl, err := connectionSettings.GetEngineUrl("appGUID", "externalhost1:4321")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedUrl := "wss://externalhost1:4321/app/appGUID"
+	if engineUrl.String() != expectedUrl {
+		t.Errorf("external host engineUrl<%s> != expected<%s>", engineUrl, expectedUrl)
+	}
+
+	// verify changes with another external host
+	engineUrl, err = connectionSettings.GetEngineUrl("appGUID", "externalhost2:5678")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedUrl = "wss://externalhost2:5678/app/appGUID"
+	if engineUrl.String() != expectedUrl {
+		t.Errorf("external host engineUrl<%s> != expected<%s>", engineUrl, expectedUrl)
 	}
 }
