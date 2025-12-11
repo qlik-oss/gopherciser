@@ -32,7 +32,7 @@ func (connectWs *ConnectWsSettings) GetConnectFunc(sessionState *session.State, 
 		sense := enigmahandlers.NewSenseUplink(sessionState.BaseContext(), sessionState.LogEntry, sessionState.RequestMetrics, sessionState.TrafficLogger(), connectionSettings.MaxFrameSize)
 		sessionState.Connection.SetSense(sense)
 
-		url, err := connectionSettings.GetEngineUrl(appGUID, externalhost)
+		url, err := connectionSettings.EngineUrl(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
 		}

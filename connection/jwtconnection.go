@@ -119,7 +119,7 @@ func (connectJWT *ConnectJWTSettings) UnmarshalJSON(arg []byte) error {
 // GetConnectFunc which establishes a connection to Qlik Sense
 func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header, timeout time.Duration) ConnectFunc {
 	connectFunc := func(reconnect bool) (string, error) {
-		url, err := connectionSettings.GetEngineUrl(appGUID, externalhost)
+		url, err := connectionSettings.EngineUrl(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
 		}

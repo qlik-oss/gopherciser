@@ -86,7 +86,7 @@ func (settings ChangestreamSettings) Validate() ([]string, error) {
 // Execute ChangestreamSettings action (Implements ActionSettings interface)
 func (settings ChangestreamSettings) Execute(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string, reset func()) {
 
-	host, err := connectionSettings.GetRestUrl()
+	host, err := connectionSettings.RestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
 		return

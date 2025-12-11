@@ -288,7 +288,7 @@ func setupRESTHandler(sessionState *session.State, connectionSettings *connectio
 		return errors.Wrap(err, "failed to get connection settings headers")
 	}
 
-	restUrl, err := connectionSettings.GetRestUrl()
+	restUrl, err := connectionSettings.RestUrl()
 	if err != nil {
 		return errors.Wrap(err, "failed to extract server information")
 	}

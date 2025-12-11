@@ -224,7 +224,7 @@ func TestConnectionStrings(t *testing.T) {
 			if restUrl != test.Expected.Url {
 				t.Errorf("expected url<%s> got<%s>", test.Expected.Url, restUrl)
 			}
-			engineUrl, err := connectionSettings.GetEngineUrl(test.AppGUID, test.ExternalHost)
+			engineUrl, err := connectionSettings.EngineUrl(test.AppGUID, test.ExternalHost)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -239,7 +239,7 @@ func TestConnectionStrings(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`), &connectionSettings); err != nil {
 		t.Fatal("failed to unmarshal connectionsettings: ", err)
 	}
-	engineUrl, err := connectionSettings.GetEngineUrl("appGUID", "externalhost1:4321")
+	engineUrl, err := connectionSettings.EngineUrl("appGUID", "externalhost1:4321")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestConnectionStrings(t *testing.T) {
 	}
 
 	// verify changes with another external host
-	engineUrl, err = connectionSettings.GetEngineUrl("appGUID", "externalhost2:5678")
+	engineUrl, err = connectionSettings.EngineUrl("appGUID", "externalhost2:5678")
 	if err != nil {
 		t.Fatal(err)
 	}

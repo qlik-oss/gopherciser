@@ -249,7 +249,7 @@ func TestConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			engineUrl, err := cfg.ConnectionSettings.GetEngineUrl(test.AppId, test.ExternalHost)
+			engineUrl, err := cfg.ConnectionSettings.EngineUrl(test.AppId, test.ExternalHost)
 			if err != nil {
 				t.Errorf("error getting open app url, err: %v", err)
 				return

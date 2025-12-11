@@ -248,22 +248,36 @@ func (connectionSettings *ConnectionSettings) Host() (string, error) {
 }
 
 // GetHost get hostname
-// deprecated: use Host()
+//
+// Deprecated: use Host()
 func (connectionSettings *ConnectionSettings) GetHost() (string, error) {
 	return connectionSettings.Host()
 }
 
-// GetRestUrl
+// GetRestUrl get REST Url
+//
+// Deprecated: use RestUrl()
 func (connectionSettings *ConnectionSettings) GetRestUrl() (string, error) {
+	return connectionSettings.RestUrl()
+}
+
+// RestUrl get REST Url
+func (connectionSettings *ConnectionSettings) RestUrl() (string, error) {
 	if err := connectionSettings.parseRestUrl(); err != nil {
 		return "", err
 	}
 	return connectionSettings.restUrl.String(), nil
 }
 
-// GetEngineUrl get websocket URL
-func (connectionSettings *ConnectionSettings) GetEngineUrl(appGUID, externalhost string) (*url.URL, error) {
+// GetURL get websocket URL
+//
+// Deprecated: use EngineURL()
+func (connectionSettings *ConnectionSettings) GetURL(appGUID, externalhost string) (*url.URL, error) {
+	return connectionSettings.EngineUrl(appGUID, externalhost)
+}
 
+// EngineUrl get websocket URL
+func (connectionSettings *ConnectionSettings) EngineUrl(appGUID, externalhost string) (*url.URL, error) {
 	var err error
 	connectionSettings.syncEngineUrl.Do(func() {
 		// Set default app extension if nothing set
@@ -299,6 +313,24 @@ func (connectionSettings *ConnectionSettings) GetEngineUrl(appGUID, externalhost
 		connectionSettings.engineUrl, err = url.Parse(buildUrl)
 	})
 
+	if externalhost != "" {
+		scheme := ""
+		if !strings.Contains(externalhost, "://") {
+			switch connectionSettings.Security {
+			case true:
+				scheme = "wss://"
+			case false:
+				scheme = "ws://"
+			}
+		}
+		engineUrl, err := url.Parse(scheme + externalhost)
+		if err != nil {
+			return nil, err
+		}
+		engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)
+		return engineUrl, nil
+	}
+
 	if connectionSettings.engineUrl == nil || err != nil {
 		return nil, err
 	}
@@ -307,11 +339,6 @@ func (connectionSettings *ConnectionSettings) GetEngineUrl(appGUID, externalhost
 	engineUrl, err := url.Parse(connectionSettings.engineUrl.String())
 	if err != nil {
 		return nil, err
-	}
-
-	if externalhost != "" {
-		// TODO use more straight off
-		engineUrl.Host = externalhost // TODO verify port part, maybe even parse verify externalhost?
 	}
 
 	engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)

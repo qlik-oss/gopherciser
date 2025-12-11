@@ -779,7 +779,7 @@ func (settings AskHubAdvisorSettings) askHubAdvisorRec(sessionState *session.Sta
 		return
 	}
 
-	host, err := connection.GetRestUrl()
+	host, err := connection.RestUrl()
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return

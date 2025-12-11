@@ -571,7 +571,7 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to generate authentication headers")
 	}
-	host, err := cfg.ConnectionSettings.GetHost()
+	host, err := cfg.ConnectionSettings.Host()
 	if err != nil {
 		return errors.Wrap(err, "failed to extract hostname")
 	}
