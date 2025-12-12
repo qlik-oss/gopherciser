@@ -100,7 +100,12 @@ func (connectionSettings *ConnectionSettings) UnmarshalJSON(arg []byte) error {
 	}
 
 	// keep host part only
+	isIPv6 := strings.Contains(connectionSettings.Server, "[")
 	connectionSettings.Server = urlObj.Hostname()
+	if isIPv6 {
+		// Hostname() strips brackets, but is required by standard net package
+		connectionSettings.Server = fmt.Sprintf("[%s]", connectionSettings.Server)
+	}
 
 	return nil
 }
@@ -309,6 +314,10 @@ func (connectionSettings *ConnectionSettings) EngineUrl(appGUID, externalhost st
 		connectionSettings.engineUrl, err = url.Parse(buildUrl)
 	})
 
+	if connectionSettings.engineUrl == nil || err != nil {
+		return nil, err
+	}
+
 	if externalhost != "" {
 		scheme := ""
 		if !strings.Contains(externalhost, "://") {
@@ -325,10 +334,6 @@ func (connectionSettings *ConnectionSettings) EngineUrl(appGUID, externalhost st
 		}
 		engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)
 		return engineUrl, nil
-	}
-
-	if connectionSettings.engineUrl == nil || err != nil {
-		return nil, err
 	}
 
 	// clone url

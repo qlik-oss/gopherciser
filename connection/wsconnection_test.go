@@ -203,6 +203,17 @@ func TestConnectionStrings(t *testing.T) {
 				EngineUrl: "wss://myhost:443/appGUID1234",
 			},
 		},
+		{
+			Name:    "IPv6 address",
+			Raw:     []byte(`{"server" : "[2001:db8::2]:9076","mode" : "ws", "security": false}`),
+			AppGUID: "appGUID1234",
+			Expected: ExpectedValues{
+				Server:    "[2001:db8::2]",
+				Mode:      WS,
+				Url:       "http://[2001:db8::2]",
+				EngineUrl: "ws://[2001:db8::2]:80/app/appGUID1234",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -217,7 +228,7 @@ func TestConnectionStrings(t *testing.T) {
 			if connectionSettings.Server != test.Expected.Server {
 				t.Errorf("expected host<%s>, got host<%s>", test.Expected.Server, connectionSettings.Server)
 			}
-			restUrl, err := connectionSettings.GetRestUrl()
+			restUrl, err := connectionSettings.RestUrl()
 			if err != nil {
 				t.Fatal(err)
 			}
