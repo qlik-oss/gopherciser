@@ -177,7 +177,7 @@ func TestConnectionStrings(t *testing.T) {
 			Expected: ExpectedValues{
 				Server:    "myhost",
 				Mode:      WS,
-				Url:       "https://myhost/myvp",
+				Url:       "https://myhost",
 				EngineUrl: "wss://myhost:443/myvp/app/appGUID1234",
 			},
 		},
@@ -234,7 +234,7 @@ func TestConnectionStrings(t *testing.T) {
 		})
 	}
 
-	// TODO multiple externalhost
+	// multiple externalhost test
 	var connectionSettings ConnectionSettings
 	if err := json.Unmarshal([]byte(`{"server" : "myhost","mode" : "ws", "security": true, "port": 1234}`), &connectionSettings); err != nil {
 		t.Fatal("failed to unmarshal connectionsettings: ", err)

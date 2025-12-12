@@ -228,11 +228,7 @@ func (connectionSettings *ConnectionSettings) parseRestUrl() error {
 		if connectionSettings.Port > 0 {
 			port = fmt.Sprintf(":%d", connectionSettings.Port)
 		}
-		vp := ""
-		if connectionSettings.VirtualProxy != "" {
-			vp = fmt.Sprintf("/%s", connectionSettings.VirtualProxy)
-		}
-		restUrl := fmt.Sprintf("%s://%s%s%s", restScheme, connectionSettings.Server, port, vp)
+		restUrl := fmt.Sprintf("%s://%s%s", restScheme, connectionSettings.Server, port)
 		connectionSettings.restUrl, parseError = url.Parse(restUrl)
 	})
 	return parseError
@@ -398,8 +394,6 @@ func (connectionSettings *ConnectionSettings) parseTemplates() error {
 				connectionSettings.templates[tmplKey] = tmpl
 			}
 		}
-
-		// todo add templates for more connection parameters
 	})
 
 	return parseErr
