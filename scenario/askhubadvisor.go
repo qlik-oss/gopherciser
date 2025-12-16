@@ -82,7 +82,7 @@ type (
 		FileName          string                 `json:"file" displayname:"File with one query per line" doc-key:"askhubadvisor.file" displayelement:"file"`
 		App               string                 `json:"app" displayname:"App name (optional)" doc-key:"askhubadvisor.app"`
 		SaveImages        bool                   `json:"saveimages" displayname:"Save images" doc-key:"askhubadvisor.saveimages"`
-		SaveImageFile     synced.Template        `json:"saveimagefile" displayname:"File name (without suffix)" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
+		SaveImageFile     synced.Template        `json:"saveimagefile" displayname:"Saved image filename" doc-key:"askhubadvisor.saveimagefile" displayelement:"savefile"`
 		ThinkTimeSettings ThinkTimeSettings      `json:"thinktime,omitempty" displayname:"Think time settings" doc-key:"askhubadvisor.thinktime"`
 		FollowupTypes     []followupType         `json:"followuptypes,omitempty" displayname:"Followup query types" doc-key:"askhubadvisor.followuptypes"`
 	}
