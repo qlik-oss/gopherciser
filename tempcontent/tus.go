@@ -64,11 +64,11 @@ func newTUSClient(sessionState *session.State, connection *connection.Connection
 	if maxRetries < 0 {
 		maxRetries = 0
 	}
-	restURL, err := connection.GetRestUrl()
+	restURL, err := connection.RestUrl()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	host, err := connection.GetHost()
+	host, err := connection.Host()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

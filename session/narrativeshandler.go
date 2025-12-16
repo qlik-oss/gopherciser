@@ -111,8 +111,8 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		return
 	}
 
-	protocol := sessionState.Rest.Protocol()
 	host := sessionState.Rest.Host()
+	baseUrl := sessionState.Rest.BaseUrl()
 
 	getXrfParam := func() string {
 		xrfKey := ""
@@ -123,7 +123,7 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 		return xrfKey
 	}
 
-	_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate%s", protocol, host, getXrfParam()), actionState, sessionState.LogEntry, content, nil)
+	_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s/api/v1/narratives/actions/generate%s", baseUrl, getXrfParam()), actionState, sessionState.LogEntry, content, nil)
 
 	event := func(ctx context.Context, as *action.State) error {
 		if err := GetObjectLayout(sessionState, as, obj, nil); err != nil {
@@ -135,7 +135,7 @@ func (handler *NarrativesHandlerInstance) SetObjectAndEvents(sessionState *State
 			return err
 		}
 
-		_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s%s/api/v1/narratives/actions/generate%s", protocol, host, getXrfParam()), actionState, sessionState.LogEntry, content, nil)
+		_, _ = sessionState.Rest.PostSync(fmt.Sprintf("%s/api/v1/narratives/actions/generate%s", baseUrl, getXrfParam()), actionState, sessionState.LogEntry, content, nil)
 		return nil
 	}
 

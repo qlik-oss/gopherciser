@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -20,7 +21,7 @@ import (
 type (
 	AuthenticationMode int
 
-	ConnectionSettings struct {
+	ConnectionSettingsCore struct {
 		// Mode authentication mode, either JWT or WS
 		Mode AuthenticationMode `json:"mode" doc-key:"config.connectionSettings.mode"`
 		// JwtSettings JWT mode specific settings
@@ -46,10 +47,21 @@ type (
 		Headers map[string]string `json:"headers" doc-key:"config.connectionSettings.headers"`
 		// MaxFrameSize (Default 0 - No limit). Max size in bytes to be read on sense websocket. Limit exceeded yields an error.
 		MaxFrameSize int64 `json:"maxframesize" doc-key:"config.connectionSettings.maxframesize"`
+	}
+
+	ConnectionSettings struct {
+		ConnectionSettingsCore
 
 		syncTemplates sync.Once
 		templates     map[string]*template.Template
-		csrfToken     string
+
+		syncEngineUrl sync.Once
+		engineUrl     *url.URL
+
+		syncRestUrl sync.Once
+		restUrl     *url.URL
+
+		csrfToken string
 	}
 
 	// ConnectFunc connects to a sense environment, set reconnect to true if it's a reconnect and session in engine
@@ -69,6 +81,34 @@ var (
 		"now": time.Now,
 	}
 )
+
+// UnmarshalJSON implements unmarshal interface
+func (connectionSettings *ConnectionSettings) UnmarshalJSON(arg []byte) error {
+	if err := json.Unmarshal(arg, &connectionSettings.ConnectionSettingsCore); err != nil {
+		return err
+	}
+
+	server := connectionSettings.Server
+	if !strings.Contains(server, "://") {
+		// temporarily add a scheme otherwise host ends up in url.path instead of host
+		server = fmt.Sprintf("https://%s", server)
+	}
+
+	urlObj, err := url.Parse(server)
+	if err != nil {
+		return err
+	}
+
+	// keep host part only
+	isIPv6 := strings.Contains(connectionSettings.Server, "[")
+	connectionSettings.Server = urlObj.Hostname()
+	if isIPv6 {
+		// Hostname() strips brackets, but is required by standard net package
+		connectionSettings.Server = fmt.Sprintf("[%s]", connectionSettings.Server)
+	}
+
+	return nil
+}
 
 func (value AuthenticationMode) GetEnumMap() *enummap.EnumMap {
 	enumMap, _ := enummap.NewEnumMap(map[string]int{
@@ -179,105 +219,138 @@ func (connectionSettings *ConnectionSettings) GetHeaders(state *session.State, e
 	return header, nil
 }
 
-// GetHost get hostname
-func (connectionSettings *ConnectionSettings) GetHost() (string, error) {
-	urlObj, err := url.Parse(connectionSettings.Server)
-	if err != nil {
-		return "", err
-	}
-	host := strings.Split(urlObj.Host+urlObj.Path, "/")[0]
-	if host == "" {
-		return "", errors.Errorf("Failed to extract hostname from <%v>", connectionSettings.Server)
-	}
+func (connectionSettings *ConnectionSettings) parseRestUrl() error {
+	var parseError error
+	connectionSettings.syncRestUrl.Do(func() {
+		// force set scheme
+		restScheme := "http"
+		if connectionSettings.Security {
+			restScheme = "https"
+		}
 
-	return host, nil
+		// possibly override port
+		port := ""
+		if connectionSettings.Port > 0 {
+			port = fmt.Sprintf(":%d", connectionSettings.Port)
+		}
+		restUrl := fmt.Sprintf("%s://%s%s", restScheme, connectionSettings.Server, port)
+		connectionSettings.restUrl, parseError = url.Parse(restUrl)
+	})
+	return parseError
 }
 
-func (connection *ConnectionSettings) GetRestUrl() (string, error) {
-	restProtocol := "http://"
-	if connection.Security {
-		restProtocol = "https://"
-	}
-
-	host, err := connection.GetHost()
-	if err != nil {
+// Host, returns host or host:port
+func (connectionSettings *ConnectionSettings) Host() (string, error) {
+	if err := connectionSettings.parseRestUrl(); err != nil {
 		return "", err
 	}
 
-	if connection.Port > 0 {
-		return fmt.Sprintf("%v%v:%d", restProtocol, host, connection.Port), nil
-	} else {
-		return fmt.Sprintf("%v%v", restProtocol, host), nil
+	return connectionSettings.restUrl.Host, nil
+}
+
+// GetHost get hostname
+//
+// Deprecated: use Host()
+func (connectionSettings *ConnectionSettings) GetHost() (string, error) {
+	return connectionSettings.Host()
+}
+
+// GetRestUrl get REST Url
+//
+// Deprecated: use RestUrl()
+func (connectionSettings *ConnectionSettings) GetRestUrl() (string, error) {
+	return connectionSettings.RestUrl()
+}
+
+// RestUrl get REST Url
+func (connectionSettings *ConnectionSettings) RestUrl() (string, error) {
+	if err := connectionSettings.parseRestUrl(); err != nil {
+		return "", err
 	}
+	return connectionSettings.restUrl.String(), nil
 }
 
 // GetURL get websocket URL
-func (connection *ConnectionSettings) GetURL(appGUID, externalhost string) (string, error) {
-	if connection.RawURL != "" {
-		return connection.RawURL, nil
-	}
+//
+// Deprecated: use EngineURL()
+func (connectionSettings *ConnectionSettings) GetURL(appGUID, externalhost string) (*url.URL, error) {
+	return connectionSettings.EngineUrl(appGUID, externalhost)
+}
 
-	// Remove protocol
-	var url string
-	if externalhost == "" {
-		url = connection.Server
-	} else {
-		url = externalhost
-	}
-
-	splitUrl := strings.Split(url, "://")
-	if len(splitUrl) > 1 {
-		url = splitUrl[1]
-	}
-
-	// Remove trailing path
-	pathIndex := strings.IndexRune(url, '/')
-	if pathIndex > -1 {
-		url = url[0:pathIndex]
-	}
-
-	// Set protocol
-	port := connection.Port
-	if connection.Security {
-		url = "wss://" + url
-		if port < 1 {
-			port = 443
+// EngineUrl get websocket URL
+func (connectionSettings *ConnectionSettings) EngineUrl(appGUID, externalhost string) (*url.URL, error) {
+	var err error
+	connectionSettings.syncEngineUrl.Do(func() {
+		// Set default app extension if nothing set
+		if connectionSettings.AppExt == nil {
+			AppExt := "app"
+			connectionSettings.AppExt = &AppExt
 		}
-	} else {
-		url = "ws://" + url
-		if port < 1 {
-			port = 80
+
+		if connectionSettings.RawURL != "" {
+			connectionSettings.engineUrl, err = url.Parse(connectionSettings.RawURL)
+			return
 		}
+
+		buildUrl := connectionSettings.Server
+
+		// Set protocol
+		port := connectionSettings.Port
+		switch connectionSettings.Security {
+		case true:
+			buildUrl = "wss://" + buildUrl
+			if port < 1 {
+				port = 443
+			}
+		case false:
+			buildUrl = "ws://" + buildUrl
+			if port < 1 {
+				port = 80
+			}
+		}
+
+		// Add port
+		buildUrl += ":" + strconv.Itoa(port)
+		connectionSettings.engineUrl, err = url.Parse(buildUrl)
+	})
+
+	if connectionSettings.engineUrl == nil || err != nil {
+		return nil, err
 	}
 
-	// Add port
-	url += ":" + strconv.Itoa(port)
-
-	// Add virtual proxy
-	if connection.VirtualProxy != "" {
-		url += "/" + connection.VirtualProxy
+	if externalhost != "" {
+		scheme := ""
+		if !strings.Contains(externalhost, "://") {
+			switch connectionSettings.Security {
+			case true:
+				scheme = "wss://"
+			case false:
+				scheme = "ws://"
+			}
+		}
+		engineUrl, err := url.Parse(scheme + externalhost)
+		if err != nil {
+			return nil, err
+		}
+		engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)
+		return engineUrl, nil
 	}
 
-	// Add path to app
-	if connection.AppExt == nil {
-		AppExt := "app"
-		connection.AppExt = &AppExt
-	}
-	AppExt := *connection.AppExt
-	if *connection.AppExt != "" {
-		AppExt = *connection.AppExt + "/"
-	}
-	if appGUID != "" {
-		url += "/" + AppExt + appGUID
-	} else {
-		url += "/" + AppExt
+	// clone url
+	engineUrl, err := url.Parse(connectionSettings.engineUrl.String())
+	if err != nil {
+		return nil, err
 	}
 
-	if connection.csrfToken != "" {
-		url += "?qlik-csrf-token=" + connection.csrfToken
+	engineUrl = engineUrl.JoinPath(connectionSettings.VirtualProxy, *connectionSettings.AppExt, appGUID)
+
+	if connectionSettings.csrfToken != "" {
+		query := engineUrl.Query()
+		query.Add("qlik-csrf-token", connectionSettings.csrfToken)
+		engineUrl.RawQuery = query.Encode()
 	}
 
-	return url, nil
+	return engineUrl, err
 }
 
 func (connectionSettings *ConnectionSettings) addReqHeaders(data *users.User, header http.Header) (http.Header, error) {
@@ -304,7 +377,7 @@ func (connectionSettings *ConnectionSettings) addReqHeaders(data *users.User, he
 			return header, errors.Wrapf(err, "failed executing %s template", tmpl.Name())
 		}
 
-		header.Set(k, buf.String()) // todo decide to use add or set?
+		header.Set(k, buf.String())
 	}
 
 	return header, nil
@@ -326,8 +399,6 @@ func (connectionSettings *ConnectionSettings) parseTemplates() error {
 				connectionSettings.templates[tmplKey] = tmpl
 			}
 		}
-
-		// todo add templates for more connection parameters
 	})
 
 	return parseErr

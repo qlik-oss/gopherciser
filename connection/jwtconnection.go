@@ -119,7 +119,7 @@ func (connectJWT *ConnectJWTSettings) UnmarshalJSON(arg []byte) error {
 // GetConnectFunc which establishes a connection to Qlik Sense
 func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State, connectionSettings *ConnectionSettings, appGUID, externalhost string, headers, customHeaders http.Header, timeout time.Duration) ConnectFunc {
 	connectFunc := func(reconnect bool) (string, error) {
-		url, err := connectionSettings.GetURL(appGUID, externalhost)
+		url, err := connectionSettings.EngineUrl(appGUID, externalhost)
 		if err != nil {
 			return appGUID, errors.WithStack(err)
 		}
@@ -149,7 +149,7 @@ func (connectJWT *ConnectJWTSettings) GetConnectFunc(sessionState *session.State
 		connectHeaders := make(http.Header)
 		maps.Copy(connectHeaders, headers)
 		maps.Copy(connectHeaders, customHeaders)
-		if err = sense.Connect(ctx, url, connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, timeout, reconnect); err != nil {
+		if err = sense.Connect(ctx, url.String(), connectHeaders, sessionState.Cookies, connectionSettings.Allowuntrusted, timeout, reconnect); err != nil {
 			return appGUID, errors.WithStack(err)
 		}
 		sense.OnUnexpectedDisconnect(sessionState.WSFailed)

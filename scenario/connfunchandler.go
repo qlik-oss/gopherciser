@@ -71,7 +71,7 @@ func defaultGuidWsConnectTest(connectionSettings *connection.ConnectionSettings,
 }
 
 func restGetConnectTest(connectionSettings *connection.ConnectionSettings, sessionState *session.State, actionState *action.State) error {
-	host, err := connectionSettings.GetRestUrl()
+	host, err := connectionSettings.RestUrl()
 	if err != nil {
 		return errors.Wrap(err, "failed to get REST URL")
 	}

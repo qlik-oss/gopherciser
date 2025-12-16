@@ -3,7 +3,6 @@ package config_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -202,9 +201,63 @@ func TestConfig(t *testing.T) {
 		t.Errorf("Action(1): unexpected value1<%d>, expected<2>", settings.Values[0])
 	}
 
-	err = settingsTest(&cfg, tmpKeyFilePath)
-	if err != nil {
-		t.Fatal(err)
+	if cfg.ConnectionSettings.Server != "myserver" {
+		t.Fatalf("expected open app server<myserver> got <%s>", cfg.ConnectionSettings.Server)
+	}
+
+	if cfg.ConnectionSettings.VirtualProxy != "myvp" {
+		t.Fatalf("expected open app virtual proxy<myvp> got <%s>", cfg.ConnectionSettings.VirtualProxy)
+	}
+
+	if !cfg.ConnectionSettings.Security {
+		t.Fatalf("expected open app security<true> got <false>")
+	}
+
+	if cfg.ConnectionSettings.JwtSettings.KeyPath != tmpKeyFilePath {
+		t.Fatalf("expected key path<%s> got<%s>", tmpKeyFilePath, cfg.ConnectionSettings.JwtSettings.KeyPath)
+	}
+
+	type testParams struct {
+		Name         string
+		AppId        string
+		ExternalHost string
+		Expected     string
+	}
+	tests := []testParams{
+		{
+			Name:     "empty app",
+			Expected: "wss://myserver:443/myvp/app",
+		},
+		{
+			Name:     "with app guid",
+			AppId:    "1a8859ad-643c-49be-85cd-17f54ffa7aa4",
+			Expected: "wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4",
+		},
+		{
+			Name:         "with external host",
+			ExternalHost: "myexternalhost.example",
+			AppId:        "1a8859ad-643c-49be-85cd-17f54ffa7aa4",
+			Expected:     "wss://myexternalhost.example/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4",
+		},
+		{
+			Name:         "with external host and port",
+			ExternalHost: "myexternalhost.example:80443",
+			AppId:        "1a8859ad-643c-49be-85cd-17f54ffa7aa4",
+			Expected:     "wss://myexternalhost.example:80443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			engineUrl, err := cfg.ConnectionSettings.EngineUrl(test.AppId, test.ExternalHost)
+			if err != nil {
+				t.Errorf("error getting open app url, err: %v", err)
+				return
+			}
+			if engineUrl.String() != test.Expected {
+				t.Errorf("expected open app url<%s> got<%s>", test.Expected, engineUrl.String())
+			}
+		})
 	}
 }
 
@@ -331,44 +384,6 @@ func TestScheduler(t *testing.T) {
 	if time.Duration(timeBuf.Duration) != 30*time.Second {
 		t.Errorf("iterationtimebuffer duration<%v>, expected<%v>", timeBuf.Duration, 30*time.Second)
 	}
-}
-
-func settingsTest(cfg *config.Config, keypath string) error {
-	if cfg.ConnectionSettings.Server != "myserver" {
-		return fmt.Errorf("expected open app server<myserver> got <%s>", cfg.ConnectionSettings.Server)
-	}
-
-	if cfg.ConnectionSettings.VirtualProxy != "myvp" {
-		return fmt.Errorf("expected open app virtual proxy<myvp> got <%s>", cfg.ConnectionSettings.VirtualProxy)
-	}
-
-	if !cfg.ConnectionSettings.Security {
-		return fmt.Errorf("expected open app security<true> got <false>")
-	}
-
-	if cfg.ConnectionSettings.JwtSettings.KeyPath != keypath {
-		return fmt.Errorf("expected key path<%s> got<%s>", keypath, cfg.ConnectionSettings.JwtSettings.KeyPath)
-	}
-
-	url, err := cfg.ConnectionSettings.GetURL("", "")
-	if err != nil {
-		return fmt.Errorf("error getting open app url, err: %v", err)
-	}
-
-	if url != "wss://myserver:443/myvp/app/" {
-		return fmt.Errorf("expected open app url<wss://myserver:443/myvp/app/> got<%s>", url)
-	}
-
-	url, err = cfg.ConnectionSettings.GetURL("1a8859ad-643c-49be-85cd-17f54ffa7aa4", "")
-	if err != nil {
-		return fmt.Errorf("error getting open app url, err: %v", err)
-	}
-
-	if url != "wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4" {
-		return fmt.Errorf("expected open app url<wss://myserver:443/myvp/app/1a8859ad-643c-49be-85cd-17f54ffa7aa4> got<%s>", url)
-	}
-
-	return nil
 }
 
 var mwCount int

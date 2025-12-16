@@ -319,14 +319,16 @@ func NewExampleConfig() (*Config, error) {
 	cfg := &Config{
 		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
-				Mode:           connection.WS,
-				WsSettings:     nil,
-				Server:         "localhost",
-				VirtualProxy:   "header",
-				Security:       true,
-				Allowuntrusted: true,
-				Headers: map[string]string{
-					"Qlik-User-Header": "{{.UserName}}",
+				ConnectionSettingsCore: connection.ConnectionSettingsCore{
+					Mode:           connection.WS,
+					WsSettings:     nil,
+					Server:         "localhost",
+					VirtualProxy:   "header",
+					Security:       true,
+					Allowuntrusted: true,
+					Headers: map[string]string{
+						"Qlik-User-Header": "{{.UserName}}",
+					},
 				},
 			},
 			LoginSettings: users.NewUserGeneratorPrefix("testuser"),
@@ -382,13 +384,15 @@ func NewEmptyConfig() (*Config, error) {
 	cfg := &Config{
 		cfgCore: &cfgCore{
 			ConnectionSettings: connection.ConnectionSettings{
-				Mode:           connection.WS,
-				WsSettings:     nil,
-				Server:         "localhost",
-				VirtualProxy:   "",
-				Security:       true,
-				Allowuntrusted: true,
-				Headers:        map[string]string{},
+				ConnectionSettingsCore: connection.ConnectionSettingsCore{
+					Mode:           connection.WS,
+					WsSettings:     nil,
+					Server:         "localhost",
+					VirtualProxy:   "",
+					Security:       true,
+					Allowuntrusted: true,
+					Headers:        map[string]string{},
+				},
 			},
 			LoginSettings: users.NewUserGeneratorPrefix("testuser"),
 			Settings: Settings{
@@ -567,7 +571,7 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to generate authentication headers")
 	}
-	host, err := cfg.ConnectionSettings.GetHost()
+	host, err := cfg.ConnectionSettings.Host()
 	if err != nil {
 		return errors.Wrap(err, "failed to extract hostname")
 	}
@@ -577,7 +581,8 @@ func (cfg *Config) TestConnection(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to set up REST client")
 	}
-	sessionState.Rest.SetClient(client, "", "")
+
+	sessionState.Rest.SetClient(client, nil)
 
 	actionState := &action.State{}
 	sessionState.CurrentActionState = actionState

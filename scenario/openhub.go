@@ -33,7 +33,7 @@ func (openHub OpenHubSettings) Execute(sessionState *session.State, actionState 
 	// New hub connection, clear any existing apps.
 	sessionState.ArtifactMap = session.NewArtifactMap()
 
-	host, err := connectionSettings.GetRestUrl()
+	host, err := connectionSettings.RestUrl()
 	if err != nil {
 		actionState.AddErrors(err)
 		return

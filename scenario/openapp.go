@@ -315,7 +315,7 @@ func DoPostOpenAppRequests(sessionState *session.State, actionState *action.Stat
 
 func TrySetCSRFToken(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings) {
 	if sessionState.TargetEnv() == "" { // No preceeding action performed to determine target environment
-		host, err := connectionSettings.GetRestUrl()
+		host, err := connectionSettings.RestUrl()
 		if err != nil {
 			actionState.AddErrors(err)
 			return

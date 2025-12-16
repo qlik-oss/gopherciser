@@ -80,8 +80,10 @@ func TestOnlyInstanceSeed(t *testing.T) {
 			SchedType:      SchedSimple,
 			InstanceNumber: 2,
 			ConnectionSettings: &connection.ConnectionSettings{
-				Server: "localhost",
-				Mode:   connection.WS,
+				ConnectionSettingsCore: connection.ConnectionSettingsCore{
+					Server: "localhost",
+					Mode:   connection.WS,
+				},
 			},
 		},
 		Settings: SimpleSchedSettings{
@@ -131,8 +133,10 @@ func TestReuseUserRandomizer(t *testing.T) {
 			SchedType:      SchedSimple,
 			InstanceNumber: 1,
 			ConnectionSettings: &connection.ConnectionSettings{
-				Server: "localhost",
-				Mode:   connection.WS,
+				ConnectionSettingsCore: connection.ConnectionSettingsCore{
+					Server: "localhost",
+					Mode:   connection.WS,
+				},
 			},
 		},
 		Settings: SimpleSchedSettings{
@@ -261,8 +265,10 @@ func TestScale(t *testing.T) {
 	rampupdelay := 0.003
 
 	connectionSettings := &connection.ConnectionSettings{
-		Server: "localhost",
-		Mode:   connection.WS,
+		ConnectionSettingsCore: connection.ConnectionSettingsCore{
+			Server: "localhost",
+			Mode:   connection.WS,
+		},
 	}
 	sched := &SimpleScheduler{
 		Settings: SimpleSchedSettings{
@@ -304,8 +310,10 @@ func TestScale(t *testing.T) {
 
 func BenchmarkSimple(b *testing.B) {
 	connectionSettings := &connection.ConnectionSettings{
-		Server: "localhost",
-		Mode:   connection.WS,
+		ConnectionSettingsCore: connection.ConnectionSettingsCore{
+			Server: "localhost",
+			Mode:   connection.WS,
+		},
 	}
 
 	sched := &SimpleScheduler{

@@ -71,7 +71,7 @@ func GenerateOdag(sessionState *session.State, settings GenerateOdagSettings, ac
 	if err != nil {
 		return err
 	}
-	host, err := connectionSettings.GetRestUrl()
+	host, err := connectionSettings.RestUrl()
 	if err != nil {
 		return err
 	}

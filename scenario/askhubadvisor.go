@@ -746,7 +746,7 @@ func (settings AskHubAdvisorSettings) Execute(sessionState *session.State, actio
 		label = "hubadvisorquery"
 	}
 
-	host, err := connection.GetRestUrl()
+	host, err := connection.RestUrl()
 	if err != nil {
 		actionState.AddErrors(errors.WithStack(err))
 		return
