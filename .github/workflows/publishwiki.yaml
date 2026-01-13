@@ -35,14 +35,19 @@ jobs:
       run: |
         git status
         cd gopherciser.wiki
-        if [[ "$(git diff --name-only)" != "" ]]; then
-          git status
-          echo "publishing wiki"
-          set -e
-          git config user.email "$GIT_USER_EMAIL"
-          git config user.name "$GIT_USER_NAME"
-          git commit -a -m "Github action automatically generated wiki"
-          git push
+          if [[ "$(git status -s)" != "" ]]; then
+            git status
+            echo "publishing wiki"
+            set -e
+            echo "setup user..."
+            git config user.email "$GIT_USER_EMAIL"
+            git config user.name "$GIT_USER_NAME"
+            echo "stage files..."
+            git add -A
+            echo "commiting..."
+            git commit -m "Github action automatically generated wiki"
+            echo "pushing..."
+            git push
         else
           echo "no changes skipping publish"
         fi
