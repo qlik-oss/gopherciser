@@ -12,6 +12,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/pending"
+	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +37,7 @@ func TestResthandler(t *testing.T) {
 	actionState := action.State{}
 	pendingHandler := pending.NewHandler()
 
-	restHandler := NewRestHandler(context.Background(), &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second, &pendingHandler)
+	restHandler := NewRestHandler(context.Background(), &enigmahandlers.TrafficLogger{}, NewHeaderJar(), "", 10*time.Second, &pendingHandler, &requestmetrics.RequestMetrics{})
 	restHandler.Client = http.DefaultClient
 	getRequest := RestRequest{
 		Method:      GET,
