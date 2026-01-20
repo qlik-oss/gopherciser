@@ -28,6 +28,7 @@ import (
 	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/logger"
 	"github.com/qlik-oss/gopherciser/pending"
+	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/version"
@@ -41,14 +42,15 @@ type (
 	// RestHandler handles waiting for pending requests and responses
 
 	RestHandler struct {
-		timeout       time.Duration
-		Client        *http.Client
-		trafficLogger enigma.TrafficLogger
-		headers       *HeaderJar
-		virtualProxy  string
-		ctx           context.Context
-		pending       *pending.Handler
-		defaultUrl    *url.URL
+		timeout        time.Duration
+		Client         *http.Client
+		trafficLogger  enigma.TrafficLogger
+		headers        *HeaderJar
+		virtualProxy   string
+		ctx            context.Context
+		pending        *pending.Handler
+		defaultUrl     *url.URL
+		requestMetrics *requestmetrics.RequestMetrics
 	}
 
 	// RestRequest represents a REST request and its response
@@ -199,14 +201,15 @@ func addCustomHeaders(req *http.Request, logEntry *logger.LogEntry) {
 }
 
 // NewRestHandler new instance of RestHandler
-func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration, pendingHandler *pending.Handler) *RestHandler {
+func NewRestHandler(ctx context.Context, trafficLogger enigma.TrafficLogger, headerjar *HeaderJar, virtualProxy string, timeout time.Duration, pendingHandler *pending.Handler, requestMetrics *requestmetrics.RequestMetrics) *RestHandler {
 	return &RestHandler{
-		trafficLogger: trafficLogger,
-		headers:       headerjar,
-		virtualProxy:  virtualProxy,
-		timeout:       timeout,
-		ctx:           ctx,
-		pending:       pendingHandler,
+		trafficLogger:  trafficLogger,
+		headers:        headerjar,
+		virtualProxy:   virtualProxy,
+		timeout:        timeout,
+		ctx:            ctx,
+		pending:        pendingHandler,
+		requestMetrics: requestMetrics,
 	}
 }
 
@@ -717,7 +720,12 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 
 				// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
 				if _, ok := streamContentTypes[mediaType]; ok && logEntry.ShouldLogTrafficMetrics() {
-					logEntry.LogTrafficMetric(time.Since(doTs).Nanoseconds(), 0, uint64(len(request.ResponseBody)), -1, req.URL.Path, "", "STREAM", "")
+					now := time.Now()
+					receivedData := len(request.ResponseBody)
+					logEntry.LogTrafficMetric(now.Sub(doTs).Nanoseconds(), 0, uint64(receivedData), -1, req.URL.Path, "", "STREAM", "")
+					if err := handler.requestMetrics.UpdateReceived(now, int64(receivedData)); err != nil {
+						logEntry.LogError(err) // Log non breaking error
+					}
 				}
 			}
 		})

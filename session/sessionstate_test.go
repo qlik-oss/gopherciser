@@ -11,6 +11,7 @@ import (
 	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/logger"
+	"github.com/qlik-oss/gopherciser/requestmetrics"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
@@ -214,7 +215,7 @@ func TestState_SessionVariables(t *testing.T) {
 func setupStateForCLTest() (*State, *eventCounter, *eventCounter, *eventCounter, *eventCounter) {
 	counters := &statistics.ExecutionCounters{}
 	state := New(context.Background(), "", 60, nil, 1, 1, "", false, counters)
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending, &requestmetrics.RequestMetrics{})
 
 	event0 := registerEvent(state, 0)
 	event1 := registerEvent(state, 1)
@@ -408,7 +409,7 @@ func TestStateTemplateArtifactMap(t *testing.T) {
 func TestPendingWaiter(t *testing.T) {
 	counters := &statistics.ExecutionCounters{}
 	state := New(context.Background(), "", 120, nil, 1, 1, "", false, counters)
-	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending)
+	state.Rest = NewRestHandler(state.ctx, state.trafficLogger, state.HeaderJar, state.VirtualProxy, state.Timeout, &state.Pending, &requestmetrics.RequestMetrics{})
 	actionState := &action.State{}
 
 	firstDone := false
