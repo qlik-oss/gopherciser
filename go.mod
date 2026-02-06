@@ -6,10 +6,9 @@ require (
 	github.com/InVisionApp/tabular v0.3.0
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/buger/jsonparser v1.1.1
-	github.com/eventials/go-tus v0.0.0-20220610120217-05d0564bb571
 	github.com/gobwas/ws v1.4.0
 	github.com/goccy/go-json v0.10.5
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.8.0
@@ -44,7 +43,6 @@ require (
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
-	github.com/tus/tusd v1.3.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
