@@ -72,7 +72,7 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 	}
 
 	total := len(allInfos)
-	if total > 1 { // Only start worker pool if we have work to do
+	if total > 0 { // Only start worker pool if we have work to do
 		pool, err := helpers.NewWorkerPool(10, total)
 		if err != nil {
 			actionState.AddErrors(errors.Wrap(err, "failed to start worker pool"))
