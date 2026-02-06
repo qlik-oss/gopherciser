@@ -71,27 +71,30 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 		structure.logEntry = sessionState.LogEntry
 	}
 
-	pool, err := helpers.NewWorkerPool(10, len(allInfos))
-	if err != nil {
-		actionState.AddErrors(errors.Wrap(err, "failed to start worker pool"))
-		return
-	}
-
-	for _, info := range allInfos {
-		if err := pool.AddTask(func() error {
-			if info == nil {
-				return nil
-			}
-
-			return structure.getStructureForObjectSync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw)
-		}); err != nil {
-			actionState.AddErrors(err)
+	total := len(allInfos)
+	if total > 1 { // Only start worker pool if we have work to do
+		pool, err := helpers.NewWorkerPool(10, total)
+		if err != nil {
+			actionState.AddErrors(errors.Wrap(err, "failed to start worker pool"))
+			return
 		}
-	}
 
-	for result := range pool.Results() {
-		if result != nil {
-			actionState.AddErrors(result)
+		for _, info := range allInfos {
+			if err := pool.AddTask(func() error {
+				if info == nil {
+					return nil
+				}
+
+				return structure.getStructureForObjectSync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw)
+			}); err != nil {
+				actionState.AddErrors(err)
+			}
+		}
+
+		for result := range pool.Results() {
+			if result != nil {
+				actionState.AddErrors(result)
+			}
 		}
 	}
 
