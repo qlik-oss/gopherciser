@@ -26,6 +26,7 @@ type (
 		ExternalHost  string                  `json:"externalhost" displayname:"External hostname" doc-key:"openapp.externalhost"`
 		UniqueSession bool                    `json:"unique" displayname:"Make session unique" doc-key:"openapp.unique"`
 		Timeouts      OpenAppSettingsTimeouts `json:"timeouts" displayname:"Timeouts" doc-key:"openapp.timeouts"`
+		NoData        bool                    `json:"nodata" displayname:"No data" doc-key:"openapp.nodata"`
 	}
 	// OpenAppSettings app and server settings
 	OpenAppSettings struct {
@@ -116,7 +117,7 @@ func (openApp OpenAppSettings) Execute(sessionState *session.State, actionState 
 
 	uplink := sessionState.Connection.Sense()
 
-	DoOpenApp(sessionState, actionState, uplink, appEntry.ID, time.Duration(openApp.Timeouts.Open))
+	DoOpenApp(sessionState, actionState, uplink, appEntry.ID, time.Duration(openApp.Timeouts.Open), openApp.NoData)
 	if actionState.Failed {
 		return
 	}
@@ -138,8 +139,8 @@ func (openApp OpenAppSettings) Validate() ([]string, error) {
 	return nil, nil
 }
 
-func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID string) error {
-	doc, err := uplink.Global.OpenDoc(ctx, appGUID, "", "", "", false)
+func openDoc(ctx context.Context, uplink *enigmahandlers.SenseUplink, appGUID string, nodata bool) error {
+	doc, err := uplink.Global.OpenDoc(ctx, appGUID, "", "", "", nodata)
 	if err != nil {
 		return err
 	}
@@ -206,9 +207,9 @@ func (openApp OpenAppSettings) AffectsAppObjectsAction(structure appstructure.Ap
 }
 
 // DoOpenApp is intended to be used from inside a open app action after websocket is connected
-func DoOpenApp(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, appGUID string, timeout time.Duration) {
+func DoOpenApp(sessionState *session.State, actionState *action.State, uplink *enigmahandlers.SenseUplink, appGUID string, timeout time.Duration, nodata bool) {
 	if err := sessionState.SendRequestWithTimeout(actionState, timeout, func(ctx context.Context) error {
-		return openDoc(ctx, uplink, appGUID)
+		return openDoc(ctx, uplink, appGUID, nodata)
 	}); err != nil {
 		actionState.AddErrors(errors.Wrapf(err, "Failed to open app GUID<%s>", appGUID))
 		return

@@ -485,6 +485,9 @@
     "openapp.timeouts.open": [
         "(optional) Custom timeout for openapp request (for example, `10m`, `30s` or `1m10s`)"
     ],
+    "openapp.nodata": [
+        "(optional) Open app without data"
+    ],
     "openapp.unique": [
         "Create unqiue engine session not re-using session from previous connection with same user. Defaults to false."
     ],

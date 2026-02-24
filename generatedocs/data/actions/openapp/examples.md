@@ -60,3 +60,17 @@ Open app with custom timeouts for connecting to engine and opening app in engine
      }
 }
 ```
+
+Open app with no data
+
+```json
+{
+     "label": "OpenApp",
+     "action": "OpenApp",
+     "settings": {
+         "appmode": "guid",
+         "app": "7967af99-68b6-464a-86de-81de8937dd56",
+         "nodata": true
+     }
+}
+```
