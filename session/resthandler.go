@@ -719,10 +719,12 @@ func (handler *RestHandler) QueueRequestWithCallback(actionState *action.State, 
 				}
 
 				// When content type is a stream normal metric log will be time to response without starting to stream the body. Thus this will log response time to stream end
-				if _, ok := streamContentTypes[mediaType]; ok && logEntry.ShouldLogTrafficMetrics() {
+				if _, ok := streamContentTypes[mediaType]; ok {
 					now := time.Now()
 					receivedData := len(request.ResponseBody)
-					logEntry.LogTrafficMetric(now.Sub(doTs).Nanoseconds(), 0, uint64(receivedData), -1, req.URL.Path, "", "STREAM", "")
+					if logEntry.ShouldLogTrafficMetrics() {
+						logEntry.LogTrafficMetric(now.Sub(doTs).Nanoseconds(), 0, uint64(receivedData), -1, req.URL.Path, "", "STREAM", "")
+					}
 					if err := handler.requestMetrics.UpdateReceived(now, int64(receivedData)); err != nil {
 						logEntry.LogError(err) // Log non breaking error
 					}
