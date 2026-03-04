@@ -163,6 +163,18 @@ func (entry *LogEntry) LogInfo(infoType, msg string) {
 	})
 }
 
+// LogInfo log info entry
+func (entry *LogEntry) LogInfoWithDetails(infoType, msg, details string) {
+	if entry == nil {
+		return
+	}
+
+	entry.log(InfoLevel, msg, &ephemeralEntry{
+		InfoType: infoType,
+		Details:  details,
+	})
+}
+
 // LogErrorReport log warning and error count
 func (entry *LogEntry) LogErrorReport(reportType string, errors, warnings uint64) {
 	if entry == nil {
