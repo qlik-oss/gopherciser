@@ -312,12 +312,12 @@ func (uplink *SenseUplink) LogMetric(invocation *enigma.Invocation, metrics *eni
 
 	reqStall := metrics.SocketWriteTimestamp.Sub(metrics.InvocationRequestTimestamp)
 	if reqStall > constant.MaxStallTime {
-		uplink.logEntry.LogDetail(logger.WarningLevel, "WS request stall", strconv.FormatInt(reqStall.Nanoseconds(), 10))
+		uplink.logEntry.LogInfoWithDetails("WS request stall", reqStall.String(), strconv.FormatInt(reqStall.Nanoseconds(), 10))
 	}
 
 	respStall := metrics.InvocationResponseTimestamp.Sub(metrics.SocketReadTimestamp)
 	if !metrics.InvocationRequestTimestamp.IsZero() && !metrics.SocketReadTimestamp.IsZero() && respStall > constant.MaxStallTime {
-		uplink.logEntry.LogDetail(logger.WarningLevel, "WS response stall", strconv.FormatInt(respStall.Nanoseconds(), 10))
+		uplink.logEntry.LogInfoWithDetails("WS response stall", respStall.String(), strconv.FormatInt(respStall.Nanoseconds(), 10))
 	}
 
 }
