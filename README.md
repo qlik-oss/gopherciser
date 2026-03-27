@@ -43,6 +43,12 @@ Updating submodule to version defined by current branch commit:
 git submodule update
 ```
 
+We recommend setting submodules to update automatically globally in your git settings:
+
+```bash
+git config --global submodule.recurse true
+```
+
 **Note**  the submodule will by default be in it's `master` branch. Any changes done and pushed in the submodule master branch will instantly update the wiki (i.e. don't make changes intended for a PR directly here).
 
 ## Building gopherciser
