@@ -120,7 +120,7 @@ func checkAllActionTags(data *docData) error {
 
 func checkActionTags(action string, value reflect.Value, paramDocs map[string][]string, level int) error {
 	switch value.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		elem := value.Elem()
 		if value.IsNil() && value.CanInterface() {
 			elem = reflect.New(value.Type().Elem())
