@@ -24,7 +24,7 @@ func MarkdownParams(obj interface{}, paramDocs map[string][]string) string {
 
 func handleValue(value reflect.Value, paramDocs map[string][]string, buf *bytes.Buffer, indent string) error {
 	switch value.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		elem := value.Elem()
 		if value.IsNil() && value.CanInterface() {
 			elem = reflect.New(value.Type().Elem())
