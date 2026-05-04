@@ -22,7 +22,7 @@ echo "detected current lint version <$CURVER>"
 echo "detected latest lint version <$LATESTVER>"
 if ! [[ "$CURVER" == "$LATESTVER" ]]; then
     echo golangci-lint not installed or incorrect version, installing latest golangci-lint
-    curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$(go env GOPATH)"/bin latest
+    curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/main/install.sh| sh -s -- -b "$(go env GOPATH)"/bin latest
 else
     echo Lint tool already at correct version
 fi
