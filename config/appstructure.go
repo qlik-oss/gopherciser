@@ -667,6 +667,20 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 		fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
 	})
 
+	// add subtitle
+	dpSubTitle := helpers.NewDataPath("/subtitle")
+	subtitle, _ := dpSubTitle.LookupNoQuotes(properties)
+	if subtitle != nil {
+		obj.SubTitle = string(subtitle)
+	}
+
+	// add footnote
+	dpFootnote := helpers.NewDataPath("/footnote")
+	footnote, _ := dpFootnote.LookupNoQuotes(properties)
+	if footnote != nil {
+		obj.Footnote = string(footnote)
+	}
+
 	return nil
 }
 
