@@ -14,7 +14,11 @@ type (
 		Title string `json:"title,omitempty"`
 		// Description of library item
 		Description string `json:"description,omitempty"`
-		// Tags of  of library item
+		// SubTitle of library item
+		SubTitle string `json:"subtitle,omitempty"`
+		// Footnote of library item
+		Footnote string `json:"footnote,omitempty"`
+		// Tags of library item
 		Tags []string `json:"tags,omitempty"`
 	}
 
