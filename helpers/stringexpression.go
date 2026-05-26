@@ -51,12 +51,3 @@ func (expr StringExpression) MarshalJSON() ([]byte, error) {
 		return []byte(expr), nil
 	}
 }
-
-// // MarshalJSON marshal HttpMethod
-// func (method HttpMethod) MarshalJSON() ([]byte, error) {
-// 	str, err := httpMethodEnum.String(int(method))
-// 	if err != nil {
-// 		return nil, errors.Errorf("Unknown HttpMethod<%d>", method)
-// 	}
-// 	return []byte(fmt.Sprintf(`"%s"`, str)), nil
-// }
