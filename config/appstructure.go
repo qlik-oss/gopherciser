@@ -662,26 +662,25 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 		obj.Selectable = false
 	}
 
-	resolveTitle(obj, properties, []string{
-		"/title",
-		fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
-	})
-
+	// 	fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
+	obj.Title = resolvePossibleStringExpression(properties, "/title")
 	// add subtitle
-	dpSubTitle := helpers.NewDataPath("/subtitle")
-	subtitle, _ := dpSubTitle.LookupNoQuotes(properties)
-	if subtitle != nil {
-		obj.SubTitle = string(subtitle)
-	}
-
+	obj.SubTitle = resolvePossibleStringExpression(properties, "/subtitle")
 	// add footnote
-	dpFootnote := helpers.NewDataPath("/footnote")
-	footnote, _ := dpFootnote.LookupNoQuotes(properties)
-	if footnote != nil {
-		obj.Footnote = string(footnote)
-	}
+	obj.Footnote = resolvePossibleStringExpression(properties, "/footnote")
 
 	return nil
+}
+
+func resolvePossibleStringExpression(properties json.RawMessage, path string) string {
+	dp := helpers.NewDataPath(path)
+	data, _ := dp.Lookup(properties)
+
+	var stringExpression helpers.StringExpression
+	if err := json.Unmarshal(data, &stringExpression); err != nil {
+		return string(data) // fallback
+	}
+	return string(stringExpression)
 }
 
 func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
@@ -966,28 +965,6 @@ func (structure *GeneratedAppStructure) addSheetMeta(layout *senseobjects.SheetL
 
 func (structure *GeneratedAppStructure) GetWarningsList() []AppStructureWarning {
 	return structure.report.warnings
-}
-
-func resolveTitle(obj *appstructure.AppStructureObject, properties json.RawMessage, paths []string) {
-	if obj.Title != "" {
-		return // We already have a title
-	}
-
-	for _, path := range paths {
-		title := stringFromDataPath(path, properties)
-		if title != "" {
-			obj.Title = title
-			return
-		}
-	}
-}
-
-func stringFromDataPath(path string, data json.RawMessage) string {
-	dataPath := helpers.NewDataPath(path)
-	rawData, _ := dataPath.Lookup(data)
-	var str string
-	_ = json.Unmarshal(rawData, &str)
-	return str
 }
 
 // AddWarning to app structure report
