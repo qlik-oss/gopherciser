@@ -549,11 +549,13 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	truncateMeta(&obj.MetaDef, structure.truncateTo)
 
 	enumTyp, _ := appstructure.ObjectTypeEnumMap.Int(typ) // 0 will be default in case of "error" == ObjectTypeDefault
-
 	// Should we look for measures and dimensions?
 	switch appstructure.ObjectType(enumTyp) {
-	case appstructure.ObjectSheet,
-		appstructure.ObjectAppprops,
+	case appstructure.ObjectSheet:
+		obj.DescriptionExpression = truncateString(resolvePossibleStringExpression(properties, "/descriptionExpression"), structure.truncateTo)
+		obj.LabelExpression = truncateString(resolvePossibleStringExpression(properties, "/labelExpression"), structure.truncateTo)
+		return nil
+	case appstructure.ObjectAppprops,
 		appstructure.ObjectLoadModel:
 		// Known object which does not have measures and dimensions
 		return nil
@@ -663,11 +665,11 @@ func (structure *GeneratedAppStructure) handleObject(typ string, obj *appstructu
 	}
 
 	// 	fmt.Sprintf("%sDef/qTitle", def.DataDef.Path),
-	obj.Title = resolvePossibleStringExpression(properties, "/title")
+	obj.Title = truncateString(resolvePossibleStringExpression(properties, "/title"), structure.truncateTo)
 	// add subtitle
-	obj.SubTitle = resolvePossibleStringExpression(properties, "/subtitle")
+	obj.SubTitle = truncateString(resolvePossibleStringExpression(properties, "/subtitle"), structure.truncateTo)
 	// add footnote
-	obj.Footnote = resolvePossibleStringExpression(properties, "/footnote")
+	obj.Footnote = truncateString(resolvePossibleStringExpression(properties, "/footnote"), structure.truncateTo)
 
 	return nil
 }
@@ -980,9 +982,14 @@ func (report *AppStructureReport) AddWarning(warning AppStructureWarning) {
 }
 
 func truncateMeta(meta *appstructure.MetaDef, truncateTo int) {
-	if truncateTo < 1 {
-		return
+	meta.Title = truncateString(meta.Title, truncateTo)
+	meta.Description = truncateString(meta.Description, truncateTo)
+}
+
+func truncateString(input string, truncateTo int) string {
+	if truncateTo < 1 { // 0 means do not truncate
+		return input
 	}
-	meta.Title = meta.Title[:helpers.Min(len(meta.Title), truncateTo)]
-	meta.Description = meta.Description[:helpers.Min(len(meta.Description), truncateTo)]
+
+	return input[:helpers.Min(len(input), truncateTo)]
 }
