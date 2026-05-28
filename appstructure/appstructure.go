@@ -20,6 +20,9 @@ type (
 		Footnote string `json:"footnote,omitempty"`
 		// Tags of library item
 		Tags []string `json:"tags,omitempty"`
+
+		LabelExpression       string `json:"labelExpression"`
+		DescriptionExpression string `json:"descriptionExpression"`
 	}
 
 	// AppObjectDef title and ID of a Sense object
