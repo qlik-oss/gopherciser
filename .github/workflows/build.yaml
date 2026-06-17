@@ -93,8 +93,7 @@ jobs:
 
   publish-github:
     needs: build
-    # TODO re-add once verified
-    # if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -114,12 +113,10 @@ jobs:
           TITLE=$(head -n 1 changelog.md)
           BODY=$(tail -n+2 changelog.md)
           echo "Creating release $TAG"
-          # TODO remove --draft once verified
           gh release create "$TAG" \
             --repo "${{ github.repository }}" \
             --title "$TITLE" \
             --notes "$BODY" \
-            --draft \
             ./pack/gopherciser_linux.zip \
             ./pack/gopherciser_windows.zip \
             ./pack/gopherciser_osx.zip \
@@ -136,6 +133,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v6
