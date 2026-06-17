@@ -161,6 +161,7 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
             docker push $DOCKER_REPO:latest
-          else
-            docker push $DOCKER_REPO:DEV # TODO remove once verified
+          else # TODO remove once verified
+            docker tag $DOCKER_REPO:$VER $DOCKER_REPO:DEV
+            docker push $DOCKER_REPO:DEV 
           fi
