@@ -1,0 +1,165 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+
+env:
+  DOCKER_REPO: ghcr.io/qlik-oss/gopherciser/gopherciser
+  GO_VERSION: '1.25'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup build directory
+        run: mkdir -p build
+
+      - name: Run Golang tests
+        run: make alltests
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: |
+            coverage.html
+            coverage.csv
+
+      - name: Minimum linting required for Pull Requests to be accepted
+        run: make lint-min
+
+      - name: Build gopherciser for Linux, Darwin and Windows (amd64)
+        run: make build
+
+      - name: Build documentation
+        run: make docbuild
+
+      - name: Create changelog
+        run: make changelog
+
+      - name: Pack binaries
+        run: ./scripts/pack.sh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-artifacts
+          path: |
+            pack/
+            build/
+            changelog.md
+
+  test-go-version:
+     runs-on: ubuntu-latest
+     continue-on-error: true
+     strategy:
+       matrix:
+         go-version: ['1.26']
+     permissions:
+       contents: read
+     steps:
+       - name: Checkout
+         uses: actions/checkout@v6
+         with:
+           fetch-depth: 0
+       - name: Set up Go ${{ matrix.go-version }}
+         uses: actions/setup-go@v6
+         with:
+           go-version: ${{ matrix.go-version }}
+           cache: true
+       - name: Create build directory
+         run: mkdir -p build
+       - name: Run tests
+         run: make alltests
+       - name: Build binaries
+         run: make build
+
+  publish-github:
+    needs: build
+    # TODO re-add once verified
+    # if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: build-artifacts
+
+      - name: Publish to GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          if [[ ! -f ./build/version ]]; then echo "./build/version not found"; exit 1; fi
+          TAG=v$(cat ./build/version)
+          TITLE=$(head -n 1 changelog.md)
+          BODY=$(tail -n+2 changelog.md)
+          echo "Creating release $TAG"
+          # TODO remove --draft once verified
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TITLE" \
+            --notes "$BODY" \
+            --draft \
+            ./pack/gopherciser_linux.zip \
+            ./pack/gopherciser_windows.zip \
+            ./pack/gopherciser_osx.zip \
+            ./pack/gopherciser_linux_arm64.zip
+
+  build-publish-docker:
+    needs: build
+    # TODO re-add once verified
+    # if: github.ref == 'refs/heads/master' || (github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build Docker image
+        run: make build-docker
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ vars.PERBOT_USERNAME }}
+          password: ${{ secrets.PERBOT_GH_TOKEN }}
+
+      - name: Push docker image
+        run: |
+          VER=$(cat build/version)
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            docker tag $DOCKER_REPO:$VER $DOCKER_REPO:$VER
+            docker push $DOCKER_REPO:$VER
+          fi
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
+            docker push $DOCKER_REPO:latest
+          else
+            docker push $DOCKER_REPO:DEV # TODO remove once verified
+          fi
