@@ -124,8 +124,7 @@ jobs:
 
   build-publish-docker:
     needs: build
-    # TODO re-add once verified
-    # if: github.ref == 'refs/heads/master' || (github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v'))
+    if: github.ref == 'refs/heads/master' || (github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -161,7 +160,4 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             docker tag $DOCKER_REPO:$VER $DOCKER_REPO:latest
             docker push $DOCKER_REPO:latest
-          else # TODO remove once verified
-            docker tag $DOCKER_REPO:$VER $DOCKER_REPO:DEV
-            docker push $DOCKER_REPO:DEV 
           fi
