@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.9.0
+	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.24.0
 	github.com/qlik-oss/enigma-go/v4 v4.5.0
