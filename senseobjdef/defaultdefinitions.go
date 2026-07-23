@@ -809,6 +809,23 @@ var (
 		Select: nil,
 	}
 
+	// DefaultImage object definitions for sn-image
+	DefaultSnImage = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -858,5 +875,6 @@ var (
 		"sn-tabbed-container":   &DefaultTabbedContainer,
 		"sn-nlg-chart":          &DefaultSnNlgChart,
 		"sn-nav-menu":           &DefaultSnNavMenu,
+		"sn-image":              &DefaultSnImage,
 	}
 )
