@@ -183,7 +183,6 @@ func (dialer *WsDialer) Dial(ctx context.Context) error {
 
 // WriteMessage Write message to a frame on the websocket
 func (dialer *WsDialer) WriteMessage(messageType int, data []byte) error {
-	fmt.Printf("WS:WriteMessage: messageType<%d> data<%s>\n", messageType, data)
 	return wsutil.WriteClientMessage(dialer, gobwas.OpCode(messageType), data)
 }
 

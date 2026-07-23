@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/InVisionApp/tabular"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v4"
@@ -139,37 +138,16 @@ func (structure *GeneratedAppStructure) printSummary(summary SummaryType, fileNa
 	buf.WriteString("\n")
 
 	// object table
-	tabbedOutput := tabular.New()
-	summaryHeaders := make(SummaryHeader)
-	//objectTblData := make([]SummaryActionDataEntry, 0, objectCount)
-
-	// Create headers and default column sizes
-	summaryHeaders["id"] = &SummaryHeaderEntry{"ID", 2}
-	summaryHeaders["vis"] = &SummaryHeaderEntry{"Visualization", 13}
-	summaryHeaders["typ"] = &SummaryHeaderEntry{"Type", 4}
-
-	// Update column widths
+	objectColumns := []summaryTableColumn{
+		{name: "ID"},
+		{name: "Visualization"},
+		{name: "Type"},
+	}
+	objectRows := make([][]string, 0, len(structure.Objects))
 	for _, obj := range structure.Objects {
-		summaryHeaders["id"].UpdateColSize(len(obj.Id))
-		summaryHeaders["vis"].UpdateColSize(len(obj.Visualization))
-		summaryHeaders["typ"].UpdateColSize(len(obj.Type))
+		objectRows = append(objectRows, []string{obj.Id, obj.Visualization, obj.Type})
 	}
-
-	// Set column widths
-	for k := range summaryHeaders {
-		summaryHeaders.Col(k, &tabbedOutput)
-	}
-
-	// Print table headers
-	table := tabbedOutput.Parse("*")
-	writeTableHeaders(buf, &table)
-
-	// print all objects
-	for _, obj := range structure.Objects {
-		buf.WriteString(ansiBoldBlue)
-		buf.WriteString(fmt.Sprintf(table.Format, obj.Id, obj.Visualization, obj.Type))
-		buf.WriteString(ansiReset)
-	}
+	writeSummaryTable(buf, objectColumns, objectRows)
 }
 
 func evaluateActionList(actions []scenario.Action, includeRaw bool, appStructureMap map[string]*GeneratedAppStructure) []scenario.Action {
