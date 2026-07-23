@@ -64,13 +64,10 @@ func UnmarshalConfigFile() (*config.Config, error) {
 	var hasPipe bool
 
 	if !IsLaunchedByDebugger() {
-		fmt.Println("No debugger present") // TODO remove this!
 		hasPipe, err = HasPipe()
 		if err != nil {
 			return nil, errors.Wrap(err, "error discovering if piped data exist")
 		}
-	} else {
-		fmt.Println("debugger present") // TODO remove this!
 	}
 
 	if cfgFile == "" {
