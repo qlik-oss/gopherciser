@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-	"github.com/mitchellh/go-ps"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -65,10 +64,13 @@ func UnmarshalConfigFile() (*config.Config, error) {
 	var hasPipe bool
 
 	if !IsLaunchedByDebugger() {
+		fmt.Println("No debugger present") // TODO remove this!
 		hasPipe, err = HasPipe()
 		if err != nil {
 			return nil, errors.Wrap(err, "error discovering if piped data exist")
 		}
+	} else {
+		fmt.Println("debugger present") // TODO remove this!
 	}
 
 	if cfgFile == "" {
@@ -281,18 +283,4 @@ func HasPipe() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 	return fileInfo.Mode()&os.ModeCharDevice == 0, nil
-}
-
-// IsLaunchedByDebugger discovers if pararent process is deleve
-func IsLaunchedByDebugger() bool {
-	parent, err := ps.FindProcess(os.Getppid())
-	if err != nil {
-		return false
-	}
-	name := parent.Executable()
-	switch name {
-	case "dlv", "dlv.exe", "debugserver", "dlv-dap":
-		return true
-	}
-	return false
 }
