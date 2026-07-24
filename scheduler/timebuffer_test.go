@@ -41,7 +41,7 @@ func TestTimeBufMinDur(t *testing.T) {
 			t.Errorf("Expected error<%s>  got: %+v", expectedError, err)
 		}
 		if helpers.IsContextTriggered(ctx) {
-			t.Error("context was triggered for mode TimeBufConstant")
+			t.Error("context was triggered for mode TimeBufMinDur")
 		}
 
 		now := time.Now()
@@ -57,7 +57,7 @@ func TestTimeBufMinDur(t *testing.T) {
 			t.Error("duration less than expected 2 seconds")
 		}
 		if helpers.IsContextTriggered(ctx) {
-			t.Error("context was triggered for mode TimeBufConstant")
+			t.Error("context was triggered for mode TimeBufMinDur")
 		}
 	})
 }
@@ -77,9 +77,9 @@ func TestTimeBufOnError(t *testing.T) {
 			t.Errorf("Error waiting: %+v", err)
 		}
 		if helpers.IsContextTriggered(ctx) {
-			t.Error("context was triggered for mode TimeBufConstant")
+			t.Error("context was triggered for mode TimeBufOnError")
 		}
-		if start.Add(time.Second + 50*time.Millisecond).Before(time.Now()) {
+		if start.Add(time.Second).Before(time.Now()) {
 			t.Error("mode<TimeBufOnError> waited despite errors false")
 		}
 
@@ -89,7 +89,7 @@ func TestTimeBufOnError(t *testing.T) {
 			t.Errorf("Error waiting: %+v", err)
 		}
 		if helpers.IsContextTriggered(ctx) {
-			t.Error("context was triggered for mode TimeBufConstant")
+			t.Error("context was triggered for mode TimeBufOnError")
 		}
 		if start.Add(time.Second).After(time.Now()) {
 			t.Error("mode<TimeBufOnError> did not wait despite errors true")
