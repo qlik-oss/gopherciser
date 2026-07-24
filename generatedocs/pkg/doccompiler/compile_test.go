@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/andreyvit/diff"
 	"github.com/goccy/go-json"
+	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-version"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
 	generatedV1 "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output/V1"
@@ -93,7 +93,7 @@ func TestCompile(t *testing.T) {
 
 			if !reflect.DeepEqual(generatedDocs, expectedDocs) {
 				t.Error("generated docs were not correct")
-				fmt.Println(diff.LineDiff(string(expectedDocs), string(generatedDocs)))
+				fmt.Println(cmp.Diff(string(expectedDocs), string(generatedDocs)))
 			}
 
 		})
@@ -597,7 +597,7 @@ func TestOverloadGroups(t *testing.T) {
 }
 
 func objDiff(obj1, obj2 interface{}) string {
-	return diff.LineDiff(pretty(obj1), pretty(obj2))
+	return cmp.Diff(pretty(obj1), pretty(obj2))
 }
 
 func pretty(i interface{}) string {
