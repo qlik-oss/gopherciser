@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -10,96 +11,90 @@ import (
 )
 
 func TestTimeBufConstant(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
-	timeBuf := TimeBuffer{
-		Mode:     TimeBufConstant,
-		Duration: helpers.TimeDuration(time.Second),
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := timeBuf.Wait(ctx, false); err != nil {
-		t.Errorf("Error waiting: %+v", err)
-	}
-	if helpers.IsContextTriggered(ctx) {
-		t.Error("context was triggered for mode TimeBufConstant")
-	}
+	synctest.Test(t, func(t *testing.T) {
+		timeBuf := TimeBuffer{
+			Mode:     TimeBufConstant,
+			Duration: helpers.TimeDuration(time.Second),
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := timeBuf.Wait(ctx, false); err != nil {
+			t.Errorf("Error waiting: %+v", err)
+		}
+		if helpers.IsContextTriggered(ctx) {
+			t.Error("context was triggered for mode TimeBufConstant")
+		}
+	})
 }
 
 func TestTimeBufMinDur(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
+	synctest.Test(t, func(t *testing.T) {
+		timeBuf := TimeBuffer{
+			Mode:     TimeBufMinDur,
+			Duration: helpers.TimeDuration(2 * time.Second),
+		}
 
-	timeBuf := TimeBuffer{
-		Mode:     TimeBufMinDur,
-		Duration: helpers.TimeDuration(2 * time.Second),
-	}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		expectedError := "illegal start time<0001-01-01 00:00:00 +0000 UTC>"
+		if err := timeBuf.Wait(ctx, false); err == nil || err.Error() != expectedError {
+			t.Errorf("Expected error<%s>  got: %+v", expectedError, err)
+		}
+		if helpers.IsContextTriggered(ctx) {
+			t.Error("context was triggered for mode TimeBufConstant")
+		}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	expectedError := "illegal start time<0001-01-01 00:00:00 +0000 UTC>"
-	if err := timeBuf.Wait(ctx, false); err == nil || err.Error() != expectedError {
-		t.Errorf("Expected error<%s>  got: %+v", expectedError, err)
-	}
-	if helpers.IsContextTriggered(ctx) {
-		t.Error("context was triggered for mode TimeBufConstant")
-	}
+		now := time.Now()
+		timeBuf.SetDurationStart(now)
+		time.Sleep(time.Millisecond * 500)
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := timeBuf.Wait(ctx, false); err != nil {
+			t.Errorf("Error waiting: %+v", err)
+		}
 
-	now := time.Now()
-	timeBuf.SetDurationStart(now)
-	<-time.After(time.Millisecond * 500)
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := timeBuf.Wait(ctx, false); err != nil {
-		t.Errorf("Error waiting: %+v", err)
-	}
-
-	if now.Add(2 * time.Second).After(time.Now()) {
-		t.Error("duration less than expected 2 seconds")
-	}
-	if helpers.IsContextTriggered(ctx) {
-		t.Error("context was triggered for mode TimeBufConstant")
-	}
+		if now.Add(2 * time.Second).After(time.Now()) {
+			t.Error("duration less than expected 2 seconds")
+		}
+		if helpers.IsContextTriggered(ctx) {
+			t.Error("context was triggered for mode TimeBufConstant")
+		}
+	})
 }
 
 func TestTimeBufOnError(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
+	synctest.Test(t, func(t *testing.T) {
+		timeBuf := TimeBuffer{
+			Mode:     TimeBufOnError,
+			Duration: helpers.TimeDuration(time.Second),
+		}
 
-	timeBuf := TimeBuffer{
-		Mode:     TimeBufOnError,
-		Duration: helpers.TimeDuration(time.Second),
-	}
+		start := time.Now()
+		// test no errors
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := timeBuf.Wait(ctx, false); err != nil {
+			t.Errorf("Error waiting: %+v", err)
+		}
+		if helpers.IsContextTriggered(ctx) {
+			t.Error("context was triggered for mode TimeBufConstant")
+		}
+		if start.Add(time.Second + 50*time.Millisecond).Before(time.Now()) {
+			t.Error("mode<TimeBufOnError> waited despite errors false")
+		}
 
-	start := time.Now()
-	// test no errors
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := timeBuf.Wait(ctx, false); err != nil {
-		t.Errorf("Error waiting: %+v", err)
-	}
-	if helpers.IsContextTriggered(ctx) {
-		t.Error("context was triggered for mode TimeBufConstant")
-	}
-	if start.Add(time.Second + 50*time.Millisecond).Before(time.Now()) {
-		t.Error("mode<TimeBufOnError> waited despite errors false")
-	}
-
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := timeBuf.Wait(ctx, true); err != nil {
-		t.Errorf("Error waiting: %+v", err)
-	}
-	if helpers.IsContextTriggered(ctx) {
-		t.Error("context was triggered for mode TimeBufConstant")
-	}
-	if start.Add(time.Second).After(time.Now()) {
-		t.Error("mode<TimeBufOnError> did not wait despite errors true")
-	}
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := timeBuf.Wait(ctx, true); err != nil {
+			t.Errorf("Error waiting: %+v", err)
+		}
+		if helpers.IsContextTriggered(ctx) {
+			t.Error("context was triggered for mode TimeBufConstant")
+		}
+		if start.Add(time.Second).After(time.Now()) {
+			t.Error("mode<TimeBufOnError> did not wait despite errors true")
+		}
+	})
 }
 
 func TestTimeBufMarshaling(t *testing.T) {
