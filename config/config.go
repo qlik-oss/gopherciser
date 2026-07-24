@@ -28,7 +28,7 @@ import (
 	"github.com/qlik-oss/gopherciser/synced"
 	"github.com/qlik-oss/gopherciser/users"
 	"github.com/qlik-oss/gopherciser/version"
-	"github.com/shiena/ansicolor"
+	"github.com/mattn/go-colorable"
 )
 
 type (
@@ -190,7 +190,7 @@ const (
 const DefaultSummaryFilename = "summary.json"
 
 var (
-	ansiWriter = ansicolor.NewAnsiColorWriter(os.Stdout)
+	ansiWriter = colorable.NewColorableStdout()
 )
 
 func (value LogFormatType) GetEnumMap() *enummap.EnumMap {

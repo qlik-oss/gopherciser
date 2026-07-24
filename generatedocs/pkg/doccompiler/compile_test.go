@@ -5,34 +5,17 @@ import (
 	"go/format"
 	"os"
 	"reflect"
-	"runtime"
-	"strings"
 	"testing"
 
-	"github.com/andreyvit/diff"
 	"github.com/goccy/go-json"
-	"github.com/hashicorp/go-version"
+	"github.com/google/go-cmp/cmp"
 	"github.com/qlik-oss/gopherciser/generatedocs/pkg/common"
-	generatedV1 "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output/V1"
 	generatedV2 "github.com/qlik-oss/gopherciser/generatedocs/pkg/doccompiler/testdata/base/expected-output/V2"
 )
 
 func TestCompile(t *testing.T) {
 	docDataRoot := "testdata/base/data"
-	expectedOutputV1 := "testdata/base/expected-output/V1/documentation.go"
 	expectedOutputV2 := "testdata/base/expected-output/V2/documentation.go"
-
-	goVersionString := runtime.Version()
-	goVersionString = strings.TrimPrefix(goVersionString, "go")
-	goVersion, err := version.NewVersion(goVersionString)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go19, err := version.NewVersion("1.19")
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	generatedActions := generatedV2.Actions
 	generatedSchedulers := generatedV2.Schedulers
@@ -42,15 +25,6 @@ func TestCompile(t *testing.T) {
 	generatedGroups := generatedV2.Groups
 
 	expectedOutput := expectedOutputV2
-	if goVersion.LessThan(go19) {
-		generatedActions = generatedV1.Actions
-		generatedSchedulers = generatedV1.Schedulers
-		generatedConfig = generatedV1.Config
-		generatedExtra = generatedV1.Extra
-		generatedParams = generatedV1.Params
-		generatedGroups = generatedV1.Groups
-		expectedOutput = expectedOutputV1
-	}
 
 	for _, tc := range []struct {
 		name     string
@@ -93,7 +67,7 @@ func TestCompile(t *testing.T) {
 
 			if !reflect.DeepEqual(generatedDocs, expectedDocs) {
 				t.Error("generated docs were not correct")
-				fmt.Println(diff.LineDiff(string(expectedDocs), string(generatedDocs)))
+				fmt.Println(cmp.Diff(string(expectedDocs), string(generatedDocs)))
 			}
 
 		})
@@ -597,7 +571,7 @@ func TestOverloadGroups(t *testing.T) {
 }
 
 func objDiff(obj1, obj2 interface{}) string {
-	return diff.LineDiff(pretty(obj1), pretty(obj2))
+	return cmp.Diff(pretty(obj1), pretty(obj2))
 }
 
 func pretty(i interface{}) string {
