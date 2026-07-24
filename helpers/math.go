@@ -1,9 +1,9 @@
 package helpers
 
-import "golang.org/x/exp/constraints"
+import "cmp"
 
 // Min returns the least of a and b
-func Min[T constraints.Ordered](a, b T) T {
+func Min[T cmp.Ordered](a, b T) T {
 	if a < b {
 		return a
 	}
@@ -11,7 +11,7 @@ func Min[T constraints.Ordered](a, b T) T {
 }
 
 // Max returns the greatest of a and b
-func Max[T constraints.Ordered](a, b T) T {
+func Max[T cmp.Ordered](a, b T) T {
 	if a > b {
 		return a
 	}
