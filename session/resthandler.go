@@ -32,7 +32,6 @@ import (
 	"github.com/qlik-oss/gopherciser/runid"
 	"github.com/qlik-oss/gopherciser/statistics"
 	"github.com/qlik-oss/gopherciser/version"
-	"github.com/rs/dnscache"
 )
 
 type (
@@ -154,7 +153,7 @@ var (
 		ContentType:        "application/json",
 	}
 
-	dnsResolver = &dnscache.Resolver{}
+	dnsResolver = &helpers.CachedDNSResolver{}
 )
 
 // RegisterCustomHeadersFunc adds extra headers to all http requests.
