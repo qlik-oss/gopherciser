@@ -10,9 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/InVisionApp/tabular"
 	"github.com/buger/jsonparser"
 	"github.com/goccy/go-json"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
@@ -37,13 +38,12 @@ type (
 
 	SummaryType int
 
-	// SummaryHeaderEntry is used to calculate summary column sizes
-	SummaryHeaderEntry struct {
-		FullName string
-		ColSize  int
+	// summaryTableColumn describes a column in a summary output table
+	summaryTableColumn struct {
+		name         string
+		rightJustify bool
+		transformer  text.Transformer
 	}
-
-	SummaryHeader map[string]*SummaryHeaderEntry
 
 	// SummaryActionDataEntry data entry for action summary table
 	SummaryActionDataEntry struct {
@@ -897,23 +897,9 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	// Separate sections
 	buf.WriteString("\n")
 
-	summaryHeaders := make(SummaryHeader)
 	actionTblData := make([]SummaryActionDataEntry, 0, counters.StatisticsCollector.ActionsLen())
 
-	// Create headers and default column sizes
-	summaryHeaders["actn"] = &SummaryHeaderEntry{"Action", 6}
-	summaryHeaders["lbl"] = &SummaryHeaderEntry{"Label", 5}
-	summaryHeaders["app"] = &SummaryHeaderEntry{"AppGUID", 7}
-	summaryHeaders["success"] = &SummaryHeaderEntry{"SuccessRate", 11}
-	summaryHeaders["resp"] = &SummaryHeaderEntry{"AvgResp", 7}
-	summaryHeaders["req"] = &SummaryHeaderEntry{"Requests", 8}
-	summaryHeaders["errs"] = &SummaryHeaderEntry{"Errors", 6}
-	summaryHeaders["warns"] = &SummaryHeaderEntry{"Warnings", 8}
-	summaryHeaders["sent"] = &SummaryHeaderEntry{"Sent (Bytes)", 11}
-	summaryHeaders["recvd"] = &SummaryHeaderEntry{"Received (Bytes)", 16}
-
-	// todo max column size and truncate?
-	// Calculate column lengths and fill data struct
+	// Fill data struct
 	counters.StatisticsCollector.ForEachAction(func(stats *statistics.ActionStats) {
 		// add data entry
 		resp, successful := stats.RespAvg.Average()
@@ -942,53 +928,31 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			Received:    stats.Received.String(),
 		}
 		actionTblData = append(actionTblData, entry)
-
-		summaryHeaders["actn"].UpdateColSize(len(stats.Name()))
-		summaryHeaders["lbl"].UpdateColSize(len(stats.Label()))
-		summaryHeaders["app"].UpdateColSize(len(stats.AppGUID()))
-		summaryHeaders["success"].UpdateColSize(len(entry.SuccessRate))
-		summaryHeaders["resp"].UpdateColSize(len(entry.AvgResp))
-		summaryHeaders["req"].UpdateColSize(len(entry.Requests))
-		summaryHeaders["errs"].UpdateColSize(len(entry.Errs))
-		summaryHeaders["warns"].UpdateColSize(len(entry.Warns))
-		summaryHeaders["sent"].UpdateColSize(len(entry.Sent))
-		summaryHeaders["recvd"].UpdateColSize(len(entry.Received))
 	})
 
 	// Actions table
-	tabbedOutput := tabular.New()
-
-	for _, v := range []string{"actn", "lbl", "app"} {
-		summaryHeaders.Col(v, &tabbedOutput)
+	actionColumns := []summaryTableColumn{
+		{name: "Action"},
+		{name: "Label"},
+		{name: "AppGUID"},
+		{name: "SuccessRate", rightJustify: true},
+		{name: "AvgResp", rightJustify: true},
+		{name: "Requests", rightJustify: true},
+		{name: "Errors", rightJustify: true, transformer: nonZeroColorTransformer(ansiBoldRed)},
+		{name: "Warnings", rightJustify: true, transformer: nonZeroColorTransformer(ansiBoldYellow)},
+		{name: "Sent (Bytes)", rightJustify: true},
+		{name: "Received (Bytes)", rightJustify: true},
 	}
-
-	for _, v := range []string{"success", "resp", "req", "errs", "warns", "sent", "recvd"} {
-		summaryHeaders.ColRJ(v, &tabbedOutput)
-	}
-
-	// Action table headers
-	table := tabbedOutput.Parse("*")
-	writeTableHeaders(buf, &table)
-
+	actionRows := make([][]string, 0, len(actionTblData))
 	for _, v := range actionTblData {
-		buf.WriteString(ansiBoldBlue)
-		buf.WriteString(fmt.Sprintf(table.Format, v.Action, v.Label, v.AppGUID, v.SuccessRate, v.AvgResp, v.Requests, v.Errs, v.Warns, v.Sent, v.Received))
-		buf.WriteString(ansiReset)
+		actionRows = append(actionRows, []string{v.Action, v.Label, v.AppGUID, v.SuccessRate, v.AvgResp, v.Requests, v.Errs, v.Warns, v.Sent, v.Received})
 	}
+	writeSummaryTable(buf, actionColumns, actionRows)
 
 	// Separate sections
 	buf.WriteString("\n")
 
-	summaryHeaders = make(SummaryHeader)
 	requestsTblData := make([]SummaryRequestDataEntry, 0, counters.StatisticsCollector.RESTRequestLen())
-
-	// Create headers and default column sizes
-	summaryHeaders["path"] = &SummaryHeaderEntry{"Endpoint", 8}
-	summaryHeaders["method"] = &SummaryHeaderEntry{"Method", 6}
-	summaryHeaders["resp"] = &SummaryHeaderEntry{"AvgResp", 7}
-	summaryHeaders["req"] = &SummaryHeaderEntry{"Requests", 8}
-	summaryHeaders["sent"] = &SummaryHeaderEntry{"Sent (Bytes)", 11}
-	summaryHeaders["recvd"] = &SummaryHeaderEntry{"Received (Bytes)", 16}
 
 	counters.StatisticsCollector.ForEachRequest(func(stats *statistics.RequestStats) {
 		resp, requests := stats.RespAvg.Average()
@@ -1001,12 +965,6 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 			Received: stats.Received.String(),
 		}
 		requestsTblData = append(requestsTblData, entry)
-		summaryHeaders["path"].UpdateColSize(len(stats.Path()))
-		summaryHeaders["method"].UpdateColSize(len(stats.Method()))
-		summaryHeaders["resp"].UpdateColSize(len(entry.AvgResp))
-		summaryHeaders["req"].UpdateColSize(len(entry.Requests))
-		summaryHeaders["sent"].UpdateColSize(len(entry.Sent))
-		summaryHeaders["recvd"].UpdateColSize(len(entry.Received))
 	})
 
 	// if not full summary return here
@@ -1015,56 +973,82 @@ func summary(log *logger.Log, summary SummaryType, startTime time.Time, counters
 	}
 
 	// REST Requests table
-	tabbedOutput = tabular.New()
-
-	for _, v := range []string{"path", "method"} {
-		summaryHeaders.Col(v, &tabbedOutput)
+	requestColumns := []summaryTableColumn{
+		{name: "Endpoint"},
+		{name: "Method"},
+		{name: "AvgResp", rightJustify: true},
+		{name: "Requests", rightJustify: true},
+		{name: "Sent (Bytes)", rightJustify: true},
+		{name: "Received (Bytes)", rightJustify: true},
 	}
-
-	for _, v := range []string{"resp", "req", "sent", "recvd"} {
-		summaryHeaders.ColRJ(v, &tabbedOutput)
-	}
-
-	// Action table headers
-	table = tabbedOutput.Parse("*")
-	writeTableHeaders(buf, &table)
-
+	requestRows := make([][]string, 0, len(requestsTblData))
 	for _, v := range requestsTblData {
-		buf.WriteString(ansiBoldBlue)
-		buf.WriteString(fmt.Sprintf(table.Format, v.Path, v.Method, v.AvgResp, v.Requests, v.Sent, v.Received))
-		buf.WriteString(ansiReset)
+		requestRows = append(requestRows, []string{v.Path, v.Method, v.AvgResp, v.Requests, v.Sent, v.Received})
+	}
+	writeSummaryTable(buf, requestColumns, requestRows)
+}
+
+// summaryTableStyle returns the borderless, auto-sized style used for summary tables
+func summaryTableStyle() table.Style {
+	style := table.StyleDefault
+	style.Options.DrawBorder = false
+	style.Options.SeparateColumns = false
+	style.Options.SeparateHeader = true
+	style.Box.MiddleHorizontal = "-"
+	style.Box.PaddingLeft = ""
+	style.Box.PaddingRight = "  "
+	style.Format.Header = text.FormatDefault // keep mixed-case header names
+	return style
+}
+
+// nonZeroColorTransformer colors a cell value with the given ANSI color when it
+// is a non-zero count. The surrounding bold-blue block color is re-asserted
+// after the value so following cells keep their color.
+func nonZeroColorTransformer(color string) text.Transformer {
+	return func(val interface{}) string {
+		s := fmt.Sprint(val)
+		if s != "" && s != "0" {
+			return color + s + ansiReset + ansiBoldBlue
+		}
+		return s
+	}
+}
+
+// writeSummaryTable renders an auto-sized summary table wrapped in the bold-blue
+// block color and appends it to buf.
+func writeSummaryTable(buf *helpers.Buffer, columns []summaryTableColumn, rows [][]string) {
+	tbl := table.NewWriter()
+	tbl.SetStyle(summaryTableStyle())
+
+	header := make(table.Row, len(columns))
+	configs := make([]table.ColumnConfig, len(columns))
+	for i, col := range columns {
+		header[i] = col.name
+		cfg := table.ColumnConfig{Number: i + 1}
+		if col.rightJustify {
+			cfg.Align = text.AlignRight
+			cfg.AlignHeader = text.AlignRight
+		}
+		if col.transformer != nil {
+			cfg.Transformer = col.transformer
+		}
+		configs[i] = cfg
+	}
+	tbl.AppendHeader(header)
+	tbl.SetColumnConfigs(configs)
+
+	for _, r := range rows {
+		row := make(table.Row, len(r))
+		for i, v := range r {
+			row[i] = v
+		}
+		tbl.AppendRow(row)
 	}
 
-}
-
-func writeTableHeaders(buf *helpers.Buffer, table *tabular.Output) {
-	// Action table headers
 	buf.WriteString(ansiBoldBlue)
-	buf.WriteString(table.Header)
+	buf.WriteString(tbl.Render())
 	buf.WriteString(ansiReset)
 	buf.WriteString("\n")
-	buf.WriteString(ansiBoldBlue)
-	buf.WriteString(table.SubHeader)
-	buf.WriteString(ansiReset)
-	buf.WriteString("\n")
-}
-
-// UpdateColSize for summary header entry
-func (entry *SummaryHeaderEntry) UpdateColSize(new int) {
-	if new <= entry.ColSize {
-		return
-	}
-	entry.ColSize = new
-}
-
-// Col sets column in table from header entry
-func (header SummaryHeader) Col(key string, tbl *tabular.Table) {
-	tbl.Col(key, header[key].FullName, header[key].ColSize)
-}
-
-// ColRJ sets column (Right Justified) in table from header entry
-func (header SummaryHeader) ColRJ(key string, tbl *tabular.Table) {
-	tbl.ColRJ(key, header[key].FullName, header[key].ColSize)
 }
 
 // Validate hooks settings

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-	"github.com/mitchellh/go-ps"
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/helpers"
@@ -281,18 +280,4 @@ func HasPipe() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 	return fileInfo.Mode()&os.ModeCharDevice == 0, nil
-}
-
-// IsLaunchedByDebugger discovers if pararent process is deleve
-func IsLaunchedByDebugger() bool {
-	parent, err := ps.FindProcess(os.Getppid())
-	if err != nil {
-		return false
-	}
-	name := parent.Executable()
-	switch name {
-	case "dlv", "dlv.exe", "debugserver", "dlv-dap":
-		return true
-	}
-	return false
 }
