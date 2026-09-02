@@ -87,7 +87,7 @@ func (settings *GetAppStructureSettings) Execute(sessionState *session.State, ac
 
 				return structure.getStructureForObjectSync(sessionState, actionState, app, info.Id, info.Type, settings.IncludeRaw)
 			}); err != nil {
-				actionState.AddErrors(err)
+				actionState.AddErrors(errors.Wrapf(err, "error getting app structure for object<%s> type<%s>", info.Id, info.Type))
 			}
 		}
 
