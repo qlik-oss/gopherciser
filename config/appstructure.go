@@ -666,11 +666,28 @@ func resolvePossibleStringExpression(properties json.RawMessage, path string) st
 func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
 	genMeasure, err := app.Doc.GetMeasure(ctx, id)
 	if err != nil {
-		return errors.WithStack(err)
+		structure.warn(id, typ, typ, AppStructureWarningObjectNotExists, err.Error())
+		return nil
 	}
-	obj.RawBaseProperties, err = genMeasure.GetPropertiesRaw(ctx)
-	if err != nil {
-		return errors.WithStack(err)
+	if genMeasure.Handle > 0 {
+		obj.RawBaseProperties, err = genMeasure.GetPropertiesRaw(ctx)
+		if err != nil {
+			structure.warn(id, typ, typ, AppStructureWarningPropertiesError, err.Error())
+			return nil
+		}
+	} else {
+		// Try see if we can resolve it as a "normal" object, some measure with type "measure" seem not to be a true measure
+		genObj, err := app.Doc.GetObject(ctx, id)
+		if err != nil {
+			structure.warn(id, typ, typ, AppStructureWarningObjectNotExists, "no object returned from engine")
+			return nil
+		}
+
+		obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
+		if err != nil {
+			structure.warn(id, typ, typ, AppStructureWarningPropertiesError, "no object returned from engine, generic object exists: failed to get properties")
+			return nil
+		}
 	}
 
 	// Save measure information to structure
@@ -708,11 +725,28 @@ func (structure *GeneratedAppStructure) handleMeasure(ctx context.Context, app *
 func (structure *GeneratedAppStructure) handleDimension(ctx context.Context, app *senseobjects.App, id, typ string, obj *appstructure.AppStructureObject) error {
 	genDim, err := app.Doc.GetDimension(ctx, id)
 	if err != nil {
-		return errors.WithStack(err)
+		structure.warn(id, typ, typ, AppStructureWarningObjectNotExists, err.Error())
+		return nil
 	}
-	obj.RawBaseProperties, err = genDim.GetPropertiesRaw(ctx)
-	if err != nil {
-		return errors.WithStack(err)
+	if genDim.Handle > 0 {
+		obj.RawBaseProperties, err = genDim.GetPropertiesRaw(ctx)
+		if err != nil {
+			structure.warn(id, typ, typ, AppStructureWarningPropertiesError, err.Error())
+			return nil
+		}
+	} else {
+		// not seen but assume similar can happen as with measure and non dimension but actually dimension can exist, this code is to handle that
+		genObj, err := app.Doc.GetObject(ctx, id)
+		if err != nil {
+			structure.warn(id, typ, typ, AppStructureWarningObjectNotExists, "no object returned from engine")
+			return nil
+		}
+
+		obj.RawBaseProperties, err = genObj.GetPropertiesRaw(ctx)
+		if err != nil {
+			structure.warn(id, typ, typ, AppStructureWarningObjectNotExists, "no object returned from engine, generic object exists: failed to get properties")
+			return nil
+		}
 	}
 
 	// Save dimension information to structure
