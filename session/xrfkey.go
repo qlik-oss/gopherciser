@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -34,7 +35,11 @@ func (state *State) GetXrfKey(host string) (string, error) {
 	state.AddCustomState(stateKey, xrfkey)
 
 	headers := state.HeaderJar.GetHeader(hostUrl.Host)
+	if headers == nil {
+		headers = http.Header{}
+	}
 	headers.Add("X-Qlik-XrfKey", xrfkey)
+	state.HeaderJar.SetHeader(hostUrl.Host, headers)
 
 	return xrfkey, nil
 }
