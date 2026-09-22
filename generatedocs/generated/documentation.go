@@ -352,7 +352,7 @@ var (
 		"setscriptvar.value":                              {"Value to set to variable (supports the use of [session variables](#session_variables))."},
 		"setsensevariable.name":                           {"Name of the Qlik Sense variable to set."},
 		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"},
-		"sheetchanger.thinktimesettings":                  {"Settings for the `thinktime` action, which is automatically inserted between every changesheet action."},
+		"sheetchanger.thinktimesettings":                  {"(optional) Settings for the `thinktime` action, which is automatically inserted between every changesheet action."},
 		"smartsearch.makeselection":                       {"Select a random search result.", "`true`", "`false`"},
 		"smartsearch.pastesearchtext":                     {"", "`true`: Simulate pasting search text.", "`false`: Simulate typing at normal speed (default)."},
 		"smartsearch.searchtextfile":                      {"File path to file with one search string per line."},
