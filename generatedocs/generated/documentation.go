@@ -144,7 +144,7 @@ var (
 		},
 		"sheetchanger": {
 			Description: "## SheetChanger action\n\nCreate and execute a `changesheet` action for each sheet in an app. This can be used to cache the inital state for all objects or, by chaining two subsequent `sheetchanger` actions, to measure how well the calculations in an app utilize the cache.\n",
-			Examples:    "### Example\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\"\n},\n{\n    \"label\" : \"Sheetchanger cached\",\n    \"action\": \"sheetchanger\"\n}\n```\n",
+			Examples:    "### Example\n\nChange to all sheets once to calculate states, then once more to get response times with cached initial states\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\"\n},\n{\n    \"label\" : \"Sheetchanger cached\",\n    \"action\": \"sheetchanger\"\n}\n```\n\nAdd a 5-15s think time inbetween each changesheet action.\n\n```json\n{\n    \"label\" : \"Sheetchanger uncached\",\n    \"action\": \"sheetchanger\",\n    \"settings\": {\n        \"thinktimesettings\": {\n            \"type\": \"uniform\",\n            \"mean\": 10,\n            \"dev\": 5\n        }\n    }\n}\n```\n",
 		},
 		"smartsearch": {
 			Description: "## SmartSearch action\n\nPerform a Smart Search in Sense app to find suggested selections.\n",
@@ -352,6 +352,7 @@ var (
 		"setscriptvar.value":                              {"Value to set to variable (supports the use of [session variables](#session_variables))."},
 		"setsensevariable.name":                           {"Name of the Qlik Sense variable to set."},
 		"setsensevariable.value":                          {"Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"},
+		"sheetchanger.thinktimesettings":                  {"Settings for the `thinktime` action, which is automatically inserted between every changesheet action."},
 		"smartsearch.makeselection":                       {"Select a random search result.", "`true`", "`false`"},
 		"smartsearch.pastesearchtext":                     {"", "`true`: Simulate pasting search text.", "`false`: Simulate typing at normal speed (default)."},
 		"smartsearch.searchtextfile":                      {"File path to file with one search string per line."},

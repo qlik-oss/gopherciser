@@ -608,6 +608,9 @@
     "setsensevariable.value": [
         "Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"
     ],
+    "sheetchanger.thinktimesettings": [
+        "Settings for the `thinktime` action, which is automatically inserted between every changesheet action."
+    ],
     "smartsearch.makeselection": [
         "Select a random search result.",
         "`true`",

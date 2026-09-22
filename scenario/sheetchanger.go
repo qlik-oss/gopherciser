@@ -6,16 +6,25 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/gopherciser/action"
 	"github.com/qlik-oss/gopherciser/connection"
+	"github.com/qlik-oss/gopherciser/helpers"
 	"github.com/qlik-oss/gopherciser/session"
 )
 
 type (
 	// SheetChangerSettings loop through sheets in an app
-	SheetChangerSettings struct{}
+	SheetChangerSettings struct {
+		// ThinkTime in between changing sheets
+		InterThinkTimeSettings *ThinkTimeSettings `json:"thinktimesettings,omitempty" doc-key:"sheetchanger.thinktimesettings" displayname:"Think time inbetween actions"`
+	}
 )
 
 // Validate implements ActionSettings interface
 func (settings SheetChangerSettings) Validate() ([]string, error) {
+	if settings.InterThinkTimeSettings != nil &&
+		!(settings.InterThinkTimeSettings.Type == helpers.StaticDistribution && helpers.NearlyEqual(settings.InterThinkTimeSettings.Delay, 0.0)) { // don't return error on GUI creating empty section
+		return settings.InterThinkTimeSettings.Validate()
+	}
+
 	return nil, nil
 }
 
@@ -54,7 +63,21 @@ func (settings SheetChangerSettings) Execute(sessionState *session.State,
 		label = "sheet changer"
 	}
 
-	for _, sheetID := range sheetIDs {
+	var timerAction *Action
+	if settings.InterThinkTimeSettings != nil &&
+		!(settings.InterThinkTimeSettings.Type == helpers.StaticDistribution && helpers.NearlyEqual(settings.InterThinkTimeSettings.Delay, 0.0)) {
+		timerAction = &Action{
+			ActionCore{
+				Type:  ActionChangeSheet,
+				Label: fmt.Sprintf("%s - inter thinktime", label),
+			},
+			&ThinkTimeSettings{
+				DistributionSettings: settings.InterThinkTimeSettings.DistributionSettings,
+			},
+		}
+	}
+
+	for i, sheetID := range sheetIDs {
 		ac := Action{
 			ActionCore{
 				Type:  ActionChangeSheet,
@@ -70,6 +93,15 @@ func (settings SheetChangerSettings) Execute(sessionState *session.State,
 		} else if err != nil {
 			actionState.AddErrors(errors.WithStack(err))
 			return
+		}
+
+		if i+1 < len(sheetIDs) && timerAction != nil {
+			if isAborted, err := CheckActionError(timerAction.Execute(sessionState, connectionSettings)); isAborted {
+				return // action is aborted, we should not continue
+			} else if err != nil {
+				actionState.AddErrors(errors.WithStack(err))
+				return
+			}
 		}
 	}
 
