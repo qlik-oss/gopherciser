@@ -608,6 +608,9 @@
     "setsensevariable.value": [
         "Value to set the Qlik Sense variable to. (supports the use of [session variables](#session_variables))"
     ],
+    "sheetchanger.continueonerror": [
+        "Continue changing sheets on errors without breaking execution. :warning: this might compound errors. Defaults to false."
+    ],
     "sheetchanger.thinktimesettings": [
         "(optional) Settings for the `thinktime` action, which is automatically inserted between every changesheet action."
     ],

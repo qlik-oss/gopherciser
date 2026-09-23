@@ -28,3 +28,15 @@ Add a 5-15s think time inbetween each changesheet action.
     }
 }
 ```
+
+Only log errors from each sub action instead of breaking execution.
+
+```json
+{
+    "label" : "Sheetchanger uncached",
+    "action": "sheetchanger",
+    "settings": {
+        "continueonerror": true
+    }
+}
+```

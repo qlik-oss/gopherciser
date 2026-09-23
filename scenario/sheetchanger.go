@@ -15,6 +15,9 @@ type (
 	SheetChangerSettings struct {
 		// ThinkTime in between changing sheets
 		InterThinkTimeSettings *ThinkTimeSettings `json:"thinktimesettings,omitempty" doc-key:"sheetchanger.thinktimesettings" displayname:"Think time inbetween actions"`
+		// ContinueOnError errors from a changesheet action will be logged but it will continue changing through all sheets in list
+		// "abort" errors will still be respected
+		ContinueOnError bool `json:"continueonerror" doc-key:"sheetchanger.continueonerror" displayname:"Continue on error"`
 	}
 )
 
@@ -88,24 +91,44 @@ func (settings SheetChangerSettings) Execute(sessionState *session.State,
 			},
 		}
 
-		if isAborted, err := CheckActionError(ac.Execute(sessionState, connectionSettings)); isAborted {
+		isAborted, err := CheckActionError(ac.Execute(sessionState, connectionSettings))
+		if isAborted {
 			return // action is aborted, we should not continue
-		} else if err != nil {
-			actionState.AddErrors(errors.WithStack(err))
+		}
+		if settings.SubActionReportErrorAndCheckShouldReturn(sessionState, actionState, err) {
 			return
 		}
 
 		if i+1 < len(sheetIDs) && timerAction != nil {
-			if isAborted, err := CheckActionError(timerAction.Execute(sessionState, connectionSettings)); isAborted {
+			isAborted, err := CheckActionError(timerAction.Execute(sessionState, connectionSettings))
+			if isAborted {
 				return // action is aborted, we should not continue
-			} else if err != nil {
-				actionState.AddErrors(errors.WithStack(err))
+			}
+			if settings.SubActionReportErrorAndCheckShouldReturn(sessionState, actionState, err) {
 				return
 			}
 		}
 	}
 
 	sessionState.Wait(actionState)
+}
+
+func (settings SheetChangerSettings) SubActionReportErrorAndCheckShouldReturn(sessionState *session.State, actionState *action.State, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if !settings.ContinueOnError {
+		actionState.AddErrors(errors.WithStack(err))
+		return true
+	}
+
+	// Current action state is the subaction at this stage, if it already reported an error don't double report
+	if !sessionState.CurrentActionState.Failed {
+		sessionState.LogError(errors.WithStack(err))
+	}
+
+	return false
 }
 
 // IsContainerAction implements ContainerAction interface
