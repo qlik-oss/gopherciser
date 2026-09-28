@@ -31,7 +31,7 @@ jobs:
     - name: Publish if any changes
       env:
         GIT_USER_EMAIL: ${{ secrets.PERBOT_EMAIL }}
-        GIT_USER_NAME: ${{ secrets.PERBOT_USERNAME }}
+        GIT_USER_NAME: ${{ vars.PERBOT_USERNAME }}
       run: |
         git status
         cd gopherciser.wiki
