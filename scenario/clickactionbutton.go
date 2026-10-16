@@ -97,6 +97,7 @@ const (
 	goToSheetByID
 	goToStory
 	openWebsite
+	openchainedapp
 )
 
 // IsContainerAction implements ContainerAction interface
@@ -483,6 +484,9 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		}
 		newCurrentSheetID = navAction.Sheet
 
+	case openchainedapp:
+		return appChain(sessionState, actionState, connectionSettings, label)
+
 	default:
 		return errors.Errorf(`button navigation action "%s" is not supported`, navAction.Action)
 	}
@@ -612,6 +616,7 @@ var buttonNavActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"gotosheetbyid":    int(goToSheetByID),
 	"gotostory":        int(goToStory),
 	"openwebsite":      int(openWebsite),
+	"openchainedapp":   int(openchainedapp),
 })
 
 func (buttonNavigationActionType) GetEnumMap() *enummap.EnumMap {
@@ -650,5 +655,43 @@ func checkSuccess(success bool, err error) error {
 	if !success {
 		return errors.Errorf("unsuccessful operation")
 	}
+	return nil
+}
+
+func appChain(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string) error {
+
+	app, err := sessionState.CurrentSenseApp()
+	if err != nil {
+		return err
+	}
+	if app.Doc == nil {
+		return errors.New("not connected to an app")
+	}
+
+	var tempStateId string
+	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		// Save temp selection state
+		id, success, err := app.Doc.StoreTempSelectionState(ctx, 0)
+		if err != nil {
+			return errors.Wrap(err, "failed to store temp selection state")
+		}
+		if !success {
+			return errors.New("store temp selection state unsuccessful")
+		}
+		tempStateId = id
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	fmt.Printf("Temp selection state id: %s\n", tempStateId)
+
+	// TODO create raw url using app guid in sub action
+	// Do OpenApp - {"delta":true,"handle":-1,"method":"OpenDoc","params":["982ae03f-75d4-4f4d-88dd-9ebfd13b2eed","","","",false],"id":1,"jsonrpc":"2.0"}
+	//
+
+	// TODO change sheet if sheet defined in sub action
+
 	return nil
 }
