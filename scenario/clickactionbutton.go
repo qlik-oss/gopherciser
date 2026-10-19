@@ -15,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
@@ -59,6 +60,7 @@ type (
 		Story      string                     `json:"story"`
 		WebsiteURL string                     `json:"websiteUrl"`
 		SameWindow bool                       `json:"sameWindow"`
+		AppId      string                     `json:"appId"`
 	}
 )
 
@@ -485,7 +487,10 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		newCurrentSheetID = navAction.Sheet
 
 	case openchainedapp:
-		return appChain(sessionState, actionState, connectionSettings, label)
+		if navAction.AppId == "" {
+			return errors.New("empty appId")
+		}
+		return appChain(sessionState, actionState, connectionSettings, label, navAction.AppId, navAction.Sheet)
 
 	default:
 		return errors.Errorf(`button navigation action "%s" is not supported`, navAction.Action)
@@ -658,40 +663,44 @@ func checkSuccess(success bool, err error) error {
 	return nil
 }
 
-func appChain(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label string) error {
-
-	app, err := sessionState.CurrentSenseApp()
-	if err != nil {
-		return err
-	}
-	if app.Doc == nil {
-		return errors.New("not connected to an app")
-	}
+func appChain(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label, appId, sheetId string) error {
 
 	var tempStateId string
-	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		// Save temp selection state
-		id, success, err := app.Doc.StoreTempSelectionState(ctx, 0)
-		if err != nil {
-			return errors.Wrap(err, "failed to store temp selection state")
-		}
-		if !success {
-			return errors.New("store temp selection state unsuccessful")
-		}
-		tempStateId = id
-
-		return nil
+	if err := executeSubAction(sessionState, connectionSettings, ActionStoreTemporaryState, label, storeTemporaryStateSettings{
+		id: &tempStateId,
 	}); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
-	fmt.Printf("Temp selection state id: %s\n", tempStateId)
+	appIdtmpl, err := synced.New(appId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if err := executeSubAction(sessionState, connectionSettings, ActionOpenApp, label, OpenAppSettings{
+		AppSelection: session.AppSelection{
+			AppSelectionCore: session.AppSelectionCore{
+				AppMode: session.AppModeGUID,
+				App:     *appIdtmpl,
+			},
+		},
+	}); err != nil {
+		return errors.WithStack(err)
+	}
 
-	// TODO create raw url using app guid in sub action
-	// Do OpenApp - {"delta":true,"handle":-1,"method":"OpenDoc","params":["982ae03f-75d4-4f4d-88dd-9ebfd13b2eed","","","",false],"id":1,"jsonrpc":"2.0"}
-	//
+	if err := executeSubAction(sessionState, connectionSettings, ActionRestoreTemporaryState, label, restoreTemporaryStateSettings{
+		id: tempStateId,
+	}); err != nil {
+		return errors.WithStack(err)
+	}
 
-	// TODO change sheet if sheet defined in sub action
+	// change sheet if sheet defined in sub action
+	if sheetId != "" {
+		if err := executeSubAction(sessionState, connectionSettings, ActionChangeSheet, label, ChangeSheetSettings{
+			ID: sheetId,
+		}); err != nil {
+			return errors.WithStack(err)
+		}
+	}
 
 	return nil
 }
