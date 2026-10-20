@@ -15,6 +15,7 @@ import (
 	"github.com/qlik-oss/gopherciser/enigmahandlers"
 	"github.com/qlik-oss/gopherciser/enummap"
 	"github.com/qlik-oss/gopherciser/session"
+	"github.com/qlik-oss/gopherciser/synced"
 )
 
 type (
@@ -59,6 +60,7 @@ type (
 		Story      string                     `json:"story"`
 		WebsiteURL string                     `json:"websiteUrl"`
 		SameWindow bool                       `json:"sameWindow"`
+		AppId      string                     `json:"appId"`
 	}
 )
 
@@ -97,6 +99,7 @@ const (
 	goToSheetByID
 	goToStory
 	openWebsite
+	openchainedapp
 )
 
 // IsContainerAction implements ContainerAction interface
@@ -483,6 +486,12 @@ func (navAction *buttonNavigationAction) execute(sessionState *session.State, ac
 		}
 		newCurrentSheetID = navAction.Sheet
 
+	case openchainedapp:
+		if navAction.AppId == "" {
+			return errors.New("empty appId")
+		}
+		return appChain(sessionState, actionState, connectionSettings, label, navAction.AppId, navAction.Sheet)
+
 	default:
 		return errors.Errorf(`button navigation action "%s" is not supported`, navAction.Action)
 	}
@@ -612,6 +621,7 @@ var buttonNavActionTypeEnumMap = enummap.NewEnumMapOrPanic(map[string]int{
 	"gotosheetbyid":    int(goToSheetByID),
 	"gotostory":        int(goToStory),
 	"openwebsite":      int(openWebsite),
+	"openchainedapp":   int(openchainedapp),
 })
 
 func (buttonNavigationActionType) GetEnumMap() *enummap.EnumMap {
@@ -650,5 +660,47 @@ func checkSuccess(success bool, err error) error {
 	if !success {
 		return errors.Errorf("unsuccessful operation")
 	}
+	return nil
+}
+
+func appChain(sessionState *session.State, actionState *action.State, connectionSettings *connection.ConnectionSettings, label, appId, sheetId string) error {
+
+	var tempStateId string
+	if err := executeSubAction(sessionState, connectionSettings, ActionStoreTemporaryState, label, storeTemporaryStateSettings{
+		id: &tempStateId,
+	}); err != nil {
+		return errors.WithStack(err)
+	}
+
+	appIdtmpl, err := synced.New(appId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if err := executeSubAction(sessionState, connectionSettings, ActionOpenApp, label, OpenAppSettings{
+		AppSelection: session.AppSelection{
+			AppSelectionCore: session.AppSelectionCore{
+				AppMode: session.AppModeGUID,
+				App:     *appIdtmpl,
+			},
+		},
+	}); err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err := executeSubAction(sessionState, connectionSettings, ActionRestoreTemporaryState, label, restoreTemporaryStateSettings{
+		id: tempStateId,
+	}); err != nil {
+		return errors.WithStack(err)
+	}
+
+	// change sheet if sheet defined in sub action
+	if sheetId != "" {
+		if err := executeSubAction(sessionState, connectionSettings, ActionChangeSheet, label, ChangeSheetSettings{
+			ID: sheetId,
+		}); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	return nil
 }
