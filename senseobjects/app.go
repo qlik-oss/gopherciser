@@ -37,10 +37,17 @@ type (
 	}
 )
 
+// readLocked returns the value of an App field while holding the app mutex
+func readLocked[T any](app *App, field *T) T {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	return *field
+}
+
 // GetSheetList update sheet list for app
 func (app *App) GetSheetList(sessionState SessionState, actionState *action.State) (*SheetList, error) {
-	if app.sheetList != nil {
-		return app.sheetList, nil
+	if sheetList := readLocked(app, &app.sheetList); sheetList != nil {
+		return sheetList, nil
 	}
 
 	// update sheetList to latest
@@ -56,19 +63,21 @@ func (app *App) GetSheetList(sessionState SessionState, actionState *action.Stat
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.sheetList.UpdateLayout); err != nil {
+	sheetList := readLocked(app, &app.sheetList)
+
+	if err := sessionState.SendRequest(actionState, sheetList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// update sheetList layout when sheetList has a change event
 	onSheetListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.sheetList.UpdateLayout(ctx))
+		return errors.WithStack(sheetList.UpdateLayout(ctx))
 	}
 
-	sessionState.RegisterEvent(app.sheetList.enigmaObject.Handle,
+	sessionState.RegisterEvent(sheetList.enigmaObject.Handle,
 		onSheetListChanged, nil, true)
 
-	return app.sheetList, nil
+	return sheetList, nil
 }
 
 func (app *App) setSheetList(sessionState SessionState, sl *SheetList) {
@@ -83,8 +92,8 @@ func (app *App) setSheetList(sessionState SessionState, sl *SheetList) {
 
 // GetBookmarkList update bookmark list for app
 func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.State) (*BookmarkList, error) {
-	if app.bookmarkList != nil {
-		return app.bookmarkList, nil
+	if bookmarkList := readLocked(app, &app.bookmarkList); bookmarkList != nil {
+		return bookmarkList, nil
 	}
 
 	// create bookmark list
@@ -101,23 +110,25 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.bookmarkList.UpdateLayout); err != nil {
+	bookmarkList := readLocked(app, &app.bookmarkList)
+
+	if err := sessionState.SendRequest(actionState, bookmarkList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.bookmarkList.UpdateProperties); err != nil {
+	if err := sessionState.SendRequest(actionState, bookmarkList.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// update bookmark list layout when bookmark list has a change event
 	onBookmarkListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.bookmarkList.UpdateLayout(ctx))
+		return errors.WithStack(bookmarkList.UpdateLayout(ctx))
 	}
 
-	sessionState.RegisterEvent(app.bookmarkList.enigmaObject.Handle,
+	sessionState.RegisterEvent(bookmarkList.enigmaObject.Handle,
 		onBookmarkListChanged, nil, true)
 
-	return app.bookmarkList, nil
+	return bookmarkList, nil
 }
 
 func (app *App) setBookmarkList(sessionState SessionState, bl *BookmarkList) {
@@ -131,8 +142,8 @@ func (app *App) setBookmarkList(sessionState SessionState, bl *BookmarkList) {
 
 // GetVariableList create or return existing variable list session object
 func (app *App) GetVariableList(sessionState SessionState, actionState *action.State) (*VariableList, error) {
-	if app.variablelist != nil {
-		return app.variablelist, nil
+	if variableList := readLocked(app, &app.variablelist); variableList != nil {
+		return variableList, nil
 	}
 
 	// create variable list
@@ -149,17 +160,19 @@ func (app *App) GetVariableList(sessionState SessionState, actionState *action.S
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.variablelist.UpdateLayout); err != nil {
+	variableList := readLocked(app, &app.variablelist)
+
+	if err := sessionState.SendRequest(actionState, variableList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// update variable list layout when variable list has a change event
 	onVariableListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.variablelist.UpdateLayout(ctx))
+		return errors.WithStack(variableList.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.variablelist.enigmaObject.Handle, onVariableListChanged, nil, true)
+	sessionState.RegisterEvent(variableList.enigmaObject.Handle, onVariableListChanged, nil, true)
 
-	return app.variablelist, nil
+	return variableList, nil
 }
 
 func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
@@ -173,8 +186,8 @@ func (app *App) setVariableList(sessionState SessionState, vl *VariableList) {
 
 // GetAppsPropsList create or return AppsPropsList
 func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.State) (*AppPropsList, error) {
-	if app.appPropsList != nil {
-		return app.appPropsList, nil
+	if appPropsList := readLocked(app, &app.appPropsList); appPropsList != nil {
+		return appPropsList, nil
 	}
 
 	createAppPropsList := func(ctx context.Context) error {
@@ -190,18 +203,20 @@ func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.
 		return nil, errors.WithStack(err)
 	}
 
+	appPropsList := readLocked(app, &app.appPropsList)
+
 	if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-		return app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
+		return appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
 	}); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	onAppPropsListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState))
+		return errors.WithStack(appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState))
 	}
-	sessionState.RegisterEvent(app.appPropsList.enigmaObject.Handle, onAppPropsListChanged, nil, true)
+	sessionState.RegisterEvent(appPropsList.enigmaObject.Handle, onAppPropsListChanged, nil, true)
 
-	return app.appPropsList, nil
+	return appPropsList, nil
 }
 
 func (app *App) setAppPropsList(sessionState SessionState, al *AppPropsList) {
@@ -216,8 +231,8 @@ func (app *App) setAppPropsList(sessionState SessionState, al *AppPropsList) {
 
 // GetStoryList create or return existing story list session object
 func (app *App) GetStoryList(sessionState SessionState, actionState *action.State) (*StoryList, error) {
-	if app.storylist != nil {
-		return app.storylist, nil
+	if storyList := readLocked(app, &app.storylist); storyList != nil {
+		return storyList, nil
 	}
 
 	// create story list
@@ -234,17 +249,19 @@ func (app *App) GetStoryList(sessionState SessionState, actionState *action.Stat
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.storylist.UpdateLayout); err != nil {
+	storyList := readLocked(app, &app.storylist)
+
+	if err := sessionState.SendRequest(actionState, storyList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// update story list layout when story list has a change event
 	onStoryListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.storylist.UpdateLayout(ctx))
+		return errors.WithStack(storyList.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.storylist.enigmaObject.Handle, onStoryListChanged, nil, true)
+	sessionState.RegisterEvent(storyList.enigmaObject.Handle, onStoryListChanged, nil, true)
 
-	return app.storylist, nil
+	return storyList, nil
 }
 
 func (app *App) setStoryList(sessionState SessionState, sl *StoryList) {
@@ -258,8 +275,8 @@ func (app *App) setStoryList(sessionState SessionState, sl *StoryList) {
 
 // GetLoadModelList create or return existing load model list session object
 func (app *App) GetLoadModelList(sessionState SessionState, actionState *action.State) (*LoadModelList, error) {
-	if app.loadmodellist != nil {
-		return app.loadmodellist, nil
+	if loadModelList := readLocked(app, &app.loadmodellist); loadModelList != nil {
+		return loadModelList, nil
 	}
 
 	// create load model list
@@ -276,21 +293,23 @@ func (app *App) GetLoadModelList(sessionState SessionState, actionState *action.
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.loadmodellist.UpdateLayout); err != nil {
+	loadModelList := readLocked(app, &app.loadmodellist)
+
+	if err := sessionState.SendRequest(actionState, loadModelList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if err := sessionState.SendRequest(actionState, app.loadmodellist.UpdateProperties); err != nil {
+	if err := sessionState.SendRequest(actionState, loadModelList.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// update load model list layout when load model list has a change event
 	onLoadModelListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.loadmodellist.UpdateLayout(ctx))
+		return errors.WithStack(loadModelList.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.loadmodellist.enigmaObject.Handle, onLoadModelListChanged, nil, true)
+	sessionState.RegisterEvent(loadModelList.enigmaObject.Handle, onLoadModelListChanged, nil, true)
 
-	return app.loadmodellist, nil
+	return loadModelList, nil
 }
 
 func (app *App) setLoadModelList(sessionState SessionState, lml *LoadModelList) {
@@ -371,8 +390,9 @@ func (app *App) addBookmarkToMap(bm *enigma.GenericBookmark) {
 }
 
 func (app *App) GetAggregatedSelectionFields() string {
-	fields := make([]string, 0, len(app.currentSelections.layout.SelectionObject.Selections))
-	for _, selection := range app.currentSelections.layout.SelectionObject.Selections {
+	currentSelections := readLocked(app, &app.currentSelections)
+	fields := make([]string, 0, len(currentSelections.layout.SelectionObject.Selections))
+	for _, selection := range currentSelections.layout.SelectionObject.Selections {
 		fields = append(fields, selection.Field)
 	}
 
@@ -380,8 +400,8 @@ func (app *App) GetAggregatedSelectionFields() string {
 }
 
 func (app *App) GetDimensionList(sessionState SessionState, actionState *action.State) (*DimensionList, error) {
-	if app.dimensionList != nil {
-		return app.dimensionList, nil
+	if dimensionList := readLocked(app, &app.dimensionList); dimensionList != nil {
+		return dimensionList, nil
 	}
 	updateDimensionList := func(ctx context.Context) error {
 		dl, err := CreateDimensionListObject(ctx, app.Doc)
@@ -395,28 +415,30 @@ func (app *App) GetDimensionList(sessionState SessionState, actionState *action.
 		return nil, errors.WithStack(err)
 	}
 
+	dimensionList := readLocked(app, &app.dimensionList)
+
 	// Get data
-	if err := sessionState.SendRequest(actionState, app.dimensionList.UpdateLayout); err != nil {
+	if err := sessionState.SendRequest(actionState, dimensionList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err := sessionState.SendRequest(actionState, app.dimensionList.UpdateProperties); err != nil {
+	if err := sessionState.SendRequest(actionState, dimensionList.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// setup automatic data update
 	onDimensionListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.dimensionList.UpdateLayout(ctx))
+		return errors.WithStack(dimensionList.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.dimensionList.enigmaObject.Handle, onDimensionListChanged, nil, true)
+	sessionState.RegisterEvent(dimensionList.enigmaObject.Handle, onDimensionListChanged, nil, true)
 
-	return app.dimensionList, nil
+	return dimensionList, nil
 
 }
 
 // GetFieldList session object containing list of fields
 func (app *App) GetFieldList(sessionState SessionState, actionState *action.State) (*FieldList, error) {
-	if app.fieldlist != nil {
-		return app.fieldlist, nil
+	if fieldList := readLocked(app, &app.fieldlist); fieldList != nil {
+		return fieldList, nil
 	}
 
 	// Create session object
@@ -432,34 +454,36 @@ func (app *App) GetFieldList(sessionState SessionState, actionState *action.Stat
 		return nil, errors.WithStack(err)
 	}
 
+	fieldList := readLocked(app, &app.fieldlist)
+
 	// Get data
-	if err := sessionState.SendRequest(actionState, app.fieldlist.UpdateLayout); err != nil {
+	if err := sessionState.SendRequest(actionState, fieldList.UpdateLayout); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err := sessionState.SendRequest(actionState, app.fieldlist.UpdateProperties); err != nil {
+	if err := sessionState.SendRequest(actionState, fieldList.UpdateProperties); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// setup automatic data update
 	onFieldListChanged := func(ctx context.Context, actionState *action.State) error {
-		return errors.WithStack(app.fieldlist.UpdateLayout(ctx))
+		return errors.WithStack(fieldList.UpdateLayout(ctx))
 	}
-	sessionState.RegisterEvent(app.fieldlist.enigmaObject.Handle, onFieldListChanged, nil, true)
+	sessionState.RegisterEvent(fieldList.enigmaObject.Handle, onFieldListChanged, nil, true)
 
-	return app.fieldlist, nil
+	return fieldList, nil
 }
 
 // GetCurrentSelections create current selection session object and add to list
 func (app *App) GetCurrentSelections(sessionState SessionState, actionState *action.State, requestData bool) (*CurrentSelections, error) {
-	if app.currentSelections != nil {
-		if requestData && app.currentSelections.enigmaObject != nil {
-			if f := sessionState.GetEventFunc(app.currentSelections.enigmaObject.Handle); f != nil {
+	if currentSelections := readLocked(app, &app.currentSelections); currentSelections != nil {
+		if requestData && currentSelections.enigmaObject != nil {
+			if f := sessionState.GetEventFunc(currentSelections.enigmaObject.Handle); f != nil {
 				if err := f(sessionState.BaseContext(), actionState); err != nil {
-					return app.currentSelections, errors.WithStack(err)
+					return currentSelections, errors.WithStack(err)
 				}
 			}
 		}
-		return app.currentSelections, nil
+		return currentSelections, nil
 	}
 
 	// Create session object
@@ -475,17 +499,19 @@ func (app *App) GetCurrentSelections(sessionState SessionState, actionState *act
 		return nil, errors.WithStack(err)
 	}
 
+	currentSelections := readLocked(app, &app.currentSelections)
+
 	var once sync.Once
 	// update currentSelection layout when object is changed
 	onCurrentSelectionChanged := func(ctx context.Context, actionState *action.State) error {
 		var err error
 		once.Do(func() {
-			err = sessionState.SendRequest(actionState, app.currentSelections.UpdateProperties)
+			err = sessionState.SendRequest(actionState, currentSelections.UpdateProperties)
 		})
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		return errors.WithStack(app.currentSelections.UpdateLayout(ctx))
+		return errors.WithStack(currentSelections.UpdateLayout(ctx))
 	}
 
 	if requestData {
@@ -494,15 +520,15 @@ func (app *App) GetCurrentSelections(sessionState SessionState, actionState *act
 		}
 	}
 
-	sessionState.RegisterEvent(app.currentSelections.enigmaObject.Handle, onCurrentSelectionChanged, nil, true)
+	sessionState.RegisterEvent(currentSelections.enigmaObject.Handle, onCurrentSelectionChanged, nil, true)
 
-	return app.currentSelections, nil
+	return currentSelections, nil
 }
 
 // GetLocaleInfo send get locale info request
 func (app *App) GetLocaleInfo(ctx context.Context) (*enigma.LocaleInfo, error) {
-	if app.localeInfo != nil {
-		return app.localeInfo, nil
+	if localeInfo := readLocked(app, &app.localeInfo); localeInfo != nil {
+		return localeInfo, nil
 	}
 
 	localeInfo, err := app.Doc.GetLocaleInfo(ctx)
@@ -545,7 +571,7 @@ func (app *App) setDimensionList(SessionState SessionState, dl *DimensionList) {
 }
 
 func (app *App) GetDimension(sessionState SessionState, actionState *action.State, id string) (*enigma.GenericDimension, error) {
-	dim := app.dimensions[id]
+	dim := app.getDimensionFromMap(id)
 	if dim != nil {
 		return dim, nil
 	}
@@ -562,6 +588,12 @@ func (app *App) GetDimension(sessionState SessionState, actionState *action.Stat
 	app.addDimension(dim)
 
 	return dim, nil
+}
+
+func (app *App) getDimensionFromMap(id string) *enigma.GenericDimension {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	return app.dimensions[id]
 }
 
 func (app *App) addDimension(dim *enigma.GenericDimension) {
