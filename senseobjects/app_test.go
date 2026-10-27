@@ -20,6 +20,11 @@ type (
 		responses  chan []byte
 		closeOnce  sync.Once
 		nextHandle atomic.Int32
+
+		// createSessionObjectCalls number of CreateSessionObject requests received
+		createSessionObjectCalls atomic.Int32
+		// failCreateSessionObject when set, the next CreateSessionObject request gets an error response
+		failCreateSessionObject atomic.Bool
 	}
 
 	// fakeSessionState executes requests synchronously in the calling goroutine
@@ -53,6 +58,11 @@ func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
 		}
 		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "GenericDimension", "qHandle": socket.nextHandle.Add(1), "qGenericId": id}}
 	case "CreateSessionObject":
+		socket.createSessionObjectCalls.Add(1)
+		if socket.failCreateSessionObject.CompareAndSwap(true, false) {
+			message["error"] = map[string]any{"code": -32000, "message": "fake engine: create session object failed"}
+			break
+		}
 		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "GenericObject", "qHandle": socket.nextHandle.Add(1), "qGenericId": "sessionobject"}}
 	case "GetLayout":
 		message["result"] = map[string]any{"qLayout": map[string]any{}}
@@ -104,12 +114,13 @@ func (fakeSessionState) LogInfo(string, string)                    {}
 func (fakeSessionState) LogTrafficMetric(int64, uint64, uint64, int, string, string, string, string) {
 }
 
-func newFakeApp(t *testing.T) *App {
+func newFakeApp(t *testing.T) (*App, *fakeEngineSocket) {
 	t.Helper()
 	ctx := context.Background()
+	socket := newFakeEngineSocket()
 	dialer := enigma.Dialer{
 		CreateSocket: func(ctx context.Context, url string, httpHeader http.Header) (enigma.Socket, error) {
-			return newFakeEngineSocket(), nil
+			return socket, nil
 		},
 	}
 	global, err := dialer.Dial(ctx, "ws://fake", nil)
@@ -122,13 +133,13 @@ func newFakeApp(t *testing.T) *App {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &App{GUID: "app", Doc: doc}
+	return &App{GUID: "app", Doc: doc}, socket
 }
 
 // TestAppConcurrentGetDimension reproduces "concurrent map read and map write" when several object layouts
 // with cyclic dimensions are handled in parallel. Run with -race.
 func TestAppConcurrentGetDimension(t *testing.T) {
-	app := newFakeApp(t)
+	app, _ := newFakeApp(t)
 	sessionState := fakeSessionState{}
 	actionState := &action.State{}
 
@@ -157,16 +168,17 @@ func TestAppConcurrentGetDimension(t *testing.T) {
 	wg.Wait()
 }
 
-// TestAppConcurrentGetDimensionList verifies that the cached session object pointer is not read unlocked
-// while being set. Run with -race.
+// TestAppConcurrentGetDimensionList verifies that concurrent callers share a single dimension list, created once
+// and only returned after its layout and properties are fetched. Run with -race.
 func TestAppConcurrentGetDimensionList(t *testing.T) {
-	app := newFakeApp(t)
+	app, socket := newFakeApp(t)
 	sessionState := fakeSessionState{}
 	actionState := &action.State{}
 
 	const goroutines = 20
+	lists := make([]*DimensionList, goroutines)
 	var wg sync.WaitGroup
-	for range goroutines {
+	for i := range goroutines {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -175,10 +187,46 @@ func TestAppConcurrentGetDimensionList(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if dl == nil {
-				t.Error("expected dimension list, got nil")
-			}
+			lists[i] = dl
 		}()
 	}
 	wg.Wait()
+
+	if calls := socket.createSessionObjectCalls.Load(); calls != 1 {
+		t.Errorf("expected 1 CreateSessionObject request, got<%d>", calls)
+	}
+	for i, dl := range lists {
+		if dl == nil {
+			t.Fatalf("caller<%d> got nil dimension list", i)
+		}
+		if dl != lists[0] {
+			t.Errorf("caller<%d> got a different dimension list than caller<0>", i)
+		}
+		if dl.layout == nil || dl.properties == nil {
+			t.Errorf("caller<%d> got a dimension list without layout or properties", i)
+		}
+	}
+}
+
+// TestAppGetDimensionListRetryAfterError verifies a failed initialization is not cached
+func TestAppGetDimensionListRetryAfterError(t *testing.T) {
+	app, socket := newFakeApp(t)
+	sessionState := fakeSessionState{}
+	actionState := &action.State{}
+
+	socket.failCreateSessionObject.Store(true)
+	if dl, err := app.GetDimensionList(sessionState, actionState); err == nil {
+		t.Fatalf("expected error on first call, got dimension list<%v>", dl)
+	}
+
+	dl, err := app.GetDimensionList(sessionState, actionState)
+	if err != nil {
+		t.Fatalf("expected retry to succeed, got error: %v", err)
+	}
+	if dl == nil {
+		t.Fatal("expected dimension list after retry, got nil")
+	}
+	if calls := socket.createSessionObjectCalls.Load(); calls != 2 {
+		t.Errorf("expected 2 CreateSessionObject requests, got<%d>", calls)
+	}
 }
