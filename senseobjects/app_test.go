@@ -21,10 +21,13 @@ type (
 		closeOnce  sync.Once
 		nextHandle atomic.Int32
 
-		// createSessionObjectCalls number of CreateSessionObject requests received
-		createSessionObjectCalls atomic.Int32
-		// failCreateSessionObject when set, the next CreateSessionObject request gets an error response
-		failCreateSessionObject atomic.Bool
+		mu sync.Mutex
+		// calls number of requests received per method
+		calls map[string]int
+		// failNext methods for which the next request gets an error response
+		failNext map[string]bool
+		// destroyed IDs of destroyed session objects
+		destroyed []string
 	}
 
 	// fakeSessionState executes requests synchronously in the calling goroutine
@@ -32,9 +35,34 @@ type (
 )
 
 func newFakeEngineSocket() *fakeEngineSocket {
-	socket := &fakeEngineSocket{responses: make(chan []byte, 1024)}
+	socket := &fakeEngineSocket{
+		responses: make(chan []byte, 1024),
+		calls:     make(map[string]int),
+		failNext:  make(map[string]bool),
+	}
 	socket.nextHandle.Store(1)
 	return socket
+}
+
+// failNextCall makes the next request of method get an error response
+func (socket *fakeEngineSocket) failNextCall(method string) {
+	socket.mu.Lock()
+	defer socket.mu.Unlock()
+	socket.failNext[method] = true
+}
+
+// callCount returns the number of requests received for method
+func (socket *fakeEngineSocket) callCount(method string) int {
+	socket.mu.Lock()
+	defer socket.mu.Unlock()
+	return socket.calls[method]
+}
+
+// destroyedIDs returns the IDs of destroyed session objects
+func (socket *fakeEngineSocket) destroyedIDs() []string {
+	socket.mu.Lock()
+	defer socket.mu.Unlock()
+	return append([]string(nil), socket.destroyed...)
 }
 
 func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
@@ -48,6 +76,18 @@ func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
 	}
 
 	message := map[string]any{"jsonrpc": "2.0", "id": request.ID}
+
+	socket.mu.Lock()
+	socket.calls[request.Method]++
+	fail := socket.failNext[request.Method]
+	delete(socket.failNext, request.Method)
+	socket.mu.Unlock()
+
+	if fail {
+		message["error"] = map[string]any{"code": -32000, "message": fmt.Sprintf("fake engine: injected failure for method<%s>", request.Method)}
+		return socket.respond(message)
+	}
+
 	switch request.Method {
 	case "OpenDoc":
 		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "Doc", "qHandle": socket.nextHandle.Add(1), "qGenericId": "app"}}
@@ -58,12 +98,17 @@ func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
 		}
 		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "GenericDimension", "qHandle": socket.nextHandle.Add(1), "qGenericId": id}}
 	case "CreateSessionObject":
-		socket.createSessionObjectCalls.Add(1)
-		if socket.failCreateSessionObject.CompareAndSwap(true, false) {
-			message["error"] = map[string]any{"code": -32000, "message": "fake engine: create session object failed"}
-			break
+		handle := socket.nextHandle.Add(1)
+		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "GenericObject", "qHandle": handle, "qGenericId": fmt.Sprintf("sessionobject%d", handle)}}
+	case "DestroySessionObject":
+		var id string
+		if err := json.Unmarshal(request.Params[0], &id); err != nil {
+			return err
 		}
-		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "GenericObject", "qHandle": socket.nextHandle.Add(1), "qGenericId": "sessionobject"}}
+		socket.mu.Lock()
+		socket.destroyed = append(socket.destroyed, id)
+		socket.mu.Unlock()
+		message["result"] = map[string]any{"qSuccess": true}
 	case "GetLayout":
 		message["result"] = map[string]any{"qLayout": map[string]any{}}
 	case "GetProperties", "GetEffectiveProperties":
@@ -73,6 +118,10 @@ func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
 		message["error"] = map[string]any{"code": -32601, "message": fmt.Sprintf("fake engine: unexpected method<%s>", request.Method)}
 	}
 
+	return socket.respond(message)
+}
+
+func (socket *fakeEngineSocket) respond(message map[string]any) error {
 	response, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -192,7 +241,7 @@ func TestAppConcurrentGetDimensionList(t *testing.T) {
 	}
 	wg.Wait()
 
-	if calls := socket.createSessionObjectCalls.Load(); calls != 1 {
+	if calls := socket.callCount("CreateSessionObject"); calls != 1 {
 		t.Errorf("expected 1 CreateSessionObject request, got<%d>", calls)
 	}
 	for i, dl := range lists {
@@ -208,25 +257,82 @@ func TestAppConcurrentGetDimensionList(t *testing.T) {
 	}
 }
 
-// TestAppGetDimensionListRetryAfterError verifies a failed initialization is not cached
+// TestAppGetDimensionListRetryAfterError verifies a failed initialization is not cached, and that a session object
+// created before the failure is destroyed in the engine
 func TestAppGetDimensionListRetryAfterError(t *testing.T) {
-	app, socket := newFakeApp(t)
+	tests := []struct {
+		failMethod     string
+		expectDestroys int
+	}{
+		{failMethod: "CreateSessionObject", expectDestroys: 0},
+		{failMethod: "GetLayout", expectDestroys: 1},
+		{failMethod: "GetEffectiveProperties", expectDestroys: 1},
+	}
+
+	for _, test := range tests {
+		t.Run(test.failMethod, func(t *testing.T) {
+			app, socket := newFakeApp(t)
+			sessionState := fakeSessionState{}
+			actionState := &action.State{}
+
+			socket.failNextCall(test.failMethod)
+			if dl, err := app.GetDimensionList(sessionState, actionState); err == nil {
+				t.Fatalf("expected error on first call, got dimension list<%v>", dl)
+			}
+
+			dl, err := app.GetDimensionList(sessionState, actionState)
+			if err != nil {
+				t.Fatalf("expected retry to succeed, got error: %v", err)
+			}
+			if dl == nil {
+				t.Fatal("expected dimension list after retry, got nil")
+			}
+			if calls := socket.callCount("CreateSessionObject"); calls != 2 {
+				t.Errorf("expected 2 CreateSessionObject requests, got<%d>", calls)
+			}
+
+			destroyed := socket.destroyedIDs()
+			if len(destroyed) != test.expectDestroys {
+				t.Fatalf("expected %d destroyed session objects, got<%v>", test.expectDestroys, destroyed)
+			}
+			for _, id := range destroyed {
+				if id == dl.enigmaObject.GenericId {
+					t.Errorf("cached dimension list<%s> was destroyed", id)
+				}
+			}
+		})
+	}
+}
+
+// TestAppConcurrentAggregatedSelectionFields verifies current selections layout updates are synchronized with
+// readers. Run with -race.
+func TestAppConcurrentAggregatedSelectionFields(t *testing.T) {
+	app, _ := newFakeApp(t)
 	sessionState := fakeSessionState{}
 	actionState := &action.State{}
 
-	socket.failCreateSessionObject.Store(true)
-	if dl, err := app.GetDimensionList(sessionState, actionState); err == nil {
-		t.Fatalf("expected error on first call, got dimension list<%v>", dl)
+	currentSelections, err := app.GetCurrentSelections(sessionState, actionState, true)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	dl, err := app.GetDimensionList(sessionState, actionState)
-	if err != nil {
-		t.Fatalf("expected retry to succeed, got error: %v", err)
-	}
-	if dl == nil {
-		t.Fatal("expected dimension list after retry, got nil")
-	}
-	if calls := socket.createSessionObjectCalls.Load(); calls != 2 {
-		t.Errorf("expected 2 CreateSessionObject requests, got<%d>", calls)
-	}
+	const iterations = 100
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			if err := currentSelections.UpdateLayout(context.Background()); err != nil {
+				t.Error(err)
+				return
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			app.GetAggregatedSelectionFields()
+		}
+	}()
+	wg.Wait()
 }

@@ -2,12 +2,14 @@ package senseobjects
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/enigma-go/v4"
 	"github.com/qlik-oss/gopherciser/action"
+	"github.com/qlik-oss/gopherciser/logger"
 )
 
 type (
@@ -37,6 +39,23 @@ type (
 	}
 )
 
+// initSessionObject runs init for a newly created session object. If init fails the session object is destroyed in
+// the engine, as it will not be cached and the next caller creates a new one. The init error is returned.
+func (app *App) initSessionObject(sessionState SessionState, actionState *action.State, obj *enigma.GenericObject, init func() error) error {
+	err := init()
+	if err == nil || obj == nil {
+		return err
+	}
+
+	if destroyErr := sessionState.SendRequest(actionState, func(ctx context.Context) error {
+		_, err := app.Doc.DestroySessionObject(ctx, obj.GenericId)
+		return err
+	}); destroyErr != nil {
+		sessionState.LogDetail(logger.WarningLevel, fmt.Sprintf("failed to destroy session object<%s> after failed initialization", obj.GenericId), destroyErr.Error())
+	}
+	return err
+}
+
 // GetSheetList update sheet list for app
 func (app *App) GetSheetList(sessionState SessionState, actionState *action.State) (*SheetList, error) {
 	return app.sheetList.get(func() (*SheetList, error) {
@@ -50,7 +69,9 @@ func (app *App) GetSheetList(sessionState SessionState, actionState *action.Stat
 			return nil, errors.WithStack(err)
 		}
 
-		if err := sessionState.SendRequest(actionState, sheetList.UpdateLayout); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, sheetList.enigmaObject, func() error {
+			return sessionState.SendRequest(actionState, sheetList.UpdateLayout)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -80,11 +101,12 @@ func (app *App) GetBookmarkList(sessionState SessionState, actionState *action.S
 			return nil, errors.WithStack(err)
 		}
 
-		if err := sessionState.SendRequest(actionState, bookmarkList.UpdateLayout); err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		if err := sessionState.SendRequest(actionState, bookmarkList.UpdateProperties); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, bookmarkList.enigmaObject, func() error {
+			if err := sessionState.SendRequest(actionState, bookmarkList.UpdateLayout); err != nil {
+				return err
+			}
+			return sessionState.SendRequest(actionState, bookmarkList.UpdateProperties)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -114,7 +136,9 @@ func (app *App) GetVariableList(sessionState SessionState, actionState *action.S
 			return nil, errors.WithStack(err)
 		}
 
-		if err := sessionState.SendRequest(actionState, variableList.UpdateLayout); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, variableList.enigmaObject, func() error {
+			return sessionState.SendRequest(actionState, variableList.UpdateLayout)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -142,8 +166,10 @@ func (app *App) GetAppsPropsList(sessionState SessionState, actionState *action.
 			return nil, errors.WithStack(err)
 		}
 
-		if err := sessionState.SendRequest(actionState, func(ctx context.Context) error {
-			return appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
+		if err := app.initSessionObject(sessionState, actionState, appPropsList.enigmaObject, func() error {
+			return sessionState.SendRequest(actionState, func(ctx context.Context) error {
+				return appPropsList.UpdateLayout(ctx, app.Doc, sessionState, actionState)
+			})
 		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -171,7 +197,9 @@ func (app *App) GetStoryList(sessionState SessionState, actionState *action.Stat
 			return nil, errors.WithStack(err)
 		}
 
-		if err := sessionState.SendRequest(actionState, storyList.UpdateLayout); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, storyList.enigmaObject, func() error {
+			return sessionState.SendRequest(actionState, storyList.UpdateLayout)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -199,11 +227,12 @@ func (app *App) GetLoadModelList(sessionState SessionState, actionState *action.
 			return nil, errors.WithStack(err)
 		}
 
-		if err := sessionState.SendRequest(actionState, loadModelList.UpdateLayout); err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		if err := sessionState.SendRequest(actionState, loadModelList.UpdateProperties); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, loadModelList.enigmaObject, func() error {
+			if err := sessionState.SendRequest(actionState, loadModelList.UpdateLayout); err != nil {
+				return err
+			}
+			return sessionState.SendRequest(actionState, loadModelList.UpdateProperties)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -287,11 +316,15 @@ func (app *App) addBookmarkToMap(bm *enigma.GenericBookmark) {
 
 func (app *App) GetAggregatedSelectionFields() string {
 	currentSelections, ok := app.currentSelections.peek()
-	if !ok || currentSelections.layout == nil {
+	if !ok {
 		return ""
 	}
-	fields := make([]string, 0, len(currentSelections.layout.SelectionObject.Selections))
-	for _, selection := range currentSelections.layout.SelectionObject.Selections {
+	layout := currentSelections.Layout()
+	if layout == nil {
+		return ""
+	}
+	fields := make([]string, 0, len(layout.SelectionObject.Selections))
+	for _, selection := range layout.SelectionObject.Selections {
 		fields = append(fields, selection.Field)
 	}
 
@@ -311,10 +344,12 @@ func (app *App) GetDimensionList(sessionState SessionState, actionState *action.
 		}
 
 		// Get data
-		if err := sessionState.SendRequest(actionState, dimensionList.UpdateLayout); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		if err := sessionState.SendRequest(actionState, dimensionList.UpdateProperties); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, dimensionList.enigmaObject, func() error {
+			if err := sessionState.SendRequest(actionState, dimensionList.UpdateLayout); err != nil {
+				return err
+			}
+			return sessionState.SendRequest(actionState, dimensionList.UpdateProperties)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -342,10 +377,12 @@ func (app *App) GetFieldList(sessionState SessionState, actionState *action.Stat
 		}
 
 		// Get data
-		if err := sessionState.SendRequest(actionState, fieldList.UpdateLayout); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		if err := sessionState.SendRequest(actionState, fieldList.UpdateProperties); err != nil {
+		if err := app.initSessionObject(sessionState, actionState, fieldList.enigmaObject, func() error {
+			if err := sessionState.SendRequest(actionState, fieldList.UpdateLayout); err != nil {
+				return err
+			}
+			return sessionState.SendRequest(actionState, fieldList.UpdateProperties)
+		}); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -389,7 +426,9 @@ func (app *App) GetCurrentSelections(sessionState SessionState, actionState *act
 		}
 
 		if requestData {
-			if err := onCurrentSelectionChanged(sessionState.BaseContext(), actionState); err != nil {
+			if err := app.initSessionObject(sessionState, actionState, currentSelections.enigmaObject, func() error {
+				return onCurrentSelectionChanged(sessionState.BaseContext(), actionState)
+			}); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
