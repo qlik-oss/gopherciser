@@ -26,8 +26,6 @@ type (
 		calls map[string]int
 		// failNext methods for which the next request gets an error response
 		failNext map[string]bool
-		// destroyed IDs of destroyed session objects
-		destroyed []string
 	}
 
 	// fakeSessionState executes requests synchronously in the calling goroutine
@@ -56,13 +54,6 @@ func (socket *fakeEngineSocket) callCount(method string) int {
 	socket.mu.Lock()
 	defer socket.mu.Unlock()
 	return socket.calls[method]
-}
-
-// destroyedIDs returns the IDs of destroyed session objects
-func (socket *fakeEngineSocket) destroyedIDs() []string {
-	socket.mu.Lock()
-	defer socket.mu.Unlock()
-	return append([]string(nil), socket.destroyed...)
 }
 
 func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
@@ -100,15 +91,6 @@ func (socket *fakeEngineSocket) WriteMessage(_ int, data []byte) error {
 	case "CreateSessionObject":
 		handle := socket.nextHandle.Add(1)
 		message["result"] = map[string]any{"qReturn": map[string]any{"qType": "GenericObject", "qHandle": handle, "qGenericId": fmt.Sprintf("sessionobject%d", handle)}}
-	case "DestroySessionObject":
-		var id string
-		if err := json.Unmarshal(request.Params[0], &id); err != nil {
-			return err
-		}
-		socket.mu.Lock()
-		socket.destroyed = append(socket.destroyed, id)
-		socket.mu.Unlock()
-		message["result"] = map[string]any{"qSuccess": true}
 	case "GetLayout":
 		message["result"] = map[string]any{"qLayout": map[string]any{}}
 	case "GetProperties", "GetEffectiveProperties":
@@ -257,16 +239,15 @@ func TestAppConcurrentGetDimensionList(t *testing.T) {
 	}
 }
 
-// TestAppGetDimensionListRetryAfterError verifies a failed initialization is not cached, and that a session object
-// created before the failure is destroyed in the engine
+// TestAppGetDimensionListRetryAfterError verifies a failed initialization is not cached. A session object created
+// before the failure is left in the engine, as the client does.
 func TestAppGetDimensionListRetryAfterError(t *testing.T) {
 	tests := []struct {
-		failMethod     string
-		expectDestroys int
+		failMethod string
 	}{
-		{failMethod: "CreateSessionObject", expectDestroys: 0},
-		{failMethod: "GetLayout", expectDestroys: 1},
-		{failMethod: "GetEffectiveProperties", expectDestroys: 1},
+		{failMethod: "CreateSessionObject"},
+		{failMethod: "GetLayout"},
+		{failMethod: "GetEffectiveProperties"},
 	}
 
 	for _, test := range tests {
@@ -290,15 +271,8 @@ func TestAppGetDimensionListRetryAfterError(t *testing.T) {
 			if calls := socket.callCount("CreateSessionObject"); calls != 2 {
 				t.Errorf("expected 2 CreateSessionObject requests, got<%d>", calls)
 			}
-
-			destroyed := socket.destroyedIDs()
-			if len(destroyed) != test.expectDestroys {
-				t.Fatalf("expected %d destroyed session objects, got<%v>", test.expectDestroys, destroyed)
-			}
-			for _, id := range destroyed {
-				if id == dl.enigmaObject.GenericId {
-					t.Errorf("cached dimension list<%s> was destroyed", id)
-				}
+			if calls := socket.callCount("DestroySessionObject"); calls != 0 {
+				t.Errorf("expected no DestroySessionObject requests, got<%d>", calls)
 			}
 		})
 	}
