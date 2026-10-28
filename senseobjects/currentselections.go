@@ -80,14 +80,20 @@ func (cs *CurrentSelections) setProperties(properties *CurrentSelectionPropertie
 	cs.properties = properties
 }
 
-// Layout for current selections
+// Layout for current selections. The layout is replaced, not modified, on updates, so the returned layout is a
+// consistent snapshot.
 func (cs *CurrentSelections) Layout() *CurrentSelectionLayout {
-	return cs.layout //TODO DECISION: wait for write lock?
+	cs.mutex.Lock()
+	defer cs.mutex.Unlock()
+	return cs.layout
 }
 
-// Properties for current selections
+// Properties for current selections. The properties are replaced, not modified, on updates, so the returned
+// properties are a consistent snapshot.
 func (cs *CurrentSelections) Properties() *CurrentSelectionProperties {
-	return cs.properties //TODO DECISION: wait for write lock?
+	cs.mutex.Lock()
+	defer cs.mutex.Unlock()
+	return cs.properties
 }
 
 // CreateCurrentSelections create current selections session object
