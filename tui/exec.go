@@ -198,7 +198,9 @@ func (v *execView) update(msg tea.Msg) {
 		v.rerun()
 	default:
 		if !v.showGraph {
-			scrollKey(&v.logs, key.String())
+			if scrollKey(&v.logs, key.String()) {
+				v.follow = key.String() == "G" || key.String() == "end"
+			}
 		}
 	}
 }
@@ -207,6 +209,7 @@ func (v *execView) scroll(delta int) {
 	if v.showGraph {
 		return
 	}
+	v.follow = false
 	if delta < 0 {
 		v.logs.ScrollUp(-delta)
 	} else {
