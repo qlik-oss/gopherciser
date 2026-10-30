@@ -143,10 +143,9 @@ func (v *execView) activate() {
 		{"ctrl-c", "stop execution"},
 		{"x", "re-run script"},
 		{"v", "log/graph view"},
-		{"f", "filter log"},
 	}
 	if !v.showGraph {
-		hints = append(hints, [2]string{"F", "toggle follow"})
+		hints = append(hints, [2]string{"f", "filter log"}, [2]string{"F", "toggle follow"})
 	}
 	v.app.setHints(append(hints,
 		[2]string{"w", "toggle wrap"},
@@ -188,6 +187,9 @@ func (v *execView) update(msg tea.Msg) {
 		v.logs.SoftWrap = v.wrap
 		v.app.flashInfo("wrap %s", onOff[v.wrap])
 	case "f":
+		if v.showGraph {
+			return
+		}
 		v.app.openOverlay(&filterDialog{app: v.app, filters: v.filters, onChange: v.renderLogs})
 	case "c":
 		v.entries, v.problems = nil, nil
