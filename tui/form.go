@@ -13,10 +13,10 @@ import (
 	"github.com/qlik-oss/gopherciser/config"
 	"github.com/qlik-oss/gopherciser/connection"
 	"github.com/qlik-oss/gopherciser/enummap"
+	"github.com/qlik-oss/gopherciser/generatedocs/generated"
 	"github.com/qlik-oss/gopherciser/scenario"
 	"github.com/qlik-oss/gopherciser/scheduler"
 	"github.com/qlik-oss/gopherciser/users"
-	"github.com/qlik-trial/gopherciser/generatedocs/generated"
 )
 
 type fieldKind int
