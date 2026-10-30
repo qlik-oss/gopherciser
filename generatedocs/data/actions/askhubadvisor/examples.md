@@ -131,7 +131,7 @@ See detailed examples of settings in the documentation for thinktime action.
 #### Save chart images to file with custom name
 
 The `saveimagefile` file name template setting supports
-[Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables).
+[Session Variables](https://github.com/qlik-oss/gopherciser/blob/master/docs/settingup.md#session-variables).
 You can apart from session variables include the following action local variables in the `saveimagefile` file name template:
 - .Local.ImageCount - _the number of images written to file_
 - .Local.ServerFileName - _the server side name of image file_

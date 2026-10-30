@@ -47,7 +47,7 @@ if mkdir -p "$PREFIX/$BIN"; then
       if [ -e "$PREFIX/$BIN/$BINARY" ]; then
         rm "$PREFIX/$BIN/$BINARY"
       fi
-      GOOS=linux GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
+      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
       docker build . -t "ghcr.io/qlik-oss/gopherciser/gopherciser:$RELEASE_VERSION"
       echo "docker build image built, run a container with:"
       echo "docker run ghcr.io/qlik-oss/gopherciser/gopherciser:$RELEASE_VERSION ./gopherciser -h"
@@ -58,11 +58,11 @@ if mkdir -p "$PREFIX/$BIN"; then
 
     # Linux amd64
     BINARY="$3"
-    GOOS=linux GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
 
     # Linux arm64
     BINARY="$3_arm64"
-    GOOS=linux GOARCH=arm64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -a -mod=readonly -tags netgo -installsuffix netgo -o "$PREFIX/$BIN/$BINARY" -ldflags "$BRANCH_FLAG $REVISION_FLAG $VERSION_FLAG $BUILD_TIME_FLAG -d -s -w"
 
     # Windows amd64
     BINARY="$3.exe"
