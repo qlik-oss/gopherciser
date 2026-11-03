@@ -1,6 +1,6 @@
 module github.com/qlik-oss/gopherciser
 
-go 1.26.0
+go 1.27.0
 
 require (
 	charm.land/bubbles/v2 v2.2.1
@@ -18,7 +18,7 @@ require (
 	github.com/mattn/go-colorable v0.1.16
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.25.0
-	github.com/qlik-oss/enigma-go/v4 v4.5.0
+	github.com/qlik-oss/enigma-go/v4 v4.6.0
 	github.com/rs/zerolog v1.35.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
@@ -44,7 +44,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
-	github.com/mattn/go-runewidth v0.0.30 // indirect
+	github.com/mattn/go-runewidth v0.0.31 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/client_model v0.6.3 // indirect
