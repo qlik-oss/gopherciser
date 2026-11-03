@@ -9,7 +9,7 @@ require (
 	github.com/buger/jsonparser v1.6.1
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/gobwas/ws v1.4.0
-	github.com/goccy/go-json v0.11.2
+	github.com/goccy/go-json v0.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
