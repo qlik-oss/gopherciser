@@ -62,7 +62,7 @@
         "`querylist`: Read queries from list defined by `querylist`."
     ],
     "askhubadvisor.saveimagefile": [
-        "File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-trial/gopherciser-oss/blob/master/docs/settingup.md#session-variables)."
+        "File name of saved images. Defaults to server side file name. Supports [Session Variables](https://github.com/qlik-oss/gopherciser/blob/master/docs/settingup.md#session-variables)."
     ],
     "askhubadvisor.saveimages": [
         "Save images of charts to file."
