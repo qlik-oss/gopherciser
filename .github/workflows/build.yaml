@@ -71,7 +71,7 @@ jobs:
      continue-on-error: true
      strategy:
        matrix:
-         go-version: ['1.26']
+         go-version: []
      permissions:
        contents: read
      steps:
