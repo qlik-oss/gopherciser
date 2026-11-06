@@ -311,6 +311,8 @@ func (entry *LogEntry) AddInterceptor(level LogLevel, f func(msg *LogEntry) bool
 	if entry == nil {
 		return
 	}
+	entry.mu.Lock()
+	defer entry.mu.Unlock()
 
 	if entry.interceptors == nil {
 		entry.interceptors = make(map[LogLevel]func(msg *LogEntry) bool)
