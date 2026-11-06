@@ -5,6 +5,12 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 3
+      semver-minor-days: 1
+      semver-patch-days: 1
+      exclude:
+        - "github.com/qlik-oss/enigma-go/*"
   - package-ecosystem: "gitsubmodule"
     directory: "/"
     schedule:
