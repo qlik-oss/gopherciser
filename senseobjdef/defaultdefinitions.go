@@ -826,6 +826,23 @@ var (
 		Select: nil,
 	}
 
+	// DefaultSlider object definitions for sn-slider
+	DefaultSnSlider = ObjectDef{
+		DataDef: DataDef{
+			Type: DataDefNoData,
+		},
+		Data: []Data{
+			{DataCore{
+				Requests: []GetDataRequests{
+					{
+						Type: DataTypeLayout,
+					},
+				},
+			}},
+		},
+		Select: nil,
+	}
+
 	DefaultObjectDefs = ObjectDefs{
 		"listbox":               &DefaultListboxDef,
 		"filterpane":            &DefaultFilterpane,
@@ -876,5 +893,6 @@ var (
 		"sn-nlg-chart":          &DefaultSnNlgChart,
 		"sn-nav-menu":           &DefaultSnNavMenu,
 		"sn-image":              &DefaultSnImage,
+		"sn-slider":             &DefaultSnSlider,
 	}
 )
