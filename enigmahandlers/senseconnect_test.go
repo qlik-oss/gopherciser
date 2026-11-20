@@ -29,8 +29,8 @@ func TestObjectList(t *testing.T) {
 	obj := &Object{
 		Handle: 0,
 	}
-	if err := connection.Objects.AddObject(obj); err != nil {
-		t.Fatalf("Failed to add obj<0> to object list: %v", err)
+	if err := connection.Objects.AddObject(obj); err == nil {
+		t.Error("expected error adding obj<0> to object list")
 	}
 
 	if _, err := connection.Objects.GetObject(1); err != ObjectNotFound(1) {
@@ -86,7 +86,7 @@ func TestObjectListMulti(t *testing.T) {
 	objectCount := 10
 
 	// Add
-	for i := 0; i < objectCount; i++ {
+	for i := 1; i <= objectCount; i++ {
 		err := connection.Objects.AddObject(&Object{
 			Handle: i,
 			ID:     strconv.Itoa(i),
@@ -97,14 +97,14 @@ func TestObjectListMulti(t *testing.T) {
 	}
 
 	// Get
-	for i := 0; i < objectCount; i++ {
+	for i := 1; i <= objectCount; i++ {
 		if _, err := connection.Objects.GetObject(i); err != nil {
 			t.Fatalf("Failed getting handle<%d>, err: %v", i, err)
 		}
 	}
 
 	// Get again
-	for i := 0; i < objectCount; i++ {
+	for i := 1; i <= objectCount; i++ {
 		if _, err := connection.Objects.GetObject(i); err != nil {
 			t.Fatalf("Failed getting handle<%d>, err: %v", i, err)
 		}
@@ -115,14 +115,14 @@ func TestObjectListMulti(t *testing.T) {
 	}
 
 	// GetByID
-	for i := 0; i < objectCount; i++ {
+	for i := 1; i <= objectCount; i++ {
 		if _, err := connection.Objects.GetObjectByID(strconv.Itoa(i)); err != nil {
 			t.Fatalf("Failed getting byID object<%d>, err: %v", i, err)
 		}
 	}
 
 	//Remove
-	for i := 0; i < objectCount; i++ {
+	for i := 1; i <= objectCount; i++ {
 		if err := connection.Objects.RemoveObject(i); err != nil {
 			t.Errorf("Got unexpected error when removing object: %v", err)
 		}

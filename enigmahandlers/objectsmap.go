@@ -84,7 +84,7 @@ func (o *ObjectsMap) AddObject(obj *Object) error {
 	if obj == nil {
 		return errors.Errorf("Tried to store nil object in objectmap")
 	}
-	if obj.Handle < 0 {
+	if obj.Handle < 1 {
 		return errors.Errorf("Invalid object handle<%d>", obj.Handle)
 	}
 
