@@ -30,6 +30,9 @@ type (
 
 	CalcEvalConditionFailedError string
 
+	// ObjectNotFoundError engine returned no handle for object
+	ObjectNotFoundError string
+
 	HyperCubeSection int
 
 	NxValidationError struct {
@@ -102,6 +105,11 @@ func (err CalcEvalConditionFailedError) Error() string {
 	return fmt.Sprintf("object has unsatisfied calculation condition in %s", string(err))
 }
 
+// Error implements error interface
+func (err ObjectNotFoundError) Error() string {
+	return fmt.Sprintf("object<%s> not found", string(err))
+}
+
 // RegisterHandler for object type, override existing handler with override flag
 func (objects *objectHandlerMap) RegisterHandler(objectType string, handler ObjectHandler, override bool) error {
 	objects.writeLock.Lock()
@@ -158,6 +166,10 @@ func getAndAddObjectWithCallback(sessionState *State, actionState *action.State,
 		}
 		if err := sessionState.SendRequest(actionState, getObject); err != nil {
 			return errors.Wrapf(err, "Failed go get object<%s>", name)
+		}
+
+		if genObj.Handle < 1 {
+			return errors.WithStack(ObjectNotFoundError(name))
 		}
 
 		obj, err := sense.AddNewObject(genObj.Handle, enigmahandlers.ObjTypeGenericObject, name, genObj)
